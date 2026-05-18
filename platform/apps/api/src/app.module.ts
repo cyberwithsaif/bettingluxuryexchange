@@ -20,6 +20,7 @@ import { RealtimeModule } from "./modules/realtime/realtime.module";
 import { SportsModule } from "./modules/sports/sports.module";
 import { SettlementModule } from "./modules/settlement/settlement.module";
 import { BootstrapModule } from "./bootstrap/bootstrap.module";
+import { AnnouncementsModule } from "./modules/announcements/announcements.module";
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { BootstrapModule } from "./bootstrap/bootstrap.module";
     SportsModule,
     SettlementModule,
     BootstrapModule,
+    AnnouncementsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

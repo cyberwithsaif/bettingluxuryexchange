@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpToLine, Activity,
   Settings, Key, ListChecks, ShieldAlert, LogOut, Gamepad2, Trophy,
+  Ticket, BarChart3, Bell,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -12,11 +13,14 @@ import { useAuthStore } from "@/lib/stores/auth";
 const NAV = [
   { href: "/",              label: "Dashboard",     Icon: LayoutDashboard },
   { href: "/users",         label: "Users",         Icon: Users },
+  { href: "/bets",          label: "All Bets",      Icon: Ticket },
   { href: "/deposits",      label: "Deposits",      Icon: ArrowDownToLine },
   { href: "/withdrawals",   label: "Withdrawals",   Icon: ArrowUpToLine },
   { href: "/markets",       label: "Markets",       Icon: Trophy },
   { href: "/casino",        label: "Casino",        Icon: Gamepad2 },
   { href: "/risk",          label: "Live Risk",     Icon: ShieldAlert },
+  { href: "/reports",       label: "Reports",       Icon: BarChart3 },
+  { href: "/notifications", label: "Announcements", Icon: Bell },
   { href: "/api-keys",      label: "API Keys",      Icon: Key },
   { href: "/logs",          label: "Audit Logs",    Icon: ListChecks },
   { href: "/settings",      label: "Settings",      Icon: Settings },

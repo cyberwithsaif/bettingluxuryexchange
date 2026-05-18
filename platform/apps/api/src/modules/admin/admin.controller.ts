@@ -106,4 +106,28 @@ export class AdminController {
   logs(@Query("actorId") actorId?: string, @Query("action") action?: string, @Query("limit") limit?: string) {
     return this.admin.listLogs({ actorId, action, limit: limit ? Number(limit) : undefined });
   }
+
+  // -- All bets across users --
+
+  @Get("bets")
+  allBets(
+    @Query("username") username?: string,
+    @Query("status") status?: string,
+    @Query("limit") limit?: string,
+    @Query("skip") skip?: string,
+  ) {
+    return this.admin.listAllBets({
+      username,
+      status,
+      limit: limit ? Number(limit) : undefined,
+      skip: skip ? Number(skip) : undefined,
+    });
+  }
+
+  // -- Platform reports --
+
+  @Get("reports")
+  reports(@Query("days") days?: string) {
+    return this.admin.getReports({ days: days ? Number(days) : undefined });
+  }
 }

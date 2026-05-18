@@ -8,6 +8,7 @@ const items = [
   ["My Bets",           "/account/bets"],
   ["Account Statement", "/account/statement"],
   ["Profit / Loss",     "/account/pl"],
+  ["Notifications",     "/account/notifications"],
   ["Deposit",           "/account/deposit"],
   ["Withdraw",          "/account/withdraw"],
   ["Security & 2FA",    "/account/security"],

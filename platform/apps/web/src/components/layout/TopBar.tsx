@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Wallet, ArrowDownToLine, ArrowUpToLine, User2, LogOut } from "lucide-react";
+import { Wallet, ArrowDownToLine, ArrowUpToLine, User2, LogOut, Bell } from "lucide-react";
 import useSWR from "swr";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
@@ -67,6 +67,7 @@ export function TopBar() {
             >
               <ArrowUpToLine size={14} /> Withdraw
             </Link>
+            <NotificationBell />
             <ProfileMenu username={user.username} onLogout={clear} />
           </>
         ) : (
@@ -110,6 +111,7 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
             ["My Bets", "/account/bets"],
             ["Account Statement", "/account/statement"],
             ["Profit / Loss", "/account/pl"],
+            ["Notifications", "/account/notifications"],
             ["Security & 2FA", "/account/security"],
           ].map(([l, h]) => (
             <Link key={h} href={h} className="block px-3 py-2 text-sm rounded hover:bg-panel2" onClick={() => setOpen(false)}>{l}</Link>
@@ -120,6 +122,25 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
         </div>
       )}
     </div>
+  );
+}
+
+function NotificationBell() {
+  const { data } = useSWR<Array<{ id: string }>>("/announcements/active", { refreshInterval: 60_000 });
+  const count = data?.length ?? 0;
+  return (
+    <Link
+      href="/account/notifications"
+      className="relative inline-flex items-center justify-center h-9 w-9 rounded-md border border-line bg-panel/60 hover:border-accent transition"
+      title="Notifications"
+    >
+      <Bell size={15} />
+      {count > 0 && (
+        <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-0.5 rounded-full bg-bad text-[9px] font-bold grid place-items-center text-white">
+          {count}
+        </span>
+      )}
+    </Link>
   );
 }
 

@@ -77,4 +77,73 @@ export class AdminService {
       include: { actor: { select: { id: true, username: true, role: true } } },
     });
   }
+
+  /** All bets across all users — paginated, filterable by username / status. */
+  async listAllBets(opts: { username?: string; status?: string; limit?: number; skip?: number } = {}) {
+    const where: Prisma.BetWhereInput = {};
+    if (opts.username) {
+      where.user = { username: { contains: opts.username, mode: "insensitive" } };
+    }
+    if (opts.status) {
+      where.status = opts.status as Prisma.EnumBetStatusFilter;
+    }
+    return this.prisma.bet.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: Math.min(opts.limit ?? 50, 200),
+      skip: opts.skip ?? 0,
+      include: {
+        user: { select: { id: true, username: true, role: true } },
+        market: { select: { id: true, name: true, type: true } },
+        runner: { select: { id: true, name: true } },
+      },
+    });
+  }
+
+  /** Platform-level P/L report: volume + aggregate net over a period. */
+  async getReports(opts: { days?: number } = {}) {
+    const days = Math.min(opts.days ?? 30, 365);
+    const since = new Date(Date.now() - days * 24 * 60 * 60_000);
+
+    const [totalBets, openBets, settledBets, ledger] = await Promise.all([
+      this.prisma.bet.count({ where: { createdAt: { gte: since } } }),
+      this.prisma.bet.count({ where: { status: "OPEN" } }),
+      this.prisma.bet.count({ where: { status: { in: ["WON", "LOST"] }, createdAt: { gte: since } } }),
+      this.prisma.ledgerEntry.findMany({
+        where: {
+          kind: { in: ["BET_SETTLE_WIN", "BET_SETTLE_LOSS", "ADMIN_CREDIT", "ADMIN_DEBIT"] },
+          createdAt: { gte: since },
+        },
+        select: { amount: true, kind: true, createdAt: true },
+      }),
+    ]);
+
+    // Daily buckets
+    const daily: Record<string, { volume: number; pl: number }> = {};
+    let totalWin = 0;
+    let totalLoss = 0;
+    for (const e of ledger) {
+      const day = e.createdAt.toISOString().slice(0, 10);
+      if (!daily[day]) daily[day] = { volume: 0, pl: 0 };
+      const amt = Number(e.amount.toString());
+      daily[day].volume += Math.abs(amt);
+      if (e.kind === "BET_SETTLE_WIN") { totalWin += amt; daily[day].pl -= amt; }
+      if (e.kind === "BET_SETTLE_LOSS") { totalLoss += Math.abs(amt); daily[day].pl += Math.abs(amt); }
+    }
+
+    const series = Object.entries(daily)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, d]) => ({ date, volume: Math.round(d.volume * 100) / 100, pl: Math.round(d.pl * 100) / 100 }));
+
+    return {
+      days,
+      totalBets,
+      openBets,
+      settledBets,
+      totalUserWin: Math.round(totalWin * 100) / 100,
+      totalOperatorPL: Math.round((totalLoss - totalWin) * 100) / 100,
+      series,
+    };
+  }
 }
+
