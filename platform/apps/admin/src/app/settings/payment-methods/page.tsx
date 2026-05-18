@@ -1,8 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import useSWR, { mutate } from "swr";
 import { api } from "@/lib/api";
-import { CreditCard, Wallet, Bitcoin, Save, CheckCircle2, ToggleLeft, ToggleRight, Eye, EyeOff } from "lucide-react";
+import { CreditCard, Wallet, Bitcoin, Save, CheckCircle2, ToggleLeft, ToggleRight, Eye, EyeOff, Upload } from "lucide-react";
 
 interface UpiMethod    { enabled: boolean; upiId: string; qrCodeUrl?: string; displayName?: string; }
 interface BankMethod   { enabled: boolean; accountName: string; accountNumber: string; ifsc: string; bankName: string; branch?: string; }
@@ -19,6 +19,8 @@ export default function PaymentMethodsPage() {
   const [busy, setBusy]     = useState(false);
   const [msg,  setMsg]      = useState<{ text: string; ok: boolean } | null>(null);
   const [showQr, setShowQr] = useState(false);
+  const upiFileInputRef = useRef<HTMLInputElement>(null);
+  const cryptoFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!data) return;
@@ -26,6 +28,18 @@ export default function PaymentMethodsPage() {
     if (data.bank)   setBank(prev   => ({ ...prev, ...data.bank }));
     if (data.crypto) setCrypto(prev => ({ ...prev, ...data.crypto }));
   }, [data]);
+
+  function handleQrUpload(e: React.ChangeEvent<HTMLInputElement>, type: 'upi' | 'crypto') {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (type === 'upi') setUpi(p => ({ ...p, qrCodeUrl: dataUrl }));
+      else setCrypto(p => ({ ...p, qrCodeUrl: dataUrl }));
+    };
+    reader.readAsDataURL(file);
+  }
 
   async function save() {
     setBusy(true); setMsg(null);
@@ -72,16 +86,31 @@ export default function PaymentMethodsPage() {
           </div>
         </div>
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-1">QR Code URL</label>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-1">QR Code</label>
           <div className="flex gap-2">
             <input value={upi.qrCodeUrl ?? ""} onChange={e => setUpi(p => ({ ...p, qrCodeUrl: e.target.value }))} placeholder="https://..."
               className="flex-1 bg-panel/60 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+            <button
+              type="button"
+              onClick={() => upiFileInputRef.current?.click()}
+              className="px-3 rounded-lg bg-panel2 border border-line text-sm hover:border-accent transition"
+              title="Upload QR code image"
+            >
+              <Upload size={14} />
+            </button>
             {upi.qrCodeUrl && (
               <button onClick={() => setShowQr(s => !s)} className="px-3 rounded-lg bg-panel2 border border-line text-sm">
                 {showQr ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             )}
           </div>
+          <input
+            ref={upiFileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleQrUpload(e, 'upi')}
+            className="hidden"
+          />
           {showQr && upi.qrCodeUrl && (
             <img src={upi.qrCodeUrl} alt="QR" className="mt-2 w-32 h-32 object-contain rounded-lg border border-line bg-white p-1" />
           )}
@@ -140,6 +169,36 @@ export default function PaymentMethodsPage() {
             <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-1">Wallet Address</label>
             <input value={crypto.address} onChange={e => setCrypto(p => ({ ...p, address: e.target.value }))} placeholder="T..."
               className="w-full bg-panel/60 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+          </div>
+          <div className="col-span-2">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-1">QR Code</label>
+            <div className="flex gap-2">
+              <input value={crypto.qrCodeUrl ?? ""} onChange={e => setCrypto(p => ({ ...p, qrCodeUrl: e.target.value }))} placeholder="https://..."
+                className="flex-1 bg-panel/60 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent" />
+              <button
+                type="button"
+                onClick={() => cryptoFileInputRef.current?.click()}
+                className="px-3 rounded-lg bg-panel2 border border-line text-sm hover:border-accent transition"
+                title="Upload QR code image"
+              >
+                <Upload size={14} />
+              </button>
+              {crypto.qrCodeUrl && (
+                <button onClick={() => setShowQr(s => !s)} className="px-3 rounded-lg bg-panel2 border border-line text-sm">
+                  {showQr ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              )}
+            </div>
+            <input
+              ref={cryptoFileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleQrUpload(e, 'crypto')}
+              className="hidden"
+            />
+            {showQr && crypto.qrCodeUrl && (
+              <img src={crypto.qrCodeUrl} alt="QR" className="mt-2 w-32 h-32 object-contain rounded-lg border border-line bg-white p-1" />
+            )}
           </div>
         </div>
       </section>
