@@ -136,14 +136,16 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
       </button>
       {open && (
         <div className="absolute right-0 mt-2 w-52 rounded-md bg-white border border-gray-200 p-1 shadow-panel text-ink z-50">
-          {[
-            ["Dashboard", "/account"],
-            ["My Bets", "/account/bets"],
-            ["Account Statement", "/account/statement"],
-            ["Profit / Loss", "/account/pl"],
-            ["Notifications", "/account/notifications"],
-            ["Security & 2FA", "/account/security"],
-          ].map(([l, h]) => (
+          {(
+            [
+              ["Dashboard", "/account"],
+              ["My Bets", "/account/bets"],
+              ["Account Statement", "/account/statement"],
+              ["Profit / Loss", "/account/pl"],
+              ["Notifications", "/account/notifications"],
+              ["Security & 2FA", "/account/security"],
+            ] as const
+          ).map(([l, h]) => (
             <Link key={h} href={h} className="block px-3 py-2 text-sm rounded hover:bg-gray-100 font-medium" onClick={() => setOpen(false)}>{l}</Link>
           ))}
           <button onClick={onLogout} className="flex w-full items-center gap-2 px-3 py-2 text-sm rounded text-bad hover:bg-gray-100 font-medium">
