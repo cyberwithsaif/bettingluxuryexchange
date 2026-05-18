@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpToLine,
   Settings, Key, ListChecks, ShieldAlert, LogOut, Gamepad2, Trophy,
-  Ticket, BarChart3, Bell, Menu, X, CreditCard,
+  Ticket, BarChart3, Bell, Menu, X, CreditCard, Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -25,6 +25,7 @@ const NAV = [
   { href: "/logs",                     label: "Audit Logs",      Icon: ListChecks },
   { href: "/settings",                 label: "Settings",        Icon: Settings },
   { href: "/settings/payment-methods", label: "Payment Methods", Icon: CreditCard },
+  { href: "/settings/banners",         label: "Banner Settings", Icon: Megaphone },
 ] as const;
 
 function Spinner() {
@@ -105,7 +106,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               href === "/"
                 ? path === "/"
                 : path === href || (href !== "/settings" && path?.startsWith(href + "/"));
-            const isSubItem = href === "/settings/payment-methods";
+            const isSubItem = href === "/settings/payment-methods" || href === "/settings/banners";
             return (
               <Link
                 key={href}

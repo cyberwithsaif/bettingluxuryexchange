@@ -7,7 +7,9 @@ import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
 import { cn } from "@/lib/cn";
 
-const MARQUEE_FALLBACK = "📢 Live Matka Markets Now Available — Play Smart, Win Big! • Bet Now in Line Markets and Get Commission Upto 2%";
+const DEFAULT_MARQUEE_FALLBACK = "📢 Live Matka Markets Now Available — Play Smart, Win Big! • Bet Now in Line Markets and Get Commission Upto 2%";
+
+interface PublicSettings { subBanner?: string; siteName?: string; siteTagline?: string; marqueeText?: string; }
 
 function useLiveClock() {
   const [now, setNow] = useState<string>("");
@@ -28,9 +30,10 @@ export function TopBar() {
   const { user, clear } = useAuthStore();
   const { data: wallet, mutate } = useSWR(user ? "/wallet/summary" : null);
   const { data: announcements } = useSWR<Array<{ id: string; text: string }>>("/announcements/active", { refreshInterval: 60_000 });
+  const { data: platformSettings } = useSWR<PublicSettings>("/platform/settings", { refreshInterval: 300_000 });
   const marqueeText = announcements && announcements.length > 0
     ? announcements.map((a) => `📢 ${a.text}`).join(" • ")
-    : MARQUEE_FALLBACK;
+    : (platformSettings?.marqueeText ?? DEFAULT_MARQUEE_FALLBACK);
 
   useEffect(() => {
     if (!user) return;

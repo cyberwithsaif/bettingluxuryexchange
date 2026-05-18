@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import useSWR from "swr";
 import { cn } from "@/lib/cn";
 const tabs = [
   { href: "/exchange",   label: "EXCHANGE",    emoji: "🎰" },
@@ -12,8 +13,12 @@ const tabs = [
   { href: "/sportsbook", label: "SPORTS BOOK", emoji: "🎯" },
 ] as const;
 
+interface PublicSettings { subBanner?: string; siteName?: string; siteTagline?: string; marqueeText?: string; }
+
 export function TopNav() {
   const path = usePathname();
+  const { data: settings } = useSWR<PublicSettings>("/platform/settings", { refreshInterval: 300_000 });
+  const subBanner = settings?.subBanner ?? "Bet Now in Line Market and Get Commission Upto 2%";
   return (
     <div className="sticky top-16 z-40 shadow-md">
       {/* Main Navigation Bar */}
@@ -47,7 +52,7 @@ export function TopNav() {
       <div className="bg-[#4a0815] border-b border-black/30">
         <div className="mx-auto max-w-[1600px] h-8 flex items-center justify-center px-4 overflow-hidden">
           <span className="text-brandYellow font-semibold text-sm animate-pulse">
-            Bet Now in Line Market and Get Comission Upto 2%
+            {subBanner}
           </span>
         </div>
       </div>
