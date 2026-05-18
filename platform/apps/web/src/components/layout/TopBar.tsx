@@ -7,6 +7,8 @@ import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
 import { cn } from "@/lib/cn";
 
+const MARQUEE_FALLBACK = "📢 Live Matka Markets Now Available — Play Smart, Win Big! • Bet Now in Line Markets and Get Commission Upto 2%";
+
 function useLiveClock() {
   const [now, setNow] = useState<string>("");
   useEffect(() => {
@@ -25,6 +27,10 @@ export function TopBar() {
   const clock = useLiveClock();
   const { user, clear } = useAuthStore();
   const { data: wallet, mutate } = useSWR(user ? "/wallet/summary" : null);
+  const { data: announcements } = useSWR<Array<{ id: string; text: string }>>("/announcements/active", { refreshInterval: 60_000 });
+  const marqueeText = announcements && announcements.length > 0
+    ? announcements.map((a) => `📢 ${a.text}`).join(" • ")
+    : MARQUEE_FALLBACK;
 
   useEffect(() => {
     if (!user) return;
@@ -55,8 +61,8 @@ export function TopBar() {
         {/* Middle: Marquee */}
         <div className="hidden md:flex flex-1 max-w-2xl mx-8 items-center overflow-hidden whitespace-nowrap text-sm font-semibold">
           <div className="flex items-center gap-2 animate-marquee w-full">
-            <Volume2 size={16} />
-            <span>📢 Live Matka Markets Now Available — Play Smart, Win Big!</span>
+            <Volume2 size={16} className="shrink-0" />
+            <span>{marqueeText}</span>
           </div>
         </div>
 
