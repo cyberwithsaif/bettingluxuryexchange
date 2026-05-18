@@ -212,6 +212,12 @@ export class AdminController {
 
   // -- Deposit Payment Methods (admin sets, users read) --
 
+  @Get("deposit-methods")
+  async getDepositMethodsAdmin() {
+    const settings = await this.admin.getPlatformSettings();
+    return (settings as any).depositMethods ?? {};
+  }
+
   @Post("deposit-methods")
   async saveDepositMethods(@CurrentUser() actor: AuthUser, @Body() dto: DepositMethodsDto, @Req() req: Request) {
     const result = await this.admin.savePlatformSettings({ depositMethods: dto } as any);
