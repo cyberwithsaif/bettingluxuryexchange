@@ -28,16 +28,31 @@ function processQueue(error: any, token: string | null) {
   pendingQueue = [];
 }
 
+function isOnLoginPage() {
+  if (typeof window === "undefined") return false;
+  return window.location.pathname.endsWith("/login");
+}
+
 api.interceptors.response.use(
   (r) => r,
   async (err: AxiosError) => {
     const original = err.config as any;
 
     if (err.response?.status === 401 && !original._retry) {
+      // Never tamper with auth state while the user is on /login —
+      // login itself uses 401 to signal bad credentials and clear() here would
+      // race the setAuth call that's about to land tokens.
+      if (isOnLoginPage()) {
+        return Promise.reject(err);
+      }
+
       const { refreshToken, set, clear } = useAuthStore.getState();
 
+      // No refresh token at all — user genuinely isn't authenticated.
+      // Don't clear() here (it triggers the redirect effect in AdminShell);
+      // just reject so the caller sees the error. AdminShell's hydration
+      // guard handles the redirect for truly-unauthenticated states.
       if (!refreshToken) {
-        clear();
         return Promise.reject(err);
       }
 
@@ -63,6 +78,8 @@ api.interceptors.response.use(
         return api(original);
       } catch (refreshErr) {
         processQueue(refreshErr, null);
+        // Only clear when refresh has truly failed — this is the real
+        // "session is dead" signal. AdminShell's effect will then redirect.
         clear();
         return Promise.reject(refreshErr);
       } finally {
