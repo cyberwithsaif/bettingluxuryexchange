@@ -35,8 +35,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     if (!user && path !== "/login") router.replace("/login");
   }, [user, path, router]);
 
-  if (!user) return null;
   if (path === "/login") return <>{children}</>;
+  if (!user) return null;
 
   return (
     <div className="min-h-screen flex">
