@@ -7,17 +7,31 @@ interface State {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
-  set: (s: Partial<State>) => void;
+  _hydrated: boolean;
+  set: (s: Partial<Omit<State, "_hydrated" | "set" | "clear" | "_setHydrated">>) => void;
   clear: () => void;
+  _setHydrated: () => void;
 }
 
 export const useAuthStore = create<State>()(
   persist(
     (set) => ({
-      user: null, accessToken: null, refreshToken: null,
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      _hydrated: false,
       set: (s) => set(s),
       clear: () => set({ user: null, accessToken: null, refreshToken: null }),
+      _setHydrated: () => set({ _hydrated: true }),
     }),
-    { name: "exch-admin-auth" },
+    {
+      name: "exch-admin-auth",
+      // Only persist the auth data, not the hydration flag
+      partialize: (s) => ({ user: s.user, accessToken: s.accessToken, refreshToken: s.refreshToken }),
+      onRehydrateStorage: () => (state) => {
+        // Called after localStorage data is loaded — safe to show authenticated UI now
+        state?._setHydrated();
+      },
+    },
   ),
 );

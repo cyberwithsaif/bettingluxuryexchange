@@ -28,33 +28,18 @@ const NAV = [
 ] as const;
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
-  const { user, clear } = useAuthStore();
+  const { user, clear, _hydrated } = useAuthStore();
   const router = useRouter();
   const path = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  // Track Zustand hydration to prevent false logout on page refresh
-  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    // useAuthStore.persist.hasHydrated() may be true synchronously or async
-    const unsub = useAuthStore.persist.onHydrate?.(() => {});
-    setHydrated(useAuthStore.persist.hasHydrated());
-    const unsubFinish = useAuthStore.persist.onFinishHydration?.(() => setHydrated(true));
-    // Fallback: mark hydrated on next tick
-    const t = setTimeout(() => setHydrated(true), 50);
-    return () => {
-      unsub?.();
-      unsubFinish?.();
-      clearTimeout(t);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (hydrated && !user && path !== "/login") {
+    // Only redirect after Zustand has finished loading from localStorage
+    if (_hydrated && !user && path !== "/login") {
       router.replace("/login");
     }
-  }, [hydrated, user, path, router]);
+  }, [_hydrated, user, path, router]);
 
   const handleLogout = useCallback(async () => {
     setIsLoggingOut(true);
@@ -62,16 +47,23 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     router.replace("/login");
   }, [clear, router]);
 
+  // Login page renders without the shell
   if (path === "/login") return <>{children}</>;
 
-  // Show spinner while store is hydrating (prevents flash-redirect on refresh)
-  if (!hydrated || !user) {
+  // Show spinner until Zustand rehydrates from localStorage
+  if (!_hydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-          <div className="text-sm text-white/40">Loading…</div>
-        </div>
+        <div className="h-8 w-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  // Hydrated but no user — redirect effect is running
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-bg">
+        <div className="h-8 w-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -97,10 +89,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
 
-        {/* Nav — flex-1 + overflow so all items are reachable */}
+        {/* Nav */}
         <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-thin scrollbar-thumb-line scrollbar-track-transparent">
           {NAV.map(({ href, label, Icon }) => {
-            // Exact match for root; prefix match for others but don't let /settings match /settings/payment-methods
             const active =
               href === "/"
                 ? path === "/"
@@ -145,19 +136,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-ink/50 md:hidden z-30 animate-fade-in"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 bg-ink/50 md:hidden z-30 animate-fade-in" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Main content */}
+      {/* Main */}
       <main className="flex-1 overflow-y-auto">
         <div className="sticky top-0 z-20 h-14 bg-panel/80 border-b border-line flex items-center px-4 md:px-6 gap-3 backdrop-blur-sm">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="md:hidden p-2 hover:bg-panel2 rounded-lg transition-colors"
-          >
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-2 hover:bg-panel2 rounded-lg transition-colors">
             <Menu size={18} />
           </button>
           <div className="flex-1" />
