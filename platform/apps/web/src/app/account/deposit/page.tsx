@@ -66,11 +66,22 @@ export default function DepositPage() {
         <h2 className="font-display text-xl mb-2">Recent requests</h2>
         <ul className="text-sm divide-y divide-line/40">
           {(mine ?? []).slice(0, 8).map((t: any) => (
-            <li key={t.id} className="py-2 flex justify-between">
-              <span>{t.kind} · {t.method} · {Number(t.amount).toLocaleString("en-IN")}</span>
-              <span className="text-xs uppercase tracking-wider text-white/60">{t.status}</span>
+            <li key={t.id} className="py-2.5 flex justify-between items-center gap-2">
+              <div className="min-w-0">
+                <span className="font-semibold">₹{Number(t.amount).toLocaleString("en-IN")}</span>
+                <span className="text-white/50 ml-2 text-xs">{(t.method ?? "").replace("_", " ")} · {t.kind}</span>
+                {t.reference && <div className="text-xs text-white/40 truncate">{t.reference}</div>}
+              </div>
+              <span className={`text-xs uppercase tracking-wider px-2.5 py-1 rounded-md font-bold shrink-0 ${
+                ["APPROVED", "COMPLETED"].includes(t.status) ? "bg-green-500/20 text-green-400 border border-green-500/30" :
+                t.status === "REJECTED"                      ? "bg-red-500/20 text-red-400 border border-red-500/30" :
+                                                               "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+              }`}>{t.status === "APPROVED" ? "COMPLETED" : t.status}</span>
             </li>
           ))}
+          {(!mine || mine.length === 0) && (
+            <li className="py-5 text-center text-white/40 text-xs">No requests yet.</li>
+          )}
         </ul>
       </section>
     </div>

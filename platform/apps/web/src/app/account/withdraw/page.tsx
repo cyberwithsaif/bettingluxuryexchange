@@ -224,11 +224,11 @@ export default function WithdrawPage() {
                 <span className="text-white/50 ml-2 text-xs">{(t.method ?? "").replace("_", " ")}</span>
                 {t.reference && <div className="text-xs text-white/40 truncate">{t.reference}</div>}
               </div>
-              <span className={`text-xs uppercase tracking-wider px-2 py-0.5 rounded font-semibold shrink-0 ${
-                t.status === "APPROVED" ? "bg-ok/15 text-ok" :
-                t.status === "REJECTED" ? "bg-bad/15 text-bad" :
-                "text-white/50 border border-white/15"
-              }`}>{t.status}</span>
+              <span className={`text-xs uppercase tracking-wider px-2.5 py-1 rounded-md font-bold shrink-0 ${
+                ["APPROVED", "COMPLETED"].includes(t.status) ? "bg-green-500/20 text-green-400 border border-green-500/30" :
+                t.status === "REJECTED"                      ? "bg-red-500/20 text-red-400 border border-red-500/30" :
+                                                               "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+              }`}>{t.status === "APPROVED" ? "COMPLETED" : t.status}</span>
             </li>
           ))}
           {(!mine || mine.filter((t: any) => t.kind === "WITHDRAWAL").length === 0) && (
