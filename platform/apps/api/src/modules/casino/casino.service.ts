@@ -140,7 +140,7 @@ export class CasinoService {
 
   createProvider(dto: { name: string; key: string; category: string }) {
     return this.prisma.casinoProvider.create({
-      data: { name: dto.name, key: dto.key, category: dto.category as any, isActive: true },
+      data: { name: dto.name, key: dto.key, isActive: true },
     });
   }
 
@@ -155,6 +155,7 @@ export class CasinoService {
     return this.prisma.casinoGame.create({
       data: {
         name: dto.name,
+        externalId: dto.name.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now(),
         providerId: dto.providerId,
         category: dto.category as any,
         thumbnail: dto.thumbnail ?? null,

@@ -181,7 +181,7 @@ export class AdminController {
 
   @Post("platform-settings")
   async saveSettings(@CurrentUser() actor: AuthUser, @Body() dto: PlatformSettingsDto, @Req() req: Request) {
-    const result = await this.admin.savePlatformSettings(dto);
+    const result = await this.admin.savePlatformSettings(dto as any);
     await this.admin.writeAudit(actor.id, "platform.settings.update", undefined, dto, req.ip);
     return result;
   }

@@ -60,3 +60,4 @@ export class UsersController {
     return this.users.updateUser(actor.id, id, dto);
   }
 }
+// Trigger rebuild

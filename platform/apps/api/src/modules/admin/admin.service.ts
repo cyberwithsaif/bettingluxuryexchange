@@ -160,7 +160,7 @@ export class AdminService {
     await this.prisma.$transaction(async (tx) => {
       await tx.bet.update({ where: { id: betId }, data: { status: newStatus } });
       const refund = Number(bet.stake.toString());
-      await tx.wallet.update({
+      const updatedWallet = await tx.wallet.update({
         where: { userId: bet.userId },
         data: {
           balance: { increment: refund },
@@ -172,6 +172,8 @@ export class AdminService {
           userId: bet.userId,
           kind: LedgerKind.BET_VOID,
           amount: refund,
+          balanceAfter: updatedWallet.balance,
+          exposureAfter: updatedWallet.exposure,
           refType: "bet",
           refId: betId,
           note: `Bet ${action}ed by admin`,

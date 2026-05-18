@@ -11,18 +11,35 @@ export class TransactionsService {
   ) {}
 
   // -- user-side: submit a deposit/withdrawal request (pending until admin reviews) --
-  request(userId: string, input: { kind: TransactionKind; method: TransactionMethod; amount: number; reference?: string; payload?: Prisma.InputJsonValue }) {
+  async request(userId: string, input: { kind: TransactionKind; method: TransactionMethod; amount: number; reference?: string; payload?: Prisma.InputJsonValue }) {
     if (input.amount <= 0) throw new BadRequestException("Amount must be positive");
-    return this.prisma.transaction.create({
-      data: {
-        userId,
-        kind: input.kind,
-        method: input.method,
-        amount: new Prisma.Decimal(input.amount),
-        reference: input.reference,
-        payload: input.payload,
-        status: TransactionStatus.PENDING,
-      },
+
+    return this.prisma.$transaction(async (tx) => {
+      const t = await tx.transaction.create({
+        data: {
+          userId,
+          kind: input.kind,
+          method: input.method,
+          amount: new Prisma.Decimal(input.amount),
+          reference: input.reference,
+          payload: input.payload,
+          status: TransactionStatus.PENDING,
+        },
+      });
+
+      // Deduct immediately on withdrawal request so they can't bet with it.
+      if (input.kind === TransactionKind.WITHDRAWAL) {
+        await this.wallet.applyLedger({
+          userId,
+          kind: LedgerKind.WITHDRAWAL,
+          amount: -input.amount,
+          refType: "transaction",
+          refId: t.id,
+          note: "Withdrawal requested (pending approval)",
+        });
+      }
+
+      return t;
     });
   }
 
@@ -45,38 +62,52 @@ export class TransactionsService {
       if (!t) throw new NotFoundException();
       if (t.status !== "PENDING") throw new BadRequestException("Not pending");
 
-      // Mark as approved + completed in one shot
       await tx.transaction.update({
         where: { id: txId },
         data: { status: TransactionStatus.COMPLETED, reviewedById: reviewerId, reviewedAt: new Date() },
       });
 
-      const signed = t.kind === TransactionKind.DEPOSIT ? +Number(t.amount.toString()) : -Number(t.amount.toString());
-      const kind = t.kind === TransactionKind.DEPOSIT ? LedgerKind.DEPOSIT : LedgerKind.WITHDRAWAL;
+      // Only credit wallet on Deposit approval. Withdrawal is already deducted.
+      if (t.kind === TransactionKind.DEPOSIT) {
+        await this.wallet.applyLedger({
+          userId: t.userId,
+          kind: LedgerKind.DEPOSIT,
+          amount: +Number(t.amount.toString()),
+          refType: "transaction",
+          refId: t.id,
+          note: "Deposit approved",
+        });
+      }
 
-      // Use WalletService outside the tx for simplicity (its own tx) — chained.
-      // Edge case: if wallet write fails after we've marked the row completed,
-      // we rollback the outer tx via throwing.
-      await this.wallet.applyLedger({
-        userId: t.userId,
-        kind,
-        amount: signed,
-        refType: "transaction",
-        refId: t.id,
-        note: `${t.kind} approved`,
-        allowNegative: t.kind === TransactionKind.WITHDRAWAL,
-      });
       return { ok: true };
     });
   }
 
   async reject(txId: string, reviewerId: string, reason?: string) {
-    const t = await this.prisma.transaction.findUnique({ where: { id: txId } });
-    if (!t) throw new NotFoundException();
-    if (t.status !== "PENDING") throw new BadRequestException("Not pending");
-    return this.prisma.transaction.update({
-      where: { id: txId },
-      data: { status: TransactionStatus.REJECTED, reviewedById: reviewerId, reviewedAt: new Date(), notes: reason },
+    return this.prisma.$transaction(async (tx) => {
+      const t = await tx.transaction.findUnique({ where: { id: txId } });
+      if (!t) throw new NotFoundException();
+      if (t.status !== "PENDING") throw new BadRequestException("Not pending");
+
+      await tx.transaction.update({
+        where: { id: txId },
+        data: { status: TransactionStatus.REJECTED, reviewedById: reviewerId, reviewedAt: new Date(), notes: reason },
+      });
+
+      // Refund the withdrawal if rejected
+      if (t.kind === TransactionKind.WITHDRAWAL) {
+        await this.wallet.applyLedger({
+          userId: t.userId,
+          kind: LedgerKind.ADMIN_CREDIT,
+          amount: +Number(t.amount.toString()),
+          refType: "transaction",
+          refId: t.id,
+          note: "Withdrawal rejected (refund)",
+          allowNegative: true,
+        });
+      }
+
+      return { ok: true };
     });
   }
 }

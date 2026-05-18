@@ -131,7 +131,7 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
         <div className="bg-white rounded-full p-1 text-brandRed">
           <User2 size={16} />
         </div>
-        <span className="hidden sm:inline font-bold text-sm">Demo</span>
+        <span className="hidden sm:inline font-bold text-sm">{username}</span>
         <ChevronDown size={14} />
       </button>
       {open && (
