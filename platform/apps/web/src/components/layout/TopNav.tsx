@@ -5,43 +5,55 @@ import { cn } from "@/lib/cn";
 import { Dices, Gamepad2, Rocket, Trophy, Sparkles, Joystick, Ticket } from "lucide-react";
 
 const tabs = [
-  { href: "/exchange",   label: "Exchange",    icon: Trophy },
-  { href: "/casino",     label: "Live Casino", icon: Dices },
-  { href: "/crash",      label: "Crash Games", icon: Rocket },
-  { href: "/virtual",    label: "Virtual",     icon: Joystick },
-  { href: "/slots",      label: "Slot Games",  icon: Sparkles },
-  { href: "/lottery",    label: "Lottery",     icon: Ticket },
-  { href: "/sportsbook", label: "Sportsbook",  icon: Gamepad2 },
+  { href: "/exchange",   label: "EXCHANGE",    icon: Trophy },
+  { href: "/casino",     label: "LIVE CASINO", icon: Dices },
+  { href: "/crash",      label: "CRASH GAMES", icon: Rocket },
+  { href: "/virtual",    label: "VIRTUAL GAME",icon: Joystick },
+  { href: "/slots",      label: "SLOT GAMES",  icon: Sparkles },
+  { href: "/lottery",    label: "LOTTERY",     icon: Ticket },
+  { href: "/sportsbook", label: "SPORTS BOOK", icon: Gamepad2 },
 ] as const;
 
 export function TopNav() {
   const path = usePathname();
   return (
-    <nav className="border-b border-line bg-panel/70 backdrop-blur sticky top-14 z-40">
-      <div className="mx-auto max-w-[1600px] px-2 overflow-x-auto no-scrollbar">
-        <ul className="flex items-stretch min-w-max">
-          {tabs.map((t) => {
-            const active = path?.startsWith(t.href);
-            const Icon = t.icon;
-            return (
-              <li key={t.href} className="relative">
-                <Link
-                  href={t.href}
-                  className={cn(
-                    "flex items-center gap-2 px-5 h-12 text-sm font-bold uppercase tracking-wider transition",
-                    active
-                      ? "text-ink bg-accent-grad"
-                      : "text-white/75 hover:text-accentSoft hover:bg-panel2/60",
-                  )}
-                >
-                  <Icon size={16}/>
-                  {t.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+    <div className="sticky top-16 z-40 shadow-md">
+      {/* Main Navigation Bar */}
+      <nav className="bg-brandMaroon border-b border-black/20">
+        <div className="mx-auto max-w-[1600px] px-2 overflow-x-auto no-scrollbar">
+          <ul className="flex items-stretch min-w-max">
+            {tabs.map((t) => {
+              const active = path === "/" ? t.href === "/exchange" : path?.startsWith(t.href);
+              const Icon = t.icon;
+              return (
+                <li key={t.href} className="relative">
+                  <Link
+                    href={t.href}
+                    className={cn(
+                      "flex items-center gap-2 px-6 h-12 text-sm font-bold tracking-wide transition",
+                      active
+                        ? "text-white bg-brandRed shadow-[inset_0_2px_0_0_#fff]"
+                        : "text-white/80 hover:text-white hover:bg-white/5",
+                    )}
+                  >
+                    <Icon size={16} className={active ? "text-white" : "text-brandYellow"} />
+                    {t.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </nav>
+
+      {/* Sub Banner */}
+      <div className="bg-[#4a0815] border-b border-black/30">
+        <div className="mx-auto max-w-[1600px] h-8 flex items-center justify-center px-4 overflow-hidden">
+          <span className="text-brandYellow font-semibold text-sm animate-pulse">
+            Bet Now in Line Market and Get Comission Upto 2%
+          </span>
+        </div>
       </div>
-    </nav>
+    </div>
   );
 }

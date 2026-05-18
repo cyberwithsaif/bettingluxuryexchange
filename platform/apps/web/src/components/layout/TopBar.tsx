@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Wallet, ArrowDownToLine, ArrowUpToLine, User2, LogOut, Bell } from "lucide-react";
+import { Wallet, ArrowDownToLine, ArrowUpToLine, User2, LogOut, Bell, Sun, Volume2, ChevronDown } from "lucide-react";
 import useSWR from "swr";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
@@ -10,7 +10,10 @@ import { cn } from "@/lib/cn";
 function useLiveClock() {
   const [now, setNow] = useState<string>("");
   useEffect(() => {
-    const tick = () => setNow(new Date().toLocaleTimeString("en-IN", { hour12: false }));
+    const tick = () => {
+      const d = new Date();
+      setNow(d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) + " " + d.toLocaleTimeString("en-US", { hour12: true }) + "(+05:30)");
+    };
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
@@ -31,51 +34,69 @@ export function TopBar() {
   }, [user, mutate]);
 
   return (
-    <header className="sticky top-0 z-50 glass border-b border-line">
-      <div className="mx-auto max-w-[1600px] flex items-center gap-4 px-4 h-14">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-accent-grad font-display text-xl text-ink shadow-glow">
-            E
-          </span>
-          <span className="font-display text-2xl tracking-wide bg-accent-grad bg-clip-text text-transparent">
-            Exch
-          </span>
-        </Link>
-
-        <div className="hidden md:flex items-center text-xs text-white/60 gap-2 ml-2">
-          <span className="inline-block h-2 w-2 rounded-full bg-ok animate-pulseGlow" />
-          {clock} IST
+    <header className="sticky top-0 z-50 bg-brandRed text-white shadow-md">
+      <div className="mx-auto max-w-[1600px] flex items-center justify-between px-4 h-16">
+        
+        {/* Left: Logo & Clock */}
+        <div className="flex items-center gap-6">
+          <Link href="/" className="flex flex-col leading-none">
+            <span className="font-display italic text-3xl font-black tracking-tight flex items-center gap-1">
+              FUTURE <span className="text-xl">🏏</span>
+            </span>
+            <span className="text-[10px] uppercase tracking-widest font-semibold text-white/90">
+              — Sports & Casino —
+            </span>
+          </Link>
+          <div className="hidden lg:block text-xs font-medium text-white/90">
+            {clock}
+          </div>
         </div>
 
-        <div className="flex-1" />
-
-        {user ? (
-          <>
-            <div className="hidden sm:flex items-center gap-4 text-sm">
-              <Stat label="Balance" value={fmtMoney(wallet?.available)} highlight />
-              <Stat label="Exposure" value={fmtMoney(wallet?.exposure)} tone="bad" />
-            </div>
-            <Link
-              href="/account/deposit"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-md bg-accent-grad px-3 py-1.5 text-sm font-semibold text-ink shadow-glow hover:brightness-110"
-            >
-              <ArrowDownToLine size={14} /> Deposit
-            </Link>
-            <Link
-              href="/account/withdraw"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-line bg-panel/60 px-3 py-1.5 text-sm font-semibold hover:border-accent"
-            >
-              <ArrowUpToLine size={14} /> Withdraw
-            </Link>
-            <NotificationBell />
-            <ProfileMenu username={user.username} onLogout={clear} />
-          </>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Link href="/auth/login"    className="rounded-md border border-line px-3 py-1.5 text-sm hover:border-accent">Login</Link>
-            <Link href="/auth/register" className="rounded-md bg-accent-grad px-3 py-1.5 text-sm font-semibold text-ink shadow-glow hover:brightness-110">Sign up</Link>
+        {/* Middle: Marquee */}
+        <div className="hidden md:flex flex-1 max-w-2xl mx-8 items-center overflow-hidden whitespace-nowrap text-sm font-semibold">
+          <div className="flex items-center gap-2 animate-marquee w-full">
+            <Volume2 size={16} />
+            <span>📢 Live Matka Markets Now Available — Play Smart, Win Big!</span>
           </div>
-        )}
+        </div>
+
+        {/* Right: Actions & User */}
+        <div className="flex items-center gap-4">
+          <button className="hidden sm:block hover:text-white/80 transition">
+            <Sun size={18} />
+          </button>
+
+          {user ? (
+            <>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/account/deposit"
+                  className="flex items-center gap-1.5 rounded bg-white px-4 py-1.5 text-sm font-bold text-brandRed hover:bg-gray-100 transition"
+                >
+                  <ArrowDownToLine size={16} /> DEPOSIT
+                </Link>
+                <Link
+                  href="/account/withdraw"
+                  className="flex items-center gap-1.5 rounded bg-white px-4 py-1.5 text-sm font-bold text-brandRed hover:bg-gray-100 transition"
+                >
+                  <ArrowUpToLine size={16} /> WITHDRAW
+                </Link>
+              </div>
+
+              <div className="hidden sm:flex flex-col text-right leading-tight ml-2">
+                <span className="text-[11px] font-semibold">Points: <span className="font-bold">{fmtMoney(wallet?.available)}</span></span>
+                <span className="text-[11px] font-semibold text-white/80">Exposure: <span className="font-bold">{fmtMoney(wallet?.exposure)}</span></span>
+              </div>
+
+              <ProfileMenu username={user.username} onLogout={clear} />
+            </>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Link href="/auth/login" className="rounded bg-white px-5 py-1.5 text-sm font-bold text-brandRed hover:bg-gray-100">Login</Link>
+              <Link href="/auth/register" className="rounded bg-brandYellow px-5 py-1.5 text-sm font-bold text-ink hover:brightness-110">Sign up</Link>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
@@ -100,12 +121,15 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
-      <button onClick={() => setOpen(o => !o)} className="inline-flex items-center gap-2 rounded-md border border-line bg-panel/60 px-3 py-1.5 text-sm hover:border-accent">
-        <User2 size={14} />
-        <span className="hidden sm:inline">{username}</span>
+      <button onClick={() => setOpen(o => !o)} className="flex items-center gap-2 hover:bg-black/10 rounded-full py-1 px-2 transition">
+        <div className="bg-white rounded-full p-1 text-brandRed">
+          <User2 size={16} />
+        </div>
+        <span className="hidden sm:inline font-bold text-sm">Demo</span>
+        <ChevronDown size={14} />
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-52 rounded-md glass p-1 shadow-panel">
+        <div className="absolute right-0 mt-2 w-52 rounded-md bg-white border border-gray-200 p-1 shadow-panel text-ink z-50">
           {[
             ["Dashboard", "/account"],
             ["My Bets", "/account/bets"],
@@ -114,9 +138,9 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
             ["Notifications", "/account/notifications"],
             ["Security & 2FA", "/account/security"],
           ].map(([l, h]) => (
-            <Link key={h} href={h} className="block px-3 py-2 text-sm rounded hover:bg-panel2" onClick={() => setOpen(false)}>{l}</Link>
+            <Link key={h} href={h} className="block px-3 py-2 text-sm rounded hover:bg-gray-100 font-medium" onClick={() => setOpen(false)}>{l}</Link>
           ))}
-          <button onClick={onLogout} className="flex w-full items-center gap-2 px-3 py-2 text-sm rounded text-bad hover:bg-panel2">
+          <button onClick={onLogout} className="flex w-full items-center gap-2 px-3 py-2 text-sm rounded text-bad hover:bg-gray-100 font-medium">
             <LogOut size={14}/> Sign out
           </button>
         </div>

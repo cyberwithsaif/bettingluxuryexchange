@@ -18,10 +18,13 @@ export default {
         wine:       "#3a0d1c",
         maroon:     "#5a1126",
         crimson:    "#a3122e",
-        accent:     "#ff7a18",   // primary orange
-        accentSoft: "#ff9b4d",
+        brandRed:   "#dc2f2f",   // Future9 bright red
+        brandMaroon:"#5c0d1b",   // Future9 dark maroon nav
+        brandYellow:"#f3c431",   // Future9 yellow text
+        accent:     "#dc2f2f",   // map primary accent to brandRed
+        accentSoft: "#f3c431",   // map secondary to yellow
         gold:       "#f1c265",
-        line:       "rgba(255, 122, 24, 0.18)",
+        line:       "rgba(255, 255, 255, 0.1)",
         ok:         "#34d39a",
         bad:        "#ff4d6d",
         back:       "#7ad7ff",   // sportsbook BACK blue
@@ -34,8 +37,8 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
-        "accent-grad": "linear-gradient(135deg, #ff7a18 0%, #ff3358 50%, #a3122e 100%)",
-        "panel-grad":  "linear-gradient(160deg, rgba(58,13,28,0.95), rgba(15,5,8,0.95))",
+        "accent-grad": "linear-gradient(135deg, #e43f3f 0%, #dc2f2f 100%)",
+        "panel-grad":  "linear-gradient(160deg, rgba(92,13,27,0.95), rgba(15,5,8,0.95))",
         "betslip-grad":"linear-gradient(180deg, rgba(58,13,28,0.95) 0%, rgba(11,6,8,0.95) 100%)",
         "subtle-grain": "radial-gradient(rgba(255,122,24,0.06) 1px, transparent 1px)",
       },
