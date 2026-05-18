@@ -2,8 +2,25 @@
 import { useLiveData } from "@/lib/hooks";
 import { TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
 
+interface DashboardData {
+  users: number;
+  openBets: number;
+  activeMarkets: number;
+  pendingDeposits: number;
+  pendingWithdrawals: number;
+  totalExposure: number;
+  totalPL7d: number;
+  totalRevenue: number;
+  commission: number;
+  activeUsers24h: number;
+  avgBetSize: number;
+  revenueTrend: number;
+  commissionTrend: number;
+  pl7d: Array<{ date: string; pl: number }>;
+}
+
 export default function AdminDashboard() {
-  const { data, isLoading } = useLiveData("/admin/dashboard", 4000);
+  const { data, isLoading } = useLiveData<DashboardData>("/admin/dashboard", 4000);
 
   return (
     <div className="space-y-6 animate-fade-in">
