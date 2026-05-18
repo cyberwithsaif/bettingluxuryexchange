@@ -37,14 +37,14 @@ export default function AdminDashboard() {
           label="Pending Deposits"
           value={data?.pendingDeposits}
           icon="⬇️"
-          tone={data?.pendingDeposits > 0 ? "warn" : undefined}
+          tone={(data?.pendingDeposits ?? 0) > 0 ? "warn" : undefined}
           loading={isLoading}
         />
         <KPI
           label="Pending Withdrawals"
           value={data?.pendingWithdrawals}
           icon="⬆️"
-          tone={data?.pendingWithdrawals > 0 ? "warn" : undefined}
+          tone={(data?.pendingWithdrawals ?? 0) > 0 ? "warn" : undefined}
           loading={isLoading}
         />
         <KPI label="Platform Exposure" value={fmt(data?.totalExposure)} icon="⚠️" tone="bad" loading={isLoading} />
@@ -111,7 +111,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Alerts */}
-      {(data?.pendingDeposits > 0 || data?.pendingWithdrawals > 0) && (
+      {((data?.pendingDeposits ?? 0) > 0 || (data?.pendingWithdrawals ?? 0) > 0) && (
         <div className="glass rounded-lg p-4 border border-orange-500/30 bg-orange-500/5 animate-pulse">
           <div className="flex items-start gap-3">
             <AlertCircle size={18} className="text-orange-400 mt-0.5 shrink-0" />
