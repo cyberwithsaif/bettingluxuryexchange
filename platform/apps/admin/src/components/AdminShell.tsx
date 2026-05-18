@@ -41,17 +41,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  // Track when Zustand has finished loading from localStorage
-  const [hydrated, setHydrated] = useState(() => useAuthStore.persist.hasHydrated());
+  // Track when Zustand has finished loading from localStorage.
+  // On the server persist doesn't exist, so default false and let the effect handle it.
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    if (hydrated) return;
+    // Already done — nothing to subscribe to
+    if (useAuthStore.persist.hasHydrated()) {
+      setHydrated(true);
+      return;
+    }
     // Subscribe to be notified when hydration finishes
     const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
-    // In case it already finished between render and effect
-    if (useAuthStore.persist.hasHydrated()) setHydrated(true);
     return unsub;
-  }, [hydrated]);
+  }, []);
 
   useEffect(() => {
     if (hydrated && !user && path !== "/login") {
