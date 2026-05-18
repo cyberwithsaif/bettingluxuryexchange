@@ -21,10 +21,10 @@ const NAV = [
   { href: "/risk",                     label: "Live Risk",       Icon: ShieldAlert },
   { href: "/reports",                  label: "Reports",         Icon: BarChart3 },
   { href: "/notifications",            label: "Announcements",   Icon: Bell },
+  { href: "/settings/payment-methods", label: "Payment Methods", Icon: CreditCard },
   { href: "/api-keys",                 label: "API Keys",        Icon: Key },
   { href: "/logs",                     label: "Audit Logs",      Icon: ListChecks },
   { href: "/settings",                 label: "Settings",        Icon: Settings },
-  { href: "/settings/payment-methods", label: "Payment Methods", Icon: CreditCard },
   { href: "/settings/banners",         label: "Banner Settings", Icon: Megaphone },
 ] as const;
 
@@ -106,7 +106,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               href === "/"
                 ? path === "/"
                 : path === href || (href !== "/settings" && path?.startsWith(href + "/"));
-            const isSubItem = href === "/settings/payment-methods" || href === "/settings/banners";
+            const isSubItem = href === "/settings/banners";
             return (
               <Link
                 key={href}
