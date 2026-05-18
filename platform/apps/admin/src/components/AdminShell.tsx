@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpToLine,
   Settings, Key, ListChecks, ShieldAlert, LogOut, Gamepad2, Trophy,
-  Ticket, BarChart3, Bell, Menu, X,
+  Ticket, BarChart3, Bell, Menu, X, CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -23,7 +23,8 @@ const NAV = [
   { href: "/notifications", label: "Announcements", Icon: Bell },
   { href: "/api-keys",      label: "API Keys",      Icon: Key },
   { href: "/logs",          label: "Audit Logs",    Icon: ListChecks },
-  { href: "/settings",      label: "Settings",      Icon: Settings },
+  { href: "/settings",                  label: "Settings",        Icon: Settings },
+  { href: "/settings/payment-methods", label: "Payment Methods", Icon: CreditCard },
 ] as const;
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
