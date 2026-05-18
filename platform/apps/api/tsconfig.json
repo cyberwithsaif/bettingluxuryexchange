@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "target": "ES2022",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@exch/shared": ["../../packages/shared/src"],
+      "@exch/shared/*": ["../../packages/shared/src/*"]
+    },
+    "noUncheckedIndexedAccess": false
+  },
+  "include": ["src/**/*.ts", "prisma/seed.ts"]
+}

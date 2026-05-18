@@ -1,0 +1,550 @@
+// =============================================================
+// Betting Exchange + Casino — PostgreSQL schema (Prisma)
+// Money columns use Decimal(20,4) — never Float — to preserve
+// rupee/cent precision under arithmetic and aggregation.
+// =============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -------------------------------------------------------------
+// Identity & agent hierarchy
+// -------------------------------------------------------------
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  SUPER_MASTER
+  MASTER
+  AGENT
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  LOCKED
+  CLOSED
+}
+
+model User {
+  id              String      @id @default(cuid())
+  username        String      @unique
+  email           String?     @unique
+  phone           String?     @unique
+  passwordHash    String
+  role            UserRole    @default(USER)
+  status          UserStatus  @default(ACTIVE)
+
+  // Agent hierarchy: every non-super-admin has a parent up the tree.
+  parentId        String?
+  parent          User?       @relation("UserHierarchy", fields: [parentId], references: [id])
+  children        User[]      @relation("UserHierarchy")
+
+  // Partnership the parent retains from this user's net P&L (basis points: 1000 = 10%).
+  partnershipBps  Int         @default(0)
+  // Credit reference shown in agent dashboards (does not affect wallet balance).
+  creditReference Decimal     @default(0) @db.Decimal(20, 4)
+
+  twoFactorSecret String?
+  twoFactorEnabled Boolean    @default(false)
+
+  lastLoginAt     DateTime?
+  lastLoginIp     String?
+
+  wallet          Wallet?
+  bets            Bet[]
+  ledgerEntries   LedgerEntry[]
+  transactions    Transaction[]
+  casinoSessions  CasinoSession[]
+  exposures       MarketExposure[]
+  refreshTokens   RefreshToken[]
+  limits          UserLimits?
+  adminLogs       AdminLog[]    @relation("AdminActor")
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([parentId])
+  @@index([role, status])
+}
+
+model UserLimits {
+  userId              String   @id
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  minStake            Decimal  @default(100)    @db.Decimal(20, 4)
+  maxStake            Decimal  @default(100000) @db.Decimal(20, 4)
+  maxMarketExposure   Decimal  @default(1000000) @db.Decimal(20, 4)
+  maxDailyLoss        Decimal  @default(500000)  @db.Decimal(20, 4)
+  betDelayMs          Int      @default(0) // odds delay enforced before bet matches
+  fancyEnabled        Boolean  @default(true)
+  casinoEnabled       Boolean  @default(true)
+  updatedAt           DateTime @updatedAt
+}
+
+model RefreshToken {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String   @unique
+  userAgent   String?
+  ip          String?
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+// -------------------------------------------------------------
+// Wallet & ledger
+// -------------------------------------------------------------
+
+model Wallet {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // The three balances. balance is the spendable pool;
+  // exposure is the sum of liabilities reserved against open bets;
+  // bonus is wallet-bonus credit (subject to wager requirement).
+  balance       Decimal  @default(0) @db.Decimal(20, 4)
+  exposure      Decimal  @default(0) @db.Decimal(20, 4)
+  bonus         Decimal  @default(0) @db.Decimal(20, 4)
+
+  currency      String   @default("INR")
+  // version is used for optimistic concurrency in WalletService.
+  version       Int      @default(0)
+
+  updatedAt     DateTime @updatedAt
+}
+
+enum LedgerKind {
+  DEPOSIT
+  WITHDRAWAL
+  BET_PLACE          // exposure increased; balance untouched in exchange model
+  BET_SETTLE_WIN
+  BET_SETTLE_LOSS
+  BET_VOID
+  BET_CANCEL
+  CASINO_BET
+  CASINO_WIN
+  CASINO_REFUND
+  ADMIN_CREDIT       // manual credit by admin
+  ADMIN_DEBIT
+  BONUS_GRANT
+  BONUS_FORFEIT
+  COMMISSION_PAYOUT  // agent commission payout
+  ROLLBACK
+}
+
+// Append-only ledger. Every wallet mutation MUST land here in the same tx
+// that updates Wallet.balance/exposure — that is the invariant the engine
+// enforces (see WalletService.applyLedger).
+model LedgerEntry {
+  id              String      @id @default(cuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  kind            LedgerKind
+  // Signed delta applied to balance. Use 0 if the entry only affects exposure.
+  amount          Decimal     @db.Decimal(20, 4)
+  // Signed delta applied to exposure. Positive locks money, negative releases.
+  exposureDelta   Decimal     @default(0) @db.Decimal(20, 4)
+  balanceAfter    Decimal     @db.Decimal(20, 4)
+  exposureAfter   Decimal     @db.Decimal(20, 4)
+  refType         String?     // "bet", "transaction", "casino_session", etc.
+  refId           String?
+  note            String?
+  createdAt       DateTime    @default(now())
+
+  @@index([userId, createdAt])
+  @@index([refType, refId])
+}
+
+enum TransactionKind {
+  DEPOSIT
+  WITHDRAWAL
+}
+
+enum TransactionMethod {
+  UPI
+  BANK_TRANSFER
+  CRYPTO
+  CARD
+  CASH
+  ADMIN
+}
+
+enum TransactionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+  FAILED
+}
+
+model Transaction {
+  id            String              @id @default(cuid())
+  userId        String
+  user          User                @relation(fields: [userId], references: [id])
+  kind          TransactionKind
+  method        TransactionMethod
+  status        TransactionStatus   @default(PENDING)
+  amount        Decimal             @db.Decimal(20, 4)
+  reference     String?  // UTR / txn hash / bank ref
+  notes         String?
+  // Operator approval audit
+  reviewedById  String?
+  reviewedAt    DateTime?
+  // For deposits: details of the source (UPI ID, account, wallet addr)
+  payload       Json?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+// -------------------------------------------------------------
+// Sports — competitions, matches, markets, runners, bets
+// -------------------------------------------------------------
+
+model Sport {
+  id        String     @id @default(cuid())
+  key       String     @unique  // "cricket", "football", ...
+  name      String
+  iconUrl   String?
+  isActive  Boolean    @default(true)
+  sortOrder Int        @default(0)
+  competitions Competition[]
+  matches      Match[]
+}
+
+model Competition {
+  id        String   @id @default(cuid())
+  sportId   String
+  sport     Sport    @relation(fields: [sportId], references: [id])
+  name      String
+  externalId String? @unique  // map to provider ID
+  countryCode String?
+  startDate DateTime?
+  endDate   DateTime?
+  matches   Match[]
+
+  @@index([sportId])
+}
+
+enum MatchStatus {
+  UPCOMING
+  LIVE
+  ENDED
+  ABANDONED
+  CANCELLED
+  SETTLED
+}
+
+model Match {
+  id            String        @id @default(cuid())
+  sportId       String
+  sport         Sport         @relation(fields: [sportId], references: [id])
+  competitionId String?
+  competition   Competition?  @relation(fields: [competitionId], references: [id])
+  name          String
+  homeTeam      String
+  awayTeam      String
+  startTime     DateTime
+  status        MatchStatus   @default(UPCOMING)
+  externalId    String?       @unique // provider match id
+  inplay        Boolean       @default(false)
+  result        Json?         // settled result payload
+  markets       Market[]
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([sportId, startTime])
+  @@index([status, startTime])
+}
+
+enum MarketType {
+  MATCH_ODDS
+  BOOKMAKER
+  PREMIUM_BOOKMAKER
+  FANCY
+  SESSION
+  OVER_RUNS
+  PLAYER_RUNS
+  TEAM_TOTAL
+  FALL_OF_WICKET
+  BOUNDARIES
+  PARTNERSHIP
+  TIED_MATCH
+  TOSS
+  FIRST_INNINGS
+}
+
+enum MarketStatus {
+  OPEN
+  SUSPENDED
+  CLOSED
+  SETTLED
+  VOID
+}
+
+model Market {
+  id            String          @id @default(cuid())
+  matchId       String
+  match         Match           @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  type          MarketType
+  name          String
+  status        MarketStatus    @default(OPEN)
+  minStake      Decimal         @default(100)    @db.Decimal(20, 4)
+  maxStake      Decimal         @default(100000) @db.Decimal(20, 4)
+  // For fancy markets: target value the user predicts over/under
+  fancyTarget   Int?
+  externalId    String?         // provider market id
+  // Manual odds override: when true, the admin-set odds win over provider feed.
+  manualMode    Boolean         @default(false)
+  // Snapshot of result for settled markets (winning runner id, fancy actual value, etc.)
+  result        Json?
+
+  runners       Runner[]
+  bets          Bet[]
+  exposures     MarketExposure[]
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([matchId, type])
+  @@index([status])
+}
+
+model Runner {
+  id          String   @id @default(cuid())
+  marketId    String
+  market      Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  name        String   // "Mumbai Indians", "Yes", "No", "1", "Tie", ...
+  sortOrder   Int      @default(0)
+  externalId  String?
+
+  // Latest known odds (also pushed to Redis pub/sub for live updates).
+  // Stored as JSON arrays of best 3 levels for back & lay.
+  backPrices  Json?
+  layPrices   Json?
+
+  bets        Bet[]
+
+  @@index([marketId])
+}
+
+enum BetSide {
+  BACK
+  LAY
+}
+
+enum BetStatus {
+  OPEN          // bet accepted but match not settled yet
+  MATCHED       // (reserved — for true exchange order book later)
+  SETTLED_WON
+  SETTLED_LOST
+  VOID
+  CANCELLED
+}
+
+model Bet {
+  id              String     @id @default(cuid())
+  userId          String
+  user            User       @relation(fields: [userId], references: [id])
+  marketId        String
+  market          Market     @relation(fields: [marketId], references: [id])
+  runnerId        String
+  runner          Runner     @relation(fields: [runnerId], references: [id])
+  side            BetSide
+  odds            Decimal    @db.Decimal(10, 4)
+  stake           Decimal    @db.Decimal(20, 4)
+  // For fancy markets — the runs/value the user is predicting.
+  fancyValue      Int?
+  // Potential profit if bet wins (excluding stake).
+  potentialProfit Decimal    @db.Decimal(20, 4)
+  // Liability locked: the amount the user could lose. Equal to stake on a
+  // back bet; equal to stake * (odds - 1) on a lay bet.
+  liability       Decimal    @db.Decimal(20, 4)
+  status          BetStatus  @default(OPEN)
+  // Snapshotted at place time — used in agent commission rollups.
+  parentChain     Json?      // [{userId, role, partnershipBps}, ...]
+  placedFromIp    String?
+  settledAt       DateTime?
+  voidReason      String?
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([marketId, status])
+  @@index([status, createdAt])
+}
+
+// Per-(user, market) exposure cache, refreshed by ExposureService.
+// Drives sticky betslip "potential loss/profit by outcome" displays
+// without re-aggregating bets every tick.
+model MarketExposure {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  marketId     String
+  market       Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  // JSON: { runnerId -> netPL_if_this_runner_wins }
+  runnerPL     Json
+  // Worst-case loss across runners = the amount we hold in Wallet.exposure for this market.
+  worstCase    Decimal  @db.Decimal(20, 4)
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, marketId])
+  @@index([marketId])
+}
+
+// -------------------------------------------------------------
+// Casino
+// -------------------------------------------------------------
+
+model CasinoProvider {
+  id        String   @id @default(cuid())
+  key       String   @unique  // "evolution", "pragmatic_play", ...
+  name      String
+  isActive  Boolean  @default(true)
+  logoUrl   String?
+  games     CasinoGame[]
+}
+
+enum CasinoCategory {
+  LIVE
+  SLOT
+  CRASH
+  TABLE
+  LOTTERY
+  VIRTUAL
+}
+
+model CasinoGame {
+  id          String         @id @default(cuid())
+  providerId  String
+  provider    CasinoProvider @relation(fields: [providerId], references: [id])
+  externalId  String         // provider's game id
+  name        String
+  category    CasinoCategory
+  thumbnail   String?
+  isLive      Boolean        @default(false)
+  rtp         Decimal?       @db.Decimal(5, 2)
+  isActive    Boolean        @default(true)
+  sortOrder   Int            @default(0)
+  sessions    CasinoSession[]
+
+  @@unique([providerId, externalId])
+  @@index([category, isActive])
+}
+
+model CasinoSession {
+  id            String          @id @default(cuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id])
+  gameId        String
+  game          CasinoGame      @relation(fields: [gameId], references: [id])
+  // Seamless-transfer token issued to the provider for wallet callbacks.
+  providerToken String          @unique
+  openedAt      DateTime        @default(now())
+  closedAt      DateTime?
+  transactions  CasinoTransaction[]
+}
+
+enum CasinoTxKind {
+  BET
+  WIN
+  REFUND
+  ROLLBACK
+}
+
+model CasinoTransaction {
+  id           String         @id @default(cuid())
+  sessionId    String
+  session      CasinoSession  @relation(fields: [sessionId], references: [id])
+  externalRef  String
+  kind         CasinoTxKind
+  amount       Decimal        @db.Decimal(20, 4)
+  // Provider round id — used to idempotently dedupe replayed callbacks.
+  roundId      String?
+  createdAt    DateTime       @default(now())
+
+  @@unique([sessionId, externalRef, kind])
+  @@index([roundId])
+}
+
+// -------------------------------------------------------------
+// Operator — API keys, settings, logs, announcements
+// -------------------------------------------------------------
+
+enum ApiKeyCategory {
+  SPORTS
+  CASINO
+  CRASH
+  SLOTS
+  VIRTUAL
+  PAYMENT
+}
+
+// Admin-configurable provider credentials. Secrets are AES-GCM encrypted
+// at rest by ApiKeysService — never stored or returned in plaintext.
+model ApiKey {
+  id            String         @id @default(cuid())
+  providerKey   String         @unique  // matches API_KEY_PROVIDERS[].key
+  label         String
+  category      ApiKeyCategory
+  enabled       Boolean        @default(true)
+  // Encrypted JSON blob of credential fields.
+  ciphertext    String
+  iv            String
+  authTag       String
+  // Last-4 hint per field (e.g. {"api_key": "…a249"}) for UI display.
+  masked        Json?
+  notes         String?
+  lastUsedAt    DateTime?
+  updatedById   String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Setting {
+  key       String   @id  // e.g. "platform.maintenance", "announcement.text"
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model Announcement {
+  id          String   @id @default(cuid())
+  text        String
+  level       String   @default("info") // info | warn | promo
+  active      Boolean  @default(true)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model AdminLog {
+  id          String   @id @default(cuid())
+  actorId     String?
+  actor       User?    @relation("AdminActor", fields: [actorId], references: [id])
+  action      String   // "user.suspend", "market.suspend", "wallet.credit", ...
+  targetType  String?
+  targetId    String?
+  metadata    Json?
+  ip          String?
+  createdAt   DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+}

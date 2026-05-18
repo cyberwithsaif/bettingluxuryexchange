@@ -1,0 +1,22 @@
+"use client";
+import { io, Socket } from "socket.io-client";
+
+let socket: Socket | null = null;
+
+export function connectSocket(token?: string | null) {
+  const url = process.env.NEXT_PUBLIC_WS_BASE || (typeof window !== "undefined" ? window.location.origin : "");
+  if (socket && socket.connected) return socket;
+  socket?.disconnect();
+  socket = io(url, {
+    path: "/socket.io",
+    auth: token ? { token } : undefined,
+    transports: ["websocket"],
+    reconnection: true,
+    reconnectionDelay: 800,
+  });
+  return socket;
+}
+
+export function getSocket() {
+  return socket ?? connectSocket();
+}

@@ -1,0 +1,662 @@
+Build a complete modern full-stack betting exchange and casino platform inspired by Diamond Exchange, RoyalX, Skyexchange, and Betfair Exchange.
+
+The platform must support:
+
+* Cricket betting exchange
+* Football betting exchange
+* Tennis betting exchange
+* Casino integration
+* Virtual games
+* Real-time live odds
+* Back/Lay betting
+* Wallet system
+* Exposure calculation
+* Multi-role admin panel
+* Agent/Master/Subadmin system
+* Real-time websocket updates
+* Mobile responsive UI
+* Dark modern UI
+* PWA support
+
+TECH STACK:
+
+Frontend:
+
+* Next.js latest
+* React latest
+* Tailwind CSS
+* Framer Motion
+* Zustand or Redux
+* Socket.io client
+* TypeScript
+
+Backend:
+
+* Node.js
+* NestJS
+* PostgreSQL
+* Redis
+* Socket.io
+* BullMQ queues
+* JWT authentication
+* REST + WebSocket APIs
+
+Infrastructure:
+
+* AWS
+* Cloudflare CDN
+* Nginx reverse proxy
+* PM2
+* Docker
+* S3 object storage
+
+==================================================
+FRONTEND FEATURES
+=================
+
+Create a professional betting exchange UI with:
+
+* Left sidebar sports navigation
+* Top navigation bar
+* Live odds tables
+* Back/Lay odds columns
+* Match odds
+* Bookmaker odds
+* Fancy betting
+* Tied match section
+* Cashout button
+* Betting slip on right side
+* Account balance display
+* Exposure display
+* Bet history
+* Account statement
+* Search games
+* Casino game grid
+* Sports tabs
+* Live indicators
+* Match timers
+* Responsive mobile layout
+* PWA support
+
+==================================================
+SPORTS MODULE
+=============
+
+Support:
+
+* Cricket
+* Football
+* Tennis
+* Basketball
+* Table Tennis
+* Horse Racing
+* Greyhound Racing
+* Volleyball
+* Snooker
+* Darts
+
+Features:
+
+* Real-time odds updates
+* WebSocket odds streaming
+* Match odds
+* Bookmaker markets
+* Fancy markets
+* Back betting
+* Lay betting
+* Multi-market support
+* Market suspension
+* Auto settlement
+* Bet placement
+* Bet cancellation
+* Exposure calculation
+* Profit/loss calculation
+* Match result settlement
+* User exposure limits
+* User profit/loss reports
+* User transaction history
+* Live score integration
+* Cashout engine
+
+==================================================
+CASINO MODULE
+=============
+
+Build casino section with:
+
+* Teen Patti
+* Roulette
+* Baccarat
+* Dragon Tiger
+* Andar Bahar
+* Poker
+* Lucky 7
+* Crash/Aviator
+* Casino War
+* Slots
+* Virtual Cricket
+* Virtual Football
+* Color prediction games
+* Lottery games
+
+Features:
+
+* Casino lobby
+* Search games
+* Category filters
+* Provider filters
+* Live casino launch
+* Wallet synchronization
+* Session tokens
+* Seamless transfer wallet
+* Game history
+* Casino transaction history
+
+==================================================
+AUTH SYSTEM
+===========
+
+Features:
+
+* Register
+* Login
+* Forgot password
+* OTP login
+* JWT authentication
+* Session management
+* Device tracking
+* IP logging
+* 2FA authentication
+* Google Authenticator support
+
+==================================================
+WALLET SYSTEM
+=============
+
+Build complete wallet ledger system:
+
+* Main balance
+* Exposure balance
+* Bonus balance
+* Deposit
+* Withdraw
+* UPI deposits
+* Bank transfer
+* Wallet ledger
+* Transaction history
+* Admin wallet adjustment
+* Rolling commission
+* Profit/loss reports
+* Casino wallet sync
+* Sports wallet sync
+
+==================================================
+ADMIN PANEL
+===========
+
+Build enterprise-level admin panel with:
+
+* Dashboard analytics
+* Total users
+* Total bets
+* Active markets
+* Revenue charts
+* Live exposure monitoring
+* Risk management
+* User management
+* Agent management
+* Master management
+* Subadmin management
+* Role permissions
+* Market control
+* Match suspension
+* Manual odds control
+* User limit settings
+* Deposit management
+* Withdrawal management
+* Transaction monitoring
+* Casino provider management
+* API management
+* Notifications
+* Broadcast messages
+* Logs
+* Audit history
+* Security logs
+
+==================================================
+AGENT SYSTEM
+============
+
+Create hierarchy system:
+
+* Super Admin
+* Admin
+* Master
+* Super Master
+* Agent
+* User
+
+Features:
+
+* Commission structure
+* Credit reference
+* Exposure sharing
+* Partnership system
+* Downline management
+* Rolling commission
+* Settlement reports
+
+==================================================
+REAL-TIME ENGINE
+================
+
+Implement:
+
+* Socket.io websocket architecture
+* Real-time odds updates
+* Real-time exposure updates
+* Real-time balance updates
+* Real-time market suspension
+* Redis pub/sub
+* Queue workers
+* Auto reconnect system
+* Live notifications
+
+==================================================
+DATABASE STRUCTURE
+==================
+
+Create optimized PostgreSQL schema for:
+
+* users
+* wallets
+* transactions
+* bets
+* matches
+* markets
+* odds
+* casino_sessions
+* casino_transactions
+* exposure
+* reports
+* settlements
+* admin_logs
+* notifications
+
+==================================================
+SECURITY
+========
+
+Implement:
+
+* HTTPS
+* Rate limiting
+* DDoS protection
+* CSRF protection
+* XSS protection
+* SQL injection prevention
+* Redis security
+* JWT refresh tokens
+* Session expiration
+* Device tracking
+* Admin IP restrictions
+* Audit logs
+* Cloudflare integration
+
+==================================================
+SCALABILITY
+===========
+
+Architecture must support:
+
+* Microservices
+* Load balancing
+* Horizontal scaling
+* Redis clustering
+* CDN caching
+* WebSocket scaling
+* Docker deployment
+* Kubernetes ready
+* Queue workers
+* High concurrency users
+
+==================================================
+UI DESIGN
+=========
+
+Design style:
+
+* Dark modern betting UI
+* Red and black gradients
+* Professional sportsbook design
+* Smooth animations
+* Fast loading
+* Mobile-first responsive
+* Professional casino tiles
+* Live glow effects
+* Sticky betting slip
+* Real-time odds flashing animation
+
+==================================================
+PAGES REQUIRED
+==============
+
+Public:
+
+* Home
+* Sports
+* Casino
+* Promotions
+* Contact
+* Terms
+* Responsible gaming
+
+User:
+
+* Dashboard
+* My Bets
+* Open Bets
+* Bet History
+* Account Statement
+* Profit Loss
+* Exposure
+* Deposit
+* Withdraw
+* Settings
+* Security
+* Notifications
+
+Admin:
+
+* Dashboard
+* Users
+* Bets
+* Markets
+* Reports
+* Wallets
+* Deposits
+* Withdrawals
+* Casino
+* Sports APIs
+* Settings
+* Logs
+* Risk Management
+
+==================================================
+SPORTS API INTEGRATION
+======================
+
+Integrate:
+
+* Betfair Exchange API
+* Betfair Stream API
+* Live score APIs
+* Sports odds APIs
+
+Create services for:
+
+* Odds ingestion
+* Market syncing
+* Exposure engine
+* Settlement engine
+* Cashout engine
+
+==================================================
+CASINO API INTEGRATION
+======================
+
+Build provider integration layer with:
+
+* Launch game APIs
+* Callback APIs
+* Wallet APIs
+* Transaction APIs
+* Session APIs
+
+==================================================
+DEPLOYMENT
+==========
+
+Provide:
+
+* Docker setup
+* Nginx config
+* PM2 config
+* CI/CD pipeline
+* hostinger vps kvm4
+* Cloudflare setup (later in future for cloudfare setup)
+* Redis setup
+* PostgreSQL setup
+* Environment configuration
+
+==================================================
+GENERATE COMPLETE CODEBASE
+==========================
+
+Generate:
+
+* Frontend code
+* Backend APIs
+* Admin panel
+* Database schema
+* Redis integration
+* WebSocket implementation
+* Authentication system
+* Betting engine
+* Wallet engine
+* Exposure engine
+* Casino integration architecture
+* Docker deployment files
+* Environment files
+* API documentation
+* Project structure
+* README
+* Production architecture
+* Security best practices
+
+
+must add api key crud option on admin panel 
+and all api key requirement list
+
+MOST IMPORTANT THING
+
+Build your:
+
+Wallet system
+Exposure engine
+Admin panel
+Betting logic
+
+YOURSELF.
+
+Because those are the core business systems.
+
+APIs can always be changed later.
+
+
+Use our Cricket API demo for free
+Use the token below to access our API.
+
+Note: You can only access completed competitions, not upcoming or live ones.
+
+Token
+ec471071441bb2ac538a0ff901abd249
+
+
+
+Include:
+
+Fancy markets
+Session markets
+Over/Under markets
+Ball-by-ball fancy
+Wicket fancy
+Partnership fancy
+Boundary fancy
+Player runs fancy
+Team total fancy
+Fall of wicket fancy
+Over runs fancy
+Innings runs fancy
+Tie market
+Bookmaker market
+Premium bookmaker market
+
+Frontend Requirements:
+
+Two-column YES/NO betting tables
+Back/Lay colored odds boxes
+Dynamic odds flashing animation
+Suspended market overlay
+Min/Max betting limits
+Real-time odds updates
+Sticky betting slip
+Cashout button
+Mobile responsive fancy tables
+
+Backend Requirements:
+
+Fancy market engine
+Exposure calculation
+Fancy settlement engine
+Odds validation
+User liability calculation
+Market suspension handling
+Auto settlement
+Fancy result processing
+Profit/loss reports
+Redis-based real-time updates
+Queue workers for settlement
+
+Admin Panel Features:
+
+Create/edit fancy markets
+Manual odds control
+Suspend/resume markets
+Set min/max limits
+Set exposure limits
+Fancy result declaration
+User limit overrides
+Fancy risk monitoring
+Manual settlement tools
+
+API Integration:
+
+Support external fancy APIs
+Support custom operator odds
+Support manual odds management
+Support provider switching from admin panel
+
+Implement:
+
+Real-time websocket odds streaming
+Odds flashing on updates
+Live suspended status
+Auto reconnect websocket
+Redis pub/sub architecture
+High-frequency odds updates
+Live market sync
+Real-time exposure updates
+Instant bet confirmation
+
+Support:
+
+Match Odds
+Bookmaker
+Fancy
+Session
+Tied Match
+Toss Winner
+Over Runs
+Fall of Wicket
+Player Runs
+Boundaries
+Partnership
+Team Total
+First Innings Markets
+Premium Markets
+Virtual Sports Markets
+
+==================================================
+API PROVIDERS LIST
+==================
+
+SPORTS APIs:
+
+* Betfair Exchange API
+  https://developer.betfair.com/
+
+* Betfair Stream API
+  https://developer.betfair.com/exchange-api/
+
+* Pinnacle API
+  https://www.pinnacle.com/
+
+* The Odds API
+  https://the-odds-api.com/
+
+CASINO PROVIDERS:
+
+* Evolution Gaming
+  https://www.evolution.com/
+
+* Pragmatic Play
+  https://www.pragmaticplay.com/
+
+* Spribe (Aviator)
+  https://spribe.co/
+
+* Vivo Gaming
+  https://www.vivo-gaming.com/
+
+* TVBet
+  https://tvbet.tv/
+
+* BetGames
+  https://www.betgames.tv/
+
+PAYMENT PROVIDERS:
+
+* Cashfree
+  https://www.cashfree.com/
+
+* Razorpay
+  https://razorpay.com/
+
+* PayU
+  https://payu.in/
+
+HOSTING:
+
+* AWS
+  https://aws.amazon.com/
+
+* Cloudflare
+  https://www.cloudflare.com/
+
+* DigitalOcean
+  https://www.digitalocean.com/
+
+MONITORING:
+
+* Grafana
+  https://grafana.com/
+
+* Prometheus
+  https://prometheus.io/
+
+* Loki
+  https://grafana.com/oss/loki/
+
+Also create:
+
+* Complete scalable architecture diagrams
+* API flow diagrams
+* Database ER diagrams
+* Admin workflow diagrams
+* Sports betting flow
+* Casino wallet flow
+* Real-time websocket architecture
+* Deployment architecture
+
+The final platform should look and work like a professional betting exchange and casino platform with enterprise-level scalability and modern UI/UX.

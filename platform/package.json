@@ -1,0 +1,26 @@
+{
+  "name": "exch-platform",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "dev:api": "pnpm --filter @exch/api dev",
+    "dev:web": "pnpm --filter @exch/web dev",
+    "dev:admin": "pnpm --filter @exch/admin dev",
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint",
+    "db:generate": "pnpm --filter @exch/api prisma:generate",
+    "db:migrate": "pnpm --filter @exch/api prisma:migrate",
+    "db:seed": "pnpm --filter @exch/api seed",
+    "docker:up": "docker compose -f infra/docker-compose.yml up -d",
+    "docker:down": "docker compose -f infra/docker-compose.yml down"
+  },
+  "devDependencies": {
+    "typescript": "5.5.4",
+    "prettier": "3.3.3"
+  }
+}

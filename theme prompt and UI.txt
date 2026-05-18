@@ -1,0 +1,197 @@
+Create a complete modern online betting exchange and casino platform UI inspired by premium sportsbook websites like Future9 Club, but with fully original branding and design. 
+
+Theme & Style:
+- Dark luxury casino theme
+- Main colors: deep maroon, black, dark red, orange gradient highlights
+- Premium glowing effects
+- Responsive desktop + mobile layout
+- Modern sportsbook interface
+- Smooth animations and hover effects
+- Glassmorphism + neon accents
+- Background with subtle casino symbols patterns
+- Professional gambling dashboard UI
+
+Frontend Stack:
+- React.js + Next.js
+- Tailwind CSS
+- Framer Motion animations
+- Responsive design
+- Dark mode optimized
+- Reusable components architecture
+
+Pages & Modules Required:
+
+1. HOME PAGE
+- Top header with:
+  - Logo
+  - Live clock
+  - Scrolling announcement bar
+  - Deposit & Withdraw buttons
+  - User balance & exposure
+  - Profile dropdown
+- Navigation tabs:
+  - Exchange
+  - Live Casino
+  - Crash Games
+  - Virtual Games
+  - Slot Games
+  - Lottery
+  - Sportsbook
+
+2. SPORTS EXCHANGE PAGE
+- Left sidebar categories:
+  - Cricket
+  - Football
+  - Tennis
+  - Horse Racing
+  - Greyhound
+  - Politics
+  - Kabaddi
+  - Basketball
+- Match cards with:
+  - Live indicators
+  - Team names
+  - Odds boxes
+  - Back/Lay system
+  - Liquidity info
+  - Market status
+- Betslip panel on right side
+- In-play matches section
+- Highlight banner carousel
+- Search functionality
+
+3. LIVE CASINO PAGE
+- Provider filter buttons:
+  - Evolution
+  - SA Gaming
+  - Ezugi
+  - Vivo Gaming
+  - Playtech
+  - SmartSoft
+  - Jili
+  - Turbo Gaming
+  - Mac88
+- Casino game cards with:
+  - Thumbnail
+  - Provider badge
+  - Live tag
+  - Hover play animation
+- Categories:
+  - Baccarat
+  - Roulette
+  - Blackjack
+  - Dragon Tiger
+  - Teen Patti
+  - Andar Bahar
+
+4. CRASH GAMES PAGE
+- Modern crash game lobby
+- Providers:
+  - Aviator
+  - Aviatrix
+  - Chicken Road
+  - Mines
+  - Plinko
+  - Dice
+  - Crash X
+  - Aero
+  - Flytrap
+- Game tiles with animated hover effects
+- Search bar
+- Provider filters
+- Trending section
+
+5. SLOT GAMES PAGE
+- Infinite scrolling grid
+- Slot providers
+- Jackpot badges
+- Favorite system
+- Search + category filters
+- Bonus indicators
+
+6. USER DASHBOARD
+- Wallet overview
+- Transaction history
+- Betting history
+- Profit/Loss charts
+- Bonus section
+- VIP status
+- Referral system
+
+7. ADMIN PANEL
+- User management
+- Odds management
+- Match control
+- Deposit/withdraw approvals
+- Casino API management
+- Revenue analytics
+- Banner management
+- Agent system
+- Risk management
+
+8. AUTHENTICATION
+- Login/Register popup
+- OTP verification UI
+- Forgot password
+- KYC upload page
+
+9. PAYMENT SYSTEM UI
+- Crypto deposits
+- UPI deposits
+- Bank transfer
+- QR code payment
+- Withdrawal requests
+
+10. MOBILE DESIGN
+- Sticky bottom navigation
+- Mobile betslip
+- Swipe sliders
+- App-like interface
+
+Extra Features:
+- Real-time odds update animations
+- WebSocket-ready components
+- Multi-language support
+- SEO optimized
+- Fast loading optimized
+- Lazy loading
+- Skeleton loaders
+- Notification system
+- Floating WhatsApp & Telegram buttons
+- Promo banners
+- Live match ticker
+
+Backend Structure:
+- Node.js + Express
+- MongoDB/PostgreSQL
+- JWT authentication
+- Redis caching
+- WebSocket support
+- API-ready architecture
+
+Required APIs Integration Placeholder:
+- Sports odds API
+- Casino aggregator API
+- Live score API
+- Payment gateway API
+- Crypto wallet API
+
+Design Requirements:
+- Premium and modern
+- Similar layout structure to major betting exchanges
+- Smooth UX
+- Highly scalable
+- Professional sportsbook appearance
+- Large admin control system
+- Betting exchange style odds tables
+- Casino provider lobby interface
+
+Generate:
+- Full frontend code
+- Component structure
+- Routing setup
+- API integration placeholders
+- Responsive layouts
+- Reusable UI components
+- Professional folder structure
+- Clean scalable architecture
