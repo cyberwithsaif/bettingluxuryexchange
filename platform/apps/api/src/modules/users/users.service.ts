@@ -91,6 +91,36 @@ export class UsersService {
     return { ok: true };
   }
 
+  async updateUser(
+    actorId: string,
+    targetId: string,
+    patch: { role?: UserRole; partnershipBps?: number; creditReference?: number },
+  ) {
+    await this.assertOverrules(actorId, targetId);
+
+    // If changing role, validate the new role is still a valid child
+    if (patch.role) {
+      const actor = await this.prisma.user.findUnique({ where: { id: actorId } });
+      if (!actor) throw new ForbiddenException();
+      const allowed = CHILD_ROLES[actor.role];
+      if (!allowed.includes(patch.role)) {
+        throw new ForbiddenException(`Cannot assign role ${patch.role}`);
+      }
+    }
+
+    const data: Record<string, unknown> = {};
+    if (patch.role !== undefined)            data.role            = patch.role;
+    if (patch.partnershipBps !== undefined)  data.partnershipBps  = patch.partnershipBps;
+    if (patch.creditReference !== undefined) data.creditReference = new Prisma.Decimal(patch.creditReference);
+
+    const updated = await this.prisma.user.update({
+      where: { id: targetId },
+      data,
+      include: { wallet: true, limits: true },
+    });
+    return this.publicUser(updated);
+  }
+
   /**
    * `actor` must (a) outrank `target` and (b) be in `target`'s upline chain
    * (or be a global SUPER_ADMIN / ADMIN). This is what stops a Master from

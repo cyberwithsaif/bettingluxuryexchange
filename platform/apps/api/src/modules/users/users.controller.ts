@@ -18,6 +18,12 @@ class CreateDownlineDto {
 class SetStatusDto { @IsEnum(UserStatus) status!: UserStatus; }
 class ResetPasswordDto { @IsString() @MinLength(8) password!: string; }
 
+class UpdateDownlineDto {
+  @IsOptional() @IsEnum(UserRole) role?: UserRole;
+  @IsOptional() @IsInt() @Min(0) @Max(10_000) partnershipBps?: number;
+  @IsOptional() @IsNumber() creditReference?: number;
+}
+
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.AGENT, UserRole.MASTER, UserRole.SUPER_MASTER, UserRole.ADMIN, UserRole.SUPER_ADMIN)
 @Controller("users")
@@ -47,5 +53,10 @@ export class UsersController {
   @Patch(":id/limits")
   setLimits(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Body() patch: Record<string, any>) {
     return this.users.updateLimits(actor.id, id, patch);
+  }
+
+  @Patch(":id")
+  update(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Body() dto: UpdateDownlineDto) {
+    return this.users.updateUser(actor.id, id, dto);
   }
 }
