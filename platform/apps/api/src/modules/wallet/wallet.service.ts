@@ -41,8 +41,10 @@ export class WalletService {
   ) {}
 
   async getSummary(userId: string) {
-    const w = await this.prisma.wallet.findUnique({ where: { userId } });
-    if (!w) throw new NotFoundException("Wallet not found");
+    let w = await this.prisma.wallet.findUnique({ where: { userId } });
+    if (!w) {
+      w = await this.prisma.wallet.create({ data: { userId } });
+    }
     const balance = toNum(w.balance);
     const exposure = toNum(w.exposure);
     const bonus = toNum(w.bonus);
