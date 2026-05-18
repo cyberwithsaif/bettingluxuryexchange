@@ -25,9 +25,16 @@ export default function AdminLogin() {
         throw new Error("Not authorized for admin panel");
       }
       setAuth({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
-      // Full page load so Zustand rehydrates cleanly before AdminShell mounts.
-      // Using router.push causes a React concurrent transition where AdminShell
-      // can briefly see stale user=null and redirect back to login.
+      // Write directly to localStorage and wait for Zustand persist to flush
+      // before navigating, otherwise the full reload races the storage write
+      // and AdminShell sees user=null on its first mount.
+      try {
+        localStorage.setItem("exch-admin-auth", JSON.stringify({
+          state: { user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken },
+          version: 0,
+        }));
+      } catch {}
+      await new Promise((r) => setTimeout(r, 50));
       window.location.href = "/admin/";
     } catch (e: any) {
       const msg = e?.response?.data?.message ?? e?.message;
