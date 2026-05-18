@@ -26,9 +26,9 @@ export const useAuthStore = create<State>()(
       name: "exch-admin-auth",
       // Only persist the auth data, not the hydration flag
       partialize: (s) => ({ user: s.user, accessToken: s.accessToken, refreshToken: s.refreshToken }),
-      onRehydrateStorage: () => (state, storage) => {
+      onRehydrateStorage: () => (state) => {
         // Called after localStorage data is loaded — mark hydration complete
-        state._hydrated = true;
+        if (state) state._hydrated = true;
       },
     },
   ),
