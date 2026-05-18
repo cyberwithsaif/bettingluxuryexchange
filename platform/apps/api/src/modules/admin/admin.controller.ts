@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import type { Request } from "express";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
@@ -9,7 +9,8 @@ import { AdminService } from "./admin.service";
 import { MarketsService } from "../markets/markets.service";
 import { WalletService } from "../wallet/wallet.service";
 import { SettlementService } from "../settlement/settlement.service";
-import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import { CasinoService } from "../casino/casino.service";
+import { IsBoolean, IsEnum, IsIn, IsInt, IsNumber, IsOptional, IsString, Min } from "class-validator";
 
 class SetOddsDto {
   @IsString() runnerId!: string;
@@ -27,8 +28,37 @@ class SettleMarketDto {
 
 class WalletAdjustDto {
   @IsString() userId!: string;
-  @IsNumber() amount!: number;       // signed: +credit, -debit
+  @IsNumber() amount!: number;
   @IsOptional() @IsString() note?: string;
+}
+
+class BetActionDto {
+  @IsIn(["void", "cancel"]) action!: "void" | "cancel";
+}
+
+class PlatformSettingsDto {
+  @IsOptional() @IsNumber() @Min(1) minStake?: number;
+  @IsOptional() @IsNumber() @Min(100) maxStake?: number;
+  @IsOptional() @IsNumber() @Min(1000) maxMarketExposure?: number;
+  @IsOptional() @IsInt() @Min(0) defaultPartnershipBps?: number;
+  @IsOptional() @IsBoolean() maintenanceMode?: boolean;
+  @IsOptional() @IsBoolean() registrationEnabled?: boolean;
+  @IsOptional() @IsBoolean() depositEnabled?: boolean;
+  @IsOptional() @IsBoolean() withdrawalEnabled?: boolean;
+}
+
+class AddProviderDto {
+  @IsString() name!: string;
+  @IsString() key!: string;
+  @IsString() category!: string;
+}
+
+class AddGameDto {
+  @IsString() name!: string;
+  @IsString() providerId!: string;
+  @IsString() category!: string;
+  @IsOptional() @IsString() thumbnail?: string;
+  @IsOptional() @IsBoolean() isLive?: boolean;
 }
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -40,6 +70,7 @@ export class AdminController {
     private readonly markets: MarketsService,
     private readonly wallet: WalletService,
     private readonly settlement: SettlementService,
+    private readonly casino: CasinoService,
   ) {}
 
   @Get("dashboard")
@@ -129,5 +160,59 @@ export class AdminController {
   @Get("reports")
   reports(@Query("days") days?: string) {
     return this.admin.getReports({ days: days ? Number(days) : undefined });
+  }
+
+  // -- Bet void / cancel --
+
+  @Patch("bets/:id")
+  async betAction(
+    @CurrentUser() actor: AuthUser, @Param("id") betId: string,
+    @Body() dto: BetActionDto, @Req() req: Request,
+  ) {
+    const result = await this.admin.voidOrCancelBet(betId, dto.action);
+    await this.admin.writeAudit(actor.id, `bet.${dto.action}`, { type: "bet", id: betId }, dto, req.ip);
+    return result;
+  }
+
+  // -- Platform Settings --
+
+  @Get("platform-settings")
+  getSettings() { return this.admin.getPlatformSettings(); }
+
+  @Post("platform-settings")
+  async saveSettings(@CurrentUser() actor: AuthUser, @Body() dto: PlatformSettingsDto, @Req() req: Request) {
+    const result = await this.admin.savePlatformSettings(dto);
+    await this.admin.writeAudit(actor.id, "platform.settings.update", undefined, dto, req.ip);
+    return result;
+  }
+
+  // -- Casino CRUD (admin only) --
+
+  @Post("casino/providers")
+  async addProvider(@CurrentUser() actor: AuthUser, @Body() dto: AddProviderDto, @Req() req: Request) {
+    const r = await this.casino.createProvider(dto);
+    await this.admin.writeAudit(actor.id, "casino.provider.create", { type: "provider", id: r.id }, dto, req.ip);
+    return r;
+  }
+
+  @Delete("casino/providers/:id")
+  async deleteProvider(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Req() req: Request) {
+    const r = await this.casino.deleteProvider(id);
+    await this.admin.writeAudit(actor.id, "casino.provider.delete", { type: "provider", id }, {}, req.ip);
+    return r;
+  }
+
+  @Post("casino/games")
+  async addGame(@CurrentUser() actor: AuthUser, @Body() dto: AddGameDto, @Req() req: Request) {
+    const r = await this.casino.createGame(dto);
+    await this.admin.writeAudit(actor.id, "casino.game.create", { type: "game", id: r.id }, dto, req.ip);
+    return r;
+  }
+
+  @Delete("casino/games/:id")
+  async deleteGame(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Req() req: Request) {
+    const r = await this.casino.deleteGame(id);
+    await this.admin.writeAudit(actor.id, "casino.game.delete", { type: "game", id }, {}, req.ip);
+    return r;
   }
 }

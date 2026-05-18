@@ -548,3 +548,9 @@ model AdminLog {
   @@index([actorId, createdAt])
   @@index([action, createdAt])
 }
+
+model SystemConfig {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}

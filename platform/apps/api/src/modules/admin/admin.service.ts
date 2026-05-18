@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, BadRequestException } from "@nestjs/common";
 import { BetStatus, LedgerKind, Prisma } from "@prisma/client";
 import { PrismaService } from "../../common/prisma/prisma.service";
 
@@ -144,6 +144,67 @@ export class AdminService {
       totalOperatorPL: Math.round((totalLoss - totalWin) * 100) / 100,
       series,
     };
+  }
+
+  /** Void or cancel a single open bet. */
+  async voidOrCancelBet(betId: string, action: "void" | "cancel") {
+    const bet = await this.prisma.bet.findUniqueOrThrow({
+      where: { id: betId },
+      include: { user: true },
+    });
+    if (bet.status !== "OPEN" && bet.status !== "MATCHED") {
+      throw new BadRequestException(`Bet is already ${bet.status}`);
+    }
+    const newStatus = action === "void" ? BetStatus.VOID : BetStatus.CANCELLED;
+    // Refund the stake back to the user's wallet
+    await this.prisma.$transaction(async (tx) => {
+      await tx.bet.update({ where: { id: betId }, data: { status: newStatus } });
+      const refund = Number(bet.stake.toString());
+      await tx.wallet.update({
+        where: { userId: bet.userId },
+        data: {
+          balance: { increment: refund },
+          exposure: { decrement: refund },
+        },
+      });
+      await tx.ledgerEntry.create({
+        data: {
+          userId: bet.userId,
+          kind: LedgerKind.BET_VOID,
+          amount: refund,
+          refType: "bet",
+          refId: betId,
+          note: `Bet ${action}ed by admin`,
+        },
+      });
+    });
+    return { betId, status: newStatus };
+  }
+
+  // ── Platform Settings ──────────────────────────────────────────────────────
+  // Stored as a single row in the SystemConfig table (key = 'platform').
+
+  async getPlatformSettings() {
+    const row = await this.prisma.systemConfig.findUnique({ where: { key: "platform" } });
+    const defaults = {
+      minStake: 100, maxStake: 100000, maxMarketExposure: 1000000,
+      defaultPartnershipBps: 0, currency: "INR",
+      maintenanceMode: false, registrationEnabled: true,
+      depositEnabled: true, withdrawalEnabled: true,
+    };
+    if (!row) return defaults;
+    return { ...defaults, ...(row.value as object) };
+  }
+
+  async savePlatformSettings(dto: Record<string, unknown>) {
+    const current = await this.getPlatformSettings();
+    const merged = { ...current, ...dto };
+    await this.prisma.systemConfig.upsert({
+      where: { key: "platform" },
+      create: { key: "platform", value: merged as any },
+      update: { value: merged as any },
+    });
+    return merged;
   }
 }
 

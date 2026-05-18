@@ -135,4 +135,41 @@ export class CasinoService {
       data: { closedAt: new Date() },
     });
   }
+
+  // ── Admin CRUD ────────────────────────────────────────────────────────────────────
+
+  createProvider(dto: { name: string; key: string; category: string }) {
+    return this.prisma.casinoProvider.create({
+      data: { name: dto.name, key: dto.key, category: dto.category as any, isActive: true },
+    });
+  }
+
+  deleteProvider(id: string) {
+    return this.prisma.casinoProvider.update({
+      where: { id },
+      data: { isActive: false },
+    });
+  }
+
+  createGame(dto: { name: string; providerId: string; category: string; thumbnail?: string; isLive?: boolean }) {
+    return this.prisma.casinoGame.create({
+      data: {
+        name: dto.name,
+        providerId: dto.providerId,
+        category: dto.category as any,
+        thumbnail: dto.thumbnail ?? null,
+        isLive: dto.isLive ?? false,
+        isActive: true,
+        sortOrder: 0,
+      },
+      include: { provider: true },
+    });
+  }
+
+  deleteGame(id: string) {
+    return this.prisma.casinoGame.update({
+      where: { id },
+      data: { isActive: false },
+    });
+  }
 }

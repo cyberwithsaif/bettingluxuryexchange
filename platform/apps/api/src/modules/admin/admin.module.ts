@@ -8,9 +8,10 @@ import { TransactionsService } from "./transactions/transactions.service";
 import { WalletModule } from "../wallet/wallet.module";
 import { MarketsModule } from "../markets/markets.module";
 import { SettlementModule } from "../settlement/settlement.module";
+import { CasinoModule } from "../casino/casino.module";
 
 @Module({
-  imports: [WalletModule, MarketsModule, SettlementModule],
+  imports: [WalletModule, MarketsModule, SettlementModule, CasinoModule],
   controllers: [AdminController, ApiKeysController, TransactionsController],
   providers: [AdminService, ApiKeysService, TransactionsService],
   exports: [AdminService, ApiKeysService, TransactionsService],
