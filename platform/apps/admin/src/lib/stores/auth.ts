@@ -14,7 +14,7 @@ interface State {
 
 export const useAuthStore = create<State>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       accessToken: null,
       refreshToken: null,
@@ -26,9 +26,9 @@ export const useAuthStore = create<State>()(
       name: "exch-admin-auth",
       // Only persist the auth data, not the hydration flag
       partialize: (s) => ({ user: s.user, accessToken: s.accessToken, refreshToken: s.refreshToken }),
-      onRehydrateStorage: () => (state) => {
-        // Called after localStorage data is loaded — mark hydration complete
-        if (state) state._hydrated = true;
+      onRehydrateStorage: () => (state, storage) => {
+        // Mark hydration as complete after localStorage is loaded
+        useAuthStore.setState({ _hydrated: true });
       },
     },
   ),
