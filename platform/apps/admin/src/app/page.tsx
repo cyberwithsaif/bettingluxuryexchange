@@ -102,7 +102,7 @@ export default function AdminDashboard() {
               <>
                 <MetricRow label="Total Revenue" value={fmt(data?.totalRevenue)} trend={data?.revenueTrend} />
                 <MetricRow label="Commission Earned" value={fmt(data?.commission)} trend={data?.commissionTrend} />
-                <MetricRow label="Active Users 24h" value={data?.activeUsers24h} />
+                <MetricRow label="Active Users 24h" value={String(data?.activeUsers24h ?? "—")} />
                 <MetricRow label="Avg Bet Size" value={fmt(data?.avgBetSize)} />
               </>
             )}
