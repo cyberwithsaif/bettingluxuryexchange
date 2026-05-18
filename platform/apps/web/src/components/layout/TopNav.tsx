@@ -2,16 +2,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
-import { Dices, Gamepad2, Rocket, Trophy, Sparkles, Joystick, Ticket } from "lucide-react";
-
 const tabs = [
-  { href: "/exchange",   label: "EXCHANGE",    icon: Trophy },
-  { href: "/casino",     label: "LIVE CASINO", icon: Dices },
-  { href: "/crash",      label: "CRASH GAMES", icon: Rocket },
-  { href: "/virtual",    label: "VIRTUAL GAME",icon: Joystick },
-  { href: "/slots",      label: "SLOT GAMES",  icon: Sparkles },
-  { href: "/lottery",    label: "LOTTERY",     icon: Ticket },
-  { href: "/sportsbook", label: "SPORTS BOOK", icon: Gamepad2 },
+  { href: "/exchange",   label: "EXCHANGE",    emoji: "🎰" },
+  { href: "/casino",     label: "LIVE CASINO", emoji: "🎲" },
+  { href: "/crash",      label: "CRASH GAMES", emoji: "🚀" },
+  { href: "/virtual",    label: "VIRTUAL GAME",emoji: "🎮" },
+  { href: "/slots",      label: "SLOT GAMES",  emoji: "✨" },
+  { href: "/lottery",    label: "LOTTERY",     emoji: "🎟️" },
+  { href: "/sportsbook", label: "SPORTS BOOK", emoji: "🎯" },
 ] as const;
 
 export function TopNav() {
@@ -24,7 +22,6 @@ export function TopNav() {
           <ul className="flex items-stretch min-w-max">
             {tabs.map((t) => {
               const active = path === "/" ? t.href === "/exchange" : path?.startsWith(t.href);
-              const Icon = t.icon;
               return (
                 <li key={t.href} className="relative">
                   <Link
@@ -36,7 +33,7 @@ export function TopNav() {
                         : "text-white/80 hover:text-white hover:bg-white/5",
                     )}
                   >
-                    <Icon size={16} className={active ? "text-white" : "text-brandYellow"} />
+                    <span className="text-lg">{t.emoji}</span>
                     {t.label}
                   </Link>
                 </li>
