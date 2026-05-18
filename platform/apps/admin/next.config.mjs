@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
+  basePath: "/admin",
   reactStrictMode: true,
   transpilePackages: ["@exch/shared"],
   async rewrites() {
