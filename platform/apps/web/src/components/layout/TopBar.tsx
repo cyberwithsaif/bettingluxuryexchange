@@ -29,8 +29,9 @@ export function TopBar() {
   const clock = useLiveClock();
   const { user, clear } = useAuthStore();
   const { data: wallet, mutate } = useSWR(user ? "/wallet/summary" : null);
-  const { data: announcements } = useSWR<Array<{ id: string; text: string }>>("/announcements/active", { refreshInterval: 60_000 });
-  const { data: platformSettings } = useSWR<PublicSettings>("/platform/settings", { refreshInterval: 300_000 });
+  const pFetch = (url: string) => fetch(url).then(r => r.json());
+  const { data: announcements } = useSWR<Array<{ id: string; text: string }>>("/api/announcements/active", pFetch, { refreshInterval: 60_000 });
+  const { data: platformSettings } = useSWR<PublicSettings>("/api/platform/settings", pFetch, { refreshInterval: 300_000 });
   const marqueeText = announcements && announcements.length > 0
     ? announcements.map((a) => `📢 ${a.text}`).join(" • ")
     : (platformSettings?.marqueeText ?? DEFAULT_MARQUEE_FALLBACK);
@@ -161,7 +162,8 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
 }
 
 function NotificationBell() {
-  const { data } = useSWR<Array<{ id: string }>>("/announcements/active", { refreshInterval: 60_000 });
+  const pFetch = (url: string) => fetch(url).then(r => r.json());
+  const { data } = useSWR<Array<{ id: string }>>("/api/announcements/active", pFetch, { refreshInterval: 60_000 });
   const count = data?.length ?? 0;
   return (
     <Link

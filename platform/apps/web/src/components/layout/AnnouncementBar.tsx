@@ -15,8 +15,10 @@ interface Announcement {
   level: string;
 }
 
+const pFetch = (url: string) => fetch(url).then(r => r.json());
+
 export function AnnouncementBar() {
-  const { data } = useSWR<Announcement[]>("/announcements/active", { refreshInterval: 60_000 });
+  const { data } = useSWR<Announcement[]>("/api/announcements/active", pFetch, { refreshInterval: 60_000 });
   const items = data && data.length > 0 ? data.map((a) => a.text) : FALLBACK;
 
   return (

@@ -17,7 +17,7 @@ interface PublicSettings { subBanner?: string; siteName?: string; siteTagline?: 
 
 export function TopNav() {
   const path = usePathname();
-  const { data: settings } = useSWR<PublicSettings>("/platform/settings", { refreshInterval: 300_000 });
+  const { data: settings } = useSWR<PublicSettings>("/api/platform/settings", (url) => fetch(url).then(r => r.json()), { refreshInterval: 300_000 });
   const subBanner = settings?.subBanner ?? "Bet Now in Line Market and Get Commission Upto 2%";
   return (
     <div className="sticky top-16 z-40 shadow-md">
