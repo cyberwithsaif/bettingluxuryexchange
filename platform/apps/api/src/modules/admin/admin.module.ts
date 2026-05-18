@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { AdminController } from "./admin.controller";
+import { AdminController, PublicPlatformController } from "./admin.controller";
 import { AdminService } from "./admin.service";
 import { ApiKeysService } from "./api-keys/api-keys.service";
 import { ApiKeysController } from "./api-keys/api-keys.controller";
@@ -12,7 +12,7 @@ import { CasinoModule } from "../casino/casino.module";
 
 @Module({
   imports: [WalletModule, MarketsModule, SettlementModule, CasinoModule],
-  controllers: [AdminController, ApiKeysController, TransactionsController],
+  controllers: [AdminController, PublicPlatformController, ApiKeysController, TransactionsController],
   providers: [AdminService, ApiKeysService, TransactionsService],
   exports: [AdminService, ApiKeysService, TransactionsService],
 })

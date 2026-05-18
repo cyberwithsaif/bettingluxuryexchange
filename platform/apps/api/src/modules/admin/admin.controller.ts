@@ -47,6 +47,30 @@ class PlatformSettingsDto {
   @IsOptional() @IsBoolean() withdrawalEnabled?: boolean;
 }
 
+class DepositMethodsDto {
+  @IsOptional() upi?: {
+    enabled: boolean;
+    upiId: string;
+    qrCodeUrl?: string;
+    displayName?: string;
+  };
+  @IsOptional() bank?: {
+    enabled: boolean;
+    accountName: string;
+    accountNumber: string;
+    ifsc: string;
+    bankName: string;
+    branch?: string;
+  };
+  @IsOptional() crypto?: {
+    enabled: boolean;
+    address: string;
+    network: string;
+    coin: string;
+    qrCodeUrl?: string;
+  };
+}
+
 class AddProviderDto {
   @IsString() name!: string;
   @IsString() key!: string;
@@ -186,6 +210,15 @@ export class AdminController {
     return result;
   }
 
+  // -- Deposit Payment Methods (admin sets, users read) --
+
+  @Post("deposit-methods")
+  async saveDepositMethods(@CurrentUser() actor: AuthUser, @Body() dto: DepositMethodsDto, @Req() req: Request) {
+    const result = await this.admin.savePlatformSettings({ depositMethods: dto } as any);
+    await this.admin.writeAudit(actor.id, "platform.depositMethods.update", undefined, dto, req.ip);
+    return result;
+  }
+
   // -- Casino CRUD (admin only) --
 
   @Post("casino/providers")
@@ -214,5 +247,16 @@ export class AdminController {
     const r = await this.casino.deleteGame(id);
     await this.admin.writeAudit(actor.id, "casino.game.delete", { type: "game", id }, {}, req.ip);
     return r;
+  }
+}
+
+@Controller("platform")
+export class PublicPlatformController {
+  constructor(private readonly admin: AdminService) {}
+
+  @Get("deposit-methods")
+  async getDepositMethods() {
+    const settings = await this.admin.getPlatformSettings();
+    return (settings as any).depositMethods ?? {};
   }
 }

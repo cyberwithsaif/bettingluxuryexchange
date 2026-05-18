@@ -50,7 +50,14 @@ export default function WithdrawPage() {
   const [newLabel, setNewLabel]   = useState("");
   const [newDetails, setNewDetails] = useState("");
 
-  useEffect(() => { setSaved(load()); }, []);
+  useEffect(() => {
+    const items = load();
+    setSaved(items);
+    // Auto-select: prefer first UPI, else first available
+    const firstUpi = items.find((m) => m.type === "UPI");
+    const defaultSel = firstUpi ?? items[0] ?? null;
+    setSelected(defaultSel);
+  }, []);
 
   function addMethod() {
     if (!newLabel.trim() || !newDetails.trim()) return;
