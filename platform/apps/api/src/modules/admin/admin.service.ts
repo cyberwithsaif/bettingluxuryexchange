@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { Prisma } from "@prisma/client";
+import { BetStatus, LedgerKind, Prisma } from "@prisma/client";
 import { PrismaService } from "../../common/prisma/prisma.service";
 
 @Injectable()
@@ -107,11 +107,11 @@ export class AdminService {
 
     const [totalBets, openBets, settledBets, ledger] = await Promise.all([
       this.prisma.bet.count({ where: { createdAt: { gte: since } } }),
-      this.prisma.bet.count({ where: { status: "OPEN" } }),
-      this.prisma.bet.count({ where: { status: { in: ["WON", "LOST"] }, createdAt: { gte: since } } }),
+      this.prisma.bet.count({ where: { status: { in: [BetStatus.OPEN, BetStatus.MATCHED] } } }),
+      this.prisma.bet.count({ where: { status: { in: [BetStatus.SETTLED_WON, BetStatus.SETTLED_LOST] }, createdAt: { gte: since } } }),
       this.prisma.ledgerEntry.findMany({
         where: {
-          kind: { in: ["BET_SETTLE_WIN", "BET_SETTLE_LOSS", "ADMIN_CREDIT", "ADMIN_DEBIT"] },
+          kind: { in: [LedgerKind.BET_SETTLE_WIN, LedgerKind.BET_SETTLE_LOSS, LedgerKind.ADMIN_CREDIT, LedgerKind.ADMIN_DEBIT] },
           createdAt: { gte: since },
         },
         select: { amount: true, kind: true, createdAt: true },

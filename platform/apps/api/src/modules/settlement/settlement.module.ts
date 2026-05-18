@@ -3,8 +3,9 @@ import { BullModule } from "@nestjs/bullmq";
 import { SettlementService } from "./settlement.service";
 import { SettlementProcessor } from "./settlement.processor";
 import { BettingModule } from "../betting/betting.module";
+import { SETTLEMENT_QUEUE } from "./settlement.constants";
 
-export const SETTLEMENT_QUEUE = "settlement";
+export { SETTLEMENT_QUEUE };
 
 @Module({
   imports: [

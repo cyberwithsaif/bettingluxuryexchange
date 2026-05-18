@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import type { Queue } from "bullmq";
-import { SETTLEMENT_QUEUE } from "./settlement.module";
+import { SETTLEMENT_QUEUE } from "./settlement.constants";
 
 export interface SettleJob {
   marketId: string;

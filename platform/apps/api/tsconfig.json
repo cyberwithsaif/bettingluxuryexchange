@@ -8,10 +8,11 @@
     "outDir": "./dist",
     "baseUrl": ".",
     "paths": {
-      "@exch/shared": ["../../packages/shared/src"],
-      "@exch/shared/*": ["../../packages/shared/src/*"]
+      "@exch/shared": ["../../packages/shared/dist"],
+      "@exch/shared/*": ["../../packages/shared/dist/*"]
     },
-    "noUncheckedIndexedAccess": false
+    "noUncheckedIndexedAccess": false,
+    "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "prisma/seed.ts"]
+  "include": ["src/**/*.ts"]
 }
