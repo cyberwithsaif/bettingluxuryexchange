@@ -2,6 +2,7 @@
 import { useState } from "react";
 import useSWR, { mutate } from "swr";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/lib/stores/auth";
 
 const methods = [
   { v: "UPI",           label: "UPI" },
@@ -15,7 +16,9 @@ export default function DepositPage() {
   const [reference, setReference] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const { data: mine } = useSWR("/transactions/mine");
+  
+  const user = useAuthStore((s) => s.user);
+  const { data: mine } = useSWR(user ? "/transactions/mine" : null);
 
   async function submit() {
     setBusy(true); setMsg(null);

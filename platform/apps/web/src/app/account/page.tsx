@@ -52,3 +52,5 @@ function Card({ label, value, accent, bad }: { label: string; value: string; acc
     </div>
   );
 }
+
+// trigger rebuild

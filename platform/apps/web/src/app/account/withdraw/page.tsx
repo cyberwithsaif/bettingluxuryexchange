@@ -2,6 +2,7 @@
 import { useState } from "react";
 import useSWR, { mutate } from "swr";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/lib/stores/auth";
 
 export default function WithdrawPage() {
   const [amount, setAmount] = useState(0);
@@ -9,8 +10,10 @@ export default function WithdrawPage() {
   const [reference, setReference] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const { data: wallet } = useSWR("/wallet/summary");
-  const { data: mine } = useSWR("/transactions/mine");
+  
+  const user = useAuthStore((s) => s.user);
+  const { data: wallet } = useSWR(user ? "/wallet/summary" : null);
+  const { data: mine } = useSWR(user ? "/transactions/mine" : null);
 
   async function submit() {
     setBusy(true); setMsg(null);
