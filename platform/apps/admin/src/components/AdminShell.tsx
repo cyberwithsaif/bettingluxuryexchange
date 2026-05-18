@@ -69,10 +69,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex bg-bg">
+    <div className="h-screen overflow-hidden flex bg-bg">
       {/* Sidebar */}
       <aside className={cn(
-        "fixed md:static w-64 h-screen bg-panel/95 border-r border-line flex flex-col transition-transform duration-300 z-40",
+        "fixed top-0 left-0 w-64 h-screen bg-panel/95 border-r border-line flex flex-col transition-transform duration-300 z-40",
         sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
       )}>
         {/* Logo */}
@@ -140,7 +140,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Main */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 md:ml-64 h-screen overflow-y-auto">
         <div className="sticky top-0 z-20 h-14 bg-panel/80 border-b border-line flex items-center px-4 md:px-6 gap-3 backdrop-blur-sm">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-2 hover:bg-panel2 rounded-lg transition-colors">
             <Menu size={18} />
