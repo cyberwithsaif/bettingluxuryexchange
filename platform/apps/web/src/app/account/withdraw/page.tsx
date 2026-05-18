@@ -101,7 +101,7 @@ export default function WithdrawPage() {
       </div>
 
       {/* Step 1 — Select payout method */}
-      <section className="glass rounded-xl p-5">
+      <section className="rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-white/90 flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-accent-grad text-ink text-xs font-bold flex items-center justify-center">1</span>
@@ -130,8 +130,8 @@ export default function WithdrawPage() {
                     onClick={() => setSelected(isSelected ? null : m)}
                     className={`flex-1 flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition ${
                       isSelected
-                        ? "border-accent bg-accent/10 shadow-glow/30"
-                        : "border-line/60 hover:border-accent/40 hover:bg-white/5"
+                        ? "border-white/50 bg-white/10 shadow-md"
+                        : "border-white/10 hover:border-white/30 hover:bg-white/5"
                     }`}
                   >
                     <span className={`p-2 rounded-lg ${isSelected ? "bg-accent/20 text-accent" : "bg-white/10 text-white/60"}`}>
@@ -163,13 +163,13 @@ export default function WithdrawPage() {
       </section>
 
       {/* Step 2 — Amount */}
-      <section className="glass rounded-xl p-5">
-        <h2 className="font-semibold text-white/90 flex items-center gap-2 mb-4">
+      <section className="rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-5">
+        <h2 className="font-semibold text-white flex items-center gap-2 mb-4">
           <span className="w-6 h-6 rounded-full bg-accent-grad text-ink text-xs font-bold flex items-center justify-center">2</span>
           Enter Amount
         </h2>
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 font-semibold">₹</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 font-bold text-lg">₹</span>
           <input
             type="number"
             min={1}
@@ -177,13 +177,13 @@ export default function WithdrawPage() {
             value={amount || ""}
             onChange={(e) => setAmount(Number(e.target.value) || 0)}
             placeholder="0"
-            className="input pl-7 text-xl font-bold"
+            className="w-full bg-white/5 border border-white/15 rounded-xl px-4 pl-8 py-3 text-white text-xl font-bold placeholder-white/20 focus:outline-none focus:border-white/50 focus:bg-white/10 transition"
           />
         </div>
         {/* Quick amounts */}
         <div className="flex gap-2 mt-2 flex-wrap">
           {[500, 1000, 2000, 5000, 10000].map((v) => (
-            <button key={v} onClick={() => setAmount(v)} className="text-xs border border-line/60 hover:border-accent/60 hover:text-accent rounded-md px-3 py-1 transition">
+            <button key={v} onClick={() => setAmount(v)} className="text-xs border border-white/20 hover:border-white/50 hover:bg-white/10 text-white/70 hover:text-white rounded-lg px-3 py-1.5 transition">
               ₹{v.toLocaleString("en-IN")}
             </button>
           ))}
@@ -193,29 +193,29 @@ export default function WithdrawPage() {
       {/* Submit */}
       <div className="space-y-2">
         {selected && amount > 0 && (
-          <div className="text-xs text-white/50 bg-white/5 rounded-lg px-4 py-2.5 flex items-center gap-2">
-            <CheckCircle2 size={13} className="text-accent shrink-0" />
+          <div className="text-xs text-white/60 bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center gap-2">
+            <CheckCircle2 size={13} className="text-green-400 shrink-0" />
             Withdraw <strong className="text-white">₹{amount.toLocaleString("en-IN")}</strong> via{" "}
-            <strong className="text-accentSoft">{selected.label}</strong> ({METHOD_LABELS[selected.type]})
+            <strong className="text-white">{selected.label}</strong> ({METHOD_LABELS[selected.type]})
           </div>
         )}
         <button
           disabled={busy || !selected || amount <= 0}
           onClick={submit}
-          className="w-full rounded-md bg-accent-grad py-3 font-bold text-ink shadow-glow hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition text-base"
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-accent-grad py-3 font-bold text-ink shadow-glow hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed transition text-base"
         >
           {busy ? "Submitting…" : "Request Withdrawal"}
         </button>
         {msg && (
-          <p className={`text-sm flex items-center gap-1.5 ${msg.ok ? "text-ok" : "text-bad"}`}>
-            {msg.ok ? <CheckCircle2 size={14} /> : "⚠"} {msg.text}
+          <p className={`text-sm flex items-center gap-1.5 ${msg.ok ? "text-green-400" : "text-red-400"}`}>
+            {msg.ok ? "✅" : "⚠️"} {msg.text}
           </p>
         )}
       </div>
 
       {/* Recent requests */}
-      <section className="glass rounded-xl p-4">
-        <h2 className="font-display text-xl mb-3">Recent Requests</h2>
+      <section className="rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-5">
+        <h2 className="font-display text-xl text-white mb-3">Recent Requests</h2>
         <ul className="text-sm divide-y divide-line/40">
           {(mine ?? []).filter((t: any) => t.kind === "WITHDRAWAL").slice(0, 8).map((t: any) => (
             <li key={t.id} className="py-2.5 flex justify-between items-start gap-2">
@@ -281,11 +281,7 @@ export default function WithdrawPage() {
         </div>
       )}
 
-      <style jsx>{`
-        :global(.input){width:100%;background:#170a10;border:1px solid rgba(255,122,24,0.2);border-radius:8px;padding:10px 12px;font-size:14px;color:#f4e7e7}
-        :global(.input:focus){outline:none;border-color:#ff7a18}
-        :global(.input::placeholder){color:rgba(255,255,255,0.2)}
-      `}</style>
+
     </div>
   );
 }
