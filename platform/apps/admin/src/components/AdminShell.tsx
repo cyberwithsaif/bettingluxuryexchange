@@ -96,6 +96,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               href === "/"
                 ? path === "/"
                 : path === href || (href !== "/settings" && path?.startsWith(href + "/"));
+            const isSubItem = href === "/settings/payment-methods";
             return (
               <Link
                 key={href}
@@ -103,12 +104,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                  isSubItem && "ml-4 py-2 text-xs border-l-2 border-line pl-4 rounded-l-none",
                   active
-                    ? "bg-accent-grad text-ink shadow-glow"
+                    ? "bg-accent-grad text-ink shadow-glow border-accent!"
                     : "text-white/70 hover:text-white hover:bg-panel2/60",
                 )}
               >
-                <Icon size={16} className="shrink-0" />
+                <Icon size={isSubItem ? 13 : 16} className="shrink-0" />
                 <span>{label}</span>
               </Link>
             );
