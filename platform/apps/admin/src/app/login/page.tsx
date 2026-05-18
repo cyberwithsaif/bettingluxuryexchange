@@ -25,7 +25,10 @@ export default function AdminLogin() {
         throw new Error("Not authorized for admin panel");
       }
       setAuth({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
-      router.push("/");
+      // Full page load so Zustand rehydrates cleanly before AdminShell mounts.
+      // Using router.push causes a React concurrent transition where AdminShell
+      // can briefly see stale user=null and redirect back to login.
+      window.location.href = "/admin/";
     } catch (e: any) {
       const msg = e?.response?.data?.message ?? e?.message;
       if (msg === "OTP required") setNeedOtp(true);
