@@ -27,19 +27,37 @@ const NAV = [
   { href: "/settings/payment-methods", label: "Payment Methods", Icon: CreditCard },
 ] as const;
 
+function Spinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-bg">
+      <div className="h-8 w-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+    </div>
+  );
+}
+
 export function AdminShell({ children }: { children: React.ReactNode }) {
-  const { user, clear, _hydrated } = useAuthStore();
+  const { user, clear } = useAuthStore();
   const router = useRouter();
   const path = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  // Track when Zustand has finished loading from localStorage
+  const [hydrated, setHydrated] = useState(() => useAuthStore.persist.hasHydrated());
 
   useEffect(() => {
-    // Only redirect after Zustand has finished loading from localStorage
-    if (_hydrated && !user && path !== "/login") {
+    if (hydrated) return;
+    // Subscribe to be notified when hydration finishes
+    const unsub = useAuthStore.persist.onFinishHydration(() => setHydrated(true));
+    // In case it already finished between render and effect
+    if (useAuthStore.persist.hasHydrated()) setHydrated(true);
+    return unsub;
+  }, [hydrated]);
+
+  useEffect(() => {
+    if (hydrated && !user && path !== "/login") {
       router.replace("/login");
     }
-  }, [_hydrated, user, path, router]);
+  }, [hydrated, user, path, router]);
 
   const handleLogout = useCallback(async () => {
     setIsLoggingOut(true);
@@ -50,23 +68,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   // Login page renders without the shell
   if (path === "/login") return <>{children}</>;
 
-  // Show spinner until Zustand rehydrates from localStorage
-  if (!_hydrated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-bg">
-        <div className="h-8 w-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-      </div>
-    );
-  }
+  // Wait for localStorage to load before deciding auth state
+  if (!hydrated) return <Spinner />;
 
-  // Hydrated but no user — redirect effect is running
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-bg">
-        <div className="h-8 w-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-      </div>
-    );
-  }
+  // Hydrated but no user — redirect effect will fire
+  if (!user) return <Spinner />;
 
   return (
     <div className="h-screen overflow-hidden flex bg-bg">
