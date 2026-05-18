@@ -8,9 +8,8 @@ interface State {
   accessToken: string | null;
   refreshToken: string | null;
   _hydrated: boolean;
-  set: (s: Partial<Omit<State, "_hydrated" | "set" | "clear" | "_setHydrated">>) => void;
+  set: (s: Partial<Omit<State, "_hydrated" | "set" | "clear">>) => void;
   clear: () => void;
-  _setHydrated: () => void;
 }
 
 export const useAuthStore = create<State>()(
@@ -22,15 +21,14 @@ export const useAuthStore = create<State>()(
       _hydrated: false,
       set: (s) => set(s),
       clear: () => set({ user: null, accessToken: null, refreshToken: null }),
-      _setHydrated: () => set({ _hydrated: true }),
     }),
     {
       name: "exch-admin-auth",
       // Only persist the auth data, not the hydration flag
       partialize: (s) => ({ user: s.user, accessToken: s.accessToken, refreshToken: s.refreshToken }),
-      onRehydrateStorage: () => (state) => {
-        // Called after localStorage data is loaded — safe to show authenticated UI now
-        state?._setHydrated();
+      onRehydrateStorage: () => (state, storage) => {
+        // Called after localStorage data is loaded — mark hydration complete
+        state._hydrated = true;
       },
     },
   ),
