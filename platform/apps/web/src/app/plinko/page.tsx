@@ -550,35 +550,29 @@ export default function PlinkoPage() {
         <div className="hidden md:flex w-[260px] shrink-0 p-3 flex-col">
           {(stats.wins + stats.losses) > 0 && (
             <div className="rounded-2xl bg-[#10121e] border border-white/[0.07] overflow-hidden shadow-2xl">
-              <div className="grid grid-cols-2 p-4 pb-3 gap-x-2 gap-y-4">
+              <div className="grid grid-cols-2 p-4 pb-3 gap-x-3 gap-y-4">
                 {/* Net Gain */}
-                <div className="min-w-0">
-                  <div className="text-[11px] uppercase tracking-wider text-white/40 mb-1.5">Net Gain</div>
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className={`text-[19px] font-bold leading-none whitespace-nowrap ${stats.netGain >= 0 ? "text-green-400" : "text-red-400"}`}>
-                      {stats.netGain >= 0 ? "+" : "-"}₹{Math.abs(stats.netGain).toFixed(2)}
-                    </span>
-                    <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-[9px] font-black text-black shrink-0">₹</span>
+                <div className="min-w-0 overflow-hidden">
+                  <div className="text-[10px] uppercase tracking-wider text-white/40 mb-1.5">Net Gain</div>
+                  <div className={`text-[18px] font-bold leading-none truncate ${stats.netGain >= 0 ? "text-green-400" : "text-red-400"}`}>
+                    {stats.netGain >= 0 ? "+" : "-"}₹{Math.abs(stats.netGain).toFixed(0)}
                   </div>
                 </div>
                 {/* Wins */}
-                <div className="min-w-0">
-                  <div className="text-[11px] uppercase tracking-wider text-white/40 mb-1.5">Wins</div>
+                <div className="min-w-0 overflow-hidden">
+                  <div className="text-[10px] uppercase tracking-wider text-white/40 mb-1.5">Wins</div>
                   <div className="text-[22px] font-bold leading-none text-green-400">{stats.wins.toLocaleString()}</div>
                 </div>
                 {/* Amount */}
-                <div className="min-w-0">
-                  <div className="text-[11px] uppercase tracking-wider text-white/40 mb-1.5">Amount</div>
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-[19px] font-bold leading-none text-white whitespace-nowrap">
-                      ₹{stats.wagered.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                    </span>
-                    <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-[9px] font-black text-black shrink-0">₹</span>
+                <div className="min-w-0 overflow-hidden">
+                  <div className="text-[10px] uppercase tracking-wider text-white/40 mb-1.5">Amount</div>
+                  <div className="text-[18px] font-bold leading-none text-white truncate">
+                    ₹{stats.wagered.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                   </div>
                 </div>
                 {/* Losses */}
-                <div className="min-w-0">
-                  <div className="text-[11px] uppercase tracking-wider text-white/40 mb-1.5">Losses</div>
+                <div className="min-w-0 overflow-hidden">
+                  <div className="text-[10px] uppercase tracking-wider text-white/40 mb-1.5">Losses</div>
                   <div className="text-[22px] font-bold leading-none text-red-400">{stats.losses.toLocaleString()}</div>
                 </div>
               </div>
