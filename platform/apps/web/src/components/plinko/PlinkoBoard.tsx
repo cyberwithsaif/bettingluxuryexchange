@@ -211,7 +211,7 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone, o
 
   // Single persistent rAF loop
   const loop = useCallback(() => {
-    const spd = turboRef.current ? 1 : 0.038;
+    const spd = turboRef.current ? 1 : 0.048;
     const balls = activeBalls.current;
 
     for (const b of balls) {
