@@ -42,9 +42,9 @@ function multColor(m: number) {
 
 export default function AdminPlinkoPage() {
   const { data: stats, isLoading: statsLoading, mutate: mutateStats } =
-    useSWR<PlinkoStats>("/admin/plinko/stats", { refreshInterval: 15_000 });
+    useSWR<PlinkoStats>("/plinko/admin/stats", { refreshInterval: 15_000 });
   const { data: cfg, isLoading: cfgLoading } =
-    useSWR<PlinkoConfig>("/admin/plinko/config");
+    useSWR<PlinkoConfig>("/plinko/admin/config");
 
   const [form, setForm] = useState<PlinkoConfig | null>(null);
   const [busy, setBusy] = useState(false);
@@ -61,7 +61,7 @@ export default function AdminPlinkoPage() {
     setBusy(true); setMsg(null);
     try {
       await api.post("/plinko/admin/config", current);
-      mutate("/admin/plinko/config");
+      mutate("/plinko/admin/config");
       setForm(null);
       setMsg({ text: "Config saved.", ok: true });
     } catch (e: any) {
