@@ -3,11 +3,17 @@ import { ValidationPipe, Logger } from "@nestjs/common";
 import { AppModule } from "./app.module";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
 import { IoAdapter } from "@nestjs/platform-socket.io";
-import { json, urlencoded } from "express";
+import { json, urlencoded, static as expressStatic } from "express";
+import { join } from "path";
+import { mkdirSync } from "fs";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   const logger = new Logger("Bootstrap");
+
+  const uploadsDir = join(process.cwd(), "uploads");
+  mkdirSync(uploadsDir, { recursive: true });
+  app.use("/uploads", expressStatic(uploadsDir));
 
   app.use(json({ limit: "15mb" }));
   app.use(urlencoded({ extended: true, limit: "15mb" }));

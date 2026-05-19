@@ -1,6 +1,6 @@
 "use client";
 import useSWR, { mutate as globalMutate } from "swr";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { Plus, Trash2, Gamepad2, Pencil, Image, GripVertical } from "lucide-react";
 
@@ -278,7 +278,7 @@ function AddGameModal({ providers, onClose }: { providers: Provider[]; onClose: 
           {["LIVE", "SLOT", "CRASH", "TABLE", "LOTTERY", "VIRTUAL"].map((c) => <option key={c}>{c}</option>)}
         </select>
       </Field>
-      <Field label="Thumbnail URL (optional)"><input className="input" value={form.thumbnail} onChange={(e) => setForm({ ...form, thumbnail: e.target.value })} placeholder="https://…" /></Field>
+      <ThumbnailField label="Thumbnail URL (optional)" value={form.thumbnail || null} onChange={(v) => setForm({ ...form, thumbnail: v ?? "" })} />
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={form.isLive} onChange={(e) => setForm({ ...form, isLive: e.target.checked })} />
         Live dealer game
@@ -308,10 +308,7 @@ function EditGameModal({ game, onClose }: { game: Game; onClose: (saved?: boolea
   return (
     <Modal title="Edit Game" onClose={() => onClose()}>
       <Field label="Game Name"><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
-      <Field label="Thumbnail URL">
-        <input className="input" value={form.thumbnail} onChange={(e) => setForm({ ...form, thumbnail: e.target.value })} placeholder="https://…" />
-        {form.thumbnail && <img src={form.thumbnail} alt="preview" className="mt-2 w-20 h-24 object-cover rounded border border-line" onError={(e) => (e.currentTarget.style.display = "none")} />}
-      </Field>
+      <ThumbnailField value={form.thumbnail || null} onChange={(v) => setForm({ ...form, thumbnail: v ?? "" })} />
       <Field label="Category">
         <select className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
           {["LIVE", "SLOT", "CRASH", "TABLE", "LOTTERY", "VIRTUAL"].map((c) => <option key={c}>{c}</option>)}
@@ -356,10 +353,7 @@ function AddInHouseGameModal({ nextOrder, onClose }: { nextOrder: number; onClos
       <Field label="Name"><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Roulette" /></Field>
       <Field label="Description"><input className="input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="e.g. European Roulette" /></Field>
       <Field label="Route (href)"><input className="input" value={form.href} onChange={(e) => setForm({ ...form, href: e.target.value })} placeholder="e.g. /roulette" /></Field>
-      <Field label="Thumbnail URL (optional, overrides emoji)">
-        <input className="input" value={form.thumbnail ?? ""} onChange={(e) => setForm({ ...form, thumbnail: e.target.value || null })} placeholder="https://…" />
-        {form.thumbnail && <img src={form.thumbnail} alt="preview" className="mt-2 w-20 h-24 object-cover rounded border border-line" onError={(e) => (e.currentTarget.style.display = "none")} />}
-      </Field>
+      <ThumbnailField value={form.thumbnail} onChange={(v) => setForm({ ...form, thumbnail: v })} />
       <Field label="Emoji (fallback when no thumbnail)"><input className="input" value={form.emoji} onChange={(e) => setForm({ ...form, emoji: e.target.value })} placeholder="🎮" /></Field>
       <Field label="Background gradient (fallback)"><input className="input" value={form.bg} onChange={(e) => setForm({ ...form, bg: e.target.value })} placeholder="linear-gradient(135deg,#000 0%,#111 100%)" /></Field>
       <Field label="Sort Order (lower = first)"><input className="input" type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} /></Field>
@@ -389,10 +383,7 @@ function EditInHouseGameModal({ game, onClose }: { game: InHouseGame; onClose: (
       <Field label="Name"><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
       <Field label="Description"><input className="input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
       <Field label="Route (href)"><input className="input" value={form.href} onChange={(e) => setForm({ ...form, href: e.target.value })} /></Field>
-      <Field label="Thumbnail URL (optional, overrides emoji)">
-        <input className="input" value={form.thumbnail ?? ""} onChange={(e) => setForm({ ...form, thumbnail: e.target.value || null })} placeholder="https://…" />
-        {form.thumbnail && <img src={form.thumbnail} alt="preview" className="mt-2 w-20 h-24 object-cover rounded border border-line" onError={(e) => (e.currentTarget.style.display = "none")} />}
-      </Field>
+      <ThumbnailField value={form.thumbnail} onChange={(v) => setForm({ ...form, thumbnail: v })} />
       <Field label="Emoji (fallback when no thumbnail)"><input className="input" value={form.emoji} onChange={(e) => setForm({ ...form, emoji: e.target.value })} /></Field>
       <Field label="Background gradient (fallback)"><input className="input" value={form.bg} onChange={(e) => setForm({ ...form, bg: e.target.value })} /></Field>
       <Field label="Sort Order (lower = first)"><input className="input" type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} /></Field>
@@ -424,6 +415,50 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
         `}</style>
       </div>
     </div>
+  );
+}
+
+function ThumbnailField({ value, onChange, label = "Thumbnail URL (optional, overrides emoji)" }: { value: string | null; onChange: (url: string | null) => void; label?: string }) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState<string | null>(null);
+  const ref = useRef<HTMLInputElement>(null);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true); setUploadErr(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const { data } = await api.post<{ url: string }>("/admin/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      onChange(data.url);
+    } catch {
+      setUploadErr("Upload failed. Check file type (JPG/PNG/WEBP) and size (max 5 MB).");
+    } finally {
+      setUploading(false);
+      if (ref.current) ref.current.value = "";
+    }
+  }
+
+  return (
+    <Field label={label}>
+      <div className="flex gap-2 items-center">
+        <input className="input flex-1" value={value ?? ""} onChange={(e) => onChange(e.target.value || null)} placeholder="https://… or upload →" />
+        <button type="button" onClick={() => ref.current?.click()}
+          disabled={uploading}
+          className="shrink-0 px-3 py-2 rounded border border-line text-xs font-semibold hover:border-accent hover:text-accent transition disabled:opacity-50">
+          {uploading ? "Uploading…" : "Browse"}
+        </button>
+        <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleFile} />
+      </div>
+      {uploadErr && <p className="text-[10px] text-bad mt-1">{uploadErr}</p>}
+      {value && (
+        <div className="mt-2 flex items-start gap-2">
+          <img src={value} alt="preview" className="w-16 h-20 object-cover rounded border border-line" onError={(e) => (e.currentTarget.style.display = "none")} />
+          <button type="button" onClick={() => onChange(null)} className="text-[10px] text-bad/70 hover:text-bad mt-1">✕ Remove</button>
+        </div>
+      )}
+    </Field>
   );
 }
 
