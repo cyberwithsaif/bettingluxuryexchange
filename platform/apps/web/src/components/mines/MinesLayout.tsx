@@ -152,6 +152,7 @@ export default function MinesLayout() {
 
     const onError = (data: any) => {
       setLoading(false);
+      if (data?.message?.toLowerCase().includes("already clicked")) return;
       showError(data.message);
     };
 
