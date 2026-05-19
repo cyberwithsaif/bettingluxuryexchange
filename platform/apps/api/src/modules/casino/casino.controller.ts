@@ -19,10 +19,13 @@ export class CasinoController {
 
   @Get("games")
   games(
-    @Query("category") category?: CasinoCategory,
+    @Query("category") categoryRaw?: string,
     @Query("provider") providerKey?: string,
     @Query("q") q?: string,
   ) {
+    const upper = categoryRaw?.toUpperCase() as CasinoCategory | undefined;
+    const validCategories = Object.values(CasinoCategory) as string[];
+    const category = upper && validCategories.includes(upper) ? upper : undefined;
     return this.casino.listGames({ category, providerKey, q });
   }
 
