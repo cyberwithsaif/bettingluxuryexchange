@@ -40,13 +40,9 @@ interface Props {
 }
 
 function slotColor(m: number): { bg: string; text: string; glow: string } {
-  if (m >= 100) return { bg: "#ffffff", text: "#000000", glow: "rgba(255,255,255,0.9)" };
-  if (m >= 20)  return { bg: "#ffd700", text: "#000000", glow: "rgba(255,215,0,0.8)" };
-  if (m >= 5)   return { bg: "#ff8c00", text: "#ffffff", glow: "rgba(255,140,0,0.7)" };
-  if (m >= 2)   return { bg: "#22c55e", text: "#ffffff", glow: "rgba(34,197,94,0.6)" };
-  if (m >= 1)   return { bg: "#0ea5e9", text: "#ffffff", glow: "rgba(14,165,233,0.5)" };
-  if (m >= 0.5) return { bg: "#f59e0b", text: "#ffffff", glow: "rgba(245,158,11,0.4)" };
-  return         { bg: "#ef4444", text: "#ffffff", glow: "rgba(239,68,68,0.4)" };
+  if (m >= 5)  return { bg: "#ef4444", text: "#ffffff", glow: "rgba(239,68,68,0.9)" };
+  if (m >= 1)  return { bg: "#22c55e", text: "#ffffff", glow: "rgba(34,197,94,0.7)" };
+  return        { bg: "#f59e0b", text: "#000000", glow: "rgba(245,158,11,0.7)" };
 }
 
 export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone, onBounce, onLand }: Props) {
@@ -190,13 +186,13 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone, o
     for (const ball of balls) {
       if (ball.settled) continue;
       const g = ctx.createRadialGradient(ball.ballX - 3, ball.ballY - 3, 1, ball.ballX, ball.ballY, 9);
-      g.addColorStop(0, "#ffffff");
-      g.addColorStop(0.5, "#d4d4d4");
-      g.addColorStop(1, "#707070");
+      g.addColorStop(0, "#ff9999");
+      g.addColorStop(0.5, "#ef4444");
+      g.addColorStop(1, "#991b1b");
       ctx.beginPath();
       ctx.arc(ball.ballX, ball.ballY, 9, 0, Math.PI * 2);
       ctx.fillStyle   = g;
-      ctx.shadowColor = "rgba(255,255,255,0.8)";
+      ctx.shadowColor = "rgba(239,68,68,0.9)";
       ctx.shadowBlur  = 14;
       ctx.fill();
       ctx.shadowBlur  = 0;
@@ -208,14 +204,14 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone, o
       (acc, b) => b.settled && b.flashAlpha > (acc?.alpha ?? 0) ? { alpha: b.flashAlpha, mult: b.winMultiplier } : acc, null);
     if (best && best.alpha > 0) {
       const c = slotColor(best.mult);
-      ctx.fillStyle = `rgba(${hexToRgb(c.bg)},${best.alpha * 0.1})`;
+      ctx.fillStyle = `rgba(${hexToRgb(c.bg)},${best.alpha * 0.12})`;
       ctx.fillRect(0, 0, W, H);
     }
   }, [getLayout, multiplierTable, rows]);
 
   // Single persistent rAF loop
   const loop = useCallback(() => {
-    const spd = turboRef.current ? 1 : 0.055;
+    const spd = turboRef.current ? 1 : 0.038;
     const balls = activeBalls.current;
 
     for (const b of balls) {

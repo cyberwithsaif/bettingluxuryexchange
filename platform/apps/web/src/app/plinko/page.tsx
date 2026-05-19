@@ -1,10 +1,14 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/auth";
 import { PlinkoBoard, QueueItem } from "@/components/plinko/PlinkoBoard";
 import { io, Socket } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Play, Square, RotateCcw, Shield, ChevronDown, RefreshCw } from "lucide-react";
+import {
+  Zap, Play, Square, RotateCcw, Shield, ChevronDown,
+  RefreshCw, ArrowLeft, Lock,
+} from "lucide-react";
 
 const ROWS_OPTIONS = [8, 12, 16, 24] as const;
 const RISK_OPTIONS = ["low", "medium", "high"] as const;
@@ -17,14 +21,24 @@ interface LiveBet {
 }
 interface Note { id: number; text: string; kind: "ok" | "bad" | "info" }
 
+// 3-color system: high=red, medium=green, low=yellow
 function multColor(m: number) {
-  if (m >= 100) return "text-white font-black";
-  if (m >= 20)  return "text-yellow-400 font-bold";
-  if (m >= 5)   return "text-orange-400 font-bold";
-  if (m >= 2)   return "text-green-400 font-semibold";
-  if (m >= 1)   return "text-sky-400 font-semibold";
-  if (m >= 0.5) return "text-amber-400";
-  return "text-red-400";
+  if (m >= 5)  return "text-red-400 font-bold";
+  if (m >= 1)  return "text-green-400 font-semibold";
+  return "text-yellow-400";
+}
+
+function chipBg(m: number) {
+  if (m >= 5)  return "bg-red-600 text-white";
+  if (m >= 1)  return "bg-green-600 text-white";
+  return "bg-yellow-500 text-black";
+}
+
+function fmtMult(m: number) {
+  if (m >= 1000) return `${Math.round(m / 100) / 10}k×`;
+  if (m >= 100)  return `${Math.round(m)}×`;
+  if (m >= 10)   return `${parseFloat(m.toFixed(1))}×`;
+  return `${m}×`;
 }
 
 const RISK_ACTIVE: Record<Risk, string> = {
@@ -34,6 +48,7 @@ const RISK_ACTIVE: Record<Risk, string> = {
 };
 
 export default function PlinkoPage() {
+  const router = useRouter();
   const { user, accessToken: token } = useAuthStore();
 
   // Toast
@@ -46,29 +61,30 @@ export default function PlinkoPage() {
   }, []);
 
   // Config
-  const [rows,      setRows]      = useState<Rows>(16);
-  const [risk,      setRisk]      = useState<Risk>("medium");
-  const [betAmount, setBetAmount] = useState(100);
-  const [clientSeed,setClientSeed]= useState(() => Math.random().toString(36).slice(2,12) + Date.now().toString(36));
-  const [turbo,     setTurbo]     = useState(false);
+  const [rows,       setRows]       = useState<Rows>(16);
+  const [risk,       setRisk]       = useState<Risk>("medium");
+  const [betAmount,  setBetAmount]  = useState(100);
+  const [clientSeed, setClientSeed] = useState(() => Math.random().toString(36).slice(2, 12) + Date.now().toString(36));
+  const [turbo,      setTurbo]      = useState(false);
 
-  const [config,    setConfig]    = useState<{ minBet:number; maxBet:number; enabled:boolean }|null>(null);
+  const [config,    setConfig]    = useState<{ minBet: number; maxBet: number; enabled: boolean } | null>(null);
   const [multTable, setMultTable] = useState<number[]>([]);
-  const [balance,   setBalance]   = useState<number|null>(null);
+  const [balance,   setBalance]   = useState<number | null>(null);
 
   // Multi-ball queue
-  const [queue,     setQueue]     = useState<QueueItem[]>([]);
-  const dropIdRef   = useRef(0);
+  const [queue,    setQueue]    = useState<QueueItem[]>([]);
+  const dropIdRef  = useRef(0);
+  const activeBalls = queue.length;
+  const isDropping  = activeBalls > 0;
 
-  const [liveFeed,  setLiveFeed]  = useState<LiveBet[]>([]);
+  const [liveFeed, setLiveFeed] = useState<LiveBet[]>([]);
 
-  // ── Sound system ────────────────────────────────────────────────────────────
+  // ── Sound system ─────────────────────────────────────────────────────────
   const audioCtx = useRef<AudioContext | null>(null);
   const getAudio = useCallback(() => {
     if (typeof window === "undefined") return null;
-    if (!audioCtx.current || audioCtx.current.state === "closed") {
+    if (!audioCtx.current || audioCtx.current.state === "closed")
       audioCtx.current = new AudioContext();
-    }
     if (audioCtx.current.state === "suspended") audioCtx.current.resume();
     return audioCtx.current;
   }, []);
@@ -113,18 +129,18 @@ export default function PlinkoPage() {
   }, [getAudio]);
 
   // Auto-play
-  const [autoPlay,     setAutoPlay]      = useState(false);
-  const [autoCount,    setAutoCount]     = useState(10);
-  const [autoLeft,     setAutoLeft]      = useState(0);
-  const [stopOnProfit, setStopOnProfit]  = useState(0);
-  const [stopOnLoss,   setStopOnLoss]    = useState(0);
-  const [sessionPL,    setSessionPL]     = useState(0);
-  const [showAuto,     setShowAuto]      = useState(false);
-  const [showFair,     setShowFair]      = useState(false);
-  const autoRef = useRef(false);
-  const sessionPLRef = useRef(0);
+  const [autoPlay,     setAutoPlay]     = useState(false);
+  const [autoCount,    setAutoCount]    = useState(10);
+  const [autoLeft,     setAutoLeft]     = useState(0);
+  const [stopOnProfit, setStopOnProfit] = useState(0);
+  const [stopOnLoss,   setStopOnLoss]   = useState(0);
+  const [sessionPL,    setSessionPL]    = useState(0);
+  const [showAuto,     setShowAuto]     = useState(false);
+  const [showFair,     setShowFair]     = useState(false);
+  const autoRef       = useRef(false);
+  const sessionPLRef  = useRef(0);
 
-  // Fetch config on rows/risk change
+  // Config fetch
   useEffect(() => {
     fetch(`/api/plinko/config?rows=${rows}&risk=${risk}`)
       .then(r => r.json())
@@ -143,28 +159,22 @@ export default function PlinkoPage() {
   }, [token]);
   useEffect(() => { fetchBalance(); }, [fetchBalance]);
 
-  // Live feed — delay per-bet based on row count so result appears after ball lands
-  // Formula: (rows+1) segments × (1/0.055) frames/seg × (1/60) s/frame × 1000 ms/s ≈ rows*303ms
+  // Live feed — instant, no delay, 15 max
   useEffect(() => {
     const socket: Socket = io("/plinko", { path: "/socket.io", transports: ["websocket"] });
-    const timers: ReturnType<typeof setTimeout>[] = [];
     socket.on("plinko:bet", (bet: LiveBet) => {
-      const delayMs = Math.round((bet.rows + 1) * 310);
-      const t = setTimeout(() => setLiveFeed(p => [bet, ...p].slice(0, 18)), delayMs);
-      timers.push(t);
+      setLiveFeed(p => [bet, ...p].slice(0, 15));
     });
-    return () => { socket.disconnect(); timers.forEach(clearTimeout); };
+    return () => { socket.disconnect(); };
   }, []);
 
-  // Store pending result metadata per ball id — revealed only when ball lands
   const pendingResults = useRef<Map<number, { multiplier: number; payout: number; profit: number }>>(new Map());
 
-  // Drop — no animation guard, allows unlimited concurrent balls
   const drop = useCallback(async (): Promise<number> => {
     if (!token)           { notify("Login to play", "bad"); return 0; }
     if (!config?.enabled) { notify("Plinko disabled", "bad"); return 0; }
     if (betAmount < (config?.minBet ?? 10)) { notify(`Min bet ₹${config.minBet}`, "bad"); return 0; }
-    playDrop(); // drop sound on click
+    playDrop();
     try {
       const res = await fetch("/api/plinko/bet", {
         method: "POST",
@@ -175,7 +185,6 @@ export default function PlinkoPage() {
       if (!res.ok) { notify(data.message ?? "Bet failed", "bad"); return 0; }
 
       const id = ++dropIdRef.current;
-      // Store result — shown ONLY when ball lands (onBallDone)
       pendingResults.current.set(id, {
         multiplier: data.multiplier,
         payout:     data.payout,
@@ -188,26 +197,22 @@ export default function PlinkoPage() {
     }
   }, [token, config, betAmount, rows, risk, clientSeed, notify, playDrop]);
 
-  // Called by canvas when ball reaches the slot — now safe to reveal result
   const onBallDone = useCallback((id: number) => {
     setQueue(prev => prev.filter(q => q.id !== id));
     const res = pendingResults.current.get(id);
     if (!res) return;
     pendingResults.current.delete(id);
-    // Update balance, session P/L and show win toast
     setSessionPL(prev => { sessionPLRef.current = prev + res.profit; return prev + res.profit; });
     fetchBalance();
     if (res.multiplier >= 5) notify(`${res.multiplier}× — Won ₹${res.payout.toLocaleString()}!`, "ok");
   }, [fetchBalance, notify]);
 
-  // Auto-play loop
   const startAuto = useCallback(async () => {
     autoRef.current = true;
     sessionPLRef.current = 0;
     setSessionPL(0);
     let left = autoCount;
     setAutoLeft(left);
-
     while (left > 0 && autoRef.current) {
       await drop();
       left--;
@@ -229,13 +234,11 @@ export default function PlinkoPage() {
   const half = () => setBetAmount(a => Math.max(config?.minBet ?? 1, Math.floor(a / 2)));
   const dbl  = () => setBetAmount(a => Math.min(config?.maxBet ?? 100000, a * 2));
 
-  const activeBalls = queue.length;
-
   return (
-    <div className="h-[calc(100vh-56px)] bg-[#0b0c12] text-white flex overflow-hidden">
+    <div className="h-screen bg-[#0b0c12] text-white flex overflow-hidden">
 
       {/* Toasts */}
-      <div className="fixed top-16 right-3 z-50 flex flex-col gap-1 pointer-events-none">
+      <div className="fixed top-4 right-3 z-50 flex flex-col gap-1 pointer-events-none">
         <AnimatePresence>
           {notes.map(n => (
             <motion.div key={n.id}
@@ -248,33 +251,42 @@ export default function PlinkoPage() {
         </AnimatePresence>
       </div>
 
-      {/* ── Left Controls ───────────────────────────────────────────────────── */}
+      {/* ── Left Controls ─────────────────────────────────────────────────────── */}
       <aside className="w-[196px] shrink-0 bg-[#0f1018] border-r border-white/[0.07] flex flex-col overflow-y-auto scrollbar-none">
         <div className="p-3 space-y-3">
 
+          {/* Back Button */}
+          <button onClick={() => router.back()}
+            className="flex items-center gap-1.5 w-full px-2.5 py-2 rounded-lg bg-white/[0.05] hover:bg-white/[0.10] border border-white/[0.09] hover:border-white/[0.20] text-white/50 hover:text-white transition-all group text-[10px] font-semibold">
+            <ArrowLeft size={12} className="shrink-0 group-hover:-translate-x-0.5 transition-transform" />
+            Back
+          </button>
+
           {/* Header */}
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-xs shrink-0">🎯</div>
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-sm shrink-0">🎯</div>
             <div className="min-w-0">
               <div className="text-xs font-bold truncate">Plinko</div>
               <div className="text-[9px] text-white/40">Provably Fair</div>
             </div>
-            {balance !== null && (
-              <div className="ml-auto text-right shrink-0">
-                <div className="text-[8px] text-white/40">Balance</div>
-                <div className="text-[10px] font-bold text-yellow-400">₹{balance.toLocaleString()}</div>
-              </div>
-            )}
           </div>
 
+          {/* Balance */}
+          {balance !== null && (
+            <div className="flex items-center justify-between bg-white/[0.04] rounded-lg px-2.5 py-1.5">
+              <span className="text-[9px] text-white/40">Balance</span>
+              <span className="text-xs font-bold text-yellow-400">₹{balance.toLocaleString()}</span>
+            </div>
+          )}
+
           {/* Bet Amount */}
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <div className="text-[9px] uppercase tracking-widest text-white/40">Bet Amount</div>
             <div className="relative">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-white/40 text-xs">₹</span>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/40 text-xs">₹</span>
               <input type="number" min={config?.minBet ?? 1} max={config?.maxBet ?? 100000}
                 value={betAmount} onChange={e => setBetAmount(Math.max(1, Number(e.target.value)))}
-                className="w-full bg-[#0b0c12] border border-white/10 rounded-lg pl-5 pr-2 py-1.5 text-xs focus:outline-none focus:border-violet-500 transition" />
+                className="w-full bg-[#0b0c12] border border-white/10 rounded-lg pl-6 pr-2 py-2 text-xs focus:outline-none focus:border-violet-500 transition" />
             </div>
             <div className="grid grid-cols-5 gap-0.5">
               {[10, 50, 100, 500, 1000].map(v => (
@@ -292,10 +304,13 @@ export default function PlinkoPage() {
             </div>
           </div>
 
-          {/* Risk */}
-          <div className="space-y-1">
-            <div className="text-[9px] uppercase tracking-widest text-white/40">Risk</div>
-            <div className="grid grid-cols-3 gap-0.5">
+          {/* Risk — locked while dropping */}
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest text-white/40">
+              Risk
+              {isDropping && <Lock size={8} className="text-white/25" />}
+            </div>
+            <div className={`grid grid-cols-3 gap-0.5 transition-opacity ${isDropping ? "opacity-40 pointer-events-none" : ""}`}>
               {RISK_OPTIONS.map(r => (
                 <button key={r} onClick={() => setRisk(r)}
                   className={`py-1.5 rounded text-[9px] font-bold capitalize border transition ${
@@ -307,10 +322,13 @@ export default function PlinkoPage() {
             </div>
           </div>
 
-          {/* Rows */}
-          <div className="space-y-1">
-            <div className="text-[9px] uppercase tracking-widest text-white/40">Rows</div>
-            <div className="grid grid-cols-4 gap-0.5">
+          {/* Rows — locked while dropping */}
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest text-white/40">
+              Rows
+              {isDropping && <Lock size={8} className="text-white/25" />}
+            </div>
+            <div className={`grid grid-cols-4 gap-0.5 transition-opacity ${isDropping ? "opacity-40 pointer-events-none" : ""}`}>
               {ROWS_OPTIONS.map(r => (
                 <button key={r} onClick={() => setRows(r)}
                   className={`py-1.5 rounded text-[9px] font-bold border transition ${
@@ -335,7 +353,7 @@ export default function PlinkoPage() {
           {/* Drop Button */}
           <button onClick={() => drop()}
             disabled={!user}
-            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 font-bold text-sm tracking-wide disabled:opacity-40 hover:brightness-110 active:scale-95 transition shadow-lg shadow-violet-900/30 relative">
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 font-bold text-sm tracking-wide disabled:opacity-40 hover:brightness-110 active:scale-95 transition shadow-lg shadow-violet-900/30 relative">
             {!user ? "Login to Play" : "Drop Ball"}
             {activeBalls > 0 && (
               <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-yellow-400 text-black text-[9px] font-black flex items-center justify-center">
@@ -399,7 +417,7 @@ export default function PlinkoPage() {
                 <div className="flex gap-1">
                   <input type="text" value={clientSeed} onChange={e => setClientSeed(e.target.value)}
                     className="flex-1 bg-[#0b0c12] border border-white/10 rounded px-1.5 py-1 text-[9px] font-mono focus:outline-none focus:border-violet-500 min-w-0" />
-                  <button onClick={() => setClientSeed(Math.random().toString(36).slice(2,12))}
+                  <button onClick={() => setClientSeed(Math.random().toString(36).slice(2, 12))}
                     className="p-1 rounded bg-white/[0.06] hover:bg-white/[0.12] transition shrink-0">
                     <RotateCcw size={9} />
                   </button>
@@ -410,46 +428,44 @@ export default function PlinkoPage() {
         </div>
       </aside>
 
-      {/* ── Board ─────────────────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-start overflow-y-auto min-w-0 bg-[#0b0c12] py-2 px-2">
-        {/* Board canvas — wide, height scales with row count */}
-        <div className="relative w-full" style={{ maxWidth: 920, height: Math.min(600, rows * 32 + 120) }}>
-          <PlinkoBoard
-            rows={rows} riskLevel={risk} multiplierTable={multTable}
-            turbo={turbo} queue={queue} onBallDone={onBallDone}
-            onBounce={playBounce} onLand={playLand}
-          />
-          {activeBalls > 1 && (
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur text-[10px] text-white/60 pointer-events-none">
-              <RefreshCw size={9} className="animate-spin" />
-              {activeBalls} balls
-            </div>
-          )}
-        </div>
-
+      {/* ── Board — fills all remaining space ──────────────────────────────────── */}
+      <div className="flex-1 relative overflow-hidden min-w-0">
+        <PlinkoBoard
+          rows={rows} riskLevel={risk} multiplierTable={multTable}
+          turbo={turbo} queue={queue} onBallDone={onBallDone}
+          onBounce={playBounce} onLand={playLand}
+        />
+        {activeBalls > 1 && (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/70 backdrop-blur text-[10px] text-white/60 pointer-events-none border border-white/10">
+            <RefreshCw size={9} className="animate-spin" />
+            {activeBalls} balls in flight
+          </div>
+        )}
       </div>
 
-      {/* ── Live Feed ─────────────────────────────────────────────────────────── */}
-      <aside className="w-[148px] shrink-0 bg-[#0f1018] border-l border-white/[0.07] flex flex-col">
-        <div className="px-2.5 py-2 border-b border-white/[0.07] flex items-center gap-1.5 text-[8px] uppercase tracking-widest text-white/30">
+      {/* ── Live Result Chips ──────────────────────────────────────────────────── */}
+      <aside className="w-[68px] shrink-0 bg-[#0f1018] border-l border-white/[0.07] flex flex-col">
+        <div className="px-1.5 py-2 border-b border-white/[0.07] flex items-center gap-1 text-[7px] uppercase tracking-wider text-white/30">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
-          Live Bets
+          Live
         </div>
-        <div className="flex-1 overflow-y-auto scrollbar-none">
+        <div className="flex-1 overflow-y-auto scrollbar-none flex flex-col gap-1 p-1.5">
           <AnimatePresence initial={false}>
             {liveFeed.map(b => (
-              <motion.div key={b.betId}
-                initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col px-2.5 py-1.5 border-b border-white/[0.04]">
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-[9px] font-medium truncate text-white/80">{b.username}</span>
-                  <span className={`text-[9px] font-bold shrink-0 ${multColor(b.multiplier)}`}>{b.multiplier}×</span>
-                </div>
-                <div className="text-[8px] text-white/30">₹{b.betAmount} · {b.rows}R</div>
+              <motion.div
+                key={b.betId}
+                initial={{ opacity: 0, y: -8, scale: 0.85 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.18 }}
+                className={`rounded-md px-1 py-1.5 text-center text-[9px] font-bold leading-none ${chipBg(b.multiplier)}`}
+              >
+                {fmtMult(b.multiplier)}
               </motion.div>
             ))}
           </AnimatePresence>
-          {liveFeed.length === 0 && <div className="p-3 text-[9px] text-white/20 text-center">Waiting…</div>}
+          {liveFeed.length === 0 && (
+            <div className="text-[8px] text-white/20 text-center pt-4">–</div>
+          )}
         </div>
       </aside>
     </div>
