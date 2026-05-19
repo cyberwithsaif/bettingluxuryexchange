@@ -10,7 +10,7 @@ interface InHouseGame { id: string; name: string; description: string; href: str
 
 const PROVIDERS_KEY = "/casino/providers";
 const GAMES_KEY = "/casino/games?limit=200";
-const SETTINGS_KEY = "/platform-settings";
+const SETTINGS_KEY = "/admin/platform-settings";
 
 export default function AdminCasinoPage() {
   const { data: providers, isLoading: provLoad } = useSWR<Provider[]>(PROVIDERS_KEY);
