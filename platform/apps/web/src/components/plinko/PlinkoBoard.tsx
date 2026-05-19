@@ -154,11 +154,19 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone }:
       ctx.fill();
       if (wf) { ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1.5; ctx.stroke(); }
       ctx.restore();
+      // Compact label: abbreviate large numbers so they fit in the slot
+      const label = m >= 1000 ? `${Math.round(m / 100) / 10}k×`
+                  : m >= 100  ? `${Math.round(m)}×`
+                  : m >= 10   ? `${parseFloat(m.toFixed(1))}×`
+                  :             `${m}×`;
+      const charCount = label.length;
+      const basePx    = slotW > 30 ? 10 : slotW > 22 ? 9 : 8;
+      const fontSize  = charCount > 5 ? Math.max(6, basePx - (charCount - 5)) : basePx;
       ctx.fillStyle    = col.text;
-      ctx.font         = `bold ${slotW > 26 ? 10 : 8}px system-ui`;
+      ctx.font         = `bold ${fontSize}px system-ui`;
       ctx.textAlign    = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(`${m}x`, slotX + slotW / 2, slotTop + 4 + slotH / 2);
+      ctx.fillText(label, slotX + slotW / 2, slotTop + 4 + slotH / 2);
     }
 
     // Trails
