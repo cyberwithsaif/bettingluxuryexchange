@@ -64,6 +64,11 @@ class PlatformSettingsDto {
   @IsOptional() heroBanners?: any[];
   // Deposit methods blob (arbitrary JSON)
   @IsOptional() depositMethods?: any;
+  // Mines game config
+  @IsOptional() @IsNumber() minesHouseEdge?: number;
+  @IsOptional() @IsNumber() minesMinBet?: number;
+  @IsOptional() @IsNumber() minesMaxBet?: number;
+  @IsOptional() @IsBoolean() minesEnabled?: boolean;
 }
 
 class DepositMethodsDto {

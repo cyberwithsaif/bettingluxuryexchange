@@ -30,6 +30,7 @@ export interface MinesState {
 export default function MinesLayout() {
   const user = useAuthStore((s) => s.user);
   const { data: walletData, mutate: mutateWallet } = useSWR<{ available: number }>(user ? "/wallet/summary" : null);
+  const [liveBalance, setLiveBalance] = useState<number | null>(null);
 
   const [gameState, setGameState] = useState<MinesState>({
     betAmount: 10,
@@ -166,11 +167,17 @@ export default function MinesLayout() {
       showError(msg);
     };
 
+    const onBalanceUpdate = (data: { available: number }) => {
+      setLiveBalance(data.available);
+      mutateWallet();
+    };
+
     s.on("mines:startResponse", onStartResp);
     s.on("mines:clickResponse", onClickResp);
     s.on("mines:cashoutResponse", onCashoutResp);
     s.on("mines:error", onError);
     s.on("exception", onException);
+    s.on("wallet:balance", onBalanceUpdate);
 
     return () => {
       s.off("mines:startResponse", onStartResp);
@@ -178,6 +185,7 @@ export default function MinesLayout() {
       s.off("mines:cashoutResponse", onCashoutResp);
       s.off("mines:error", onError);
       s.off("exception", onException);
+      s.off("wallet:balance", onBalanceUpdate);
     };
   }, [mutateWallet]);
 
@@ -267,7 +275,9 @@ export default function MinesLayout() {
         </div>
         <div className="flex items-center gap-1.5 bg-[#1a2c38] px-2 sm:px-3 py-1.5 rounded-lg border border-gray-700 shrink-0">
           <span className="text-xs text-gray-400 font-semibold hidden sm:inline">Balance:</span>
-          <span className="text-xs sm:text-sm font-bold text-white whitespace-nowrap">₹{walletData ? Number(walletData.available).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}</span>
+          <span className="text-xs sm:text-sm font-bold text-white whitespace-nowrap">
+            ₹{(liveBalance ?? (walletData ? Number(walletData.available) : null))?.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? "0.00"}
+          </span>
         </div>
       </header>
 

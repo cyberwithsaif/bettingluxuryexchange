@@ -1,30 +1,23 @@
 import { Injectable, Logger, BadRequestException } from "@nestjs/common";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { WalletService } from "../wallet/wallet.service";
+import { AdminService } from "../admin/admin.service";
 import { Prisma, LedgerKind, MinesStatus } from "@prisma/client";
 import * as crypto from "crypto";
 
-// House edge for Mines (typically 1%)
-const HOUSE_EDGE = 0.01;
-
 function generateMinePositions(serverSeed: string, clientSeed: string, nonce: number, minesCount: number): number[] {
-  // Hash logic based on provably fair.
-  // Generate random floats using HMAC-SHA256
   const positions: number[] = [];
   const tiles = Array.from({ length: 25 }, (_, i) => i);
   let currentRound = 0;
-
   while (positions.length < minesCount) {
-    const hash = crypto.createHmac('sha256', serverSeed).update(`${clientSeed}:${nonce}:${currentRound}`).digest('hex');
-    // Read 4 bytes chunks to get floats between 0 and 1
+    const hash = crypto.createHmac("sha256", serverSeed).update(`${clientSeed}:${nonce}:${currentRound}`).digest("hex");
     for (let i = 0; i < hash.length / 8 && positions.length < minesCount; i++) {
       const chunk = hash.substring(i * 8, i * 8 + 8);
       const val = parseInt(chunk, 16);
       const float = val / Math.pow(2, 32);
-      
       const idx = Math.floor(float * tiles.length);
       const tile = tiles[idx];
-      positions.push(tile);
+      positions.push(tile!);
       tiles.splice(idx, 1);
     }
     currentRound++;
@@ -32,23 +25,17 @@ function generateMinePositions(serverSeed: string, clientSeed: string, nonce: nu
   return positions;
 }
 
-function calculateMultiplier(minesCount: number, safeClicks: number): number {
+function calculateMultiplier(minesCount: number, safeClicks: number, houseEdge: number): number {
   if (safeClicks === 0) return 1.00;
-  
-  // Comb(25, safeClicks) / Comb(25 - minesCount, safeClicks)
-  // This calculates the true odds.
-  let n = 25;
-  let nMinusMines = 25 - minesCount;
-  
+  const n = 25;
+  const nMinusMines = 25 - minesCount;
   let probability = 1;
   for (let i = 0; i < safeClicks; i++) {
     probability *= (nMinusMines - i) / (n - i);
   }
-  
   const trueOdds = 1 / probability;
-  // Apply house edge
-  const payoutMultiplier = trueOdds * (1 - HOUSE_EDGE);
-  return Math.floor(payoutMultiplier * 100) / 100; // Floor to 2 decimal places
+  const payoutMultiplier = trueOdds * (1 - houseEdge);
+  return Math.floor(payoutMultiplier * 100) / 100;
 }
 
 @Injectable()
@@ -58,28 +45,39 @@ export class MinesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly wallet: WalletService,
+    private readonly adminService: AdminService,
   ) {}
 
+  private async getConfig() {
+    const settings = await this.adminService.getPlatformSettings() as any;
+    return {
+      houseEdge:  Number(settings.minesHouseEdge  ?? 0.01),
+      minBet:     Number(settings.minesMinBet     ?? 10),
+      maxBet:     Number(settings.minesMaxBet     ?? 100000),
+      enabled:    settings.minesEnabled !== false,
+    };
+  }
+
   async startGame(userId: string, betAmount: number, minesCount: number, clientSeed: string) {
-    if (betAmount < 10) throw new BadRequestException("Minimum bet is 10");
-    if (betAmount > 100000) throw new BadRequestException("Maximum bet is 100,000");
+    const cfg = await this.getConfig();
+    if (!cfg.enabled) throw new BadRequestException("Mines game is currently disabled");
+    if (betAmount < cfg.minBet) throw new BadRequestException(`Minimum bet is ${cfg.minBet}`);
+    if (betAmount > cfg.maxBet) throw new BadRequestException(`Maximum bet is ${cfg.maxBet}`);
     if (minesCount < 1 || minesCount > 24) throw new BadRequestException("Mines count must be between 1 and 24");
     if (!clientSeed) throw new BadRequestException("Client seed required");
 
-    // Deduct bet amount
     await this.wallet.applyLedger({
       userId,
       amount: -betAmount,
       kind: LedgerKind.CASINO_BET,
       refType: "mines_bet",
-      refId: "pending", // Will update after creation
+      refId: "pending",
       note: `Mines bet (${minesCount} mines)`,
     });
 
     const serverSeed = crypto.randomBytes(32).toString("hex");
     const serverSeedHash = crypto.createHash("sha256").update(serverSeed).digest("hex");
-    const nonce = 1; // Simplification: we don't strictly track consecutive nonces per user unless requested, use 1.
-
+    const nonce = 1;
     const minePositions = generateMinePositions(serverSeed, clientSeed, nonce, minesCount);
 
     const session = await this.prisma.minesSession.create({
@@ -93,12 +91,11 @@ export class MinesService {
         nonce,
         status: MinesStatus.IN_PROGRESS,
         multiplier: new Prisma.Decimal(1.00),
-        minePositions: minePositions,
+        minePositions,
         clickedTiles: [],
       },
     });
 
-    // Update refId
     await this.prisma.ledgerEntry.updateMany({
       where: { userId, refType: "mines_bet", refId: "pending" },
       data: { refId: session.id },
@@ -132,7 +129,6 @@ export class MinesService {
     const isMine = minePositions.includes(tileIndex);
 
     if (isMine) {
-      // BUSTED
       await this.prisma.minesSession.update({
         where: { id: sessionId },
         data: {
@@ -142,34 +138,27 @@ export class MinesService {
         },
       });
       return {
-        isMine: true,
+        isMine: true as const,
         status: MinesStatus.BUSTED,
-        minePositions, // reveal all mines
-        serverSeed: session.serverSeed, // reveal seed for fair verification
+        minePositions,
+        serverSeed: session.serverSeed,
       };
     } else {
-      // SAFE
+      const cfg = await this.getConfig();
       const newClickedCount = clickedTiles.length + 1;
-      const nextMultiplier = calculateMultiplier(session.minesCount, newClickedCount);
-      
+      const nextMultiplier = calculateMultiplier(session.minesCount, newClickedCount, cfg.houseEdge);
       const newClickedTiles = [...clickedTiles, { tile: tileIndex, isMine: false, multiplier: nextMultiplier }];
-      
-      // Auto cashout if won all safe tiles (25 - mines)
       const wonAll = newClickedCount === (25 - session.minesCount);
-      
+
       if (wonAll) {
         return this.cashoutInternal(session, newClickedTiles, nextMultiplier, true);
       } else {
         await this.prisma.minesSession.update({
           where: { id: sessionId },
-          data: {
-            multiplier: new Prisma.Decimal(nextMultiplier),
-            clickedTiles: newClickedTiles,
-          },
+          data: { multiplier: new Prisma.Decimal(nextMultiplier), clickedTiles: newClickedTiles },
         });
-
         return {
-          isMine: false,
+          isMine: false as const,
           status: MinesStatus.IN_PROGRESS,
           multiplier: nextMultiplier,
           tileIndex,
@@ -183,10 +172,8 @@ export class MinesService {
     if (!session) throw new BadRequestException("Session not found");
     if (session.userId !== userId) throw new BadRequestException("Unauthorized");
     if (session.status !== MinesStatus.IN_PROGRESS) throw new BadRequestException("Game is not in progress");
-    
     const clickedTiles = (session.clickedTiles as any[]) || [];
     if (clickedTiles.length === 0) throw new BadRequestException("Must click at least one tile");
-
     return this.cashoutInternal(session, clickedTiles, Number(session.multiplier), false);
   }
 
@@ -217,9 +204,49 @@ export class MinesService {
       status: MinesStatus.CASHED_OUT,
       multiplier,
       payout,
-      minePositions: session.minePositions, // reveal
-      serverSeed: session.serverSeed, // reveal
+      minePositions: session.minePositions,
+      serverSeed: session.serverSeed,
     };
+  }
+
+  async getAdminStats() {
+    const [total, active, wins, busts] = await Promise.all([
+      this.prisma.minesSession.count(),
+      this.prisma.minesSession.count({ where: { status: MinesStatus.IN_PROGRESS } }),
+      this.prisma.minesSession.findMany({
+        where: { status: MinesStatus.CASHED_OUT },
+        select: { betAmount: true, payout: true },
+      }),
+      this.prisma.minesSession.findMany({
+        where: { status: MinesStatus.BUSTED },
+        select: { betAmount: true },
+      }),
+    ]);
+    const totalBetsVol = [...wins.map(w => Number(w.betAmount)), ...busts.map(b => Number(b.betAmount))].reduce((s, v) => s + v, 0);
+    const totalPayouts = wins.reduce((s, w) => s + Number(w.payout), 0);
+    const houseProfit = totalBetsVol - totalPayouts;
+    return { total, active, totalBetsVol, totalPayouts, houseProfit };
+  }
+
+  async getLiveSessions() {
+    return this.prisma.minesSession.findMany({
+      where: { status: MinesStatus.IN_PROGRESS },
+      include: { user: { select: { username: true } } },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async getAdminHistory(opts: { limit?: number; skip?: number; status?: string; username?: string }) {
+    const where: any = {};
+    if (opts.status && opts.status !== "ALL") where.status = opts.status;
+    if (opts.username) where.user = { username: { contains: opts.username, mode: "insensitive" } };
+    return this.prisma.minesSession.findMany({
+      where,
+      include: { user: { select: { username: true } } },
+      orderBy: { createdAt: "desc" },
+      take: opts.limit ?? 50,
+      skip: opts.skip ?? 0,
+    });
   }
 
   async getRecentResults(limit = 20) {
@@ -227,9 +254,7 @@ export class MinesService {
       where: { status: { in: [MinesStatus.CASHED_OUT, MinesStatus.BUSTED] } },
       orderBy: { settledAt: "desc" },
       take: limit,
-      include: {
-        user: { select: { username: true } },
-      },
+      include: { user: { select: { username: true } } },
     });
   }
 
