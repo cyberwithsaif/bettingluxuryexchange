@@ -68,6 +68,7 @@ model User {
   limits          UserLimits?
   adminLogs       AdminLog[]    @relation("AdminActor")
   rouletteBets    RouletteBet[]
+  minesSessions   MinesSession[]
 
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -528,6 +529,48 @@ model RouletteBet {
 
   @@index([roundId])
   @@index([userId, createdAt])
+}
+
+// -------------------------------------------------------------
+// Mines — Provably fair 5x5 grid game
+// -------------------------------------------------------------
+
+enum MinesStatus {
+  IN_PROGRESS
+  CASHED_OUT
+  BUSTED
+}
+
+model MinesSession {
+  id             String      @id @default(cuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id])
+  betAmount      Decimal     @db.Decimal(20, 4)
+  minesCount     Int         @default(3)
+  
+  // Provably Fair
+  serverSeed     String      
+  serverSeedHash String      
+  clientSeed     String      
+  nonce          Int         
+  
+  // State
+  status         MinesStatus @default(IN_PROGRESS)
+  multiplier     Decimal     @default(1.00) @db.Decimal(10, 4)
+  payout         Decimal     @default(0) @db.Decimal(20, 4)
+  
+  // The actual mine positions: array of integers 0..24
+  minePositions  Json?
+  
+  // The tiles clicked so far
+  clickedTiles   Json?       
+  
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  settledAt      DateTime?
+
+  @@index([userId, status])
+  @@index([status, createdAt])
 }
 
 // -------------------------------------------------------------

@@ -3,10 +3,15 @@ import { ValidationPipe, Logger } from "@nestjs/common";
 import { AppModule } from "./app.module";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
 import { IoAdapter } from "@nestjs/platform-socket.io";
+import { json, urlencoded } from "express";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   const logger = new Logger("Bootstrap");
+
+  app.use(json({ limit: "15mb" }));
+  app.use(urlencoded({ extended: true, limit: "15mb" }));
+
 
   const origins = (process.env.CORS_ORIGINS ?? "http://localhost:3000,http://localhost:3001")
     .split(",")

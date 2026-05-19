@@ -2,7 +2,7 @@ import axios, { AxiosError } from "axios";
 import { useAuthStore } from "@/lib/stores/auth";
 
 export const api = axios.create({
-  baseURL: "/api",
+  baseURL: "/admin/api",
   timeout: 15_000,
 });
 
@@ -69,7 +69,7 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { data } = await axios.post("/api/auth/refresh", { refreshToken });
+        const { data } = await axios.post("/admin/api/auth/refresh", { refreshToken });
         const newToken = data.accessToken;
         set({ accessToken: newToken, refreshToken: data.refreshToken ?? refreshToken, user: data.user });
         api.defaults.headers.common.Authorization = `Bearer ${newToken}`;

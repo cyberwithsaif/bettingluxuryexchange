@@ -43,9 +43,9 @@ function Chip({ amount, small }: { amount: number; small?: boolean }) {
   if (!amount) return null;
   return (
     <motion.div
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${small ? "min-w-[16px] h-[16px] text-[8px]" : "min-w-[20px] h-[20px] text-[9px]"} px-1 rounded-full bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-700 border-2 border-yellow-100 shadow-[0_2px_6px_rgba(0,0,0,0.6)] flex items-center justify-center font-black text-yellow-950 z-20 pointer-events-none`}
+      initial={{ scale: 0, x: "-50%", y: "-50%" }}
+      animate={{ scale: 1, x: "-50%", y: "-50%" }}
+      className={`absolute top-1/2 left-1/2 ${small ? "min-w-[16px] h-[16px] text-[8px]" : "min-w-[20px] h-[20px] text-[9px]"} px-1 rounded-full bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-700 border-2 border-yellow-100 shadow-[0_2px_6px_rgba(0,0,0,0.6)] flex items-center justify-center font-black text-yellow-950 z-20 pointer-events-none`}
     >
       {amount >= 1000 ? `${(amount / 1000).toFixed(amount % 1000 === 0 ? 0 : 1)}k` : amount}
     </motion.div>

@@ -22,6 +22,7 @@ import { SettlementModule } from "./modules/settlement/settlement.module";
 import { BootstrapModule } from "./bootstrap/bootstrap.module";
 import { AnnouncementsModule } from "./modules/announcements/announcements.module";
 import { RouletteModule } from "./modules/roulette/roulette.module";
+import { MinesModule } from "./modules/mines/mines.module";
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { RouletteModule } from "./modules/roulette/roulette.module";
     BootstrapModule,
     AnnouncementsModule,
     RouletteModule,
+    MinesModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

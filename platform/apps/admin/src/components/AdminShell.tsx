@@ -26,6 +26,7 @@ const NAV = [
   { href: "/logs",                     label: "Audit Logs",      Icon: ListChecks },
   { href: "/settings",                 label: "Settings",        Icon: Settings },
   { href: "/settings/banners",         label: "Banner Settings", Icon: Megaphone },
+  { href: "/casino/mines",             label: "Mines",           Icon: Gamepad2 },
 ] as const;
 
 function Spinner() {
@@ -105,8 +106,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             const active =
               href === "/"
                 ? path === "/"
-                : path === href || (href !== "/settings" && path?.startsWith(href + "/"));
-            const isSubItem = href === "/settings/banners";
+                : path === href || (href !== "/settings" && href !== "/casino" && path?.startsWith(href + "/"));
+            const isSubItem = href === "/settings/banners" || href === "/casino/mines";
             return (
               <Link
                 key={href}

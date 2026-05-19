@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Coins, Trophy, History, Clock, Volume2, VolumeX, RotateCcw, X, Repeat, ChevronLeft, ChevronRight } from "lucide-react";
+import { Coins, Trophy, History, Clock, Volume2, VolumeX, RotateCcw, X, Repeat, ChevronLeft, ChevronRight, ArrowLeft, AlertTriangle } from "lucide-react";
+import Link from "next/link";
 import { getSocket } from "@/lib/socket";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -69,6 +70,23 @@ export default function RoulettePage() {
   const [resultPopup, setResultPopup] = useState<{ winningNumber: number; payout: number } | null>(null);
   const [globalBetCount, setGlobalBetCount] = useState(0);
   const [bettingAlert, setBettingAlert] = useState<{ type: "open" | "closed"; key: number } | null>(null);
+  const [errorToast, setErrorToast] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const showError = useCallback((msg: string) => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setErrorToast(msg);
+    toastTimeoutRef.current = setTimeout(() => {
+      setErrorToast(null);
+    }, 4500);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    };
+  }, []);
+
   const prevStatusRef = useRef<string | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -171,6 +189,13 @@ export default function RoulettePage() {
   function playSound(kind: "spin" | "win" | "chip") {
     if (muted) return;
     try {
+      if (kind === "spin") {
+        const audio = new Audio("/sounds/spinning.mp3");
+        audio.volume = 0.6;
+        audio.play().catch(() => {});
+        return;
+      }
+      
       if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
       const ctx = audioCtxRef.current;
       const o = ctx.createOscillator();
@@ -181,12 +206,6 @@ export default function RoulettePage() {
         o.start(); o.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1);
         g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
         o.stop(ctx.currentTime + 0.15);
-      } else if (kind === "spin") {
-        o.frequency.value = 440; g.gain.value = 0.05;
-        o.start();
-        o.frequency.exponentialRampToValueAtTime(220, ctx.currentTime + 0.5);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-        o.stop(ctx.currentTime + 0.5);
       } else if (kind === "win") {
         o.frequency.value = 660; g.gain.value = 0.1;
         o.start();
@@ -214,7 +233,7 @@ export default function RoulettePage() {
         return idx >= 0 ? [...b.slice(0, idx), ...b.slice(idx + 1)] : b;
       });
       const msg = e?.response?.data?.message || "Bet failed";
-      alert(typeof msg === "string" ? msg : "Bet failed");
+      showError(typeof msg === "string" ? msg : "Bet failed");
     }
   }, [round, user, mutateWallet, muted]);
 
@@ -253,12 +272,32 @@ export default function RoulettePage() {
   }, [status, bets]);
 
   return (
-    <div className="min-h-screen bg-black p-2 md:p-3">
-      <div className="max-w-7xl mx-auto rounded-xl overflow-hidden border border-yellow-700/30" style={{ background: "#0a0a0c" }}>
+    <div className="h-[100dvh] bg-[#0F1923] text-white flex flex-col font-sans w-full overflow-x-hidden overflow-y-auto">
+      {/* Minimal Header with Wallet Balance */}
+      <header className="px-4 py-2 flex items-center justify-between border-b border-gray-800 bg-[#0f212e] w-full shrink-0">
+        <Link href="/" className="flex items-center gap-1 md:gap-2 text-gray-400 hover:text-white transition font-bold text-xs md:text-sm">
+          <ArrowLeft size={16} />
+          <span className="hidden sm:inline">Back to Lobby</span>
+          <span className="sm:hidden">Back</span>
+        </Link>
+        <div className="font-bold tracking-widest text-xs md:text-sm text-yellow-400 uppercase">
+          ☸ Roulette
+        </div>
+        <div className="flex items-center gap-1 md:gap-2 bg-[#1a2c38] px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-gray-700">
+          <span className="hidden sm:inline text-[10px] text-gray-400 font-semibold">Balance:</span>
+          <span className="text-xs md:text-sm font-bold text-white">
+            ₹{wallet ? Number(wallet.available).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
+          </span>
+        </div>
+      </header>
+
+      {/* Main Game Container */}
+      <div className="flex-1 flex items-start md:items-center justify-center p-2 md:p-4 w-full max-w-7xl mx-auto">
+        <div className="w-full rounded-xl border border-yellow-700/30 bg-[#0a0a0c] flex flex-col">
 
         {/* ===== MAIN CASINO STAGE — wheel left, betting controls right ===== */}
         <div
-          className="relative px-4 pt-3 pb-4"
+          className="relative px-2 md:px-4 pt-3 pb-4"
           style={{
             background:
               "radial-gradient(ellipse at top, #1a1a20 0%, #0a0a0c 70%)",
@@ -327,29 +366,7 @@ export default function RoulettePage() {
 
             {/* RIGHT: Betting table, chips, buttons */}
             <div className="space-y-2">
-              {/* Bet mode selector */}
-              <div className="grid grid-cols-5 gap-1 bg-black/30 rounded-lg p-1 border border-white/10">
-                {([
-                  ["straight", "Straight", "35:1"],
-                  ["split",    "Split",    "17:1"],
-                  ["street",   "Street",   "11:1"],
-                  ["corner",   "Corner",   "8:1"],
-                  ["sixline",  "6-Line",   "5:1"],
-                ] as [BetMode, string, string][]).map(([mode, label, odds]) => (
-                  <button
-                    key={mode}
-                    onClick={() => setBetMode(mode)}
-                    className={`py-1 px-0.5 rounded text-[9px] md:text-[10px] font-bold transition-all ${
-                      betMode === mode
-                        ? "bg-yellow-500 text-yellow-950 shadow"
-                        : "text-white/60 hover:text-white hover:bg-white/5"
-                    }`}
-                  >
-                    <div className="leading-tight">{label}</div>
-                    <div className={`text-[7px] md:text-[8px] ${betMode === mode ? "text-yellow-900" : "text-white/40"}`}>{odds}</div>
-                  </button>
-                ))}
-              </div>
+
 
               {/* Betting table */}
               <div className="relative mt-5">
@@ -392,8 +409,8 @@ export default function RoulettePage() {
               {/* Chip selector — premium casino chip design */}
               <style>{`
                 .casino-chip {
-                  width: 64px;
-                  height: 64px;
+                  width: 48px;
+                  height: 48px;
                   border-radius: 50%;
                   position: relative;
                   cursor: pointer;
@@ -402,6 +419,12 @@ export default function RoulettePage() {
                   justify-content: center;
                   align-items: center;
                   overflow: hidden;
+                }
+                @media (min-width: 768px) {
+                  .casino-chip {
+                    width: 64px;
+                    height: 64px;
+                  }
                 }
                 .casino-chip:hover {
                   transform: translateY(-4px) scale(1.08);
@@ -415,16 +438,24 @@ export default function RoulettePage() {
                   position: absolute;
                   inset: 0;
                   border-radius: 50%;
-                  padding: 4px;
+                  padding: 3px;
                   background: repeating-conic-gradient(#fff 0deg 18deg, transparent 18deg 36deg);
-                  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 10px), #fff calc(100% - 10px));
-                  mask: radial-gradient(farthest-side, transparent calc(100% - 10px), #fff calc(100% - 10px));
+                  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #fff calc(100% - 8px));
+                  mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #fff calc(100% - 8px));
+                }
+                @media (min-width: 768px) {
+                  .casino-chip::before {
+                    padding: 4px;
+                    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 10px), #fff calc(100% - 10px));
+                    mask: radial-gradient(farthest-side, transparent calc(100% - 10px), #fff calc(100% - 10px));
+                  }
                 }
                 .casino-chip::after {
                   content: '';
                   position: absolute;
                   width: 65%;
                   height: 65%;
+
                   background: rgba(255, 255, 255, 0.08);
                   border-radius: 50%;
                   backdrop-filter: blur(3px);
@@ -599,6 +630,7 @@ export default function RoulettePage() {
           </div>
         )}
       </div>
+    </div>
 
       {/* ── Betting Start / Stop Toast Alert ── */}
       <AnimatePresence mode="wait">
@@ -671,6 +703,37 @@ export default function RoulettePage() {
                 Continue
               </button>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Beautiful Premium Toast Notification ── */}
+      <AnimatePresence>
+        {errorToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, x: "-50%", scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, x: "-50%", scale: 1 }}
+            exit={{ opacity: 0, y: -20, x: "-50%", scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+            className="fixed top-6 left-1/2 z-50 w-full max-w-sm px-4"
+          >
+            <div className="bg-[#180a0f]/95 border-2 border-red-500/50 backdrop-blur-xl p-4 rounded-xl shadow-[0_8px_32px_rgba(239,68,68,0.25),0_0_15px_rgba(239,68,68,0.15)] flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center text-red-400 shrink-0 border border-red-500/30 shadow-[inset_0_0_10px_rgba(239,68,68,0.2)] animate-pulse">
+                <AlertTriangle size={20} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-bold text-red-200 tracking-wide uppercase text-[10px]">Error Alert</h4>
+                <p className="text-sm text-white/90 font-medium leading-relaxed mt-0.5 break-words">
+                  {errorToast}
+                </p>
+              </div>
+              <button
+                onClick={() => setErrorToast(null)}
+                className="text-white/40 hover:text-white/90 transition text-lg px-2 py-1 hover:bg-white/5 rounded-md self-start font-bold"
+              >
+                &times;
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

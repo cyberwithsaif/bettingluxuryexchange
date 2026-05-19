@@ -32,64 +32,45 @@ export function RouletteWheel({ winningNumber, spinning, status }: Props) {
   const lastSpinRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (spinning && winningNumber !== null && winningNumber !== lastSpinRef.current) {
-      lastSpinRef.current = winningNumber;
+    // Always stop existing animations when state changes
+    wheelRotation.stop();
+    ballRotation.stop();
+    ballY.stop();
 
-      const idx = WHEEL_ORDER.indexOf(winningNumber);
-      if (idx < 0) return;
+    if (spinning) {
+      if (winningNumber !== null && winningNumber !== lastSpinRef.current) {
+        // ─── STOPPING AT RESULT ────────────────────────────────────────────────
+        lastSpinRef.current = winningNumber;
+        const idx = WHEEL_ORDER.indexOf(winningNumber);
+        if (idx < 0) return;
 
-      // ─── WHEEL ─────────────────────────────────────────────────────────────
-      // Wheel rotates CCW (negative degrees). We accumulate so there's no snap.
-      const currentWheel = wheelRotation.get();
-      const baseWheelSpins = 6; // full CCW rotations
+        const currentWheel = wheelRotation.get();
+        const baseWheelSpins = 6;
+        const wheelEndOffset = ((winningNumber * 97 + 211) % 360);
+        const finalWheelDeg = currentWheel - baseWheelSpins * 360 - wheelEndOffset;
 
-      // Per-result varied offset so the wheel always ends at a "random-looking" spot.
-      const wheelEndOffset = ((winningNumber * 97 + 211) % 360);
-      const finalWheelDeg = currentWheel - baseWheelSpins * 360 - wheelEndOffset;
+        const slotCentreAngle = idx * SLOT_ANGLE + SLOT_ANGLE / 2;
+        const slotPageAngle = slotCentreAngle + finalWheelDeg;
 
-      // ─── BALL (PAGE-SPACE ANGLE) ────────────────────────────────────────────
-      // SVG is drawn so slot-0 is at the top (12-o'clock) when wheelRotation = 0.
-      // Slot idx starts at angle = idx * SLOT_ANGLE (0° = top of SVG).
-      // The slot's CENTRE in page space (after wheel rotation) is:
-      //   slotPageAngle = (idx * SLOT_ANGLE + SLOT_ANGLE/2) + finalWheelDeg
-      // (SLOT_ANGLE/2 puts us at the centre of the slot, not the edge)
-      //
-      // The ball pointer sits at 12-o'clock when ballRotation = 0.
-      // We want ballRotation ≡ slotPageAngle (mod 360), always going forward.
-      const slotCentreAngle = idx * SLOT_ANGLE + SLOT_ANGLE / 2;
-      const slotPageAngle = slotCentreAngle + finalWheelDeg;
+        const currentBall = ballRotation.get();
+        const baseBallSpins = 10;
+        const diff = ((slotPageAngle - (currentBall % 360)) + 360) % 360;
+        const finalBallDeg = currentBall + baseBallSpins * 360 + diff;
 
-      const currentBall = ballRotation.get();
-      const baseBallSpins = 10; // full CW rotations (counter to wheel for visual drama)
-      const diff = ((slotPageAngle - (currentBall % 360)) + 360) % 360;
-      const finalBallDeg = currentBall + baseBallSpins * 360 + diff;
+        animate(wheelRotation, finalWheelDeg, { duration: 8, ease: [0.1, 0.5, 0.2, 1] });
+        animate(ballRotation, finalBallDeg, { duration: 8, ease: [0.08, 0.45, 0.25, 1] });
+        animate(ballY, -145, { duration: 8, ease: [0.3, 0, 0.7, 1] });
 
-      // ─── ANIMATE ───────────────────────────────────────────────────────────
-      wheelRotation.stop();
-      ballRotation.stop();
-      ballY.stop();
-
-      // Wheel: 8 s, strong ease-out (fast start, crawls to stop)
-      animate(wheelRotation, finalWheelDeg, {
-        duration: 8,
-        ease: [0.1, 0.5, 0.2, 1],
-      });
-
-      // Ball: slightly faster spin, then decelerates to a dead stop on the number
-      animate(ballRotation, finalBallDeg, {
-        duration: 8,
-        ease: [0.08, 0.45, 0.25, 1],
-      });
-
-      // Ball spirals inward: outer track → slot ring
-      animate(ballY, -145, {
-        duration: 8,
-        ease: [0.3, 0, 0.7, 1],
-      });
-
+      } else if (winningNumber === null) {
+        // ─── CONTINUOUS SPINNING ───────────────────────────────────────────────
+        const currentWheel = wheelRotation.get();
+        const currentBall = ballRotation.get();
+        
+        animate(wheelRotation, currentWheel - 3600, { duration: 25, ease: "linear", repeat: Infinity });
+        animate(ballRotation, currentBall + 5400, { duration: 25, ease: "linear", repeat: Infinity });
+        animate(ballY, -175, { duration: 0.8 });
+      }
     } else if (status === "BETTING") {
-      // Reset ball to outer track for next round
-      ballY.stop();
       animate(ballY, -175, { duration: 0.8 });
     }
   }, [spinning, winningNumber, status, wheelRotation, ballRotation, ballY]);

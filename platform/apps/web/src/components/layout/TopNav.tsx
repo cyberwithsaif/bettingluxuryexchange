@@ -8,6 +8,7 @@ const tabs = [
   { href: "/casino",     label: "LIVE CASINO", emoji: "🎲" },
   { href: "/roulette",   label: "ROULETTE",    emoji: "🎯" },
   { href: "/crash",      label: "CRASH GAMES", emoji: "🚀" },
+  { href: "/mines",      label: "MINES",       emoji: "💣" },
   { href: "/virtual",    label: "VIRTUAL GAME",emoji: "🎮" },
   { href: "/slots",      label: "SLOT GAMES",  emoji: "✨" },
   { href: "/lottery",    label: "LOTTERY",     emoji: "🎟️" },
