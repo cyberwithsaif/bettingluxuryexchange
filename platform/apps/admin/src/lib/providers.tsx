@@ -8,12 +8,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       value={{
         fetcher,
         revalidateOnFocus: false,
-        revalidateOnReconnect: true,
-        focusThrottleInterval: 300000,
-        dedupingInterval: 60000,
-        errorRetryInterval: 5000,
-        errorRetryCount: 3,
-        compare: (a, b) => JSON.stringify(a) === JSON.stringify(b),
+        revalidateOnReconnect: false,
+        dedupingInterval: 30000,
+        errorRetryCount: 2,
       }}
     >
       {children}

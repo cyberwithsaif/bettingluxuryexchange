@@ -59,6 +59,8 @@ export function HeroBanner() {
             alt={s.title ?? ""}
             className="w-full h-full object-cover object-center"
             draggable={false}
+            loading={i === 0 ? "eager" : "lazy"}
+            decoding="async"
           />
           {s.title && (
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">

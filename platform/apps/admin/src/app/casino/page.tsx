@@ -3,7 +3,7 @@ import useSWR, { mutate as globalMutate } from "swr";
 import { useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth";
-import { Plus, Trash2, Gamepad2, Pencil, Image, GripVertical } from "lucide-react";
+import { Plus, Trash2, Gamepad2, Pencil, Image, GripVertical, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface Provider { id: string; key: string; name: string; category: string; }
 interface Game { id: string; name: string; category: string; thumbnail: string | null; isLive: boolean; sortOrder: number; provider: Provider; }
@@ -23,12 +23,24 @@ export default function AdminCasinoPage() {
   const [editInhouse,      setEditInhouse]      = useState<InHouseGame | null>(null);
   const [showAddInhouse,   setShowAddInhouse]   = useState(false);
   const [activeTab, setActiveTab]               = useState<"providers" | "games" | "inhouse">("games");
+  const [inhouseSaving,    setInhouseSaving]    = useState(false);
+  const [inhouseMsg,       setInhouseMsg]       = useState<{ ok: boolean; text: string } | null>(null);
 
   const inhouseGames: InHouseGame[] = (settings?.inhouseGames ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder);
 
   async function saveInhouseGames(updated: InHouseGame[]) {
-    await api.post(SETTINGS_KEY, { inhouseGames: updated });
-    globalMutate(SETTINGS_KEY);
+    setInhouseSaving(true);
+    setInhouseMsg(null);
+    try {
+      await api.post(SETTINGS_KEY, { inhouseGames: updated });
+      await globalMutate(SETTINGS_KEY);
+      setInhouseMsg({ ok: true, text: "Saved!" });
+      setTimeout(() => setInhouseMsg(null), 2500);
+    } catch {
+      setInhouseMsg({ ok: false, text: "Save failed — try again." });
+    } finally {
+      setInhouseSaving(false);
+    }
   }
 
   return (
@@ -47,9 +59,18 @@ export default function AdminCasinoPage() {
             </button>
           )}
           {activeTab === "inhouse" && (
-            <button onClick={() => setShowAddInhouse(true)} className="inline-flex items-center gap-2 rounded-md bg-accent-grad px-4 py-2 font-bold text-ink shadow-glow hover:brightness-110">
-              <Plus size={16} /> Add In-House Game
-            </button>
+            <div className="flex items-center gap-3">
+              {inhouseMsg && (
+                <span className={`flex items-center gap-1 text-sm font-medium ${inhouseMsg.ok ? "text-ok" : "text-bad"}`}>
+                  {inhouseMsg.ok ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                  {inhouseMsg.text}
+                </span>
+              )}
+              {inhouseSaving && <span className="text-sm text-white/50 animate-pulse">Saving…</span>}
+              <button onClick={() => setShowAddInhouse(true)} className="inline-flex items-center gap-2 rounded-md bg-accent-grad px-4 py-2 font-bold text-ink shadow-glow hover:brightness-110">
+                <Plus size={16} /> Add In-House Game
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -71,7 +92,15 @@ export default function AdminCasinoPage() {
               <tr><Th>Thumb</Th><Th>Name</Th><Th>Category</Th><Th>Provider</Th><Th>Live</Th><Th>Order</Th><Th>Actions</Th></tr>
             </thead>
             <tbody>
-              {gameLoad && <tr><td colSpan={5} className="text-center py-8 text-white/50">Loading…</td></tr>}
+              {gameLoad && Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} className="border-t border-line/40">
+                  {Array.from({ length: 7 }).map((__, j) => (
+                    <td key={j} className="px-4 py-3">
+                      <div className="h-4 rounded bg-white/5 animate-pulse" style={{ width: j === 0 ? 36 : "80%" }} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
               {!gameLoad && (!games || games.length === 0) && (
                 <tr><td colSpan={5} className="text-center py-10 text-white/50">
                   <Gamepad2 size={32} className="mx-auto mb-2 text-white/20" />

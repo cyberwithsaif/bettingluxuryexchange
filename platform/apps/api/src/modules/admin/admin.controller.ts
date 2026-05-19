@@ -2,8 +2,11 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, Uploaded
 import { FileInterceptor } from "@nestjs/platform-express";
 import { extname, join } from "path";
 import { randomBytes } from "crypto";
+import { rename, unlink } from "fs/promises";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const multer = require("multer");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const sharp = require("sharp");
 import type { Request } from "express";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
@@ -264,8 +267,22 @@ export class AdminController {
       cb(null, /image\/(jpeg|png|webp|gif)/.test(file.mimetype));
     },
   }))
-  uploadFile(@UploadedFile() file: { filename: string }, @Req() _req: Request) {
-    return { url: `/api/uploads/${file.filename}` };
+  async uploadFile(@UploadedFile() file: { filename: string; path: string; mimetype: string }, @Req() _req: Request) {
+    const uploadsDir = join(process.cwd(), "uploads");
+    const outName = randomBytes(10).toString("hex") + ".webp";
+    const outPath = join(uploadsDir, outName);
+    try {
+      await sharp(file.path)
+        .resize({ width: 900, height: 400, fit: "inside", withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toFile(outPath);
+      await unlink(file.path);
+    } catch {
+      // If sharp fails (e.g. animated gif), keep the original
+      await rename(file.path, join(uploadsDir, outName.replace(".webp", extname(file.path))));
+      return { url: `/api/uploads/${outName.replace(".webp", extname(file.path))}` };
+    }
+    return { url: `/api/uploads/${outName}` };
   }
 
   // -- Casino CRUD (admin only) --

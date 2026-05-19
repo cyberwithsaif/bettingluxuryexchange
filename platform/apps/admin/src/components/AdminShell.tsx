@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/lib/stores/auth";
+import { TopLoader } from "@/components/TopLoader";
 
 const NAV = [
   { href: "/",                         label: "Dashboard",       Icon: LayoutDashboard },
@@ -81,6 +82,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-screen overflow-hidden flex bg-bg">
+      <TopLoader />
       {/* Sidebar */}
       <aside className={cn(
         "fixed top-0 left-0 w-64 h-screen bg-panel/95 border-r border-line flex flex-col transition-transform duration-300 z-40",
