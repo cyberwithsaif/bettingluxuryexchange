@@ -536,31 +536,6 @@ export default function PlinkoPage() {
             onBounce={playBounce} onLand={playLand}
           />
 
-          {/* ── Session stats — top-left blank area ── */}
-          {(stats.wins + stats.losses) > 0 && (
-            <div className="absolute top-4 left-4 z-10 w-[290px] pointer-events-none">
-              <div className="rounded-2xl overflow-hidden bg-black/70 backdrop-blur-sm border border-white/[0.10]">
-                <div className="grid grid-cols-3 divide-x divide-white/[0.07] border-b border-white/[0.07]">
-                  <div className="px-4 py-3">
-                    <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Wins</div>
-                    <div className="text-xl font-bold text-green-400">{stats.wins}</div>
-                  </div>
-                  <div className="px-4 py-3">
-                    <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Losses</div>
-                    <div className="text-xl font-bold text-red-400">{stats.losses}</div>
-                  </div>
-                  <div className="px-4 py-3">
-                    <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Wagered</div>
-                    <div className="text-[13px] font-bold text-white/80">₹{stats.wagered >= 1000 ? `${(stats.wagered/1000).toFixed(1)}k` : stats.wagered}</div>
-                  </div>
-                </div>
-                <div className="px-2 pb-2 pt-1.5">
-                  <MiniChart history={stats.history} />
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* ── Overlay chips: latest 7, fade out after 3s ── */}
           <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-1 pointer-events-none">
             <AnimatePresence initial={false}>
