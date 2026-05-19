@@ -5,14 +5,15 @@ import useSWR from "swr";
 import { cn } from "@/lib/cn";
 
 const DEFAULT_TABS = [
-  { href: "/exchange",   label: "EXCHANGE",    emoji: "🎰", enabled: true },
-  { href: "/casino",     label: "LIVE CASINO", emoji: "🎲", enabled: true },
-  { href: "/crash",      label: "CRASH GAMES", emoji: "🚀", enabled: true },
-  { href: "/virtual",    label: "VIRTUAL GAME",emoji: "🎮", enabled: true },
-  { href: "/vr-games",   label: "VR GAMES",    emoji: "🥽", enabled: true },
-  { href: "/slots",      label: "SLOT GAMES",  emoji: "✨", enabled: true },
-  { href: "/lottery",    label: "LOTTERY",     emoji: "🎟️", enabled: true },
-  { href: "/sportsbook", label: "SPORTS BOOK", emoji: "🎯", enabled: true },
+  { href: "/exchange",    label: "EXCHANGE",         emoji: "🎰", enabled: true },
+  { href: "/casino",      label: "LIVE CASINO",      emoji: "🎲", enabled: true },
+  { href: "/crash",       label: "CRASH GAMES",      emoji: "🚀", enabled: true },
+  { href: "/mini-games",  label: "DIAMOND MINI GAMES", emoji: "💎", enabled: true },
+  { href: "/virtual",     label: "VIRTUAL GAME",     emoji: "🎮", enabled: true },
+  { href: "/vr-games",    label: "VR GAMES",         emoji: "🥽", enabled: true },
+  { href: "/slots",       label: "SLOT GAMES",       emoji: "✨", enabled: true },
+  { href: "/lottery",     label: "LOTTERY",          emoji: "🎟️", enabled: true },
+  { href: "/sportsbook",  label: "SPORTS BOOK",      emoji: "🎯", enabled: true },
 ];
 
 interface NavItem { href: string; label: string; emoji: string; enabled: boolean; }
