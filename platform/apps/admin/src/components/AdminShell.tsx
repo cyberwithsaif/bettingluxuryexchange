@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpToLine,
   Settings, Key, ListChecks, ShieldAlert, LogOut, Gamepad2, Trophy,
-  Ticket, BarChart3, Bell, Menu, X, CreditCard, Megaphone,
+  Ticket, BarChart3, Bell, Menu, X, CreditCard, Megaphone, Navigation,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -27,6 +27,7 @@ const NAV = [
   { href: "/logs",                     label: "Audit Logs",      Icon: ListChecks },
   { href: "/settings",                 label: "Settings",        Icon: Settings },
   { href: "/settings/banners",         label: "Banner Settings", Icon: Megaphone },
+  { href: "/settings/nav",             label: "Navigation Bar",  Icon: Navigation },
   { href: "/casino/mines",             label: "Mines",           Icon: Gamepad2 },
 ] as const;
 
@@ -109,7 +110,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               href === "/"
                 ? path === "/"
                 : path === href || (href !== "/settings" && href !== "/casino" && path?.startsWith(href + "/"));
-            const isSubItem = href === "/settings/banners" || href === "/casino/mines";
+            const isSubItem = href === "/settings/banners" || href === "/settings/nav" || href === "/casino/mines";
             return (
               <Link
                 key={href}
