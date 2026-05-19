@@ -27,7 +27,7 @@ interface SessionStats {
 
 function MiniChart({ history }: { history: number[] }) {
   if (history.length < 2) return null;
-  const W = 180, H = 68;
+  const W = 280, H = 120;
   const min = Math.min(...history, 0);
   const max = Math.max(...history, 0);
   const range = max - min || 1;
@@ -538,29 +538,23 @@ export default function PlinkoPage() {
 
           {/* ── Session stats — top-left blank area ── */}
           {(stats.wins + stats.losses) > 0 && (
-            <div className="absolute top-4 left-4 z-10 w-[168px] pointer-events-none">
-              <div className="rounded-xl overflow-hidden bg-black/60 backdrop-blur-sm border border-white/[0.08]">
-                <div className="grid grid-cols-2 divide-x divide-y divide-white/[0.07]">
-                  <div className="p-2">
-                    <div className="text-[7px] text-white/40 uppercase tracking-wider mb-0.5">Net Gain</div>
-                    <div className={`text-[11px] font-bold ${stats.netGain >= 0 ? "text-green-400" : "text-red-400"}`}>
-                      {stats.netGain >= 0 ? "+" : ""}₹{stats.netGain.toFixed(2)}
-                    </div>
+            <div className="absolute top-4 left-4 z-10 w-[290px] pointer-events-none">
+              <div className="rounded-2xl overflow-hidden bg-black/70 backdrop-blur-sm border border-white/[0.10]">
+                <div className="grid grid-cols-3 divide-x divide-white/[0.07] border-b border-white/[0.07]">
+                  <div className="px-4 py-3">
+                    <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Wins</div>
+                    <div className="text-xl font-bold text-green-400">{stats.wins}</div>
                   </div>
-                  <div className="p-2">
-                    <div className="text-[7px] text-white/40 uppercase tracking-wider mb-0.5">Wins</div>
-                    <div className="text-[11px] font-bold text-green-400">{stats.wins}</div>
+                  <div className="px-4 py-3">
+                    <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Losses</div>
+                    <div className="text-xl font-bold text-red-400">{stats.losses}</div>
                   </div>
-                  <div className="p-2">
-                    <div className="text-[7px] text-white/40 uppercase tracking-wider mb-0.5">Amount</div>
-                    <div className="text-[11px] font-bold text-white/80">₹{stats.wagered.toFixed(0)}</div>
-                  </div>
-                  <div className="p-2">
-                    <div className="text-[7px] text-white/40 uppercase tracking-wider mb-0.5">Losses</div>
-                    <div className="text-[11px] font-bold text-red-400">{stats.losses}</div>
+                  <div className="px-4 py-3">
+                    <div className="text-[9px] text-white/40 uppercase tracking-wider mb-1.5">Wagered</div>
+                    <div className="text-[13px] font-bold text-white/80">₹{stats.wagered >= 1000 ? `${(stats.wagered/1000).toFixed(1)}k` : stats.wagered}</div>
                   </div>
                 </div>
-                <div className="px-1 pb-1 pt-0.5">
+                <div className="px-2 pb-2 pt-1.5">
                   <MiniChart history={stats.history} />
                 </div>
               </div>
