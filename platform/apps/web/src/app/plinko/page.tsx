@@ -31,7 +31,7 @@ function multColor(m: number) {
 }
 
 export default function PlinkoPage() {
-  const { user, token } = useAuthStore();
+  const { user, accessToken: token } = useAuthStore();
 
   // ── Notifications ─────────────────────────────────────────────────────────
   const [notes, setNotes] = useState<Note[]>([]);
