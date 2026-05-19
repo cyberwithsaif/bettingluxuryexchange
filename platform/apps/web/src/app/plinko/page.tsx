@@ -3,12 +3,42 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuthStore } from "@/lib/stores/auth";
 import { PlinkoBoard, PlinkoResult } from "@/components/plinko/PlinkoBoard";
 import { io, Socket } from "socket.io-client";
-import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ChevronDown, ChevronUp, RefreshCw, Zap, Play, Square,
-  RotateCcw, Shield, ExternalLink,
+  ChevronDown, ChevronUp, RefreshCw, Zap, Play, Square, RotateCcw, Shield, X,
 } from "lucide-react";
+
+// ── Inline toast ─────────────────────────────────────────────────────────
+interface ToastMsg { id: number; text: string; type: "success" | "error" | "info" }
+let _toastId = 0;
+let _setToasts: React.Dispatch<React.SetStateAction<ToastMsg[]>> | null = null;
+const toast = {
+  success: (t: string) => _setToasts?.(p => [...p, { id: ++_toastId, text: t, type: "success" }].slice(-4)),
+  error:   (t: string) => _setToasts?.(p => [...p, { id: ++_toastId, text: t, type: "error"   }].slice(-4)),
+  info:    (t: string) => _setToasts?.(p => [...p, { id: ++_toastId, text: t, type: "info"    }].slice(-4)),
+};
+function ToastContainer({ toasts, setToasts }: { toasts: ToastMsg[]; setToasts: React.Dispatch<React.SetStateAction<ToastMsg[]>> }) {
+  _setToasts = setToasts;
+  useEffect(() => {
+    if (toasts.length === 0) return;
+    const t = setTimeout(() => setToasts(p => p.slice(1)), 3500);
+    return () => clearTimeout(t);
+  }, [toasts, setToasts]);
+  return (
+    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+      <AnimatePresence>
+        {toasts.map(t => (
+          <motion.div key={t.id} initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 60 }}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium shadow-xl pointer-events-auto
+              ${t.type === "success" ? "bg-green-700 text-white" : t.type === "error" ? "bg-red-700 text-white" : "bg-blue-700 text-white"}`}>
+            {t.text}
+            <button onClick={() => setToasts(p => p.filter(x => x.id !== t.id))} className="ml-1 opacity-70 hover:opacity-100"><X size={13} /></button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 const ROWS_OPTIONS   = [8, 12, 16, 24] as const;
 const RISK_OPTIONS   = ["low", "medium", "high"] as const;
@@ -33,6 +63,7 @@ function multColor(m: number) {
 
 export default function PlinkoPage() {
   const { user, token } = useAuthStore();
+  const [toasts, setToasts] = useState<ToastMsg[]>([]);
 
   // Game config
   const [rows,      setRows]      = useState<Rows>(16);
@@ -215,6 +246,7 @@ export default function PlinkoPage() {
 
   return (
     <div className="min-h-screen bg-[#0d0e15] text-white flex flex-col">
+      <ToastContainer toasts={toasts} setToasts={setToasts} />
       {/* Header */}
       <div className="border-b border-white/10 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
