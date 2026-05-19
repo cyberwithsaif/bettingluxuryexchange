@@ -14,7 +14,7 @@ function jwtExpiry(token: string): number | null {
   } catch { return null; }
 }
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children, initialSettings }: { children: React.ReactNode; initialSettings?: Record<string, unknown> | null }) {
   const token = useAuthStore((s) => s.accessToken);
   const refreshToken = useAuthStore((s) => s.refreshToken);
   const set = useAuthStore((s) => s.set);
@@ -64,6 +64,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         fetcher,
         revalidateOnFocus: false,
         shouldRetryOnError: false,
+        fallback: initialSettings ? { "/api/platform/settings": initialSettings } : {},
       }}
     >
       {children}
