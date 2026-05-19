@@ -2,6 +2,7 @@
 import useSWR, { mutate as globalMutate } from "swr";
 import { useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/lib/stores/auth";
 import { Plus, Trash2, Gamepad2, Pencil, Image, GripVertical } from "lucide-react";
 
 interface Provider { id: string; key: string; name: string; category: string; }
@@ -430,7 +431,15 @@ function ThumbnailField({ value, onChange, label = "Thumbnail URL (optional, ove
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const { data } = await api.post<{ url: string }>("/admin/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      // Post directly to /api/admin/upload (nginx → NestJS, bypasses Next.js proxy hop)
+      const token = useAuthStore.getState().accessToken;
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json() as { url: string };
       onChange(data.url);
     } catch {
       setUploadErr("Upload failed. Check file type (JPG/PNG/WEBP) and size (max 5 MB).");
