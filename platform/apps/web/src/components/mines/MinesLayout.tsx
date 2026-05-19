@@ -250,17 +250,17 @@ export default function MinesLayout() {
   return (
     <div className="h-screen bg-[#0F1923] text-white flex flex-col font-sans w-full overflow-hidden">
       {/* Minimal Header with Wallet Balance */}
-      <header className="px-6 py-2.5 flex items-center justify-between border-b border-gray-800 bg-[#0f212e] w-full shrink-0">
-        <Link href="/" className="flex items-center gap-2 text-gray-400 hover:text-white transition font-bold text-sm">
-          <ArrowLeft size={18} />
-          Back to Lobby
+      <header className="px-3 md:px-6 py-2.5 flex items-center justify-between gap-2 border-b border-gray-800 bg-[#0f212e] w-full shrink-0">
+        <Link href="/" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition font-bold text-sm shrink-0">
+          <ArrowLeft size={16} />
+          <span className="hidden sm:inline">Back to Lobby</span>
         </Link>
-        <div className="font-bold tracking-widest text-sm text-green-400 uppercase">
+        <div className="font-bold tracking-widest text-xs sm:text-sm text-green-400 uppercase whitespace-nowrap">
           💣 Mines Game
         </div>
-        <div className="flex items-center gap-2 bg-[#1a2c38] px-3 py-1.5 rounded-lg border border-gray-700">
-          <span className="text-xs text-gray-400 font-semibold">Balance:</span>
-          <span className="text-sm font-bold text-white">₹{walletData ? Number(walletData.available).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}</span>
+        <div className="flex items-center gap-1.5 bg-[#1a2c38] px-2 sm:px-3 py-1.5 rounded-lg border border-gray-700 shrink-0">
+          <span className="text-xs text-gray-400 font-semibold hidden sm:inline">Balance:</span>
+          <span className="text-xs sm:text-sm font-bold text-white whitespace-nowrap">₹{walletData ? Number(walletData.available).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}</span>
         </div>
       </header>
 
