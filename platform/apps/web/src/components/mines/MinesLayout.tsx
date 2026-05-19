@@ -30,6 +30,12 @@ export interface MinesState {
 export default function MinesLayout() {
   const user = useAuthStore((s) => s.user);
   const { data: walletData, mutate: mutateWallet } = useSWR<{ available: number }>(user ? "/wallet/summary" : null);
+  const { data: platformCfg } = useSWR<{ minesMinBet?: number; minesMaxBet?: number }>("/platform/settings",
+    (url: string) => fetch(url).then(r => r.ok ? r.json() : {}),
+    { revalidateOnFocus: false }
+  );
+  const minBet = platformCfg?.minesMinBet ?? 10;
+  const maxBet = platformCfg?.minesMaxBet ?? 100000;
   const [liveBalance, setLiveBalance] = useState<number | null>(null);
 
   const [gameState, setGameState] = useState<MinesState>({
@@ -40,6 +46,15 @@ export default function MinesLayout() {
     clickedTiles: [],
     clientSeed: Math.random().toString(36).substring(2, 15),
   });
+
+  // Sync default bet amount to minBet when config loads
+  useEffect(() => {
+    if (!platformCfg) return;
+    setGameState(prev => {
+      if (prev.status !== "IDLE") return prev;
+      return { ...prev, betAmount: Math.max(prev.betAmount, minBet) };
+    });
+  }, [minBet, platformCfg]);
 
   const [loading, setLoading] = useState(false);
   const [showFairModal, setShowFairModal] = useState(false);
@@ -234,7 +249,7 @@ export default function MinesLayout() {
       window.location.href = "/auth/login";
       return;
     }
-    const finalBet = Math.max(10, gameState.betAmount);
+    const finalBet = Math.max(minBet, gameState.betAmount);
     setGameState(prev => ({ ...prev, betAmount: finalBet }));
 
     setLoading(true);
@@ -294,6 +309,8 @@ export default function MinesLayout() {
               handleBet={handleBet}
               handleCashout={handleCashout}
               loading={loading}
+              minBet={minBet}
+              maxBet={maxBet}
             />
             <div className="mt-auto pt-4 flex justify-between gap-2">
               <button
