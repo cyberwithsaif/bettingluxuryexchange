@@ -46,7 +46,7 @@ export function HeroBanner() {
   const slide = slides[idx % slides.length]!;
 
   const inner = (
-    <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "16/4", maxHeight: 220 }}>
+    <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "16/4", maxHeight: 280 }}>
       {/* Slides */}
       {slides.map((s, i) => (
         <div
