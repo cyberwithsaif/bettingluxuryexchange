@@ -261,8 +261,9 @@ export function PlinkoBoard({ rows, multiplierTable, result, animating, turbo, o
 
     if (result && animating) {
       const wps = buildWaypoints(canvas, result.path);
+      const firstWp = wps[0];
       stateRef.current = {
-        ballX: wps[0].x, ballY: wps[0].y,
+        ballX: firstWp?.x ?? 0, ballY: firstWp?.y ?? 0,
         waypoints: wps,
         waypointIdx: 0,
         progress: 0,
