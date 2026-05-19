@@ -343,24 +343,23 @@ export default function PlinkoPage() {
       </aside>
 
       {/* ── Board ─────────────────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        <div className="flex-1 min-h-0 relative">
+      <div className="flex-1 flex flex-col items-center justify-start overflow-y-auto min-w-0 bg-[#0b0c12] py-2 px-2">
+        {/* Board canvas — fixed sensible max size */}
+        <div className="relative w-full" style={{ maxWidth: 680, height: Math.min(520, rows * 28 + 100) }}>
           <PlinkoBoard
             rows={rows} riskLevel={risk} multiplierTable={multTable}
             turbo={turbo} queue={queue} onBallDone={onBallDone}
           />
-
-          {/* Active balls counter */}
           {activeBalls > 1 && (
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur text-xs text-white/70">
-              <RefreshCw size={10} className="animate-spin" />
-              {activeBalls} balls in flight
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur text-[10px] text-white/60 pointer-events-none">
+              <RefreshCw size={9} className="animate-spin" />
+              {activeBalls} balls
             </div>
           )}
         </div>
 
         {/* History strip */}
-        <div className="h-8 border-t border-white/[0.06] bg-[#0f1018] flex items-center px-2 gap-1.5 overflow-x-auto scrollbar-none shrink-0">
+        <div className="w-full mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-none" style={{ maxWidth: 680 }}>
           {history.length === 0
             ? <span className="text-[9px] text-white/20">Drop a ball to start…</span>
             : history.map((h, i) => (

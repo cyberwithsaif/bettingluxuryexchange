@@ -97,31 +97,34 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone }:
     ctx.clearRect(0, 0, W, H);
 
     // Background
-    const bg = ctx.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, "#0d0e15");
-    bg.addColorStop(1, "#080910");
-    ctx.fillStyle = bg;
+    ctx.fillStyle = "#0f111a";
     ctx.fillRect(0, 0, W, H);
 
     // Active ball positions for peg glow
     const bpos = balls.filter(b => !b.settled).map(b => ({ x: b.ballX, y: b.ballY }));
 
-    // Pegs
-    const pegR = rows <= 8 ? 5 : rows <= 12 ? 4.5 : rows <= 16 ? 4 : 3.5;
+    // Pegs — white like Stake
+    const pegR = rows <= 8 ? 7 : rows <= 12 ? 6 : rows <= 16 ? 5 : 4;
     for (let row = 0; row < rows; row++) {
       const numPegs = row + 1;
       const pegY    = padTop + row * rowH + rowH / 2;
       for (let p = 0; p < numPegs; p++) {
         const pegX = centerX + slotW * (p - (numPegs - 1) / 2);
-        const near = bpos.some(b => Math.hypot(pegX - b.x, pegY - b.y) < slotW * 0.7);
+        const near = bpos.some(b => Math.hypot(pegX - b.x, pegY - b.y) < slotW * 0.8);
         ctx.beginPath();
         ctx.arc(pegX, pegY, pegR, 0, Math.PI * 2);
-        ctx.fillStyle    = near ? "#ffd700" : "#4a4a6a";
-        ctx.shadowColor  = near ? "rgba(255,215,0,0.9)" : "rgba(100,100,200,0.3)";
-        ctx.shadowBlur   = near ? 12 : 5;
+        if (near) {
+          ctx.fillStyle   = "#ffd700";
+          ctx.shadowColor = "rgba(255,215,0,1)";
+          ctx.shadowBlur  = 14;
+        } else {
+          ctx.fillStyle   = "#c8cfe8";
+          ctx.shadowColor = "rgba(200,207,232,0.4)";
+          ctx.shadowBlur  = 3;
+        }
         ctx.fill();
-        ctx.shadowBlur   = 0;
-        ctx.shadowColor  = "transparent";
+        ctx.shadowBlur  = 0;
+        ctx.shadowColor = "transparent";
       }
     }
 
@@ -136,7 +139,7 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone }:
 
     // Slots
     const slotTop = padTop + rows * rowH + rowH / 2;
-    const slotH   = padBot - 12;
+    const slotH   = padBot - 10;
     for (let i = 0; i <= rows; i++) {
       const slotX  = padX + i * slotW;
       const m      = multiplierTable[i] ?? 0;
