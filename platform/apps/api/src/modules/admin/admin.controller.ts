@@ -375,12 +375,18 @@ export class PublicPlatformController {
       { href: "/lottery",    label: "LOTTERY",     emoji: "🎟️", enabled: true },
       { href: "/sportsbook", label: "SPORTS BOOK", emoji: "🎯", enabled: true },
     ];
+    // Merge: always include all default built-in games; admin-added extras are appended.
+    const storedGames: any[] = (settings as any).inhouseGames ?? [];
+    const storedIds = new Set(storedGames.map((g: any) => g.id));
+    const missingDefaults = defaultInhouseGames.filter(g => !storedIds.has(g.id));
+    const mergedGames = [...storedGames, ...missingDefaults].sort((a, b) => (a.sortOrder ?? 99) - (b.sortOrder ?? 99));
+
     return {
       subBanner:     (settings as any).subBanner     ?? "Bet Now in Line Market and Get Commission Upto 2%",
       siteName:      (settings as any).siteName      ?? "Future9",
       siteTagline:   (settings as any).siteTagline   ?? "Sports & Casino",
       marqueeText:   (settings as any).marqueeText   ?? "📢 Live Markets Now Available — Play Smart, Win Big! • Bet Now in Line Markets and Get Commission Upto 2%",
-      inhouseGames:  (settings as any).inhouseGames  ?? defaultInhouseGames,
+      inhouseGames:  mergedGames,
       heroBanners:   (settings as any).heroBanners   ?? [],
       minesMinBet:   Number((settings as any).minesMinBet  ?? 10),
       minesMaxBet:   Number((settings as any).minesMaxBet  ?? 100000),
