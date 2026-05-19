@@ -57,6 +57,8 @@ class PlatformSettingsDto {
   @IsOptional() @IsString() siteTagline?: string;
   // In-house games list (arbitrary JSON array)
   @IsOptional() inhouseGames?: any[];
+  // Hero banner slides list
+  @IsOptional() heroBanners?: any[];
   // Deposit methods blob (arbitrary JSON)
   @IsOptional() depositMethods?: any;
 }
@@ -327,6 +329,7 @@ export class PublicPlatformController {
       siteTagline:   (settings as any).siteTagline   ?? "Sports & Casino",
       marqueeText:   (settings as any).marqueeText   ?? "📢 Live Markets Now Available — Play Smart, Win Big! • Bet Now in Line Markets and Get Commission Upto 2%",
       inhouseGames:  (settings as any).inhouseGames  ?? defaultInhouseGames,
+      heroBanners:   (settings as any).heroBanners   ?? [],
     };
   }
 }
