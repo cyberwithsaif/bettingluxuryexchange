@@ -60,7 +60,6 @@ export default function PlinkoPage() {
   const dropIdRef   = useRef(0);
 
   // History
-  const [history,   setHistory]   = useState<{ mult: number; payout: number }[]>([]);
   const [liveFeed,  setLiveFeed]  = useState<LiveBet[]>([]);
 
   // Auto-play
@@ -94,12 +93,14 @@ export default function PlinkoPage() {
   }, [token]);
   useEffect(() => { fetchBalance(); }, [fetchBalance]);
 
-  // Live feed — delay display ~4 s so result appears after ball lands
+  // Live feed — delay per-bet based on row count so result appears after ball lands
+  // Formula: (rows+1) segments × (1/0.055) frames/seg × (1/60) s/frame × 1000 ms/s ≈ rows*303ms
   useEffect(() => {
     const socket: Socket = io("/plinko", { path: "/socket.io", transports: ["websocket"] });
     const timers: ReturnType<typeof setTimeout>[] = [];
     socket.on("plinko:bet", (bet: LiveBet) => {
-      const t = setTimeout(() => setLiveFeed(p => [bet, ...p].slice(0, 20)), 4000);
+      const delayMs = Math.round((bet.rows + 1) * 310);
+      const t = setTimeout(() => setLiveFeed(p => [bet, ...p].slice(0, 20)), delayMs);
       timers.push(t);
     });
     return () => { socket.disconnect(); timers.forEach(clearTimeout); };
@@ -142,8 +143,7 @@ export default function PlinkoPage() {
     const res = pendingResults.current.get(id);
     if (!res) return;
     pendingResults.current.delete(id);
-    // Update history, balance, session P/L and show win toast
-    setHistory(prev => [{ mult: res.multiplier, payout: res.payout }, ...prev].slice(0, 60));
+    // Update balance, session P/L and show win toast
     setSessionPL(prev => { sessionPLRef.current = prev + res.profit; return prev + res.profit; });
     fetchBalance();
     if (res.multiplier >= 5) notify(`${res.multiplier}× — Won ₹${res.payout.toLocaleString()}!`, "ok");
@@ -375,17 +375,6 @@ export default function PlinkoPage() {
           )}
         </div>
 
-        {/* History strip */}
-        <div className="w-full mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-none" style={{ maxWidth: 920 }}>
-          {history.length === 0
-            ? <span className="text-[9px] text-white/20">Drop a ball to start…</span>
-            : history.map((h, i) => (
-                <span key={i} className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-white/5 font-bold ${multColor(h.mult)}`}>
-                  {h.mult}×
-                </span>
-              ))
-          }
-        </div>
       </div>
 
       {/* ── Live Feed ─────────────────────────────────────────────────────────── */}
