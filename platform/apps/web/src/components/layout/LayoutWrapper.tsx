@@ -8,7 +8,7 @@ import { Footer } from "./Footer";
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isFullScreen = pathname === "/mines" || pathname === "/roulette";
+  const isFullScreen = pathname === "/mines" || pathname === "/roulette" || pathname === "/plinko" || pathname === "/crash";
 
   if (isFullScreen) {
     return <main className="flex-1 bg-[#0F1923] flex flex-col">{children}</main>;

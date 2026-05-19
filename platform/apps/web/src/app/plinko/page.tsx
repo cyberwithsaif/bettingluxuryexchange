@@ -101,6 +101,9 @@ export default function PlinkoPage() {
     return () => { socket.disconnect(); };
   }, []);
 
+  // Store pending result metadata per ball id — revealed only when ball lands
+  const pendingResults = useRef<Map<number, { multiplier: number; payout: number; profit: number }>>(new Map());
+
   // Drop — no animation guard, allows unlimited concurrent balls
   const drop = useCallback(async (): Promise<number> => {
     if (!token)           { notify("Login to play", "bad"); return 0; }
@@ -116,21 +119,31 @@ export default function PlinkoPage() {
       if (!res.ok) { notify(data.message ?? "Bet failed", "bad"); return 0; }
 
       const id = ++dropIdRef.current;
+      // Store result — shown ONLY when ball lands (onBallDone)
+      pendingResults.current.set(id, {
+        multiplier: data.multiplier,
+        payout:     data.payout,
+        profit:     data.profit as number,
+      });
       setQueue(prev => [...prev, { id, path: data.path, slot: data.slot, multiplier: data.multiplier }]);
-      setHistory(prev => [{ mult: data.multiplier, payout: data.payout }, ...prev].slice(0, 60));
-      const pl = data.profit as number;
-      setSessionPL(prev => { sessionPLRef.current = prev + pl; return prev + pl; });
-      fetchBalance();
-      if (data.multiplier >= 10) notify(`${data.multiplier}× — Won ₹${data.payout.toLocaleString()}!`, "ok");
-      return pl;
+      return data.profit as number;
     } catch {
       notify("Connection error", "bad"); return 0;
     }
-  }, [token, config, betAmount, rows, risk, clientSeed, fetchBalance, notify]);
+  }, [token, config, betAmount, rows, risk, clientSeed, notify]);
 
+  // Called by canvas when ball reaches the slot — now safe to reveal result
   const onBallDone = useCallback((id: number) => {
     setQueue(prev => prev.filter(q => q.id !== id));
-  }, []);
+    const res = pendingResults.current.get(id);
+    if (!res) return;
+    pendingResults.current.delete(id);
+    // Update history, balance, session P/L and show win toast
+    setHistory(prev => [{ mult: res.multiplier, payout: res.payout }, ...prev].slice(0, 60));
+    setSessionPL(prev => { sessionPLRef.current = prev + res.profit; return prev + res.profit; });
+    fetchBalance();
+    if (res.multiplier >= 5) notify(`${res.multiplier}× — Won ₹${res.payout.toLocaleString()}!`, "ok");
+  }, [fetchBalance, notify]);
 
   // Auto-play loop
   const startAuto = useCallback(async () => {
