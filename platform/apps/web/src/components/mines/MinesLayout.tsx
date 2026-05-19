@@ -177,6 +177,13 @@ export default function MinesLayout() {
   const playSound = (type: "gem" | "bomb" | "win" | "cashout" | "bet") => {
     // Basic web audio api sounds
     try {
+      if (type === "bet") {
+        const audio = new Audio("/sounds/bet.mp3");
+        audio.volume = 0.6;
+        audio.play().catch(() => {});
+        return;
+      }
+
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
