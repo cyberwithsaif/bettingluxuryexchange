@@ -241,7 +241,9 @@ export default function BannerSettingsPage() {
                     disabled={i === 0}
                     onClick={() => {
                       const updated = [...slides];
-                      [updated[i - 1], updated[i]] = [updated[i], updated[i - 1]];
+                      const tmp = updated[i - 1]!;
+                      updated[i - 1] = updated[i]!;
+                      updated[i] = tmp;
                       updated.forEach((s, j) => { s.sortOrder = j; });
                       saveSlides(updated);
                     }}
@@ -252,7 +254,9 @@ export default function BannerSettingsPage() {
                     disabled={i === slides.length - 1}
                     onClick={() => {
                       const updated = [...slides];
-                      [updated[i], updated[i + 1]] = [updated[i + 1], updated[i]];
+                      const tmp = updated[i + 1]!;
+                      updated[i + 1] = updated[i]!;
+                      updated[i] = tmp;
                       updated.forEach((s, j) => { s.sortOrder = j; });
                       saveSlides(updated);
                     }}
