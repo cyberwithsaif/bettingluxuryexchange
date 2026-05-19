@@ -21,6 +21,35 @@ interface LiveBet {
 }
 interface Note { id: number; text: string; kind: "ok" | "bad" | "info" }
 interface Chip  { uid: string; multiplier: number; expiresAt: number; }
+interface SessionStats {
+  wins: number; losses: number; wagered: number; netGain: number; history: number[];
+}
+
+function MiniChart({ history }: { history: number[] }) {
+  if (history.length < 2) return null;
+  const W = 180, H = 68;
+  const min = Math.min(...history, 0);
+  const max = Math.max(...history, 0);
+  const range = max - min || 1;
+  const yOf = (v: number) => H - ((v - min) / range) * H;
+  const zeroY = Math.max(0, Math.min(H, yOf(0)));
+  const pts = history.map((v, i) => `${(i / (history.length - 1)) * W} ${yOf(v)}`);
+  const lineD = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p}`).join(" ");
+  const areaD = `M 0 ${zeroY} ${pts.map(p => `L ${p}`).join(" ")} L ${W} ${zeroY} Z`;
+  return (
+    <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+      <defs>
+        <clipPath id="mc-above"><rect x="0" y="0" width={W} height={zeroY} /></clipPath>
+        <clipPath id="mc-below"><rect x="0" y={zeroY} width={W} height={H} /></clipPath>
+      </defs>
+      <line x1="0" y1={zeroY} x2={W} y2={zeroY} stroke="rgba(255,255,255,0.12)" strokeWidth="0.5" />
+      <path d={areaD} fill="rgba(34,197,94,0.2)"  clipPath="url(#mc-above)" />
+      <path d={areaD} fill="rgba(239,68,68,0.2)"  clipPath="url(#mc-below)" />
+      <path d={lineD} fill="none" stroke="#22c55e" strokeWidth="1.5" strokeLinejoin="round" clipPath="url(#mc-above)" />
+      <path d={lineD} fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinejoin="round" clipPath="url(#mc-below)" />
+    </svg>
+  );
+}
 
 // 3-color system: high=red, medium=green, low=yellow
 function multColor(m: number) {
@@ -80,6 +109,7 @@ export default function PlinkoPage() {
 
   const [liveFeed, setLiveFeed] = useState<LiveBet[]>([]);
   const [chips,    setChips]    = useState<Chip[]>([]);
+  const [stats,    setStats]    = useState<SessionStats>({ wins: 0, losses: 0, wagered: 0, netGain: 0, history: [] });
 
   // ── Sound system ─────────────────────────────────────────────────────────
   const audioCtx = useRef<AudioContext | null>(null);
@@ -254,6 +284,16 @@ export default function PlinkoPage() {
     }, ...p].slice(0, 15));
 
     setSessionPL(prev => { sessionPLRef.current = prev + res.profit; return prev + res.profit; });
+    setStats(prev => {
+      const netGain = prev.netGain + res.profit;
+      return {
+        wins:    prev.wins    + (res.profit >= 0 ? 1 : 0),
+        losses:  prev.losses  + (res.profit <  0 ? 1 : 0),
+        wagered: prev.wagered + res.betAmount,
+        netGain,
+        history: [...prev.history.slice(-99), netGain],
+      };
+    });
     fetchBalance();
     if (res.multiplier >= 5) notify(`${res.multiplier}× — Won ₹${res.payout.toLocaleString()}!`, "ok");
   }, [fetchBalance, notify]);
@@ -400,6 +440,35 @@ export default function PlinkoPage() {
             <Zap size={10} className={turbo ? "text-yellow-400" : "text-white/30"} />
             <span className="text-[9px] text-white/50">Turbo</span>
           </label>
+
+          {/* Session Stats */}
+          {(stats.wins + stats.losses) > 0 && (
+            <div className="rounded-xl bg-[#0b0c12] border border-white/[0.08] overflow-hidden">
+              <div className="grid grid-cols-2 divide-x divide-y divide-white/[0.06]">
+                <div className="p-2">
+                  <div className="text-[7px] text-white/35 uppercase tracking-wider mb-0.5">Net Gain</div>
+                  <div className={`text-[11px] font-bold flex items-center gap-0.5 ${stats.netGain >= 0 ? "text-green-400" : "text-red-400"}`}>
+                    {stats.netGain >= 0 ? "+" : ""}₹{stats.netGain.toFixed(2)}
+                  </div>
+                </div>
+                <div className="p-2">
+                  <div className="text-[7px] text-white/35 uppercase tracking-wider mb-0.5">Wins</div>
+                  <div className="text-[11px] font-bold text-green-400">{stats.wins}</div>
+                </div>
+                <div className="p-2">
+                  <div className="text-[7px] text-white/35 uppercase tracking-wider mb-0.5">Amount</div>
+                  <div className="text-[11px] font-bold text-white/80">₹{stats.wagered.toFixed(0)}</div>
+                </div>
+                <div className="p-2">
+                  <div className="text-[7px] text-white/35 uppercase tracking-wider mb-0.5">Losses</div>
+                  <div className="text-[11px] font-bold text-red-400">{stats.losses}</div>
+                </div>
+              </div>
+              <div className="px-1 pb-1">
+                <MiniChart history={stats.history} />
+              </div>
+            </div>
+          )}
 
           {/* Drop Button */}
           <button onClick={() => drop()}
