@@ -370,14 +370,49 @@ export default function RoulettePage() {
           {/* Two-column layout: wheel left, controls right (stacks on mobile) */}
           <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[380px_1fr] gap-4">
             {/* LEFT: Wheel — bigger on all screens */}
-            <div className="flex items-center justify-center mx-auto md:mx-0 w-[260px] h-[260px] md:w-[300px] md:h-[300px] lg:w-[380px] lg:h-[380px] overflow-visible">
-              <div className="scale-[0.55] md:scale-[0.65] lg:scale-[0.82]" style={{ transformOrigin: "center center" }}>
-                <RouletteWheel
-                  winningNumber={round?.winningNumber ?? null}
-                  spinning={status === "SPINNING"}
-                  status={status}
-                />
+            <div className="flex flex-col items-center gap-2 mx-auto md:mx-0">
+              <div className="w-[260px] h-[260px] md:w-[300px] md:h-[300px] lg:w-[380px] lg:h-[380px] overflow-visible">
+                <div className="scale-[0.55] md:scale-[0.65] lg:scale-[0.82]" style={{ transformOrigin: "center center" }}>
+                  <RouletteWheel
+                    winningNumber={round?.winningNumber ?? null}
+                    spinning={status === "SPINNING"}
+                    status={status}
+                  />
+                </div>
               </div>
+
+              {/* Speed indicator — only visible while spinning */}
+              {status === "SPINNING" && (
+                <div className="w-full max-w-[220px] space-y-1">
+                  <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider">
+                    <span style={{
+                      color: secondsLeft > 13 ? "#4ade80"
+                           : secondsLeft > 7  ? "#facc15"
+                           : secondsLeft > 3  ? "#fb923c"
+                           : "#ef4444"
+                    }}>
+                      {secondsLeft > 13 ? "⚡ Spinning Fast"
+                     : secondsLeft > 7  ? "↻ Slowing Down"
+                     : secondsLeft > 3  ? "🎯 Almost Stopped"
+                     : "🛑 Stopping…"}
+                    </span>
+                    <span className="text-white/40">{secondsLeft}s</span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-1000"
+                      style={{
+                        width: `${Math.min(100, (secondsLeft / 20) * 100)}%`,
+                        background: secondsLeft > 13
+                          ? "linear-gradient(90deg,#4ade80,#22d3ee)"
+                          : secondsLeft > 7
+                          ? "linear-gradient(90deg,#facc15,#fb923c)"
+                          : "linear-gradient(90deg,#ef4444,#dc2626)",
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* RIGHT: Betting table, chips, buttons */}

@@ -17,6 +17,8 @@ function color(n: number) {
   return RED.has(n) ? "#c8102e" : "#1a1a1a";
 }
 
+const SPIN_DURATION = 20; // seconds — must match backend SPIN_MS / 1000
+
 interface Props {
   winningNumber: number | null;
   spinning: boolean;
@@ -45,7 +47,7 @@ export function RouletteWheel({ winningNumber, spinning, status }: Props) {
         if (idx < 0) return;
 
         const currentWheel = wheelRotation.get();
-        const baseWheelSpins = 6;
+        const baseWheelSpins = 12;
         const wheelEndOffset = ((winningNumber * 97 + 211) % 360);
         const finalWheelDeg = currentWheel - baseWheelSpins * 360 - wheelEndOffset;
 
@@ -53,13 +55,14 @@ export function RouletteWheel({ winningNumber, spinning, status }: Props) {
         const slotPageAngle = slotCentreAngle + finalWheelDeg;
 
         const currentBall = ballRotation.get();
-        const baseBallSpins = 10;
+        const baseBallSpins = 22;
         const diff = ((slotPageAngle - (currentBall % 360)) + 360) % 360;
         const finalBallDeg = currentBall + baseBallSpins * 360 + diff;
 
-        animate(wheelRotation, finalWheelDeg, { duration: 8, ease: [0.1, 0.5, 0.2, 1] });
-        animate(ballRotation, finalBallDeg, { duration: 8, ease: [0.08, 0.45, 0.25, 1] });
-        animate(ballY, -145, { duration: 8, ease: [0.3, 0, 0.7, 1] });
+        // Fast start, dramatic slowdown in final ~6s: 80% of rotation in first 40% of time
+        animate(wheelRotation, finalWheelDeg, { duration: SPIN_DURATION, ease: [0.04, 0.72, 0.12, 1] });
+        animate(ballRotation, finalBallDeg,   { duration: SPIN_DURATION, ease: [0.03, 0.68, 0.10, 1] });
+        animate(ballY, -145, { duration: SPIN_DURATION, ease: [0.05, 0.3, 0.8, 1] });
 
       } else if (winningNumber === null) {
         // ─── CONTINUOUS SPINNING ───────────────────────────────────────────────
