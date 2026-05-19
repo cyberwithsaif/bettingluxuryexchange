@@ -1,8 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { diskStorage } from "multer";
 import { extname, join } from "path";
 import { randomBytes } from "crypto";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const multer = require("multer");
 import type { Request } from "express";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
@@ -245,15 +246,15 @@ export class AdminController {
 
   @Post("upload")
   @UseInterceptors(FileInterceptor("file", {
-    storage: diskStorage({
+    storage: multer.diskStorage({
       destination: join(process.cwd(), "uploads"),
-      filename: (_req, file, cb) => {
+      filename: (_req: any, file: any, cb: (e: null, n: string) => void) => {
         const unique = randomBytes(10).toString("hex");
         cb(null, unique + extname(file.originalname));
       },
     }),
     limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter: (_req, file, cb) => {
+    fileFilter: (_req: any, file: any, cb: (e: null, ok: boolean) => void) => {
       cb(null, /image\/(jpeg|png|webp|gif)/.test(file.mimetype));
     },
   }))
