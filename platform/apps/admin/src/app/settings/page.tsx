@@ -3,7 +3,7 @@ import useSWR, { mutate } from "swr";
 import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Settings2, RefreshCw, Shield, Database, CreditCard, ChevronRight } from "lucide-react";
+import { Settings2, RefreshCw, Shield, Database, CreditCard, Navigation, ChevronRight } from "lucide-react";
 
 interface PlatformSettings {
   minStake: number;
@@ -115,6 +115,19 @@ export default function SettingsPage() {
           ))}
         </div>
       </Section>
+
+      {/* Navigation Bar */}
+      <Link href="/settings/nav">
+        <section className="rounded-xl border border-line bg-panel/60 p-5 hover:border-accent/60 transition cursor-pointer group">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-xl flex items-center gap-2">
+              <Navigation size={18} className="text-accentSoft" /> Navigation Bar
+            </h2>
+            <ChevronRight size={18} className="text-white/40 group-hover:text-accent transition" />
+          </div>
+          <p className="text-sm text-white/50 mt-1">Add, edit, delete, reorder and toggle visibility of top navigation tabs.</p>
+        </section>
+      </Link>
 
       {/* Payment Methods */}
       <Link href="/settings/payment-methods">

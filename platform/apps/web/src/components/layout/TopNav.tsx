@@ -3,23 +3,33 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import useSWR from "swr";
 import { cn } from "@/lib/cn";
-const tabs = [
-  { href: "/exchange",   label: "EXCHANGE",    emoji: "🎰" },
-  { href: "/casino",     label: "LIVE CASINO", emoji: "🎲" },
-  { href: "/crash",      label: "CRASH GAMES", emoji: "🚀" },
-  { href: "/virtual",    label: "VIRTUAL GAME",emoji: "🎮" },
-  { href: "/vr-games",   label: "VR GAMES",    emoji: "🥽" },
-  { href: "/slots",      label: "SLOT GAMES",  emoji: "✨" },
-  { href: "/lottery",    label: "LOTTERY",     emoji: "🎟️" },
-  { href: "/sportsbook", label: "SPORTS BOOK", emoji: "🎯" },
-] as const;
 
-interface PublicSettings { subBanner?: string; siteName?: string; siteTagline?: string; marqueeText?: string; }
+const DEFAULT_TABS = [
+  { href: "/exchange",   label: "EXCHANGE",    emoji: "🎰", enabled: true },
+  { href: "/casino",     label: "LIVE CASINO", emoji: "🎲", enabled: true },
+  { href: "/crash",      label: "CRASH GAMES", emoji: "🚀", enabled: true },
+  { href: "/virtual",    label: "VIRTUAL GAME",emoji: "🎮", enabled: true },
+  { href: "/vr-games",   label: "VR GAMES",    emoji: "🥽", enabled: true },
+  { href: "/slots",      label: "SLOT GAMES",  emoji: "✨", enabled: true },
+  { href: "/lottery",    label: "LOTTERY",     emoji: "🎟️", enabled: true },
+  { href: "/sportsbook", label: "SPORTS BOOK", emoji: "🎯", enabled: true },
+];
+
+interface NavItem { href: string; label: string; emoji: string; enabled: boolean; }
+interface PublicSettings {
+  subBanner?: string;
+  siteName?: string;
+  siteTagline?: string;
+  marqueeText?: string;
+  navItems?: NavItem[];
+}
 
 export function TopNav() {
   const path = usePathname();
   const { data: settings } = useSWR<PublicSettings>("/api/platform/settings", (url) => fetch(url).then(r => r.json()), { refreshInterval: 300_000 });
   const subBanner = settings?.subBanner ?? "Bet Now in Line Market and Get Commission Upto 2%";
+  const tabs = (settings?.navItems ?? DEFAULT_TABS).filter(t => t.enabled !== false);
+
   return (
     <div className="sticky top-16 z-40 shadow-md">
       {/* Main Navigation Bar */}

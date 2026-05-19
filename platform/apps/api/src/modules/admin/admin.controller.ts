@@ -70,6 +70,8 @@ class PlatformSettingsDto {
   @IsOptional() @IsNumber() minesMaxBet?: number;
   @IsOptional() @IsBoolean() minesEnabled?: boolean;
   @IsOptional() @IsNumber() minesHardness?: number;
+  // Top navigation bar items
+  @IsOptional() navItems?: any[];
 }
 
 class DepositMethodsDto {
@@ -361,6 +363,16 @@ export class PublicPlatformController {
       { id: "roulette", name: "Roulette", description: "European Roulette", href: "/roulette", thumbnail: null, emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
       { id: "mines",    name: "Mines",    description: "Mines Game",        href: "/mines",    thumbnail: null, emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
     ];
+    const defaultNavItems = [
+      { href: "/exchange",   label: "EXCHANGE",    emoji: "🎰", enabled: true },
+      { href: "/casino",     label: "LIVE CASINO", emoji: "🎲", enabled: true },
+      { href: "/crash",      label: "CRASH GAMES", emoji: "🚀", enabled: true },
+      { href: "/virtual",    label: "VIRTUAL GAME",emoji: "🎮", enabled: true },
+      { href: "/vr-games",   label: "VR GAMES",    emoji: "🥽", enabled: true },
+      { href: "/slots",      label: "SLOT GAMES",  emoji: "✨", enabled: true },
+      { href: "/lottery",    label: "LOTTERY",     emoji: "🎟️", enabled: true },
+      { href: "/sportsbook", label: "SPORTS BOOK", emoji: "🎯", enabled: true },
+    ];
     return {
       subBanner:     (settings as any).subBanner     ?? "Bet Now in Line Market and Get Commission Upto 2%",
       siteName:      (settings as any).siteName      ?? "Future9",
@@ -371,6 +383,7 @@ export class PublicPlatformController {
       minesMinBet:   Number((settings as any).minesMinBet  ?? 10),
       minesMaxBet:   Number((settings as any).minesMaxBet  ?? 100000),
       minesEnabled:  (settings as any).minesEnabled !== false,
+      navItems:      (settings as any).navItems      ?? defaultNavItems,
     };
   }
 }
