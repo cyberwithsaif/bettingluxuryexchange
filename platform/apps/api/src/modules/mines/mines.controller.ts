@@ -53,6 +53,13 @@ export class MinesController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Post("admin/expire-stale")
+  expireStale(@Query("minutes") minutes?: string) {
+    return this.minesService.expireStale(minutes ? parseInt(minutes, 10) : 120);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Get("admin/live")
   getLiveSessions() {
     return this.minesService.getLiveSessions();

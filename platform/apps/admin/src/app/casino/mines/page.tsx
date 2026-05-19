@@ -40,6 +40,7 @@ export default function MinesAdminPage() {
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [resetting, setResetting] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [expiring, setExpiring] = useState(false);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -57,8 +58,16 @@ export default function MinesAdminPage() {
     setResetting(true); setConfirmReset(false);
     try {
       await api.post("/mines/admin/stats/reset");
-      mutate(STATS_KEY); mutate(HIST_KEY);
+      mutate(STATS_KEY); mutate(HIST_KEY); mutateLive();
     } finally { setResetting(false); }
+  }
+
+  async function expireStale() {
+    setExpiring(true);
+    try {
+      await api.post("/mines/admin/expire-stale");
+      mutateLive(); mutate(STATS_KEY); mutate(HIST_KEY);
+    } finally { setExpiring(false); }
   }
 
   async function saveConfig() {
@@ -82,19 +91,29 @@ export default function MinesAdminPage() {
           </h1>
           <p className="text-sm text-white/50 mt-1">Live sessions, game history, house edge & bet limits.</p>
         </div>
-        <button
-          onClick={resetStats}
-          disabled={resetting}
-          className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition",
-            confirmReset
-              ? "bg-red-600 border-red-500 text-white animate-pulse"
-              : "border-red-500/40 text-red-400 hover:bg-red-500/10"
-          )}
-        >
-          {resetting ? <RefreshCw size={14} className="animate-spin" /> : <Trash2 size={14} />}
-          {resetting ? "Resetting…" : confirmReset ? "Click again to confirm" : "Reset Stats"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={expireStale}
+            disabled={expiring}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10 transition disabled:opacity-50"
+          >
+            {expiring ? <RefreshCw size={14} className="animate-spin" /> : <Activity size={14} />}
+            {expiring ? "Expiring…" : "Expire Stale"}
+          </button>
+          <button
+            onClick={resetStats}
+            disabled={resetting}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition",
+              confirmReset
+                ? "bg-red-600 border-red-500 text-white animate-pulse"
+                : "border-red-500/40 text-red-400 hover:bg-red-500/10"
+            )}
+          >
+            {resetting ? <RefreshCw size={14} className="animate-spin" /> : <Trash2 size={14} />}
+            {resetting ? "Resetting…" : confirmReset ? "Click again to confirm" : "Reset Stats"}
+          </button>
+        </div>
       </div>
 
       {/* Stats */}

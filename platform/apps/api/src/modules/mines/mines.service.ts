@@ -250,11 +250,27 @@ export class MinesService {
   }
 
   async getLiveSessions() {
+    // Auto-expire sessions older than 2 hours
+    await this.expireStale(120);
     return this.prisma.minesSession.findMany({
       where: { status: MinesStatus.IN_PROGRESS },
       include: { user: { select: { username: true } } },
       orderBy: { createdAt: "desc" },
     });
+  }
+
+  async expireStale(maxAgeMinutes = 120) {
+    const cutoff = new Date(Date.now() - maxAgeMinutes * 60 * 1000);
+    const stale = await this.prisma.minesSession.findMany({
+      where: { status: MinesStatus.IN_PROGRESS, createdAt: { lt: cutoff } },
+      select: { id: true },
+    });
+    if (stale.length === 0) return { expired: 0 };
+    await this.prisma.minesSession.updateMany({
+      where: { id: { in: stale.map(s => s.id) } },
+      data: { status: MinesStatus.BUSTED, settledAt: new Date() },
+    });
+    return { expired: stale.length };
   }
 
   async getAdminHistory(opts: { limit?: number; skip?: number; status?: string; username?: string }) {
