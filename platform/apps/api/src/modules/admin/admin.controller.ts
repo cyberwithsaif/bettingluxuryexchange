@@ -257,7 +257,7 @@ export class AdminController {
       cb(null, /image\/(jpeg|png|webp|gif)/.test(file.mimetype));
     },
   }))
-  uploadFile(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+  uploadFile(@UploadedFile() file: { filename: string }, @Req() req: Request) {
     const host = `${req.protocol}://${req.get("host")}`;
     return { url: `${host}/uploads/${file.filename}` };
   }
