@@ -62,7 +62,7 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
     return true;
   });
 
-  const showInHouse = category === "LIVE" || !category;
+  const showInHouse = category === "LIVE" || category === "VR" || !category;
 
   return (
     <div className="mx-auto max-w-[1600px] px-4 py-6">
