@@ -180,7 +180,8 @@ export default function PlinkoPage() {
       .catch(() => {});
   }, [rows, risk]);
 
-  // Balance
+  // Balance — debounced refetch so concurrent ball-lands don't race each other
+  const balanceFetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchBalance = useCallback(async () => {
     if (!token) return;
     try {
@@ -189,6 +190,10 @@ export default function PlinkoPage() {
       setBalance(Number(d.balance ?? 0));
     } catch { /* ignore */ }
   }, [token]);
+  const scheduleFetchBalance = useCallback(() => {
+    if (balanceFetchTimer.current) clearTimeout(balanceFetchTimer.current);
+    balanceFetchTimer.current = setTimeout(fetchBalance, 900);
+  }, [fetchBalance]);
   useEffect(() => { fetchBalance(); }, [fetchBalance]);
 
   // Live feed — own bets are added on ball-land (onBallDone); other players' bets
@@ -294,9 +299,12 @@ export default function PlinkoPage() {
         history: [...prev.history.slice(-99), netGain],
       };
     });
-    fetchBalance();
+    // Optimistic update: adjust balance immediately so it's never stale
+    setBalance(prev => (prev !== null ? +(prev + res.profit).toFixed(2) : null));
+    // Debounced server refetch: fires 900ms after the last ball lands (avoids race)
+    scheduleFetchBalance();
     if (res.multiplier >= 5) notify(`${res.multiplier}× — Won ₹${res.payout.toLocaleString()}!`, "ok");
-  }, [fetchBalance, notify]);
+  }, [scheduleFetchBalance, notify]);
 
   const startAuto = useCallback(async () => {
     autoRef.current = true;
