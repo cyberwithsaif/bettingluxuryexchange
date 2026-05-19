@@ -224,8 +224,8 @@ export function PlinkoBoard({ rows, multiplierTable, result, animating, turbo, o
       s.waypointIdx++;
       if (s.waypointIdx >= wps.length - 1) {
         // Animation done
-        s.ballX = wps[wps.length - 1].x;
-        s.ballY = wps[wps.length - 1].y;
+        const lastWp = wps[wps.length - 1];
+        if (lastWp) { s.ballX = lastWp.x; s.ballY = lastWp.y; }
         s.settled = true;
         s.flashAlpha = 1;
         draw();
@@ -236,6 +236,7 @@ export function PlinkoBoard({ rows, multiplierTable, result, animating, turbo, o
 
     const from = wps[s.waypointIdx];
     const to   = wps[s.waypointIdx + 1];
+    if (!from || !to) { draw(); return; }
     const t    = easeInOut(s.progress);
 
     s.ballX = from.x + (to.x - from.x) * t;
@@ -274,8 +275,7 @@ export function PlinkoBoard({ rows, multiplierTable, result, animating, turbo, o
       if (turbo) {
         // Jump straight to end
         const last = wps[wps.length - 1];
-        stateRef.current.ballX = last.x;
-        stateRef.current.ballY = last.y;
+        if (last) { stateRef.current.ballX = last.x; stateRef.current.ballY = last.y; }
         stateRef.current.settled = true;
         stateRef.current.flashAlpha = 1;
         draw();
