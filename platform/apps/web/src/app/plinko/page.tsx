@@ -161,17 +161,26 @@ export default function PlinkoPage() {
   }, [token]);
   useEffect(() => { fetchBalance(); }, [fetchBalance]);
 
-  // Live feed — instant, no delay, 15 max; overlay chips expire in 3s
+  // Live feed — right sidebar instant; overlay chips delayed to match ball animation
+  // Speed 0.038/frame @ 60fps → 1/0.038/60*1000 ≈ 439ms per segment; rows+1 segments
   useEffect(() => {
     const socket: Socket = io("/plinko", { path: "/socket.io", transports: ["websocket"] });
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
     socket.on("plinko:bet", (bet: LiveBet) => {
       setLiveFeed(p => [bet, ...p].slice(0, 15));
-      setChips(p => [
-        { uid: bet.betId + "-" + Date.now(), multiplier: bet.multiplier, expiresAt: Date.now() + 3000 },
-        ...p,
-      ].slice(0, 7));
+
+      const delay = Math.round((bet.rows + 1) * 440);
+      const t = setTimeout(() => {
+        setChips(p => [
+          { uid: bet.betId + "-" + Date.now(), multiplier: bet.multiplier, expiresAt: Date.now() + 3000 },
+          ...p,
+        ].slice(0, 7));
+      }, delay);
+      timers.push(t);
     });
-    return () => { socket.disconnect(); };
+
+    return () => { socket.disconnect(); timers.forEach(clearTimeout); };
   }, []);
 
   // Auto-expire overlay chips
