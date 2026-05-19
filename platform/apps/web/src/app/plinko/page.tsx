@@ -20,6 +20,7 @@ interface LiveBet {
   rows: number; riskLevel: string; multiplier: number; payout: number;
 }
 interface Note { id: number; text: string; kind: "ok" | "bad" | "info" }
+interface Chip  { uid: string; multiplier: number; expiresAt: number; }
 
 // 3-color system: high=red, medium=green, low=yellow
 function multColor(m: number) {
@@ -78,6 +79,7 @@ export default function PlinkoPage() {
   const isDropping  = activeBalls > 0;
 
   const [liveFeed, setLiveFeed] = useState<LiveBet[]>([]);
+  const [chips,    setChips]    = useState<Chip[]>([]);
 
   // ── Sound system ─────────────────────────────────────────────────────────
   const audioCtx = useRef<AudioContext | null>(null);
@@ -159,14 +161,26 @@ export default function PlinkoPage() {
   }, [token]);
   useEffect(() => { fetchBalance(); }, [fetchBalance]);
 
-  // Live feed — instant, no delay, 15 max
+  // Live feed — instant, no delay, 15 max; overlay chips expire in 3s
   useEffect(() => {
     const socket: Socket = io("/plinko", { path: "/socket.io", transports: ["websocket"] });
     socket.on("plinko:bet", (bet: LiveBet) => {
       setLiveFeed(p => [bet, ...p].slice(0, 15));
+      setChips(p => [
+        { uid: bet.betId + "-" + Date.now(), multiplier: bet.multiplier, expiresAt: Date.now() + 3000 },
+        ...p,
+      ].slice(0, 7));
     });
     return () => { socket.disconnect(); };
   }, []);
+
+  // Auto-expire overlay chips
+  useEffect(() => {
+    if (chips.length === 0) return;
+    const next = Math.min(...chips.map(c => c.expiresAt)) - Date.now();
+    const t = setTimeout(() => setChips(p => p.filter(c => c.expiresAt > Date.now())), Math.max(0, next));
+    return () => clearTimeout(t);
+  }, [chips]);
 
   const pendingResults = useRef<Map<number, { multiplier: number; payout: number; profit: number }>>(new Map());
 
@@ -437,28 +451,22 @@ export default function PlinkoPage() {
             onBounce={playBounce} onLand={playLand}
           />
 
-          {/* ── Live chips overlaid in blank top-right of board ── */}
+          {/* ── Overlay chips: latest 7, fade out after 3s ── */}
           <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-1 pointer-events-none">
-            <div className="flex items-center gap-1.5 text-[7px] text-white/40 uppercase tracking-wider mb-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shrink-0" />
-              Live
-            </div>
             <AnimatePresence initial={false}>
-              {liveFeed.map(b => (
+              {chips.map(c => (
                 <motion.div
-                  key={b.betId}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.16 }}
-                  className={`w-14 rounded-md px-1.5 py-1 text-[9px] font-bold text-center ${chipBg(b.multiplier)}`}
+                  key={c.uid}
+                  initial={{ opacity: 0, x: 24, scale: 0.85 }}
+                  animate={{ opacity: 1, x: 0,  scale: 1 }}
+                  exit={{    opacity: 0, x: 24, scale: 0.85 }}
+                  transition={{ duration: 0.18 }}
+                  className={`w-[58px] rounded-lg px-1.5 py-1.5 text-[10px] font-bold text-center shadow-lg ${chipBg(c.multiplier)}`}
                 >
-                  {fmtMult(b.multiplier)}
+                  {fmtMult(c.multiplier)}
                 </motion.div>
               ))}
             </AnimatePresence>
-            {liveFeed.length === 0 && (
-              <div className="text-[8px] text-white/20">–</div>
-            )}
           </div>
 
           {activeBalls > 1 && (
@@ -469,6 +477,36 @@ export default function PlinkoPage() {
           )}
         </div>
       </div>
+
+      {/* ── Right: Live Bets Sidebar ───────────────────────────────────────────── */}
+      <aside className="w-[150px] shrink-0 bg-[#0f1018] border-l border-white/[0.07] flex flex-col">
+        <div className="px-2.5 py-2 border-b border-white/[0.07] flex items-center gap-1.5 text-[8px] uppercase tracking-widest text-white/30 shrink-0">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
+          Live Bets
+        </div>
+        <div className="flex-1 overflow-y-auto scrollbar-none">
+          <AnimatePresence initial={false}>
+            {liveFeed.map(b => (
+              <motion.div
+                key={b.betId}
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex flex-col px-2.5 py-1.5 border-b border-white/[0.04]"
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[9px] font-medium truncate text-white/70">{b.username}</span>
+                  <span className={`text-[9px] font-bold shrink-0 ${multColor(b.multiplier)}`}>{fmtMult(b.multiplier)}</span>
+                </div>
+                <div className="text-[8px] text-white/30 mt-0.5">₹{b.betAmount} · {b.rows}R</div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          {liveFeed.length === 0 && (
+            <div className="p-3 text-[9px] text-white/20 text-center">Waiting…</div>
+          )}
+        </div>
+      </aside>
     </div>
   );
 }
