@@ -568,8 +568,9 @@ export default function PlinkoPage() {
           )}
         </div>
 
-        {/* Board canvas — fills remaining space */}
-        <div className="relative flex-1 h-full min-w-0">
+        {/* Board canvas — constrained width, centered */}
+        <div className="flex-1 flex items-stretch justify-center overflow-hidden min-w-0">
+          <div className="relative h-full w-full" style={{ maxWidth: 600 }}>
           <PlinkoBoard
             rows={rows} riskLevel={risk} multiplierTable={multTable}
             turbo={turbo} queue={queue} onBallDone={onBallDone}
@@ -600,6 +601,7 @@ export default function PlinkoPage() {
               {activeBalls} balls
             </div>
           )}
+          </div>
         </div>
       </div> {/* end center area */}
 
