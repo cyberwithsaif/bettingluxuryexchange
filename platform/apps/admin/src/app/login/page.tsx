@@ -24,17 +24,14 @@ export default function AdminLogin() {
       if (!["SUPER_ADMIN", "ADMIN", "SUPER_MASTER", "MASTER", "AGENT"].includes(data.user.role)) {
         throw new Error("Not authorized for admin panel");
       }
-      setAuth({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
-      // Write directly to localStorage and wait for Zustand persist to flush
-      // before navigating, otherwise the full reload races the storage write
-      // and AdminShell sees user=null on its first mount.
-      try {
-        localStorage.setItem("exch-admin-auth", JSON.stringify({
-          state: { user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken },
-          version: 0,
-        }));
-      } catch {}
-      await new Promise((r) => setTimeout(r, 50));
+      // Write directly to localStorage without calling setAuth() first.
+      localStorage.setItem("exch-admin-auth", JSON.stringify({
+        state: { user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken },
+        version: 0,
+      }));
+      // Use window.location.href for a FULL page reload, which triggers Zustand hydration.
+      // SPA navigation with router.replace() doesn't re-hydrate Zustand from storage.
+      // The localStorage write completes synchronously before navigation.
       window.location.href = "/admin/";
     } catch (e: any) {
       const msg = e?.response?.data?.message ?? e?.message;

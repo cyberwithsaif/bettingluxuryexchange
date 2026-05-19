@@ -67,6 +67,7 @@ model User {
   refreshTokens   RefreshToken[]
   limits          UserLimits?
   adminLogs       AdminLog[]    @relation("AdminActor")
+  rouletteBets    RouletteBet[]
 
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -482,6 +483,51 @@ model CasinoTransaction {
 
   @@unique([sessionId, externalRef, kind])
   @@index([roundId])
+}
+
+// -------------------------------------------------------------
+// Roulette — In-house European roulette (0-36)
+// -------------------------------------------------------------
+
+enum RouletteRoundStatus {
+  BETTING     // accepting bets
+  SPINNING    // ball is rolling, no new bets
+  SETTLED     // result announced, payouts complete
+}
+
+model RouletteRound {
+  id             String              @id @default(cuid())
+  roundNumber    Int                 @unique @default(autoincrement())
+  status         RouletteRoundStatus @default(BETTING)
+  serverSeed     String              // 32-byte hex
+  serverSeedHash String              // sha256(serverSeed) — published before round
+  winningNumber  Int?                // 0..36, set when settled
+  winningColor   String?             // "red" | "black" | "green"
+  startedAt      DateTime            @default(now())
+  spinAt         DateTime?
+  settledAt      DateTime?
+
+  bets RouletteBet[]
+
+  @@index([status, startedAt])
+}
+
+model RouletteBet {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  roundId     String
+  round       RouletteRound @relation(fields: [roundId], references: [id])
+  betType     String        // "number" | "red" | "black" | "odd" | "even" | "high" | "low" | "dozen1" | "dozen2" | "dozen3" | "col1" | "col2" | "col3"
+  betValue    String?       // for "number": "0".."36"; otherwise null
+  amount      Decimal       @db.Decimal(20, 4)
+  payout      Decimal       @default(0) @db.Decimal(20, 4)
+  isWin       Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  settledAt   DateTime?
+
+  @@index([roundId])
+  @@index([userId, createdAt])
 }
 
 // -------------------------------------------------------------

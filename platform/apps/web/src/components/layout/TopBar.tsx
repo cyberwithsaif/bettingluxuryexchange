@@ -50,11 +50,11 @@ export function TopBar() {
         {/* Left: Logo & Clock */}
         <div className="flex items-center gap-6">
           <Link href="/" className="flex flex-col leading-none">
-            <span className="font-display italic text-3xl font-black tracking-tight flex items-center gap-1">
-              FUTURE <span className="text-xl">🏏</span>
+            <span className="font-display italic text-3xl font-black tracking-tight flex items-center gap-1 uppercase">
+              {platformSettings?.siteName ?? "Future9"} <span className="text-xl">🏏</span>
             </span>
             <span className="text-[10px] uppercase tracking-widest font-semibold text-white/90">
-              — Sports & Casino —
+              — {platformSettings?.siteTagline ?? "Sports & Casino"} —
             </span>
           </Link>
           <div className="hidden lg:block text-xs font-medium text-white/90">

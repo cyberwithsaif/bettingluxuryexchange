@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 const tabs = [
   { href: "/exchange",   label: "EXCHANGE",    emoji: "🎰" },
   { href: "/casino",     label: "LIVE CASINO", emoji: "🎲" },
+  { href: "/roulette",   label: "ROULETTE",    emoji: "🎯" },
   { href: "/crash",      label: "CRASH GAMES", emoji: "🚀" },
   { href: "/virtual",    label: "VIRTUAL GAME",emoji: "🎮" },
   { href: "/slots",      label: "SLOT GAMES",  emoji: "✨" },
