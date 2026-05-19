@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpToLine,
   Settings, Key, ListChecks, ShieldAlert, LogOut, Gamepad2, Trophy,
-  Ticket, BarChart3, Bell, Menu, X, CreditCard, Megaphone, Navigation,
+  Ticket, BarChart3, Bell, Menu, X, CreditCard, Megaphone, Navigation, Target,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -29,6 +29,7 @@ const NAV = [
   { href: "/settings/banners",         label: "Banner Settings", Icon: Megaphone },
   { href: "/settings/nav",             label: "Navigation Bar",  Icon: Navigation },
   { href: "/casino/mines",             label: "Mines",           Icon: Gamepad2 },
+  { href: "/casino/plinko",            label: "Plinko",          Icon: Target },
 ] as const;
 
 function Spinner() {
@@ -110,7 +111,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               href === "/"
                 ? path === "/"
                 : path === href || (href !== "/settings" && href !== "/casino" && path?.startsWith(href + "/"));
-            const isSubItem = href === "/settings/banners" || href === "/settings/nav" || href === "/casino/mines";
+            const isSubItem = href === "/settings/banners" || href === "/settings/nav" || href === "/casino/mines" || href === "/casino/plinko";
             return (
               <Link
                 key={href}

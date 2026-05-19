@@ -246,8 +246,9 @@ export class AdminController {
   async getSettings() {
     const settings = await this.admin.getPlatformSettings() as any;
     const defaultInhouseGames = [
-      { id: "roulette", name: "Roulette", description: "European Roulette", href: "/roulette", thumbnail: null, emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
-      { id: "mines",    name: "Mines",    description: "Mines Game",        href: "/mines",    thumbnail: null, emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
+      { id: "roulette", name: "Roulette", description: "European Roulette",     href: "/roulette", thumbnail: null, emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
+      { id: "mines",    name: "Mines",    description: "Mines Game",             href: "/mines",    thumbnail: null, emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
+      { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko",   href: "/plinko",   thumbnail: null, emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", sortOrder: 2 },
     ];
     return { ...settings, inhouseGames: settings.inhouseGames ?? defaultInhouseGames };
   }
@@ -360,8 +361,9 @@ export class PublicPlatformController {
   async getPublicSettings() {
     const settings = await this.admin.getPlatformSettings();
     const defaultInhouseGames = [
-      { id: "roulette", name: "Roulette", description: "European Roulette", href: "/roulette", thumbnail: null, emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
-      { id: "mines",    name: "Mines",    description: "Mines Game",        href: "/mines",    thumbnail: null, emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
+      { id: "roulette", name: "Roulette", description: "European Roulette",   href: "/roulette", thumbnail: null, emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
+      { id: "mines",    name: "Mines",    description: "Mines Game",           href: "/mines",    thumbnail: null, emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
+      { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko", href: "/plinko",   thumbnail: null, emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", sortOrder: 2 },
     ];
     const defaultNavItems = [
       { href: "/exchange",   label: "EXCHANGE",    emoji: "🎰", enabled: true },

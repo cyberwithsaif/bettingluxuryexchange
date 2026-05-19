@@ -23,6 +23,7 @@ import { BootstrapModule } from "./bootstrap/bootstrap.module";
 import { AnnouncementsModule } from "./modules/announcements/announcements.module";
 import { RouletteModule } from "./modules/roulette/roulette.module";
 import { MinesModule } from "./modules/mines/mines.module";
+import { PlinkoModule } from "./modules/plinko/plinko.module";
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { MinesModule } from "./modules/mines/mines.module";
     AnnouncementsModule,
     RouletteModule,
     MinesModule,
+    PlinkoModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

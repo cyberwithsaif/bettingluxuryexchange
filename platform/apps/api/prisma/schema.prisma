@@ -69,6 +69,7 @@ model User {
   adminLogs       AdminLog[]    @relation("AdminActor")
   rouletteBets    RouletteBet[]
   minesSessions   MinesSession[]
+  plinkoBets      PlinkoBet[]
 
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -642,4 +643,27 @@ model SystemConfig {
   key       String   @id
   value     Json
   updatedAt DateTime @updatedAt
+}
+
+model PlinkoBet {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  betAmount      Decimal  @db.Decimal(20, 4)
+  rows           Int
+  riskLevel      String   // "low" | "medium" | "high"
+  serverSeed     String
+  serverSeedHash String
+  clientSeed     String
+  nonce          Int
+  path           Json     // number[] — 0=left, 1=right per row
+  slot           Int      // final slot 0..rows
+  multiplier     Decimal  @db.Decimal(10, 4)
+  payout         Decimal  @db.Decimal(20, 4)
+  profit         Decimal  @db.Decimal(20, 4)
+  rtpAtPlay      Decimal? @db.Decimal(5, 2)
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }
