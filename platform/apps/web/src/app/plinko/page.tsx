@@ -428,46 +428,47 @@ export default function PlinkoPage() {
         </div>
       </aside>
 
-      {/* ── Board — fills all remaining space ──────────────────────────────────── */}
-      <div className="flex-1 relative overflow-hidden min-w-0">
-        <PlinkoBoard
-          rows={rows} riskLevel={risk} multiplierTable={multTable}
-          turbo={turbo} queue={queue} onBallDone={onBallDone}
-          onBounce={playBounce} onLand={playLand}
-        />
-        {activeBalls > 1 && (
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/70 backdrop-blur text-[10px] text-white/60 pointer-events-none border border-white/10">
-            <RefreshCw size={9} className="animate-spin" />
-            {activeBalls} balls in flight
-          </div>
-        )}
-      </div>
+      {/* ── Board — centered, constrained width ───────────────────────────────── */}
+      <div className="flex-1 flex items-center justify-center overflow-hidden min-w-0 bg-[#0b0c12]">
+        <div className="relative w-full h-full" style={{ maxWidth: 700 }}>
+          <PlinkoBoard
+            rows={rows} riskLevel={risk} multiplierTable={multTable}
+            turbo={turbo} queue={queue} onBallDone={onBallDone}
+            onBounce={playBounce} onLand={playLand}
+          />
 
-      {/* ── Live Result Chips ──────────────────────────────────────────────────── */}
-      <aside className="w-[68px] shrink-0 bg-[#0f1018] border-l border-white/[0.07] flex flex-col">
-        <div className="px-1.5 py-2 border-b border-white/[0.07] flex items-center gap-1 text-[7px] uppercase tracking-wider text-white/30">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
-          Live
-        </div>
-        <div className="flex-1 overflow-y-auto scrollbar-none flex flex-col gap-1 p-1.5">
-          <AnimatePresence initial={false}>
-            {liveFeed.map(b => (
-              <motion.div
-                key={b.betId}
-                initial={{ opacity: 0, y: -8, scale: 0.85 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.18 }}
-                className={`rounded-md px-1 py-1.5 text-center text-[9px] font-bold leading-none ${chipBg(b.multiplier)}`}
-              >
-                {fmtMult(b.multiplier)}
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          {liveFeed.length === 0 && (
-            <div className="text-[8px] text-white/20 text-center pt-4">–</div>
+          {/* ── Live chips overlaid in blank top-right of board ── */}
+          <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-1 pointer-events-none">
+            <div className="flex items-center gap-1.5 text-[7px] text-white/40 uppercase tracking-wider mb-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shrink-0" />
+              Live
+            </div>
+            <AnimatePresence initial={false}>
+              {liveFeed.map(b => (
+                <motion.div
+                  key={b.betId}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.16 }}
+                  className={`w-14 rounded-md px-1.5 py-1 text-[9px] font-bold text-center ${chipBg(b.multiplier)}`}
+                >
+                  {fmtMult(b.multiplier)}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            {liveFeed.length === 0 && (
+              <div className="text-[8px] text-white/20">–</div>
+            )}
+          </div>
+
+          {activeBalls > 1 && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/70 backdrop-blur text-[10px] text-white/60 pointer-events-none border border-white/10">
+              <RefreshCw size={9} className="animate-spin" />
+              {activeBalls} balls
+            </div>
           )}
         </div>
-      </aside>
+      </div>
     </div>
   );
 }
