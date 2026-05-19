@@ -206,7 +206,14 @@ export class AdminController {
   // -- Platform Settings --
 
   @Get("platform-settings")
-  getSettings() { return this.admin.getPlatformSettings(); }
+  async getSettings() {
+    const settings = await this.admin.getPlatformSettings() as any;
+    const defaultInhouseGames = [
+      { id: "roulette", name: "Roulette", description: "European Roulette", href: "/roulette", thumbnail: null, emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
+      { id: "mines",    name: "Mines",    description: "Mines Game",        href: "/mines",    thumbnail: null, emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
+    ];
+    return { ...settings, inhouseGames: settings.inhouseGames ?? defaultInhouseGames };
+  }
 
   @Post("platform-settings")
   async saveSettings(@CurrentUser() actor: AuthUser, @Body() dto: PlatformSettingsDto, @Req() req: Request) {
