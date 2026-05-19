@@ -8,10 +8,10 @@ import { cn } from "@/lib/cn";
 import {
   ArrowLeft, User, Shield, CreditCard, TrendingUp, Activity, Settings,
   CheckCircle2, XCircle, Clock, Wallet, Lock, RefreshCw, Save, Bomb,
-  Phone, Mail, Calendar, Key, BarChart3, Gamepad2, FileText, Ban,
+  Phone, Mail, Calendar, Key, BarChart3, Gamepad2, Ban,
   UserCheck, UserX, DollarSign, MessageSquare, AlertTriangle,
   Eye, Fingerprint, Building2, Bitcoin, Gift, Star, ShieldAlert,
-  ToggleLeft, ToggleRight, Edit2, ChevronRight, Info,
+  ToggleLeft, ToggleRight, Edit2, ChevronRight, Info, Plus,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
