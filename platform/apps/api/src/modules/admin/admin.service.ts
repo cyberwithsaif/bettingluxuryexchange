@@ -208,5 +208,150 @@ export class AdminService {
     });
     return merged;
   }
+
+  // ── User Profile ───────────────────────────────────────────────────────────
+
+  async getUserProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { wallet: true, limits: true },
+    });
+    if (!user) throw new BadRequestException("User not found");
+
+    const [ledgerGroups, betGroups, minesAgg, minesGroups, recentLogins, recentTxns, recentBets, adminNotes] =
+      await Promise.all([
+        this.prisma.ledgerEntry.groupBy({
+          by: ["kind"],
+          where: { userId },
+          _sum: { amount: true },
+        }),
+        this.prisma.bet.groupBy({
+          by: ["status"],
+          where: { userId },
+          _count: { _all: true },
+          _sum: { stake: true },
+        }),
+        this.prisma.minesSession.aggregate({
+          where: { userId },
+          _count: { _all: true },
+          _sum: { betAmount: true, payout: true },
+        }),
+        this.prisma.minesSession.groupBy({
+          by: ["status"],
+          where: { userId },
+          _count: { _all: true },
+        }),
+        this.prisma.refreshToken.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: 5,
+          select: { userAgent: true, ip: true, createdAt: true },
+        }),
+        this.prisma.transaction.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: 15,
+          select: { id: true, kind: true, method: true, amount: true, status: true, reference: true, createdAt: true },
+        }),
+        this.prisma.bet.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: 15,
+          include: {
+            market: { select: { name: true, type: true } },
+            runner: { select: { name: true } },
+          },
+        }),
+        this.prisma.adminLog.findMany({
+          where: { targetId: userId, action: "admin.note" },
+          orderBy: { createdAt: "desc" },
+          take: 20,
+          include: { actor: { select: { username: true } } },
+        }),
+      ]);
+
+    // Ledger map: kind → signed sum
+    const lm: Record<string, number> = {};
+    for (const g of ledgerGroups) lm[g.kind] = Number(g._sum.amount ?? 0);
+
+    // Bet stats
+    const bm: Record<string, number> = {};
+    for (const g of betGroups) bm[g.status] = g._count._all;
+    const totalBets = betGroups.reduce((s, b) => s + b._count._all, 0);
+    const wonBets   = bm["SETTLED_WON"]  ?? 0;
+    const lostBets  = bm["SETTLED_LOST"] ?? 0;
+    const totalBetStake = betGroups.reduce((s, b) => s + Number(b._sum.stake ?? 0), 0);
+
+    // Mines stats
+    const msm: Record<string, number> = {};
+    for (const g of minesGroups) msm[g.status] = g._count._all;
+
+    return {
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        status: user.status,
+        twoFactorEnabled: user.twoFactorEnabled,
+        lastLoginAt: user.lastLoginAt,
+        lastLoginIp: user.lastLoginIp,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        partnershipBps: user.partnershipBps,
+        creditReference: Number(user.creditReference),
+      },
+      wallet: {
+        balance:  Number(user.wallet?.balance  ?? 0),
+        exposure: Number(user.wallet?.exposure ?? 0),
+        bonus:    Number(user.wallet?.bonus    ?? 0),
+      },
+      limits: user.limits ? {
+        minStake:          Number(user.limits.minStake),
+        maxStake:          Number(user.limits.maxStake),
+        maxMarketExposure: Number(user.limits.maxMarketExposure),
+        maxDailyLoss:      Number(user.limits.maxDailyLoss),
+        betDelayMs:        user.limits.betDelayMs,
+        fancyEnabled:      user.limits.fancyEnabled,
+        casinoEnabled:     user.limits.casinoEnabled,
+      } : null,
+      financials: {
+        totalDeposits:    Math.max(0,  lm["DEPOSIT"]          ?? 0),
+        totalWithdrawals: Math.abs(Math.min(0, lm["WITHDRAWAL"] ?? 0)),
+        casinoWins:       Math.max(0,  lm["CASINO_WIN"]        ?? 0),
+        casinoBets:       Math.abs(Math.min(0, lm["CASINO_BET"] ?? 0)),
+        betWins:          Math.max(0,  lm["BET_SETTLE_WIN"]    ?? 0),
+        betLosses:        Math.abs(Math.min(0, lm["BET_SETTLE_LOSS"] ?? 0)),
+        adminCredits:     Math.max(0,  lm["ADMIN_CREDIT"]      ?? 0),
+        bonusGranted:     Math.max(0,  lm["BONUS_GRANT"]       ?? 0),
+      },
+      bettingStats: {
+        total:      totalBets,
+        won:        wonBets,
+        lost:       lostBets,
+        open:       bm["OPEN"]    ?? 0,
+        cancelled:  bm["CANCELLED"] ?? 0,
+        totalStake: totalBetStake,
+        winRate:    (wonBets + lostBets) > 0 ? Number(((wonBets / (wonBets + lostBets)) * 100).toFixed(1)) : 0,
+      },
+      casinoStats: {
+        totalGames: minesAgg._count._all,
+        won:        msm["CASHED_OUT"] ?? 0,
+        busted:     msm["BUSTED"]     ?? 0,
+        totalBet:   Number(minesAgg._sum.betAmount ?? 0),
+        totalPayout:Number(minesAgg._sum.payout    ?? 0),
+      },
+      recentLogins,
+      recentTxns,
+      recentBets,
+      adminNotes,
+    };
+  }
+
+  async addUserNote(actorId: string, targetUserId: string, note: string) {
+    await this.writeAudit(actorId, "admin.note", { type: "user", id: targetUserId }, { note });
+    return { ok: true };
+  }
 }
 

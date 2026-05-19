@@ -223,6 +223,21 @@ export class AdminController {
     return result;
   }
 
+  // -- User Profile --
+
+  @Get("users/:id/profile")
+  getUserProfile(@Param("id") id: string) {
+    return this.admin.getUserProfile(id);
+  }
+
+  @Post("users/:id/notes")
+  async addUserNote(
+    @CurrentUser() actor: AuthUser, @Param("id") id: string,
+    @Body() dto: { note: string }, @Req() req: Request,
+  ) {
+    return this.admin.addUserNote(actor.id, id, dto.note);
+  }
+
   // -- Platform Settings --
 
   @Get("platform-settings")

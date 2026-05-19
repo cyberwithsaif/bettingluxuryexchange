@@ -1,6 +1,7 @@
 "use client";
 import useSWR, { mutate } from "swr";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Edit2, Wallet, UserX, UserCheck, KeyRound, X, Save, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -32,6 +33,7 @@ function buildKey(q: string, role: string) {
 }
 
 export default function UsersPage() {
+  const router = useRouter();
   const [q, setQ]       = useState("");
   const [role, setRole] = useState("");
   const [editing, setEditing] = useState<UserRecord | null>(null);
@@ -89,8 +91,8 @@ export default function UsersPage() {
           </thead>
           <tbody>
             {(users ?? []).map((u) => (
-              <tr key={u.id} className="border-t border-line/60 hover:bg-panel2/20 transition">
-                <Td className="font-semibold">{u.username}</Td>
+              <tr key={u.id} className="border-t border-line/60 hover:bg-panel2/20 transition cursor-pointer group" onClick={() => router.push(`/users/${u.id}`)}>
+                <Td className="font-semibold group-hover:text-accent transition">{u.username}</Td>
                 <Td>
                   <span className="text-xs px-2 py-0.5 rounded bg-accent/15 text-accentSoft border border-accent/20">
                     {u.role}
@@ -109,7 +111,7 @@ export default function UsersPage() {
                 <Td>{(u.partnershipBps / 100).toFixed(2)}%</Td>
                 <Td className="tabular-nums">₹{Number(u.creditReference ?? 0).toLocaleString("en-IN")}</Td>
                 <Td>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     {/* Edit */}
                     <ActionBtn
                       title="Edit user"
