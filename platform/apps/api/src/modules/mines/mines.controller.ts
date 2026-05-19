@@ -45,6 +45,13 @@ export class MinesController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Post("admin/stats/reset")
+  resetStats() {
+    return this.minesService.resetStats();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
   @Get("admin/live")
   getLiveSessions() {
     return this.minesService.getLiveSessions();

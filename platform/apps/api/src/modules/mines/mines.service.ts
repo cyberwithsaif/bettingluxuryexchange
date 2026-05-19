@@ -249,6 +249,13 @@ export class MinesService {
     });
   }
 
+  async resetStats() {
+    await this.prisma.minesSession.deleteMany({
+      where: { status: { in: [MinesStatus.CASHED_OUT, MinesStatus.BUSTED] } },
+    });
+    return { ok: true };
+  }
+
   async getRecentResults(limit = 20) {
     return this.prisma.minesSession.findMany({
       where: { status: { in: [MinesStatus.CASHED_OUT, MinesStatus.BUSTED] } },

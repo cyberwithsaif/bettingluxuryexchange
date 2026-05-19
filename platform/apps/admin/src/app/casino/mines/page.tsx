@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import {
   Bomb, Activity, TrendingUp, TrendingDown, Users, Settings,
-  RefreshCw, CheckCircle2, AlertCircle, ToggleLeft, ToggleRight,
+  RefreshCw, CheckCircle2, AlertCircle, ToggleLeft, ToggleRight, Trash2,
 } from "lucide-react";
 
 const STATS_KEY  = "/mines/admin/stats";
@@ -38,6 +38,8 @@ export default function MinesAdminPage() {
   const [form, setForm] = useState({ minesHouseEdge: 0.01, minesMinBet: 10, minesMaxBet: 100000, minesEnabled: true });
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -49,6 +51,15 @@ export default function MinesAdminPage() {
     const t = setInterval(() => setTick(n => n + 1), 1000);
     return () => clearInterval(t);
   }, []);
+
+  async function resetStats() {
+    if (!confirmReset) { setConfirmReset(true); setTimeout(() => setConfirmReset(false), 4000); return; }
+    setResetting(true); setConfirmReset(false);
+    try {
+      await api.post("/mines/admin/stats/reset");
+      mutate(STATS_KEY); mutate(HIST_KEY);
+    } finally { setResetting(false); }
+  }
 
   async function saveConfig() {
     setSaving(true); setSaveMsg(null);
@@ -64,11 +75,26 @@ export default function MinesAdminPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="font-display text-3xl flex items-center gap-2">
-          <Bomb size={26} className="text-accent" /> Mines Control Panel
-        </h1>
-        <p className="text-sm text-white/50 mt-1">Live sessions, game history, house edge & bet limits.</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="font-display text-3xl flex items-center gap-2">
+            <Bomb size={26} className="text-accent" /> Mines Control Panel
+          </h1>
+          <p className="text-sm text-white/50 mt-1">Live sessions, game history, house edge & bet limits.</p>
+        </div>
+        <button
+          onClick={resetStats}
+          disabled={resetting}
+          className={cn(
+            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition",
+            confirmReset
+              ? "bg-red-600 border-red-500 text-white animate-pulse"
+              : "border-red-500/40 text-red-400 hover:bg-red-500/10"
+          )}
+        >
+          {resetting ? <RefreshCw size={14} className="animate-spin" /> : <Trash2 size={14} />}
+          {resetting ? "Resetting…" : confirmReset ? "Click again to confirm" : "Reset Stats"}
+        </button>
       </div>
 
       {/* Stats */}
