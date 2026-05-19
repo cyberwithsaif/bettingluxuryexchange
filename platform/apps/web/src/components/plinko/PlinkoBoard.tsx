@@ -74,7 +74,7 @@ export function PlinkoBoard({ rows, multiplierTable, result, animating, turbo, o
     wps.push({ x: centerX, y: padTop - rowH * 0.4 });
     let rights = 0;
     for (let i = 0; i < path.length; i++) {
-      rights += path[i];
+      rights += path[i] ?? 0;
       wps.push({
         x: ballXAtStep(centerX, slotW, rights, i + 1),
         y: padTop + (i + 1) * rowH,
