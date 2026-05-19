@@ -55,6 +55,10 @@ class PlatformSettingsDto {
   @IsOptional() @IsString() marqueeText?: string;
   @IsOptional() @IsString() siteName?: string;
   @IsOptional() @IsString() siteTagline?: string;
+  // In-house games list (arbitrary JSON array)
+  @IsOptional() inhouseGames?: any[];
+  // Deposit methods blob (arbitrary JSON)
+  @IsOptional() depositMethods?: any;
 }
 
 class DepositMethodsDto {
@@ -258,9 +262,8 @@ export class AdminController {
       cb(null, /image\/(jpeg|png|webp|gif)/.test(file.mimetype));
     },
   }))
-  uploadFile(@UploadedFile() file: { filename: string }, @Req() req: Request) {
-    const host = `${req.protocol}://${req.get("host")}`;
-    return { url: `${host}/uploads/${file.filename}` };
+  uploadFile(@UploadedFile() file: { filename: string }, @Req() _req: Request) {
+    return { url: `/api/uploads/${file.filename}` };
   }
 
   // -- Casino CRUD (admin only) --

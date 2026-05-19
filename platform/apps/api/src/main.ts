@@ -13,7 +13,8 @@ async function bootstrap() {
 
   const uploadsDir = join(process.cwd(), "uploads");
   mkdirSync(uploadsDir, { recursive: true });
-  app.use("/uploads", expressStatic(uploadsDir));
+  // Served at /api/uploads/ so nginx's /api/ → port-4000 rule covers it
+  app.use("/api/uploads", expressStatic(uploadsDir));
 
   app.use(json({ limit: "15mb" }));
   app.use(urlencoded({ extended: true, limit: "15mb" }));
