@@ -232,7 +232,8 @@ export default function RoulettePage() {
         const idx = b.findIndex(x => x.betType === bet.betType && x.betValue === bet.betValue && x.amount === bet.amount);
         return idx >= 0 ? [...b.slice(0, idx), ...b.slice(idx + 1)] : b;
       });
-      const msg = e?.response?.data?.message || "Bet failed";
+      const msg: string = e?.response?.data?.message || "Bet failed";
+      if (typeof msg === "string" && msg.toLowerCase().includes("too many")) return;
       showError(typeof msg === "string" ? msg : "Bet failed");
     }
   }, [round, user, mutateWallet, muted]);
@@ -256,14 +257,29 @@ export default function RoulettePage() {
   const lastBetsRef = useRef<LocalBet[]>([]);
   const undoBet = () => setBets(b => b.slice(0, -1));
   const clearBets = () => setBets([]);
+
+  const placeBatch = useCallback(async (newBets: LocalBet[]) => {
+    if (!user || !newBets.length) return;
+    setBets(b => [...b, ...newBets]);
+    try {
+      await api.post("/roulette/bets-batch", { bets: newBets });
+      mutateWallet();
+    } catch (e: any) {
+      setBets(b => b.slice(0, b.length - newBets.length));
+      const msg = e?.response?.data?.message || "Batch bet failed";
+      showError(typeof msg === "string" ? msg : "Bet failed");
+    }
+  }, [user, mutateWallet, showError]);
+
   const repeatLastBets = useCallback(() => {
     if (!lastBetsRef.current.length || status !== "BETTING") return;
-    lastBetsRef.current.forEach(b => placeBet(b));
-  }, [placeBet, status]);
+    placeBatch(lastBetsRef.current.map(b => ({ ...b })));
+  }, [placeBatch, status]);
+
   const doubleBets = useCallback(() => {
     if (!bets.length || status !== "BETTING") return;
-    bets.forEach(b => placeBet({ ...b }));
-  }, [bets, placeBet, status]);
+    placeBatch(bets.map(b => ({ ...b })));
+  }, [bets, placeBatch, status]);
 
   useEffect(() => {
     if (status === "SPINNING" && bets.length > 0) {

@@ -1,5 +1,7 @@
 import { Body, Controller, Get, Post, UseGuards, Query } from "@nestjs/common";
-import { IsIn, IsInt, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
+import { SkipThrottle } from "@nestjs/throttler";
+import { IsArray, IsIn, IsNumber, IsOptional, IsString, Max, Min, ValidateNested, ArrayMaxSize } from "class-validator";
+import { Type } from "class-transformer";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { CurrentUser, AuthUser } from "../../common/decorators/current-user.decorator";
 import { RouletteService, BetType } from "./roulette.service";
@@ -9,6 +11,7 @@ class PlaceBetDto {
   @IsIn([
     "number","red","black","odd","even","high","low",
     "dozen1","dozen2","dozen3","col1","col2","col3",
+    "split","street","corner","sixline",
   ])
   betType!: BetType;
 
@@ -21,6 +24,15 @@ class PlaceBetDto {
   amount!: number;
 }
 
+class PlaceBatchBetsDto {
+  @IsArray()
+  @ArrayMaxSize(50)
+  @ValidateNested({ each: true })
+  @Type(() => PlaceBetDto)
+  bets!: PlaceBetDto[];
+}
+
+@SkipThrottle()
 @Controller("roulette")
 export class RouletteController {
   constructor(private readonly service: RouletteService) {}
@@ -44,6 +56,21 @@ export class RouletteController {
       betValue: dto.betValue ?? null,
       amount: dto.amount,
     });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("bets-batch")
+  async placeBatch(@CurrentUser() user: AuthUser, @Body() dto: PlaceBatchBetsDto) {
+    const results = [];
+    for (const bet of dto.bets) {
+      const r = await this.service.placeBet(user.id, {
+        betType: bet.betType,
+        betValue: bet.betValue ?? null,
+        amount: bet.amount,
+      });
+      results.push(r);
+    }
+    return { placed: results.length };
   }
 
   @UseGuards(JwtAuthGuard)
