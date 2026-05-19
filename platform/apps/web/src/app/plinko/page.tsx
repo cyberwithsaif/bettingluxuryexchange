@@ -161,27 +161,21 @@ export default function PlinkoPage() {
   }, [token]);
   useEffect(() => { fetchBalance(); }, [fetchBalance]);
 
-  // Live feed — right sidebar instant; overlay chips delayed to match ball animation
-  // Speed 0.048/frame @ 60fps → 1/0.048/60*1000 ≈ 347ms per segment; rows+1 segments
+  // Live feed — own bets are added on ball-land (onBallDone); other players' bets
+  // come from socket and are added instantly (no local animation to wait for).
   useEffect(() => {
     const socket: Socket = io("/plinko", { path: "/socket.io", transports: ["websocket"] });
-    const timers: ReturnType<typeof setTimeout>[] = [];
-
     socket.on("plinko:bet", (bet: LiveBet) => {
+      // Skip own bets — handled by onBallDone when the local animation completes
+      if (user?.username && bet.username === user.username) return;
       setLiveFeed(p => [bet, ...p].slice(0, 15));
-
-      const delay = Math.round((bet.rows + 1) * 347);
-      const t = setTimeout(() => {
-        setChips(p => [
-          { uid: bet.betId + "-" + Date.now(), multiplier: bet.multiplier, expiresAt: Date.now() + 3000 },
-          ...p,
-        ].slice(0, 7));
-      }, delay);
-      timers.push(t);
+      setChips(p => [
+        { uid: bet.betId + "-" + Date.now(), multiplier: bet.multiplier, expiresAt: Date.now() + 3000 },
+        ...p,
+      ].slice(0, 7));
     });
-
-    return () => { socket.disconnect(); timers.forEach(clearTimeout); };
-  }, []);
+    return () => { socket.disconnect(); };
+  }, [user?.username]);
 
   // Auto-expire overlay chips
   useEffect(() => {
@@ -191,7 +185,17 @@ export default function PlinkoPage() {
     return () => clearTimeout(t);
   }, [chips]);
 
-  const pendingResults = useRef<Map<number, { multiplier: number; payout: number; profit: number }>>(new Map());
+  interface PendingResult {
+    betId:      string;
+    username:   string;
+    betAmount:  number;
+    rows:       number;
+    riskLevel:  string;
+    multiplier: number;
+    payout:     number;
+    profit:     number;
+  }
+  const pendingResults = useRef<Map<number, PendingResult>>(new Map());
 
   const drop = useCallback(async (): Promise<number> => {
     if (!token)           { notify("Login to play", "bad"); return 0; }
@@ -209,6 +213,11 @@ export default function PlinkoPage() {
 
       const id = ++dropIdRef.current;
       pendingResults.current.set(id, {
+        betId:      data.betId ?? `local-${id}`,
+        username:   user?.username ?? "you",
+        betAmount,
+        rows,
+        riskLevel:  risk,
         multiplier: data.multiplier,
         payout:     data.payout,
         profit:     data.profit as number,
@@ -218,13 +227,32 @@ export default function PlinkoPage() {
     } catch {
       notify("Connection error", "bad"); return 0;
     }
-  }, [token, config, betAmount, rows, risk, clientSeed, notify, playDrop]);
+  }, [token, config, betAmount, rows, risk, clientSeed, notify, playDrop, user?.username]);
 
+  // Fires when ball physically lands — at this exact moment add chip + live feed entry
   const onBallDone = useCallback((id: number) => {
     setQueue(prev => prev.filter(q => q.id !== id));
     const res = pendingResults.current.get(id);
     if (!res) return;
     pendingResults.current.delete(id);
+
+    // Overlay chip — appears precisely when ball touches the slot
+    setChips(p => [
+      { uid: res.betId + "-" + Date.now(), multiplier: res.multiplier, expiresAt: Date.now() + 3000 },
+      ...p,
+    ].slice(0, 7));
+
+    // Live bets sidebar — own bet appears now (other players' bets come via socket)
+    setLiveFeed(p => [{
+      betId:      res.betId,
+      username:   res.username,
+      betAmount:  res.betAmount,
+      rows:       res.rows,
+      riskLevel:  res.riskLevel,
+      multiplier: res.multiplier,
+      payout:     res.payout,
+    }, ...p].slice(0, 15));
+
     setSessionPL(prev => { sessionPLRef.current = prev + res.profit; return prev + res.profit; });
     fetchBalance();
     if (res.multiplier >= 5) notify(`${res.multiplier}× — Won ₹${res.payout.toLocaleString()}!`, "ok");
