@@ -351,7 +351,7 @@ export default function PlinkoPage() {
       </div>
 
       {/* ── Left Controls ─────────────────────────────────────────────────────── */}
-      <aside className="w-[196px] shrink-0 bg-[#0f1018] border-r border-white/[0.07] flex flex-col overflow-y-auto scrollbar-none">
+      <aside className="w-[250px] shrink-0 bg-[#0f1018] border-r border-white/[0.07] flex flex-col overflow-y-auto scrollbar-none">
         <div className="p-3 space-y-3">
 
           {/* Back Button */}
