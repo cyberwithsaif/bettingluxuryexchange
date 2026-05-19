@@ -25,9 +25,9 @@ interface SessionStats {
   wins: number; losses: number; wagered: number; netGain: number; history: number[];
 }
 
-function MiniChart({ history }: { history: number[] }) {
+function MiniChart({ history, h = 120 }: { history: number[]; h?: number }) {
   if (history.length < 2) return null;
-  const W = 280, H = 120;
+  const W = 300, H = h;
   const min = Math.min(...history, 0);
   const max = Math.max(...history, 0);
   const range = max - min || 1;
@@ -42,11 +42,11 @@ function MiniChart({ history }: { history: number[] }) {
         <clipPath id="mc-above"><rect x="0" y="0" width={W} height={zeroY} /></clipPath>
         <clipPath id="mc-below"><rect x="0" y={zeroY} width={W} height={H} /></clipPath>
       </defs>
-      <line x1="0" y1={zeroY} x2={W} y2={zeroY} stroke="rgba(255,255,255,0.12)" strokeWidth="0.5" />
-      <path d={areaD} fill="rgba(34,197,94,0.2)"  clipPath="url(#mc-above)" />
-      <path d={areaD} fill="rgba(239,68,68,0.2)"  clipPath="url(#mc-below)" />
-      <path d={lineD} fill="none" stroke="#22c55e" strokeWidth="1.5" strokeLinejoin="round" clipPath="url(#mc-above)" />
-      <path d={lineD} fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinejoin="round" clipPath="url(#mc-below)" />
+      <line x1="0" y1={zeroY} x2={W} y2={zeroY} stroke="rgba(255,255,255,0.10)" strokeWidth="0.5" />
+      <path d={areaD} fill="rgba(34,197,94,0.25)"  clipPath="url(#mc-above)" />
+      <path d={areaD} fill="rgba(239,68,68,0.25)"  clipPath="url(#mc-below)" />
+      <path d={lineD} fill="none" stroke="#22c55e" strokeWidth="2" strokeLinejoin="round" clipPath="url(#mc-above)" />
+      <path d={lineD} fill="none" stroke="#ef4444" strokeWidth="2" strokeLinejoin="round" clipPath="url(#mc-below)" />
     </svg>
   );
 }
@@ -535,6 +535,47 @@ export default function PlinkoPage() {
             turbo={turbo} queue={queue} onBallDone={onBallDone}
             onBounce={playBounce} onLand={playLand}
           />
+
+          {/* ── Session stats card — top-left blank area ── */}
+          {(stats.wins + stats.losses) > 0 && (
+            <div className="absolute top-4 left-4 z-10 w-[270px] pointer-events-none">
+              <div className="rounded-2xl bg-[#10121e]/90 backdrop-blur border border-white/[0.07] overflow-hidden shadow-2xl">
+                {/* 2×2 stats grid */}
+                <div className="grid grid-cols-2 gap-0 p-4 pb-3">
+                  <div>
+                    <div className="text-[11px] text-white/50 mb-1">Net Gain</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-[17px] font-bold leading-none ${stats.netGain >= 0 ? "text-green-400" : "text-red-400"}`}>
+                        {stats.netGain >= 0 ? "" : "-"}₹{Math.abs(stats.netGain).toFixed(2)}
+                      </span>
+                      <span className="w-[18px] h-[18px] rounded-full bg-green-500 flex items-center justify-center text-[9px] font-black text-black shrink-0">₹</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-white/50 mb-1">Wins</div>
+                    <div className="text-[17px] font-bold leading-none text-green-400">{stats.wins.toLocaleString()}</div>
+                  </div>
+                  <div className="mt-3">
+                    <div className="text-[11px] text-white/50 mb-1">Amount</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[17px] font-bold leading-none text-white">{stats.wagered.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
+                      <span className="w-[18px] h-[18px] rounded-full bg-green-500 flex items-center justify-center text-[9px] font-black text-black shrink-0">₹</span>
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <div className="text-[11px] text-white/50 mb-1">Losses</div>
+                    <div className="text-[17px] font-bold leading-none text-red-400">{stats.losses.toLocaleString()}</div>
+                  </div>
+                </div>
+                {/* Divider */}
+                <div className="h-px bg-white/[0.06] mx-0" />
+                {/* Chart */}
+                <div className="px-0 pt-1 pb-0">
+                  <MiniChart history={stats.history} h={160} />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ── Overlay chips: latest 7, fade out after 3s ── */}
           <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-1 pointer-events-none">
