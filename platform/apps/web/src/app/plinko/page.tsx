@@ -94,11 +94,15 @@ export default function PlinkoPage() {
   }, [token]);
   useEffect(() => { fetchBalance(); }, [fetchBalance]);
 
-  // Live feed
+  // Live feed — delay display ~4 s so result appears after ball lands
   useEffect(() => {
     const socket: Socket = io("/plinko", { path: "/socket.io", transports: ["websocket"] });
-    socket.on("plinko:bet", (bet: LiveBet) => setLiveFeed(p => [bet, ...p].slice(0, 20)));
-    return () => { socket.disconnect(); };
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    socket.on("plinko:bet", (bet: LiveBet) => {
+      const t = setTimeout(() => setLiveFeed(p => [bet, ...p].slice(0, 20)), 4000);
+      timers.push(t);
+    });
+    return () => { socket.disconnect(); timers.forEach(clearTimeout); };
   }, []);
 
   // Store pending result metadata per ball id — revealed only when ball lands
@@ -357,8 +361,8 @@ export default function PlinkoPage() {
 
       {/* ── Board ─────────────────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col items-center justify-start overflow-y-auto min-w-0 bg-[#0b0c12] py-2 px-2">
-        {/* Board canvas — fixed sensible max size */}
-        <div className="relative w-full" style={{ maxWidth: 680, height: Math.min(520, rows * 28 + 100) }}>
+        {/* Board canvas — wide, height scales with row count */}
+        <div className="relative w-full" style={{ maxWidth: 920, height: Math.min(600, rows * 32 + 120) }}>
           <PlinkoBoard
             rows={rows} riskLevel={risk} multiplierTable={multTable}
             turbo={turbo} queue={queue} onBallDone={onBallDone}
@@ -372,7 +376,7 @@ export default function PlinkoPage() {
         </div>
 
         {/* History strip */}
-        <div className="w-full mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-none" style={{ maxWidth: 680 }}>
+        <div className="w-full mt-2 flex items-center gap-1.5 overflow-x-auto scrollbar-none" style={{ maxWidth: 920 }}>
           {history.length === 0
             ? <span className="text-[9px] text-white/20">Drop a ball to start…</span>
             : history.map((h, i) => (
