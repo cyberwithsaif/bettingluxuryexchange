@@ -441,35 +441,6 @@ export default function PlinkoPage() {
             <span className="text-[9px] text-white/50">Turbo</span>
           </label>
 
-          {/* Session Stats */}
-          {(stats.wins + stats.losses) > 0 && (
-            <div className="rounded-xl bg-[#0b0c12] border border-white/[0.08] overflow-hidden">
-              <div className="grid grid-cols-2 divide-x divide-y divide-white/[0.06]">
-                <div className="p-2">
-                  <div className="text-[7px] text-white/35 uppercase tracking-wider mb-0.5">Net Gain</div>
-                  <div className={`text-[11px] font-bold flex items-center gap-0.5 ${stats.netGain >= 0 ? "text-green-400" : "text-red-400"}`}>
-                    {stats.netGain >= 0 ? "+" : ""}₹{stats.netGain.toFixed(2)}
-                  </div>
-                </div>
-                <div className="p-2">
-                  <div className="text-[7px] text-white/35 uppercase tracking-wider mb-0.5">Wins</div>
-                  <div className="text-[11px] font-bold text-green-400">{stats.wins}</div>
-                </div>
-                <div className="p-2">
-                  <div className="text-[7px] text-white/35 uppercase tracking-wider mb-0.5">Amount</div>
-                  <div className="text-[11px] font-bold text-white/80">₹{stats.wagered.toFixed(0)}</div>
-                </div>
-                <div className="p-2">
-                  <div className="text-[7px] text-white/35 uppercase tracking-wider mb-0.5">Losses</div>
-                  <div className="text-[11px] font-bold text-red-400">{stats.losses}</div>
-                </div>
-              </div>
-              <div className="px-1 pb-1">
-                <MiniChart history={stats.history} />
-              </div>
-            </div>
-          )}
-
           {/* Drop Button */}
           <button onClick={() => drop()}
             disabled={!user}
@@ -556,6 +527,37 @@ export default function PlinkoPage() {
             turbo={turbo} queue={queue} onBallDone={onBallDone}
             onBounce={playBounce} onLand={playLand}
           />
+
+          {/* ── Session stats — top-left blank area ── */}
+          {(stats.wins + stats.losses) > 0 && (
+            <div className="absolute top-4 left-4 z-10 w-[168px] pointer-events-none">
+              <div className="rounded-xl overflow-hidden bg-black/60 backdrop-blur-sm border border-white/[0.08]">
+                <div className="grid grid-cols-2 divide-x divide-y divide-white/[0.07]">
+                  <div className="p-2">
+                    <div className="text-[7px] text-white/40 uppercase tracking-wider mb-0.5">Net Gain</div>
+                    <div className={`text-[11px] font-bold ${stats.netGain >= 0 ? "text-green-400" : "text-red-400"}`}>
+                      {stats.netGain >= 0 ? "+" : ""}₹{stats.netGain.toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="p-2">
+                    <div className="text-[7px] text-white/40 uppercase tracking-wider mb-0.5">Wins</div>
+                    <div className="text-[11px] font-bold text-green-400">{stats.wins}</div>
+                  </div>
+                  <div className="p-2">
+                    <div className="text-[7px] text-white/40 uppercase tracking-wider mb-0.5">Amount</div>
+                    <div className="text-[11px] font-bold text-white/80">₹{stats.wagered.toFixed(0)}</div>
+                  </div>
+                  <div className="p-2">
+                    <div className="text-[7px] text-white/40 uppercase tracking-wider mb-0.5">Losses</div>
+                    <div className="text-[11px] font-bold text-red-400">{stats.losses}</div>
+                  </div>
+                </div>
+                <div className="px-1 pb-1 pt-0.5">
+                  <MiniChart history={stats.history} />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ── Overlay chips: latest 7, fade out after 3s ── */}
           <div className="absolute top-4 right-4 z-10 flex flex-col items-end gap-1 pointer-events-none">
