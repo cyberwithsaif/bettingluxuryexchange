@@ -11,6 +11,8 @@ html, body {
   color: #f4e7e7;
   font-family: theme(fontFamily.sans);
   min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 body {

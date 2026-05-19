@@ -334,7 +334,7 @@ export default function PlinkoPage() {
   const dbl  = () => setBetAmount(a => Math.min(config?.maxBet ?? 100000, a * 2));
 
   return (
-    <div className="h-screen bg-[#0b0c12] text-white flex overflow-hidden">
+    <div className="h-[100dvh] bg-[#0b0c12] text-white flex flex-col md:flex-row overflow-hidden">
 
       {/* Toasts */}
       <div className="fixed top-4 right-3 z-50 flex flex-col gap-1 pointer-events-none">
@@ -350,8 +350,24 @@ export default function PlinkoPage() {
         </AnimatePresence>
       </div>
 
+      {/* ── Mobile Top Bar ────────────────────────────────────────────────────── */}
+      <div className="md:hidden shrink-0 flex items-center gap-3 px-3 py-2 bg-[#0f1018] border-b border-white/[0.07]">
+        <button onClick={() => router.back()} className="flex items-center gap-1 text-white/50 hover:text-white transition">
+          <ArrowLeft size={16} />
+          <span className="text-xs font-semibold">Back</span>
+        </button>
+        <div className="flex-1 flex items-center justify-center gap-2">
+          <span className="text-sm">🎯</span>
+          <span className="text-sm font-bold text-white">Plinko</span>
+          <span className="text-[9px] text-white/30">· Provably Fair</span>
+        </div>
+        {balance !== null && (
+          <span className="text-xs font-bold text-yellow-400">₹{balance.toLocaleString()}</span>
+        )}
+      </div>
+
       {/* ── Left Controls ─────────────────────────────────────────────────────── */}
-      <aside className="w-[250px] shrink-0 bg-[#0f1018] border-r border-white/[0.07] flex flex-col overflow-y-auto scrollbar-none">
+      <aside className="hidden md:flex w-[250px] shrink-0 bg-[#0f1018] border-r border-white/[0.07] flex-col overflow-y-auto scrollbar-none">
         <div className="p-3 space-y-3">
 
           {/* Back Button */}
@@ -528,10 +544,10 @@ export default function PlinkoPage() {
       </aside>
 
       {/* ── Center: stats column + board ─────────────────────────────────────── */}
-      <div className="flex-1 flex items-stretch overflow-hidden min-w-0 bg-[#0b0c12]">
+      <div className="flex-1 flex flex-col md:flex-row items-stretch overflow-hidden min-w-0 bg-[#0b0c12]">
 
-        {/* Stats card — own column, left of the board canvas */}
-        <div className="w-[260px] shrink-0 p-3 flex flex-col">
+        {/* Stats card — desktop only */}
+        <div className="hidden md:flex w-[260px] shrink-0 p-3 flex-col">
           {(stats.wins + stats.losses) > 0 && (
             <div className="rounded-2xl bg-[#10121e] border border-white/[0.07] overflow-hidden shadow-2xl">
               <div className="grid grid-cols-2 p-4 pb-3 gap-x-2 gap-y-4">
@@ -574,9 +590,9 @@ export default function PlinkoPage() {
           )}
         </div>
 
-        {/* Board canvas — constrained width, centered */}
+        {/* Board canvas — constrained width on desktop, full width on mobile */}
         <div className="flex-1 flex items-stretch justify-center overflow-hidden min-w-0">
-          <div className="relative h-full w-full" style={{ maxWidth: 600 }}>
+          <div className="relative h-full w-full md:max-w-[600px]">
           <PlinkoBoard
             rows={rows} riskLevel={risk} multiplierTable={multTable}
             turbo={turbo} queue={queue} onBallDone={onBallDone}
@@ -611,8 +627,8 @@ export default function PlinkoPage() {
         </div>
       </div> {/* end center area */}
 
-      {/* ── Right: Live Bets Sidebar ───────────────────────────────────────────── */}
-      <aside className="w-[150px] shrink-0 bg-[#0f1018] border-l border-white/[0.07] flex flex-col">
+      {/* ── Right: Live Bets Sidebar — desktop only ───────────────────────────── */}
+      <aside className="hidden md:flex w-[150px] shrink-0 bg-[#0f1018] border-l border-white/[0.07] flex-col">
         <div className="px-2.5 py-2 border-b border-white/[0.07] flex items-center gap-1.5 text-[8px] uppercase tracking-widest text-white/30 shrink-0">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
           Live Bets
@@ -640,6 +656,77 @@ export default function PlinkoPage() {
           )}
         </div>
       </aside>
+
+      {/* ── Mobile Bottom Controls ─────────────────────────────────────────────── */}
+      <div className="md:hidden shrink-0 bg-[#0f1018] border-t border-white/[0.07] px-3 pt-2 pb-3 space-y-2">
+
+        {/* Bet amount row */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/40 text-xs">₹</span>
+            <input type="number" min={config?.minBet ?? 1} max={config?.maxBet ?? 100000}
+              value={betAmount} onChange={e => setBetAmount(Math.max(1, Number(e.target.value)))}
+              className="w-full bg-[#0b0c12] border border-white/10 rounded-lg pl-6 pr-2 py-1.5 text-xs focus:outline-none focus:border-violet-500 transition" />
+          </div>
+          <div className="flex gap-0.5">
+            {[10, 50, 100, 500, 1000].map(v => (
+              <button key={v} onClick={() => setBetAmount(v)}
+                className="px-2 py-1.5 rounded text-[10px] bg-white/[0.06] hover:bg-white/[0.13] transition font-medium">
+                {v >= 1000 ? "1k" : v}
+              </button>
+            ))}
+            <button onClick={() => setBetAmount(Math.floor(balance ?? 100))}
+              className="px-2 py-1.5 rounded text-[10px] bg-white/[0.06] hover:bg-white/[0.13] transition">Max</button>
+          </div>
+        </div>
+
+        {/* Risk + Rows + Turbo row */}
+        <div className="flex items-center gap-2">
+          {/* Risk */}
+          <div className={`flex gap-0.5 transition-opacity ${isDropping ? "opacity-40 pointer-events-none" : ""}`}>
+            {RISK_OPTIONS.map(r => (
+              <button key={r} onClick={() => setRisk(r)}
+                className={`px-2.5 py-1 rounded text-[10px] font-bold capitalize border transition ${
+                  risk === r ? RISK_ACTIVE[r] : "bg-transparent border-white/10 text-white/40 hover:border-white/25"
+                }`}>
+                {r}
+              </button>
+            ))}
+          </div>
+          <div className="w-px h-5 bg-white/[0.07] shrink-0" />
+          {/* Rows */}
+          <div className={`flex gap-0.5 transition-opacity ${isDropping ? "opacity-40 pointer-events-none" : ""}`}>
+            {ROWS_OPTIONS.map(r => (
+              <button key={r} onClick={() => setRows(r)}
+                className={`px-2 py-1 rounded text-[10px] font-bold border transition ${
+                  rows === r ? "bg-violet-600/25 border-violet-500/60 text-violet-300" : "bg-transparent border-white/10 text-white/40 hover:border-white/25"
+                }`}>
+                {r}
+              </button>
+            ))}
+          </div>
+          <div className="w-px h-5 bg-white/[0.07] shrink-0" />
+          {/* Turbo */}
+          <label className="flex items-center gap-1.5 cursor-pointer select-none shrink-0">
+            <div onClick={() => setTurbo(v => !v)}
+              className={`w-6 h-3 rounded-full transition relative shrink-0 ${turbo ? "bg-violet-600" : "bg-white/10"}`}>
+              <div className={`absolute top-0.5 w-2 h-2 rounded-full bg-white shadow transition-all ${turbo ? "left-[13px]" : "left-0.5"}`} />
+            </div>
+            <Zap size={10} className={turbo ? "text-yellow-400" : "text-white/30"} />
+          </label>
+        </div>
+
+        {/* Drop Ball button */}
+        <button onClick={() => drop()} disabled={!user}
+          className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 font-bold text-sm tracking-wide disabled:opacity-40 hover:brightness-110 active:scale-95 transition shadow-lg shadow-violet-900/30 relative">
+          {!user ? "Login to Play" : "Drop Ball"}
+          {activeBalls > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-yellow-400 text-black text-[9px] font-black flex items-center justify-center">
+              {activeBalls}
+            </span>
+          )}
+        </button>
+      </div>
     </div>
   );
 }

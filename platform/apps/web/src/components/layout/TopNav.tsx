@@ -31,10 +31,10 @@ export function TopNav() {
   const tabs = (settings?.navItems ?? DEFAULT_TABS).filter(t => t.enabled !== false);
 
   return (
-    <div className="sticky top-16 z-40 shadow-md">
+    <div className="sticky top-14 md:top-16 z-40 shadow-md">
       {/* Main Navigation Bar */}
       <nav className="bg-brandMaroon border-b border-black/20">
-        <div className="mx-auto max-w-[1600px] px-2 overflow-x-auto no-scrollbar">
+        <div className="mx-auto max-w-[1600px] px-1 md:px-2 overflow-x-auto no-scrollbar">
           <ul className="flex items-stretch min-w-max">
             {tabs.map((t) => {
               const active = path === "/" ? t.href === "/exchange" : path?.startsWith(t.href);
@@ -43,13 +43,13 @@ export function TopNav() {
                   <Link
                     href={t.href}
                     className={cn(
-                      "flex items-center gap-2 px-6 h-12 text-sm font-bold tracking-wide transition",
+                      "flex items-center gap-1 md:gap-2 px-3 md:px-6 h-10 md:h-12 text-xs md:text-sm font-bold tracking-wide transition whitespace-nowrap",
                       active
                         ? "text-white bg-brandRed shadow-[inset_0_2px_0_0_#fff]"
                         : "text-white/80 hover:text-white hover:bg-white/5",
                     )}
                   >
-                    <span className="text-lg">{t.emoji}</span>
+                    <span className="text-base md:text-lg">{t.emoji}</span>
                     {t.label}
                   </Link>
                 </li>
@@ -59,8 +59,8 @@ export function TopNav() {
         </div>
       </nav>
 
-      {/* Sub Banner */}
-      <div className="bg-[#4a0815] border-b border-black/30">
+      {/* Sub Banner — hidden on mobile */}
+      <div className="hidden sm:block bg-[#4a0815] border-b border-black/30">
         <div className="mx-auto max-w-[1600px] h-8 flex items-center justify-center px-4 overflow-hidden">
           <span className="text-brandYellow font-semibold text-sm animate-pulse">
             {subBanner}

@@ -45,15 +45,15 @@ export function TopBar() {
 
   return (
     <header className="sticky top-0 z-50 bg-brandRed text-white shadow-md">
-      <div className="mx-auto max-w-[1600px] flex items-center justify-between px-4 h-16">
+      <div className="mx-auto max-w-[1600px] flex items-center justify-between px-3 md:px-4 h-14 md:h-16">
         
         {/* Left: Logo & Clock */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
           <Link href="/" className="flex flex-col leading-none">
-            <span className="font-display italic text-3xl font-black tracking-tight flex items-center gap-1 uppercase">
-              {platformSettings?.siteName ?? "Future9"} <span className="text-xl">🏏</span>
+            <span className="font-display italic text-2xl md:text-3xl font-black tracking-tight flex items-center gap-1 uppercase">
+              {platformSettings?.siteName ?? "Future9"} <span className="text-lg md:text-xl">🏏</span>
             </span>
-            <span className="text-[10px] uppercase tracking-widest font-semibold text-white/90">
+            <span className="hidden sm:block text-[10px] uppercase tracking-widest font-semibold text-white/90">
               — {platformSettings?.siteTagline ?? "Sports & Casino"} —
             </span>
           </Link>
@@ -78,18 +78,20 @@ export function TopBar() {
 
           {user ? (
             <>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <Link
                   href="/account/deposit"
-                  className="flex items-center gap-1.5 rounded bg-white px-4 py-1.5 text-sm font-bold text-brandRed hover:bg-gray-100 transition"
+                  className="flex items-center gap-1 rounded bg-white px-2.5 sm:px-4 py-1.5 text-xs sm:text-sm font-bold text-brandRed hover:bg-gray-100 transition"
                 >
-                  <ArrowDownToLine size={16} /> DEPOSIT
+                  <ArrowDownToLine size={14} />
+                  <span className="hidden xs:inline sm:inline">DEPOSIT</span>
                 </Link>
                 <Link
                   href="/account/withdraw"
-                  className="flex items-center gap-1.5 rounded bg-white px-4 py-1.5 text-sm font-bold text-brandRed hover:bg-gray-100 transition"
+                  className="flex items-center gap-1 rounded bg-white px-2.5 sm:px-4 py-1.5 text-xs sm:text-sm font-bold text-brandRed hover:bg-gray-100 transition"
                 >
-                  <ArrowUpToLine size={16} /> WITHDRAW
+                  <ArrowUpToLine size={14} />
+                  <span className="hidden xs:inline sm:inline">WITHDRAW</span>
                 </Link>
               </div>
 
