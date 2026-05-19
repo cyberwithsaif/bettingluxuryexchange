@@ -104,7 +104,7 @@ export function HeroBanner() {
   return (
     <div className="w-full mb-4">
       {slide.link ? (
-        <Link href={slide.link} target={slide.link.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer">
+        <Link href={slide.link}>
           {inner}
         </Link>
       ) : inner}
