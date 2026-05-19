@@ -54,7 +54,7 @@ export default function PlinkoPage() {
   // ── Game state ────────────────────────────────────────────────────────────
   const [config,    setConfig]    = useState<{ minBet: number; maxBet: number; enabled: boolean } | null>(null);
   const [multTable, setMultTable] = useState<number[]>([]);
-  const [result,    setResult]    = useState<PlinkoResult | null>(null);
+  const [result,    setResult]    = useState<(PlinkoResult & { payout: number; betAmount: number }) | null>(null);
   const [animating, setAnimating] = useState(false);
   const [dropping,  setDropping]  = useState(false);
   const [balance,   setBalance]   = useState<number | null>(null);
