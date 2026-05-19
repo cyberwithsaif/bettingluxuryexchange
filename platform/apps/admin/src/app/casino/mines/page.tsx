@@ -32,10 +32,10 @@ export default function MinesAdminPage() {
   const { data: live,  isLoading: liveLoad, mutate: mutateLive } = useSWR(LIVE_KEY, { refreshInterval: 5000 });
   const { data: hist,  isLoading: histLoad } = useSWR(HIST_KEY);
   const { data: cfg } = useSWR<{
-    minesHouseEdge: number; minesMinBet: number; minesMaxBet: number; minesEnabled: boolean;
+    minesHouseEdge: number; minesMinBet: number; minesMaxBet: number; minesEnabled: boolean; minesHardness: number;
   }>(CONFIG_KEY);
 
-  const [form, setForm] = useState({ minesHouseEdge: 0.01, minesMinBet: 10, minesMaxBet: 100000, minesEnabled: true });
+  const [form, setForm] = useState({ minesHouseEdge: 0.01, minesMinBet: 10, minesMaxBet: 100000, minesEnabled: true, minesHardness: 0 });
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [resetting, setResetting] = useState(false);
@@ -43,7 +43,7 @@ export default function MinesAdminPage() {
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    if (cfg) setForm({ minesHouseEdge: cfg.minesHouseEdge, minesMinBet: cfg.minesMinBet, minesMaxBet: cfg.minesMaxBet, minesEnabled: cfg.minesEnabled });
+    if (cfg) setForm({ minesHouseEdge: cfg.minesHouseEdge, minesMinBet: cfg.minesMinBet, minesMaxBet: cfg.minesMaxBet, minesEnabled: cfg.minesEnabled, minesHardness: cfg.minesHardness ?? 0 });
   }, [cfg]);
 
   // Re-render every second so elapsed timers stay live
@@ -138,6 +138,26 @@ export default function MinesAdminPage() {
               </span>
             </div>
             <p className="text-xs text-white/30 mt-0.5">RTP = {(100 - form.minesHouseEdge * 100).toFixed(1)}%</p>
+          </div>
+
+          <div>
+            <label className="block text-xs text-white/50 mb-1">Hardness %</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="range" min={0} max={100} step={1}
+                value={form.minesHardness}
+                onChange={e => setForm(f => ({ ...f, minesHardness: Number(e.target.value) }))}
+                className="flex-1 accent-red-500"
+              />
+              <span className={cn("w-14 text-right font-bold text-sm", form.minesHardness === 0 ? "text-ok" : form.minesHardness < 30 ? "text-yellow-400" : "text-bad")}>
+                {form.minesHardness}%
+              </span>
+            </div>
+            <p className="text-xs text-white/30 mt-0.5">
+              {form.minesHardness === 0
+                ? "Fair — no forced busts"
+                : `Each safe click has ${form.minesHardness}% extra chance to bust`}
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

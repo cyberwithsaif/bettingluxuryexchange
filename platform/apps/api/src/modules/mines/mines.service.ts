@@ -55,6 +55,8 @@ export class MinesService {
       minBet:     Number(settings.minesMinBet     ?? 10),
       maxBet:     Number(settings.minesMaxBet     ?? 100000),
       enabled:    settings.minesEnabled !== false,
+      // 0 = fair, 1–100 = extra bust chance % per safe click
+      hardness:   Math.min(100, Math.max(0, Number(settings.minesHardness ?? 0))),
     };
   }
 
@@ -145,6 +147,25 @@ export class MinesService {
       };
     } else {
       const cfg = await this.getConfig();
+
+      // Hardness: extra probability to force a bust on a safe tile
+      if (cfg.hardness > 0 && Math.random() * 100 < cfg.hardness) {
+        await this.prisma.minesSession.update({
+          where: { id: sessionId },
+          data: {
+            status: MinesStatus.BUSTED,
+            settledAt: new Date(),
+            clickedTiles: [...clickedTiles, { tile: tileIndex, isMine: true }],
+          },
+        });
+        return {
+          isMine: true as const,
+          status: MinesStatus.BUSTED,
+          minePositions: [...minePositions, tileIndex], // show clicked tile as mine
+          serverSeed: session.serverSeed,
+        };
+      }
+
       const newClickedCount = clickedTiles.length + 1;
       const nextMultiplier = calculateMultiplier(session.minesCount, newClickedCount, cfg.houseEdge);
       const newClickedTiles = [...clickedTiles, { tile: tileIndex, isMine: false, multiplier: nextMultiplier }];

@@ -12,6 +12,7 @@ class MinesConfigDto {
   @IsOptional() @IsNumber() @Min(1) minesMinBet?: number;
   @IsOptional() @IsNumber() @Min(100) minesMaxBet?: number;
   @IsOptional() @IsBoolean() minesEnabled?: boolean;
+  @IsOptional() @IsNumber() @Min(0) @Max(100) minesHardness?: number;
 }
 
 @Controller("mines")
@@ -84,6 +85,7 @@ export class MinesController {
       minesMinBet:    Number(s.minesMinBet     ?? 10),
       minesMaxBet:    Number(s.minesMaxBet     ?? 100000),
       minesEnabled:   s.minesEnabled !== false,
+      minesHardness:  Number(s.minesHardness   ?? 0),
     };
   }
 

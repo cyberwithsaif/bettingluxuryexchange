@@ -69,6 +69,7 @@ class PlatformSettingsDto {
   @IsOptional() @IsNumber() minesMinBet?: number;
   @IsOptional() @IsNumber() minesMaxBet?: number;
   @IsOptional() @IsBoolean() minesEnabled?: boolean;
+  @IsOptional() @IsNumber() minesHardness?: number;
 }
 
 class DepositMethodsDto {
