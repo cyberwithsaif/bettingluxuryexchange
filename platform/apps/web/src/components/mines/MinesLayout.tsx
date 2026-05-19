@@ -8,7 +8,7 @@ import MinesControls from "./MinesControls";
 import MinesGrid from "./MinesGrid";
 import ProvablyFairModal from "./ProvablyFairModal";
 import { motion, AnimatePresence } from "framer-motion";
-import { History, ShieldCheck, ArrowLeft, AlertTriangle } from "lucide-react";
+import { ShieldCheck, ArrowLeft, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 
 export type MinesStatus = "IDLE" | "IN_PROGRESS" | "CASHED_OUT" | "BUSTED";
@@ -156,7 +156,14 @@ export default function MinesLayout() {
 
     const onException = (data: any) => {
       setLoading(false);
-      showError(data.message || "An error occurred");
+      const msg: string = data?.message || "An error occurred";
+      if (msg.toLowerCase().includes("unauthorized")) {
+        // Token expired mid-session — force re-login
+        useAuthStore.getState().clear();
+        window.location.href = "/auth/login";
+        return;
+      }
+      showError(msg);
     };
 
     s.on("mines:startResponse", onStartResp);

@@ -4,9 +4,10 @@ import { Providers } from "@/lib/providers";
 import { LayoutWrapper } from "@/components/layout/LayoutWrapper";
 
 export const metadata: Metadata = {
-  title: "Exch — Premium Betting Exchange & Casino",
+  title: "Future9 — Premium Betting Exchange & Casino",
   description: "Live cricket, football, tennis exchange + casino, crash, virtual & lottery games.",
   manifest: "/manifest.webmanifest",
+  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
 };
 
 export const viewport: Viewport = {
