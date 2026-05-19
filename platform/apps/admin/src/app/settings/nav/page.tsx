@@ -59,7 +59,7 @@ export default function NavSettingsPage() {
     if (dragIdx === null || dragIdx === idx) return;
     const next = [...current];
     const [moved] = next.splice(dragIdx, 1);
-    next.splice(idx, 0, moved);
+    if (moved) next.splice(idx, 0, moved);
     setItems(next);
     setDragIdx(idx);
   }
