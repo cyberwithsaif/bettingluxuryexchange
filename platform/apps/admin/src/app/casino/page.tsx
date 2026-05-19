@@ -177,7 +177,7 @@ function AddProviderModal({ onClose }: { onClose: (saved?: boolean) => void }) {
 }
 
 function AddGameModal({ providers, onClose }: { providers: Provider[]; onClose: (saved?: boolean) => void }) {
-  const [form, setForm] = useState({ name: "", category: "Teen Patti", providerId: providers[0]?.id ?? "", thumbnail: "", isLive: true });
+  const [form, setForm] = useState({ name: "", category: "LIVE", providerId: providers[0]?.id ?? "", thumbnail: "", isLive: true });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -189,7 +189,11 @@ function AddGameModal({ providers, onClose }: { providers: Provider[]; onClose: 
           {providers.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
       </Field>
-      <Field label="Category"><input className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g. Teen Patti" /></Field>
+      <Field label="Category">
+        <select className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+          {["LIVE", "SLOT", "CRASH", "TABLE", "LOTTERY", "VIRTUAL"].map((c) => <option key={c}>{c}</option>)}
+        </select>
+      </Field>
       <Field label="Thumbnail URL (optional)"><input className="input" value={form.thumbnail} onChange={(e) => setForm({ ...form, thumbnail: e.target.value })} placeholder="https://…" /></Field>
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={form.isLive} onChange={(e) => setForm({ ...form, isLive: e.target.checked })} />
@@ -224,7 +228,11 @@ function EditGameModal({ game, onClose }: { game: Game; onClose: (saved?: boolea
         <input className="input" value={form.thumbnail} onChange={(e) => setForm({ ...form, thumbnail: e.target.value })} placeholder="https://…" />
         {form.thumbnail && <img src={form.thumbnail} alt="preview" className="mt-2 w-20 h-24 object-cover rounded border border-line" onError={(e) => (e.currentTarget.style.display = "none")} />}
       </Field>
-      <Field label="Category"><input className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></Field>
+      <Field label="Category">
+        <select className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+          {["LIVE", "SLOT", "CRASH", "TABLE", "LOTTERY", "VIRTUAL"].map((c) => <option key={c}>{c}</option>)}
+        </select>
+      </Field>
       <Field label="Sort Order (lower = first)"><input className="input" type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} /></Field>
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={form.isLive} onChange={(e) => setForm({ ...form, isLive: e.target.checked })} />

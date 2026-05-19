@@ -38,18 +38,19 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
   const [categoryKey, setCategoryKey] = useState<string>("All");
   const [q, setQ] = useState("");
 
-  const apiCategory = category === "LIVE" ? "casino"
-    : category === "CRASH" ? "crash"
-    : category === "SLOTS" ? "slots"
-    : category === "VIRTUAL" ? "virtual"
-    : category === "VR" ? "virtual"
-    : category === "LOTTERY" ? "lottery"
+  const apiCategory = category === "LIVE" ? "LIVE"
+    : category === "CRASH" ? "CRASH"
+    : category === "SLOTS" ? "SLOT"
+    : category === "VIRTUAL" ? "VIRTUAL"
+    : category === "VR" ? "VIRTUAL"
+    : category === "LOTTERY" ? "LOTTERY"
     : undefined;
 
-  const { data: apiGames = [] } = useSWR<ApiGame[]>(
+  const { data: rawGames } = useSWR<ApiGame[]>(
     `/api/casino/games${apiCategory ? `?category=${apiCategory}` : ""}`,
-    (url: string) => fetch(url).then((r) => r.json()),
+    (url: string) => fetch(url).then((r) => r.ok ? r.json() : []),
   );
+  const apiGames: ApiGame[] = Array.isArray(rawGames) ? rawGames : [];
 
   const providers = Array.from(new Set(apiGames.map((g) => g.provider.name)));
   const categories = Array.from(new Set(apiGames.map((g) => g.category).filter(Boolean)));
