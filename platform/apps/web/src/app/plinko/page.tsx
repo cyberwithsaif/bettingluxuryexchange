@@ -21,8 +21,9 @@ function multColor(m: number) {
   if (m >= 100) return "text-white font-black";
   if (m >= 20)  return "text-yellow-400 font-bold";
   if (m >= 5)   return "text-orange-400 font-bold";
-  if (m >= 2)   return "text-green-400";
-  if (m >= 1)   return "text-sky-400";
+  if (m >= 2)   return "text-green-400 font-semibold";
+  if (m >= 1)   return "text-sky-400 font-semibold";
+  if (m >= 0.5) return "text-amber-400";
   return "text-red-400";
 }
 
@@ -59,8 +60,57 @@ export default function PlinkoPage() {
   const [queue,     setQueue]     = useState<QueueItem[]>([]);
   const dropIdRef   = useRef(0);
 
-  // History
   const [liveFeed,  setLiveFeed]  = useState<LiveBet[]>([]);
+
+  // ── Sound system ────────────────────────────────────────────────────────────
+  const audioCtx = useRef<AudioContext | null>(null);
+  const getAudio = useCallback(() => {
+    if (typeof window === "undefined") return null;
+    if (!audioCtx.current || audioCtx.current.state === "closed") {
+      audioCtx.current = new AudioContext();
+    }
+    if (audioCtx.current.state === "suspended") audioCtx.current.resume();
+    return audioCtx.current;
+  }, []);
+
+  const playBounce = useCallback(() => {
+    const ctx = getAudio(); if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const g   = ctx.createGain();
+    osc.connect(g); g.connect(ctx.destination);
+    osc.type = "sine";
+    osc.frequency.value = 900 + Math.random() * 300;
+    g.gain.setValueAtTime(0.07, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.055);
+    osc.start(); osc.stop(ctx.currentTime + 0.055);
+  }, [getAudio]);
+
+  const playLand = useCallback((multiplier: number) => {
+    const ctx = getAudio(); if (!ctx) return;
+    const freq = multiplier >= 10 ? 880 : multiplier >= 2 ? 660 : multiplier >= 1 ? 523 : 392;
+    const dur  = multiplier >= 5 ? 0.4 : 0.25;
+    const osc  = ctx.createOscillator();
+    const g    = ctx.createGain();
+    osc.connect(g); g.connect(ctx.destination);
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.18, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    osc.start(); osc.stop(ctx.currentTime + dur);
+  }, [getAudio]);
+
+  const playDrop = useCallback(() => {
+    const ctx = getAudio(); if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const g   = ctx.createGain();
+    osc.connect(g); g.connect(ctx.destination);
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(400, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.12);
+    g.gain.setValueAtTime(0.12, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+    osc.start(); osc.stop(ctx.currentTime + 0.12);
+  }, [getAudio]);
 
   // Auto-play
   const [autoPlay,     setAutoPlay]      = useState(false);
@@ -100,7 +150,7 @@ export default function PlinkoPage() {
     const timers: ReturnType<typeof setTimeout>[] = [];
     socket.on("plinko:bet", (bet: LiveBet) => {
       const delayMs = Math.round((bet.rows + 1) * 310);
-      const t = setTimeout(() => setLiveFeed(p => [bet, ...p].slice(0, 20)), delayMs);
+      const t = setTimeout(() => setLiveFeed(p => [bet, ...p].slice(0, 18)), delayMs);
       timers.push(t);
     });
     return () => { socket.disconnect(); timers.forEach(clearTimeout); };
@@ -114,6 +164,7 @@ export default function PlinkoPage() {
     if (!token)           { notify("Login to play", "bad"); return 0; }
     if (!config?.enabled) { notify("Plinko disabled", "bad"); return 0; }
     if (betAmount < (config?.minBet ?? 10)) { notify(`Min bet ₹${config.minBet}`, "bad"); return 0; }
+    playDrop(); // drop sound on click
     try {
       const res = await fetch("/api/plinko/bet", {
         method: "POST",
@@ -135,7 +186,7 @@ export default function PlinkoPage() {
     } catch {
       notify("Connection error", "bad"); return 0;
     }
-  }, [token, config, betAmount, rows, risk, clientSeed, notify]);
+  }, [token, config, betAmount, rows, risk, clientSeed, notify, playDrop]);
 
   // Called by canvas when ball reaches the slot — now safe to reveal result
   const onBallDone = useCallback((id: number) => {
@@ -366,6 +417,7 @@ export default function PlinkoPage() {
           <PlinkoBoard
             rows={rows} riskLevel={risk} multiplierTable={multTable}
             turbo={turbo} queue={queue} onBallDone={onBallDone}
+            onBounce={playBounce} onLand={playLand}
           />
           {activeBalls > 1 && (
             <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur text-[10px] text-white/60 pointer-events-none">

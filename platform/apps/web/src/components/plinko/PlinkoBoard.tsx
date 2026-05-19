@@ -35,6 +35,8 @@ interface Props {
   turbo: boolean;
   queue: QueueItem[];
   onBallDone: (id: number) => void;
+  onBounce?: () => void;
+  onLand?: (multiplier: number) => void;
 }
 
 function slotColor(m: number): { bg: string; text: string; glow: string } {
@@ -47,7 +49,7 @@ function slotColor(m: number): { bg: string; text: string; glow: string } {
   return         { bg: "#ef4444", text: "#ffffff", glow: "rgba(239,68,68,0.4)" };
 }
 
-export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone }: Props) {
+export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone, onBounce, onLand }: Props) {
   const canvasRef      = useRef<HTMLCanvasElement>(null);
   const animRef        = useRef<number>(0);
   const activeBalls    = useRef<BallState[]>([]);
@@ -55,9 +57,13 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone }:
   const isLooping      = useRef(false);
   const turboRef       = useRef(turbo);
   const onBallDoneRef  = useRef(onBallDone);
+  const onBounceRef    = useRef(onBounce);
+  const onLandRef      = useRef(onLand);
 
-  useEffect(() => { turboRef.current = turbo; },       [turbo]);
+  useEffect(() => { turboRef.current = turbo; },          [turbo]);
   useEffect(() => { onBallDoneRef.current = onBallDone; }, [onBallDone]);
+  useEffect(() => { onBounceRef.current = onBounce; },    [onBounce]);
+  useEffect(() => { onLandRef.current = onLand; },        [onLand]);
 
   const getLayout = useCallback((canvas: HTMLCanvasElement) => {
     const W = canvas.width, H = canvas.height;
@@ -226,9 +232,15 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone }:
           if (last) { b.ballX = last.x; b.ballY = last.y; }
           b.settled    = true;
           b.flashAlpha = 1;
-          if (!b.calledDone) { b.calledDone = true; onBallDoneRef.current(b.id); }
+          if (!b.calledDone) {
+            b.calledDone = true;
+            if (!turboRef.current) onLandRef.current?.(b.winMultiplier);
+            onBallDoneRef.current(b.id);
+          }
           continue;
         }
+        // Peg bounce sound (not in turbo)
+        if (!turboRef.current) onBounceRef.current?.();
       }
       const from = b.waypoints[b.waypointIdx];
       const to   = b.waypoints[b.waypointIdx + 1];
