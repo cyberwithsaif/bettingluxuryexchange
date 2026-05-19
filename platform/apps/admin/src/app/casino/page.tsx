@@ -2,10 +2,10 @@
 import useSWR, { mutate as globalMutate } from "swr";
 import { useState } from "react";
 import { api } from "@/lib/api";
-import { Plus, Trash2, ToggleLeft, ToggleRight, Gamepad2 } from "lucide-react";
+import { Plus, Trash2, Gamepad2, Pencil, Image } from "lucide-react";
 
 interface Provider { id: string; key: string; name: string; category: string; }
-interface Game { id: string; name: string; category: string; thumbnail: string | null; isLive: boolean; provider: Provider; }
+interface Game { id: string; name: string; category: string; thumbnail: string | null; isLive: boolean; sortOrder: number; provider: Provider; }
 
 const PROVIDERS_KEY = "/casino/providers";
 const GAMES_KEY = "/casino/games?limit=200";
@@ -15,6 +15,7 @@ export default function AdminCasinoPage() {
   const { data: games,     isLoading: gameLoad } = useSWR<Game[]>(GAMES_KEY);
   const [showAddProvider, setShowAddProvider] = useState(false);
   const [showAddGame,     setShowAddGame]     = useState(false);
+  const [editGame,        setEditGame]        = useState<Game | null>(null);
   const [activeTab, setActiveTab]             = useState<"providers" | "games">("games");
 
   return (
@@ -49,7 +50,7 @@ export default function AdminCasinoPage() {
         <div className="rounded-xl border border-line bg-panel/60 overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-panel text-[10px] uppercase tracking-wider text-white/50">
-              <tr><Th>Name</Th><Th>Category</Th><Th>Provider</Th><Th>Live</Th><Th>Actions</Th></tr>
+              <tr><Th>Thumb</Th><Th>Name</Th><Th>Category</Th><Th>Provider</Th><Th>Live</Th><Th>Order</Th><Th>Actions</Th></tr>
             </thead>
             <tbody>
               {gameLoad && <tr><td colSpan={5} className="text-center py-8 text-white/50">Loading…</td></tr>}
@@ -61,6 +62,12 @@ export default function AdminCasinoPage() {
               )}
               {(games ?? []).map((g) => (
                 <tr key={g.id} className="border-t border-line/60 hover:bg-panel2/20">
+                  <Td>
+                    {g.thumbnail
+                      ? <img src={g.thumbnail} alt={g.name} className="w-10 h-12 object-cover rounded border border-line" />
+                      : <div className="w-10 h-12 bg-white/5 rounded border border-line flex items-center justify-center"><Image size={14} className="text-white/30" /></div>
+                    }
+                  </Td>
                   <Td className="font-semibold">{g.name}</Td>
                   <Td className="text-xs text-white/60">{g.category}</Td>
                   <Td>{g.provider.name}</Td>
@@ -69,14 +76,20 @@ export default function AdminCasinoPage() {
                       {g.isLive ? "LIVE" : "RNG"}
                     </span>
                   </Td>
+                  <Td className="text-xs text-white/50">{g.sortOrder ?? 0}</Td>
                   <Td>
-                    <button onClick={async () => {
-                      if (!confirm(`Delete game "${g.name}"?`)) return;
-                      await api.delete(`/casino/games/${g.id}`);
-                      globalMutate(GAMES_KEY);
-                    }} className="p-1.5 rounded border border-line hover:border-bad hover:text-bad transition">
-                      <Trash2 size={14} />
-                    </button>
+                    <div className="flex gap-1">
+                      <button onClick={() => setEditGame(g)} className="p-1.5 rounded border border-line hover:border-accent hover:text-accent transition">
+                        <Pencil size={14} />
+                      </button>
+                      <button onClick={async () => {
+                        if (!confirm(`Delete game "${g.name}"?`)) return;
+                        await api.delete(`/casino/games/${g.id}`);
+                        globalMutate(GAMES_KEY);
+                      }} className="p-1.5 rounded border border-line hover:border-bad hover:text-bad transition">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </Td>
                 </tr>
               ))}
@@ -124,6 +137,9 @@ export default function AdminCasinoPage() {
       )}
       {showAddGame && (
         <AddGameModal providers={providers ?? []} onClose={(saved) => { setShowAddGame(false); if (saved) globalMutate(GAMES_KEY); }} />
+      )}
+      {editGame && (
+        <EditGameModal game={editGame} onClose={(saved) => { setEditGame(null); if (saved) globalMutate(GAMES_KEY); }} />
       )}
     </div>
   );
@@ -190,6 +206,42 @@ function AddGameModal({ providers, onClose }: { providers: Provider[]; onClose: 
           finally { setBusy(false); }
         }} className="px-4 py-2 rounded bg-accent-grad font-bold text-ink shadow-glow disabled:opacity-50 text-sm">
           {busy ? "Saving…" : "Save Game"}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function EditGameModal({ game, onClose }: { game: Game; onClose: (saved?: boolean) => void }) {
+  const [form, setForm] = useState({ name: game.name, thumbnail: game.thumbnail ?? "", isLive: game.isLive, category: game.category, sortOrder: game.sortOrder ?? 0 });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  return (
+    <Modal title="Edit Game" onClose={() => onClose()}>
+      <Field label="Game Name"><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
+      <Field label="Thumbnail URL">
+        <input className="input" value={form.thumbnail} onChange={(e) => setForm({ ...form, thumbnail: e.target.value })} placeholder="https://…" />
+        {form.thumbnail && <img src={form.thumbnail} alt="preview" className="mt-2 w-20 h-24 object-cover rounded border border-line" onError={(e) => (e.currentTarget.style.display = "none")} />}
+      </Field>
+      <Field label="Category"><input className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></Field>
+      <Field label="Sort Order (lower = first)"><input className="input" type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} /></Field>
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={form.isLive} onChange={(e) => setForm({ ...form, isLive: e.target.checked })} />
+        Live dealer game
+      </label>
+      {err && <div className="text-xs text-bad bg-bad/15 border border-bad/40 rounded px-2 py-1.5">{err}</div>}
+      <div className="flex gap-2 justify-end pt-1">
+        <button onClick={() => onClose()} className="px-4 py-2 rounded border border-line text-sm">Cancel</button>
+        <button disabled={busy} onClick={async () => {
+          setBusy(true); setErr(null);
+          try {
+            await api.patch(`/casino/games/${game.id}`, { ...form, thumbnail: form.thumbnail || null });
+            onClose(true);
+          } catch (e: any) { setErr(e?.response?.data?.message || "Failed"); }
+          finally { setBusy(false); }
+        }} className="px-4 py-2 rounded bg-accent-grad font-bold text-ink shadow-glow disabled:opacity-50 text-sm">
+          {busy ? "Saving…" : "Save Changes"}
         </button>
       </div>
     </Modal>

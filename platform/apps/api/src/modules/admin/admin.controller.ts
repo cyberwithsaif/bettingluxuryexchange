@@ -253,6 +253,13 @@ export class AdminController {
     return r;
   }
 
+  @Patch("casino/games/:id")
+  async updateGame(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Body() dto: any, @Req() req: Request) {
+    const r = await this.casino.updateGame(id, dto);
+    await this.admin.writeAudit(actor.id, "casino.game.update", { type: "game", id }, dto, req.ip);
+    return r;
+  }
+
   @Delete("casino/games/:id")
   async deleteGame(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Req() req: Request) {
     const r = await this.casino.deleteGame(id);

@@ -173,4 +173,18 @@ export class CasinoService {
       data: { isActive: false },
     });
   }
+
+  updateGame(id: string, dto: { name?: string; thumbnail?: string | null; isLive?: boolean; category?: string; sortOrder?: number }) {
+    return this.prisma.casinoGame.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.thumbnail !== undefined ? { thumbnail: dto.thumbnail } : {}),
+        ...(dto.isLive !== undefined ? { isLive: dto.isLive } : {}),
+        ...(dto.category !== undefined ? { category: dto.category as any } : {}),
+        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
+      },
+      include: { provider: true },
+    });
+  }
 }
