@@ -281,7 +281,9 @@ export class AdminController {
   @Post("upload")
   @UseInterceptors(FileInterceptor("file", {
     storage: multer.diskStorage({
-      destination: join(process.cwd(), "uploads"),
+      destination: (_req: any, _file: any, cb: (e: null | Error, d: string) => void) => {
+        cb(null, process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads"));
+      },
       filename: (_req: any, file: any, cb: (e: null, n: string) => void) => {
         const unique = randomBytes(10).toString("hex");
         cb(null, unique + extname(file.originalname));
@@ -293,7 +295,7 @@ export class AdminController {
     },
   }))
   async uploadFile(@UploadedFile() file: { filename: string; path: string; mimetype: string }, @Req() _req: Request) {
-    const uploadsDir = join(process.cwd(), "uploads");
+    const uploadsDir = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
     const outName = randomBytes(10).toString("hex") + ".webp";
     const outPath = join(uploadsDir, outName);
     try {

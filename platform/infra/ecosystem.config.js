@@ -9,7 +9,7 @@ module.exports = {
       instances: 1,
       exec_mode: "fork",
       max_memory_restart: "512M",
-      env: { NODE_ENV: "production", API_PORT: 4000 },
+      env: { NODE_ENV: "production", API_PORT: 4000, UPLOADS_DIR: "/var/www/exch/uploads" },
     },
     {
       name: "exch-web",
