@@ -2,21 +2,33 @@
 import useSWR, { mutate as globalMutate } from "swr";
 import { useState } from "react";
 import { api } from "@/lib/api";
-import { Plus, Trash2, Gamepad2, Pencil, Image } from "lucide-react";
+import { Plus, Trash2, Gamepad2, Pencil, Image, GripVertical } from "lucide-react";
 
 interface Provider { id: string; key: string; name: string; category: string; }
 interface Game { id: string; name: string; category: string; thumbnail: string | null; isLive: boolean; sortOrder: number; provider: Provider; }
+interface InHouseGame { id: string; name: string; description: string; href: string; thumbnail: string | null; emoji: string; bg: string; sortOrder: number; }
 
 const PROVIDERS_KEY = "/casino/providers";
 const GAMES_KEY = "/casino/games?limit=200";
+const SETTINGS_KEY = "/platform-settings";
 
 export default function AdminCasinoPage() {
   const { data: providers, isLoading: provLoad } = useSWR<Provider[]>(PROVIDERS_KEY);
   const { data: games,     isLoading: gameLoad } = useSWR<Game[]>(GAMES_KEY);
-  const [showAddProvider, setShowAddProvider] = useState(false);
-  const [showAddGame,     setShowAddGame]     = useState(false);
-  const [editGame,        setEditGame]        = useState<Game | null>(null);
-  const [activeTab, setActiveTab]             = useState<"providers" | "games">("games");
+  const { data: settings } = useSWR<{ inhouseGames?: InHouseGame[] }>(SETTINGS_KEY);
+  const [showAddProvider,  setShowAddProvider]  = useState(false);
+  const [showAddGame,      setShowAddGame]      = useState(false);
+  const [editGame,         setEditGame]         = useState<Game | null>(null);
+  const [editInhouse,      setEditInhouse]      = useState<InHouseGame | null>(null);
+  const [showAddInhouse,   setShowAddInhouse]   = useState(false);
+  const [activeTab, setActiveTab]               = useState<"providers" | "games" | "inhouse">("games");
+
+  const inhouseGames: InHouseGame[] = (settings?.inhouseGames ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder);
+
+  async function saveInhouseGames(updated: InHouseGame[]) {
+    await api.post(SETTINGS_KEY, { inhouseGames: updated });
+    globalMutate(SETTINGS_KEY);
+  }
 
   return (
     <div className="space-y-5">
@@ -33,15 +45,20 @@ export default function AdminCasinoPage() {
               <Plus size={16} /> Add Game
             </button>
           )}
+          {activeTab === "inhouse" && (
+            <button onClick={() => setShowAddInhouse(true)} className="inline-flex items-center gap-2 rounded-md bg-accent-grad px-4 py-2 font-bold text-ink shadow-glow hover:brightness-110">
+              <Plus size={16} /> Add In-House Game
+            </button>
+          )}
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-line">
-        {(["games", "providers"] as const).map((tab) => (
+        {(["games", "inhouse", "providers"] as const).map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className={"px-4 py-2 text-sm font-semibold capitalize border-b-2 transition " + (activeTab === tab ? "border-accent text-white" : "border-transparent text-white/50 hover:text-white")}
-          >{tab}</button>
+          >{tab === "inhouse" ? "In-House Games" : tab}</button>
         ))}
       </div>
 
@@ -132,6 +149,58 @@ export default function AdminCasinoPage() {
         </div>
       )}
 
+      {/* In-House Games Table */}
+      {activeTab === "inhouse" && (
+        <div className="rounded-xl border border-line bg-panel/60 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-panel text-[10px] uppercase tracking-wider text-white/50">
+              <tr><Th>Order</Th><Th>Thumb / Emoji</Th><Th>Name</Th><Th>Description</Th><Th>Route</Th><Th>Actions</Th></tr>
+            </thead>
+            <tbody>
+              {inhouseGames.length === 0 && (
+                <tr><td colSpan={6} className="text-center py-10 text-white/50">
+                  <Gamepad2 size={32} className="mx-auto mb-2 text-white/20" />
+                  No in-house games yet. Click "Add In-House Game" to create one.
+                </td></tr>
+              )}
+              {inhouseGames.map((g) => (
+                <tr key={g.id} className="border-t border-line/60 hover:bg-panel2/20">
+                  <Td>
+                    <div className="flex items-center gap-1 text-white/40">
+                      <GripVertical size={14} />
+                      <span className="text-xs">{g.sortOrder}</span>
+                    </div>
+                  </Td>
+                  <Td>
+                    {g.thumbnail
+                      ? <img src={g.thumbnail} alt={g.name} className="w-10 h-12 object-cover rounded border border-line" />
+                      : <div className="w-10 h-12 rounded border border-line flex items-center justify-center text-2xl" style={{ background: g.bg }}>{g.emoji}</div>
+                    }
+                  </Td>
+                  <Td className="font-semibold">{g.name}</Td>
+                  <Td className="text-xs text-white/60">{g.description}</Td>
+                  <Td className="font-mono text-xs text-white/60">{g.href}</Td>
+                  <Td>
+                    <div className="flex gap-1">
+                      <button onClick={() => setEditInhouse(g)} className="p-1.5 rounded border border-line hover:border-accent hover:text-accent transition">
+                        <Pencil size={14} />
+                      </button>
+                      <button onClick={async () => {
+                        if (!confirm(`Delete in-house game "${g.name}"?`)) return;
+                        const updated = inhouseGames.filter((x) => x.id !== g.id);
+                        await saveInhouseGames(updated);
+                      }} className="p-1.5 rounded border border-line hover:border-bad hover:text-bad transition">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </Td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {showAddProvider && (
         <AddProviderModal onClose={(saved) => { setShowAddProvider(false); if (saved) globalMutate(PROVIDERS_KEY); }} />
       )}
@@ -140,6 +209,21 @@ export default function AdminCasinoPage() {
       )}
       {editGame && (
         <EditGameModal game={editGame} onClose={(saved) => { setEditGame(null); if (saved) globalMutate(GAMES_KEY); }} />
+      )}
+      {showAddInhouse && (
+        <AddInHouseGameModal
+          nextOrder={inhouseGames.length}
+          onClose={async (game) => { setShowAddInhouse(false); if (game) await saveInhouseGames([...inhouseGames, game]); }}
+        />
+      )}
+      {editInhouse && (
+        <EditInHouseGameModal
+          game={editInhouse}
+          onClose={async (updated) => {
+            setEditInhouse(null);
+            if (updated) await saveInhouseGames(inhouseGames.map((g) => g.id === updated.id ? updated : g));
+          }}
+        />
       )}
     </div>
   );
@@ -248,6 +332,78 @@ function EditGameModal({ game, onClose }: { game: Game; onClose: (saved?: boolea
             onClose(true);
           } catch (e: any) { setErr(e?.response?.data?.message || "Failed"); }
           finally { setBusy(false); }
+        }} className="px-4 py-2 rounded bg-accent-grad font-bold text-ink shadow-glow disabled:opacity-50 text-sm">
+          {busy ? "Saving…" : "Save Changes"}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function AddInHouseGameModal({ nextOrder, onClose }: { nextOrder: number; onClose: (game?: InHouseGame) => void }) {
+  const [form, setForm] = useState<InHouseGame>({
+    id: "", name: "", description: "", href: "", thumbnail: null, emoji: "🎮",
+    bg: "linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)", sortOrder: nextOrder,
+  });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  return (
+    <Modal title="Add In-House Game" onClose={() => onClose()}>
+      <Field label="ID (unique slug, e.g. roulette)">
+        <input className="input" value={form.id} onChange={(e) => setForm({ ...form, id: e.target.value.toLowerCase().replace(/\s+/g, "-") })} placeholder="e.g. roulette" />
+      </Field>
+      <Field label="Name"><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Roulette" /></Field>
+      <Field label="Description"><input className="input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="e.g. European Roulette" /></Field>
+      <Field label="Route (href)"><input className="input" value={form.href} onChange={(e) => setForm({ ...form, href: e.target.value })} placeholder="e.g. /roulette" /></Field>
+      <Field label="Thumbnail URL (optional, overrides emoji)">
+        <input className="input" value={form.thumbnail ?? ""} onChange={(e) => setForm({ ...form, thumbnail: e.target.value || null })} placeholder="https://…" />
+        {form.thumbnail && <img src={form.thumbnail} alt="preview" className="mt-2 w-20 h-24 object-cover rounded border border-line" onError={(e) => (e.currentTarget.style.display = "none")} />}
+      </Field>
+      <Field label="Emoji (fallback when no thumbnail)"><input className="input" value={form.emoji} onChange={(e) => setForm({ ...form, emoji: e.target.value })} placeholder="🎮" /></Field>
+      <Field label="Background gradient (fallback)"><input className="input" value={form.bg} onChange={(e) => setForm({ ...form, bg: e.target.value })} placeholder="linear-gradient(135deg,#000 0%,#111 100%)" /></Field>
+      <Field label="Sort Order (lower = first)"><input className="input" type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} /></Field>
+      {err && <div className="text-xs text-bad bg-bad/15 border border-bad/40 rounded px-2 py-1.5">{err}</div>}
+      <div className="flex gap-2 justify-end pt-1">
+        <button onClick={() => onClose()} className="px-4 py-2 rounded border border-line text-sm">Cancel</button>
+        <button disabled={busy} onClick={async () => {
+          if (!form.id || !form.name || !form.href) { setErr("ID, Name, and Route are required."); return; }
+          setBusy(true); setErr(null);
+          try { onClose(form); }
+          catch (e: any) { setErr("Failed"); setBusy(false); }
+        }} className="px-4 py-2 rounded bg-accent-grad font-bold text-ink shadow-glow disabled:opacity-50 text-sm">
+          {busy ? "Saving…" : "Add Game"}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function EditInHouseGameModal({ game, onClose }: { game: InHouseGame; onClose: (updated?: InHouseGame) => void }) {
+  const [form, setForm] = useState<InHouseGame>({ ...game });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  return (
+    <Modal title="Edit In-House Game" onClose={() => onClose()}>
+      <Field label="Name"><input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
+      <Field label="Description"><input className="input" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
+      <Field label="Route (href)"><input className="input" value={form.href} onChange={(e) => setForm({ ...form, href: e.target.value })} /></Field>
+      <Field label="Thumbnail URL (optional, overrides emoji)">
+        <input className="input" value={form.thumbnail ?? ""} onChange={(e) => setForm({ ...form, thumbnail: e.target.value || null })} placeholder="https://…" />
+        {form.thumbnail && <img src={form.thumbnail} alt="preview" className="mt-2 w-20 h-24 object-cover rounded border border-line" onError={(e) => (e.currentTarget.style.display = "none")} />}
+      </Field>
+      <Field label="Emoji (fallback when no thumbnail)"><input className="input" value={form.emoji} onChange={(e) => setForm({ ...form, emoji: e.target.value })} /></Field>
+      <Field label="Background gradient (fallback)"><input className="input" value={form.bg} onChange={(e) => setForm({ ...form, bg: e.target.value })} /></Field>
+      <Field label="Sort Order (lower = first)"><input className="input" type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} /></Field>
+      {err && <div className="text-xs text-bad bg-bad/15 border border-bad/40 rounded px-2 py-1.5">{err}</div>}
+      <div className="flex gap-2 justify-end pt-1">
+        <button onClick={() => onClose()} className="px-4 py-2 rounded border border-line text-sm">Cancel</button>
+        <button disabled={busy} onClick={async () => {
+          if (!form.name || !form.href) { setErr("Name and Route are required."); return; }
+          setBusy(true); setErr(null);
+          try { onClose(form); }
+          catch (e: any) { setErr("Failed"); setBusy(false); }
         }} className="px-4 py-2 rounded bg-accent-grad font-bold text-ink shadow-glow disabled:opacity-50 text-sm">
           {busy ? "Saving…" : "Save Changes"}
         </button>

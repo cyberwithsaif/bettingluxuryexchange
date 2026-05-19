@@ -14,24 +14,16 @@ interface ApiGame {
   provider: { id: string; name: string; key: string; category: string };
 }
 
-const IN_HOUSE_GAMES = [
-  {
-    name: "Roulette",
-    href: "/roulette",
-    emoji: "🎯",
-    bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)",
-    desc: "European Roulette",
-    badge: "IN-HOUSE",
-  },
-  {
-    name: "Mines",
-    href: "/mines",
-    emoji: "💣",
-    bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)",
-    desc: "Mines Game",
-    badge: "IN-HOUSE",
-  },
-];
+interface InHouseGame {
+  id: string;
+  name: string;
+  description: string;
+  href: string;
+  thumbnail: string | null;
+  emoji: string;
+  bg: string;
+  sortOrder: number;
+}
 
 export function CasinoGrid({ category, title }: { category?: string; title: string }) {
   const [providerKey, setProviderKey] = useState<string>("All");
@@ -45,6 +37,12 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
     : category === "VR" ? "VIRTUAL"
     : category === "LOTTERY" ? "LOTTERY"
     : undefined;
+
+  const { data: siteSettings } = useSWR<{ inhouseGames?: InHouseGame[] }>(
+    "/api/platform/settings",
+    (url: string) => fetch(url).then((r) => r.ok ? r.json() : {}),
+  );
+  const inhouseGames: InHouseGame[] = (siteSettings?.inhouseGames ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder);
 
   const { data: rawGames } = useSWR<ApiGame[]>(
     `/api/casino/games${apiCategory ? `?category=${apiCategory}` : ""}`,
@@ -72,30 +70,34 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
       </div>
 
       {/* In-House Featured Games */}
-      {showInHouse && (
+      {showInHouse && inhouseGames.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
             <span className="text-xs font-bold uppercase tracking-widest text-brandYellow bg-brandYellow/10 border border-brandYellow/30 px-3 py-1 rounded-full">Our Games</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-            {IN_HOUSE_GAMES.map((g) => (
+            {inhouseGames.map((g) => (
               <Link
-                key={g.href}
+                key={g.id}
                 href={g.href}
                 className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-transparent hover:border-brandRed transition transform hover:-translate-y-1 shadow-lg"
-                style={{ background: g.bg }}
+                style={{ background: g.thumbnail ? undefined : g.bg }}
               >
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                  <span className="text-5xl drop-shadow-lg">{g.emoji}</span>
-                </div>
+                {g.thumbnail ? (
+                  <img src={g.thumbnail} alt={g.name} className="absolute inset-0 h-full w-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-5xl drop-shadow-lg">{g.emoji}</span>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                 <div className="absolute top-2 right-2">
-                  <span className="text-[9px] font-bold uppercase tracking-wider bg-brandYellow/90 text-black px-1.5 py-0.5 rounded">{g.badge}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider bg-brandYellow/90 text-black px-1.5 py-0.5 rounded">IN-HOUSE</span>
                 </div>
                 <div className="absolute bottom-0 inset-x-0 p-2 text-left">
                   <p className="font-bold text-sm leading-tight text-white">{g.name}</p>
-                  <p className="text-[10px] uppercase tracking-wider text-brandYellow">{g.desc}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-brandYellow">{g.description}</p>
                 </div>
               </Link>
             ))}

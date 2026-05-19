@@ -281,11 +281,16 @@ export class PublicPlatformController {
   @Get("settings")
   async getPublicSettings() {
     const settings = await this.admin.getPlatformSettings();
+    const defaultInhouseGames = [
+      { id: "roulette", name: "Roulette", description: "European Roulette", href: "/roulette", thumbnail: null, emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
+      { id: "mines",    name: "Mines",    description: "Mines Game",        href: "/mines",    thumbnail: null, emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
+    ];
     return {
-      subBanner:   (settings as any).subBanner   ?? "Bet Now in Line Market and Get Commission Upto 2%",
-      siteName:    (settings as any).siteName    ?? "Future9",
-      siteTagline: (settings as any).siteTagline ?? "Sports & Casino",
-      marqueeText: (settings as any).marqueeText ?? "📢 Live Markets Now Available — Play Smart, Win Big! • Bet Now in Line Markets and Get Commission Upto 2%",
+      subBanner:     (settings as any).subBanner     ?? "Bet Now in Line Market and Get Commission Upto 2%",
+      siteName:      (settings as any).siteName      ?? "Future9",
+      siteTagline:   (settings as any).siteTagline   ?? "Sports & Casino",
+      marqueeText:   (settings as any).marqueeText   ?? "📢 Live Markets Now Available — Play Smart, Win Big! • Bet Now in Line Markets and Get Commission Upto 2%",
+      inhouseGames:  (settings as any).inhouseGames  ?? defaultInhouseGames,
     };
   }
 }
