@@ -199,14 +199,21 @@ export class AdminService {
   }
 
   async savePlatformSettings(dto: Record<string, unknown>) {
-    const current = await this.getPlatformSettings();
-    const merged = { ...current, ...dto };
-    await this.prisma.systemConfig.upsert({
-      where: { key: "platform" },
-      create: { key: "platform", value: merged as any },
-      update: { value: merged as any },
-    });
-    return merged;
+    // Strip undefined values so they don't overwrite existing fields with null
+    const clean = Object.fromEntries(Object.entries(dto).filter(([, v]) => v !== undefined));
+    const jsonValue = JSON.stringify(clean);
+
+    // Atomic JSONB merge — avoids read-modify-write race condition under cluster mode.
+    // PostgreSQL's || operator merges at the top level: existing keys not in `clean` are preserved.
+    await this.prisma.$executeRaw`
+      INSERT INTO "SystemConfig" (key, value, "updatedAt")
+      VALUES ('platform', ${jsonValue}::jsonb, NOW())
+      ON CONFLICT (key) DO UPDATE
+        SET value      = "SystemConfig".value || ${jsonValue}::jsonb,
+            "updatedAt" = NOW()
+    `;
+
+    return this.getPlatformSettings();
   }
 
   // ── User Profile ───────────────────────────────────────────────────────────

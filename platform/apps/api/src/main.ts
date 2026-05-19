@@ -11,7 +11,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   const logger = new Logger("Bootstrap");
 
-  const uploadsDir = join(process.cwd(), "uploads");
+  const uploadsDir = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
   mkdirSync(uploadsDir, { recursive: true });
   // Served at /api/uploads/ so nginx's /api/ → port-4000 rule covers it
   app.use("/api/uploads", expressStatic(uploadsDir));

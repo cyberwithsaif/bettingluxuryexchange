@@ -49,6 +49,7 @@ class PlatformSettingsDto {
   @IsOptional() @IsNumber() @Min(100) maxStake?: number;
   @IsOptional() @IsNumber() @Min(1000) maxMarketExposure?: number;
   @IsOptional() @IsInt() @Min(0) defaultPartnershipBps?: number;
+  @IsOptional() @IsString() currency?: string;
   @IsOptional() @IsBoolean() maintenanceMode?: boolean;
   @IsOptional() @IsBoolean() registrationEnabled?: boolean;
   @IsOptional() @IsBoolean() depositEnabled?: boolean;
