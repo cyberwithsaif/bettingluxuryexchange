@@ -271,9 +271,7 @@ export class MinesService {
   }
 
   async resetStats() {
-    await this.prisma.minesSession.deleteMany({
-      where: { status: { in: [MinesStatus.CASHED_OUT, MinesStatus.BUSTED] } },
-    });
+    await this.prisma.minesSession.deleteMany({});
     return { ok: true };
   }
 

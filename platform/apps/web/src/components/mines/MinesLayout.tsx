@@ -30,7 +30,7 @@ export interface MinesState {
 export default function MinesLayout() {
   const user = useAuthStore((s) => s.user);
   const { data: walletData, mutate: mutateWallet } = useSWR<{ available: number }>(user ? "/wallet/summary" : null);
-  const { data: platformCfg } = useSWR<{ minesMinBet?: number; minesMaxBet?: number }>("/platform/settings",
+  const { data: platformCfg } = useSWR<{ minesMinBet?: number; minesMaxBet?: number }>("/api/platform/settings",
     (url: string) => fetch(url).then(r => r.ok ? r.json() : {}),
     { revalidateOnFocus: false }
   );
