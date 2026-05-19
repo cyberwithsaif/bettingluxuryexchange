@@ -381,38 +381,6 @@ export default function RoulettePage() {
                 </div>
               </div>
 
-              {/* Speed indicator — only visible while spinning */}
-              {status === "SPINNING" && (
-                <div className="w-full max-w-[220px] space-y-1">
-                  <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider">
-                    <span style={{
-                      color: secondsLeft > 13 ? "#4ade80"
-                           : secondsLeft > 7  ? "#facc15"
-                           : secondsLeft > 3  ? "#fb923c"
-                           : "#ef4444"
-                    }}>
-                      {secondsLeft > 13 ? "⚡ Spinning Fast"
-                     : secondsLeft > 7  ? "↻ Slowing Down"
-                     : secondsLeft > 3  ? "🎯 Almost Stopped"
-                     : "🛑 Stopping…"}
-                    </span>
-                    <span className="text-white/40">{secondsLeft}s</span>
-                  </div>
-                  <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-1000"
-                      style={{
-                        width: `${Math.min(100, (secondsLeft / 20) * 100)}%`,
-                        background: secondsLeft > 13
-                          ? "linear-gradient(90deg,#4ade80,#22d3ee)"
-                          : secondsLeft > 7
-                          ? "linear-gradient(90deg,#facc15,#fb923c)"
-                          : "linear-gradient(90deg,#ef4444,#dc2626)",
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* RIGHT: Betting table, chips, buttons */}
