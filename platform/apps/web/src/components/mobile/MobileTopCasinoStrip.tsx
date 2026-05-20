@@ -44,11 +44,6 @@ export function MobileTopCasinoStrip() {
                 <span className="text-4xl">{g.emoji}</span>
               </div>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 px-2 py-2">
-              <p className="text-[10px] font-bold text-white leading-tight truncate">{g.name}</p>
-              {g.description && <p className="text-[8px] text-yellow-400/70 truncate mt-0.5">{g.description}</p>}
-            </div>
           </Link>
         ))}
       </div>
