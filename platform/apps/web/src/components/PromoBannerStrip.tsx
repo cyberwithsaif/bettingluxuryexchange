@@ -107,9 +107,7 @@ export function PromoBannerStrip() {
         <div className="flex gap-2 md:gap-4" style={{ width: "max-content" }}>
           {items.map((b, i) => {
             const img = (
-              <div
-                className="shrink-0 rounded-lg overflow-hidden border border-white/10 hover:border-brandYellow/50 transition-all duration-200 md:hover:scale-[1.02] w-[92vw] aspect-[19/9] md:w-[380px] md:h-[180px] md:aspect-auto"
-              >
+              <div className="promo-banner-card shrink-0 rounded-lg overflow-hidden border border-white/10 md:hover:border-brandYellow/50 transition-all duration-200 md:hover:scale-[1.02]">
                 <img
                   src={b.imageUrl}
                   alt={b.title ?? ""}
@@ -126,7 +124,12 @@ export function PromoBannerStrip() {
           })}
         </div>
       </div>
-      <style>{`.promo-no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}.promo-no-scrollbar::-webkit-scrollbar{display:none}`}</style>
+      <style>{`
+        .promo-no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+        .promo-no-scrollbar::-webkit-scrollbar{display:none}
+        .promo-banner-card{width:calc(100vw - 1rem);aspect-ratio:10/3;max-height:90px}
+        @media (min-width:768px){.promo-banner-card{width:380px;height:180px;aspect-ratio:auto;max-height:none}}
+      `}</style>
     </>
   );
 }
@@ -137,7 +140,7 @@ function PromoBannerSkeleton() {
       {[1, 2].map(i => (
         <div
           key={i}
-          className="shrink-0 rounded-lg animate-pulse bg-white/10 border border-white/5 w-[92vw] aspect-[19/9] md:w-[380px] md:h-[180px] md:aspect-auto"
+          className="promo-banner-card shrink-0 rounded-lg animate-pulse bg-white/10 border border-white/5"
         />
       ))}
     </div>
