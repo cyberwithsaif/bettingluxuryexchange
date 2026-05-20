@@ -73,12 +73,12 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
           <p className="text-white/50 text-xs md:text-sm mt-0.5 uppercase tracking-wider">Premium Games · Bet Now</p>
         </div>
         {/* Search */}
-        <div className="relative w-full sm:w-56">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+        <div className="relative w-full sm:w-64">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60" />
           <input
             value={q} onChange={e => setQ(e.target.value)}
             placeholder="Search game…"
-            className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-brandRed/60 transition"
+            className="w-full bg-black/60 backdrop-blur border border-white/30 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder-white/50 focus:outline-none focus:border-brandRed focus:bg-black/80 transition shadow-lg"
           />
         </div>
       </div>
@@ -105,7 +105,7 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
             <span className="text-[10px] font-bold uppercase tracking-widest text-brandYellow bg-brandYellow/10 border border-brandYellow/30 px-3 py-1 rounded-full">Our Games</span>
             <div className="flex-1 h-px bg-white/8" />
           </div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-2 md:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3 md:gap-4">
             {inhouseGames.map((g, idx) => (
               <Link key={g.id} href={g.href}
                 className="group relative rounded-2xl overflow-hidden border border-white/8 hover:border-yellow-400/60 hover:scale-[1.04] hover:shadow-[0_0_18px_rgba(250,204,21,0.25)] transition-all duration-200 shadow-md"
@@ -141,7 +141,7 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
           )}
 
           {filtered.length > 0 ? (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-2 md:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3 md:gap-4">
               {filtered.map((g, idx) => (
                 <button key={g.id}
                   className="group relative rounded-2xl overflow-hidden border border-white/8 hover:border-brandRed/60 hover:scale-[1.04] hover:shadow-[0_0_18px_rgba(168,18,46,0.3)] transition-all duration-200 shadow-md text-left"
