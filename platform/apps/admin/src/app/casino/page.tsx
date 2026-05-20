@@ -203,8 +203,8 @@ export default function AdminCasinoPage() {
                   </Td>
                   <Td>
                     {g.thumbnail
-                      ? <img src={g.thumbnail} alt={g.name} className="w-10 h-12 object-cover rounded border border-line" />
-                      : <div className="w-10 h-12 rounded border border-line flex items-center justify-center text-2xl" style={{ background: g.bg }}>{g.emoji}</div>
+                      ? <img src={g.thumbnail} alt={g.name} className="w-10 object-cover rounded-lg border border-line" style={{ aspectRatio: "3/4" }} />
+                      : <div className="w-10 rounded-lg border border-line flex items-center justify-center text-xl" style={{ aspectRatio: "3/4", background: g.bg }}>{g.emoji}</div>
                     }
                   </Td>
                   <Td className="font-semibold">{g.name}</Td>
@@ -490,10 +490,24 @@ function ThumbnailField({ value, onChange, label = "Thumbnail URL (optional, ove
         <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleFile} />
       </div>
       {uploadErr && <p className="text-[10px] text-bad mt-1">{uploadErr}</p>}
+      <p className="text-[10px] text-white/35 mt-1">
+        Recommended: <strong>300 × 400 px</strong> (portrait 3:4) · JPG/PNG/WEBP · max 5 MB
+      </p>
       {value && (
-        <div className="mt-2 flex items-start gap-2">
-          <img src={value} alt="preview" className="w-16 h-20 object-cover rounded border border-line" onError={(e) => (e.currentTarget.style.display = "none")} />
-          <button type="button" onClick={() => onChange(null)} className="text-[10px] text-bad/70 hover:text-bad mt-1">✕ Remove</button>
+        <div className="mt-2 flex items-start gap-3">
+          {/* Preview matches exact tile ratio used on site */}
+          <div className="relative w-[75px] shrink-0" style={{ aspectRatio: "3/4" }}>
+            <img
+              src={value}
+              alt="preview"
+              className="absolute inset-0 w-full h-full object-cover rounded-lg border border-line"
+              onError={(e) => (e.currentTarget.style.display = "none")}
+            />
+          </div>
+          <div className="flex flex-col gap-1 pt-1">
+            <span className="text-[10px] text-white/40">Preview (actual tile size)</span>
+            <button type="button" onClick={() => onChange(null)} className="text-[10px] text-bad/70 hover:text-bad">✕ Remove image</button>
+          </div>
         </div>
       )}
     </Field>
