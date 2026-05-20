@@ -451,32 +451,56 @@ function Modal({ title, children, onClose }: { title: string; children: React.Re
 function ThumbnailField({ value, onChange, label = "Thumbnail URL (optional, overrides emoji)" }: { value: string | null; onChange: (url: string | null) => void; label?: string }) {
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);           // 0-100
+  const [etaSec, setEtaSec]     = useState<number | null>(null);
+  const [bytesPerSec, setBps]   = useState(0);
+  const [phase, setPhase]       = useState<"uploading" | "processing" | null>(null);
   const ref = useRef<HTMLInputElement>(null);
 
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploading(true); setUploadErr(null);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      // Post directly to /api/admin/upload (nginx → NestJS, bypasses Next.js proxy hop)
-      const token = useAuthStore.getState().accessToken;
-      const res = await fetch("/api/admin/upload?type=thumbnail", {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: fd,
-      });
-      if (!res.ok) throw new Error();
-      const data = await res.json() as { url: string };
-      onChange(data.url);
-    } catch {
-      setUploadErr("Upload failed. Check file type (JPG/PNG/WEBP) and size (max 5 MB).");
-    } finally {
-      setUploading(false);
+    setUploading(true); setUploadErr(null); setProgress(0); setEtaSec(null); setBps(0); setPhase("uploading");
+
+    const fd = new FormData();
+    fd.append("file", file);
+    const token = useAuthStore.getState().accessToken;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/admin/upload?type=thumbnail");
+    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+
+    const startMs = Date.now();
+    xhr.upload.onprogress = (ev) => {
+      if (!ev.lengthComputable) return;
+      const pct = Math.round((ev.loaded / ev.total) * 100);
+      setProgress(pct);
+      const elapsed = (Date.now() - startMs) / 1000;
+      if (elapsed > 0.2) {
+        const bps = ev.loaded / elapsed;
+        setBps(bps);
+        const remaining = (ev.total - ev.loaded) / bps;
+        setEtaSec(Math.max(0, Math.round(remaining)));
+      }
+    };
+    xhr.upload.onload = () => { setPhase("processing"); setProgress(100); setEtaSec(null); };
+    xhr.onload = () => {
+      setUploading(false); setPhase(null);
       if (ref.current) ref.current.value = "";
-    }
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try { const data = JSON.parse(xhr.responseText) as { url: string }; onChange(data.url); }
+        catch { setUploadErr("Server returned invalid response."); }
+      } else {
+        setUploadErr(`Upload failed (status ${xhr.status}). Check file type (JPG/PNG/WEBP/GIF) and size (max 5 MB).`);
+      }
+    };
+    xhr.onerror = () => { setUploading(false); setPhase(null); setUploadErr("Network error. Try again."); };
+    xhr.send(fd);
   }
+
+  const kbps = bytesPerSec / 1024;
+  const speedLabel = kbps > 1024 ? `${(kbps / 1024).toFixed(1)} MB/s` : `${Math.round(kbps)} KB/s`;
+  const etaLabel = etaSec === null ? "—" : etaSec > 60 ? `${Math.floor(etaSec / 60)}m ${etaSec % 60}s` : `${etaSec}s`;
 
   return (
     <Field label={label}>
@@ -489,6 +513,24 @@ function ThumbnailField({ value, onChange, label = "Thumbnail URL (optional, ove
         </button>
         <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleFile} />
       </div>
+      {uploading && (
+        <div className="mt-2 space-y-1">
+          <div className="h-2 w-full rounded-full bg-white/8 overflow-hidden">
+            <div
+              className={`h-full transition-all duration-150 ${phase === "processing" ? "bg-yellow-400 animate-pulse" : "bg-accent"}`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-white/55 font-mono">
+            <span>
+              {phase === "processing"
+                ? "⚡ Processing image on server…"
+                : `📤 Uploading ${progress}% · ${speedLabel}`}
+            </span>
+            <span>{phase === "uploading" && etaSec !== null ? `ETA ${etaLabel}` : ""}</span>
+          </div>
+        </div>
+      )}
       {uploadErr && <p className="text-[10px] text-bad mt-1">{uploadErr}</p>}
       <p className="text-[10px] text-white/35 mt-1">
         Any size · HD up to 600×800 · JPG/PNG/WEBP · max 5 MB · auto-compressed under 900 KB · full image always visible

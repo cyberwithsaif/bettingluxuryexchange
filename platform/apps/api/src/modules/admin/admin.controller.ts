@@ -332,9 +332,9 @@ export class AdminController {
       const pipeline = sharp(file.path).resize({ ...dims, withoutEnlargement: false });
       let quality = isThumbnail ? 92 : 88;
       const encode = (q: number) => {
-        // Use FAST encoder settings — file is already small at 600×800, no need for max compression
-        if (ext === ".png")  return pipeline.clone().png({ quality: q, compressionLevel: 6, effort: 4 }).toBuffer();
-        if (ext === ".webp") return pipeline.clone().webp({ quality: q, effort: 3 }).toBuffer();
+        // Aggressively fast encoder settings — thumbnail output at 600×800 is small enough
+        if (ext === ".png")  return pipeline.clone().png({ quality: q, compressionLevel: 3, effort: 1, palette: true }).toBuffer();
+        if (ext === ".webp") return pipeline.clone().webp({ quality: q, effort: 1 }).toBuffer();
         if (ext === ".gif")  return pipeline.clone().gif().toBuffer();
         return pipeline.clone().jpeg({ quality: q }).toBuffer();   // .jpg fallback (libjpeg, fast)
       };
