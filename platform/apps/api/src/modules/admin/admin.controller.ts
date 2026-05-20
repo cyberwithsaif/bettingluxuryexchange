@@ -312,9 +312,11 @@ export class AdminController {
     const uploadsDir = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
     const outName = randomBytes(10).toString("hex") + ".webp";
     const outPath = join(uploadsDir, outName);
-    // hero: 1920×480 high-res; promo: 600×200 strip thumbnail; default: 1920×480
+    // hero: 1920×480; promo: 600×200; thumbnail (game tile 4:5): 400×500; default: 1920×480
     const dims = uploadType === "promo"
-      ? { width: 600, height: 200 }
+      ? { width: 600,  height: 200 }
+      : uploadType === "thumbnail"
+      ? { width: 400,  height: 500 }
       : { width: 1920, height: 480 };
     try {
       await sharp(file.path)
