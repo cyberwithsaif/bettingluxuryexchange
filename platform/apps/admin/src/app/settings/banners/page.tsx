@@ -225,8 +225,10 @@ export default function BannerSettingsPage() {
   const [msg,  setMsg]          = useState<{ text: string; ok: boolean } | null>(null);
   const [heroSlides, setHeroSlides]   = useState<HeroBannerSlide[]>([]);
   const [promoSlides, setPromoSlides] = useState<PromoBanner[]>([]);
+  const [promoSpeed, setPromoSpeed]   = useState(45);
   const [heroSaving, setHeroSaving]   = useState(false);
   const [promoSaving, setPromoSaving] = useState(false);
+  const [speedSaving, setSpeedSaving] = useState(false);
 
   useEffect(() => {
     if (!data) return;
@@ -238,6 +240,7 @@ export default function BannerSettingsPage() {
     });
     setHeroSlides((data.heroBanners ?? []).slice().sort((a: HeroBannerSlide, b: HeroBannerSlide) => a.sortOrder - b.sortOrder));
     setPromoSlides((data.promoBanners ?? []).slice().sort((a: PromoBanner, b: PromoBanner) => a.sortOrder - b.sortOrder));
+    setPromoSpeed(data.promoBannerSpeed ?? 45);
   }, [data]);
 
   async function save() {
@@ -261,10 +264,17 @@ export default function BannerSettingsPage() {
 
   async function savePromoSlides(updated: PromoBanner[]) {
     setPromoSaving(true);
-    await api.post(SETTINGS_KEY, { promoBanners: updated });
+    await api.post(SETTINGS_KEY, { promoBanners: updated, promoBannerSpeed: promoSpeed });
     setPromoSlides(updated);
     mutate(SETTINGS_KEY);
     setPromoSaving(false);
+  }
+
+  async function savePromoSpeed() {
+    setSpeedSaving(true);
+    await api.post(SETTINGS_KEY, { promoBannerSpeed: promoSpeed });
+    mutate(SETTINGS_KEY);
+    setSpeedSaving(false);
   }
 
   return (
@@ -369,6 +379,31 @@ export default function BannerSettingsPage() {
         <p className="text-xs text-white/40">
           Small scrolling promotional banners shown above the hero carousel. Recommended: 600×200 px. Auto-scroll left continuously.
         </p>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-2">Scroll Speed (seconds)</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min="5"
+                max="120"
+                value={promoSpeed}
+                onChange={e => setPromoSpeed(Number(e.target.value))}
+                className="flex-1 h-2 bg-panel/60 rounded-lg appearance-none cursor-pointer accent-accent"
+              />
+              <span className="text-sm font-semibold text-white/70 w-12 text-right">{promoSpeed}s</span>
+            </div>
+            <p className="text-xs text-white/40 mt-1">Lower values = faster scrolling (5–120 sec)</p>
+          </div>
+          <button
+            onClick={savePromoSpeed}
+            disabled={speedSaving}
+            className="px-3 py-2 bg-accent-grad rounded-lg text-xs font-semibold text-ink shadow-glow hover:brightness-110 disabled:opacity-50 transition flex items-center gap-2 w-fit"
+          >
+            <Save size={14} />
+            {speedSaving ? "Saving…" : "Save Speed"}
+          </button>
+        </div>
         <SlideManager
           label="Promo"
           hint="Recommended image: 600×200 px. These appear as a scrolling row of small promo cards."
