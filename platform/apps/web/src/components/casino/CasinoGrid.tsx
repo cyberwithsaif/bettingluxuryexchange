@@ -1,61 +1,60 @@
 "use client";
 import { useState } from "react";
 import { Search } from "lucide-react";
-import { cn } from "@/lib/cn";
 import useSWR from "swr";
 import Link from "next/link";
 
 interface ApiGame {
-  id: string;
-  name: string;
-  category: string;
-  thumbnail: string | null;
-  isLive: boolean;
+  id: string; name: string; category: string;
+  thumbnail: string | null; isLive: boolean;
   provider: { id: string; name: string; key: string; category: string };
 }
-
 interface InHouseGame {
-  id: string;
-  name: string;
-  description: string;
-  href: string;
-  thumbnail: string | null;
-  emoji: string;
-  bg: string;
-  sortOrder: number;
+  id: string; name: string; description: string; href: string;
+  thumbnail: string | null; emoji: string; bg: string; sortOrder: number;
 }
 
-export function CasinoGrid({ category, title }: { category?: string; title: string }) {
-  const [providerKey, setProviderKey] = useState<string>("All");
-  const [categoryKey, setCategoryKey] = useState<string>("All");
-  const [q, setQ] = useState("");
+// Fallback gradient colors for games without thumbnails
+const FALLBACK_GRADIENTS = [
+  "linear-gradient(135deg,#1a0533 0%,#6d28d9 100%)",
+  "linear-gradient(135deg,#0a1f3c 0%,#1d4ed8 100%)",
+  "linear-gradient(135deg,#0f2a1e 0%,#059669 100%)",
+  "linear-gradient(135deg,#2d0000 0%,#dc2626 100%)",
+  "linear-gradient(135deg,#1a1200 0%,#d97706 100%)",
+  "linear-gradient(135deg,#1a0020 0%,#9333ea 100%)",
+  "linear-gradient(135deg,#001a2d 0%,#0891b2 100%)",
+  "linear-gradient(135deg,#1f1a00 0%,#ca8a04 100%)",
+];
 
-  const apiCategory = category === "LIVE" ? "LIVE"
-    : category === "CRASH" ? "CRASH"
-    : category === "SLOTS" ? "SLOT"
+function fallback(idx: number) { return FALLBACK_GRADIENTS[idx % FALLBACK_GRADIENTS.length]; }
+
+export function CasinoGrid({ category, title }: { category?: string; title: string }) {
+  const [providerKey, setProviderKey]   = useState("All");
+  const [q, setQ]                       = useState("");
+
+  const apiCategory = category === "LIVE"    ? "LIVE"
+    : category === "CRASH"   ? "CRASH"
+    : category === "SLOTS"   ? "SLOT"
     : category === "VIRTUAL" ? "VIRTUAL"
-    : category === "VR" ? "VIRTUAL"
+    : category === "VR"      ? "VIRTUAL"
     : category === "LOTTERY" ? "LOTTERY"
     : undefined;
 
   const { data: siteSettings } = useSWR<{ inhouseGames?: InHouseGame[] }>(
     "/api/platform/settings",
-    (url: string) => fetch(url).then((r) => r.ok ? r.json() : {}),
+    (url: string) => fetch(url).then(r => r.ok ? r.json() : {}),
   );
-  const inhouseGames: InHouseGame[] = (siteSettings?.inhouseGames ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder);
+  const inhouseGames = (siteSettings?.inhouseGames ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder);
 
   const { data: rawGames } = useSWR<ApiGame[]>(
     `/api/casino/games${apiCategory ? `?category=${apiCategory}` : ""}`,
-    (url: string) => fetch(url).then((r) => r.ok ? r.json() : []),
+    (url: string) => fetch(url).then(r => r.ok ? r.json() : []),
   );
   const apiGames: ApiGame[] = Array.isArray(rawGames) ? rawGames : [];
+  const providers = Array.from(new Set(apiGames.map(g => g.provider.name)));
 
-  const providers = Array.from(new Set(apiGames.map((g) => g.provider.name)));
-  const categories = Array.from(new Set(apiGames.map((g) => g.category).filter(Boolean)));
-
-  const filtered = apiGames.filter((g) => {
+  const filtered = apiGames.filter(g => {
     if (providerKey !== "All" && g.provider.name !== providerKey) return false;
-    if (categoryKey !== "All" && g.category !== categoryKey) return false;
     if (q && !g.name.toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
@@ -63,41 +62,64 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
   const showInHouse = category === "LIVE" || category === "VR" || !category;
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-6">
-      <div className="flex flex-col mb-4">
-        <h1 className="font-display text-3xl md:text-5xl font-black text-brandRed tracking-tight uppercase">{title}</h1>
-        <h2 className="font-display text-base md:text-2xl font-bold text-white uppercase mt-1">BET NOW ON MULTIPLE {title}</h2>
+    <div className="mx-auto max-w-[1600px] px-3 md:px-6 py-4 md:py-6">
+
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-5">
+        <div>
+          <h1 className="font-display text-2xl md:text-4xl font-black text-brandRed tracking-tight uppercase">{title}</h1>
+          <p className="text-white/50 text-xs md:text-sm mt-0.5 uppercase tracking-wider">Premium Games · Bet Now</p>
+        </div>
+        {/* Search */}
+        <div className="relative w-full sm:w-56">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+          <input
+            value={q} onChange={e => setQ(e.target.value)}
+            placeholder="Search game…"
+            className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-brandRed/60 transition"
+          />
+        </div>
       </div>
 
-      {/* In-House Featured Games */}
+      {/* Provider filter */}
+      {providers.length > 0 && (
+        <div className="flex gap-1.5 flex-wrap mb-4">
+          {["All", ...providers].map(p => (
+            <button key={p} onClick={() => setProviderKey(p)}
+              className={`px-3 py-1 rounded-full text-[11px] font-bold border transition ${
+                providerKey === p
+                  ? "bg-brandRed border-brandRed text-white shadow-[0_0_10px_rgba(168,18,46,0.4)]"
+                  : "bg-white/5 border-white/10 text-white/60 hover:border-white/30 hover:text-white"
+              }`}
+            >{p}</button>
+          ))}
+        </div>
+      )}
+
+      {/* ── In-House Games ── */}
       {showInHouse && inhouseGames.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-brandYellow bg-brandYellow/10 border border-brandYellow/30 px-3 py-1 rounded-full">Our Games</span>
-            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-brandYellow bg-brandYellow/10 border border-brandYellow/30 px-3 py-1 rounded-full">Our Games</span>
+            <div className="flex-1 h-px bg-white/8" />
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-            {inhouseGames.map((g) => (
-              <Link
-                key={g.id}
-                href={g.href}
-                className="group relative aspect-[4/5] rounded-xl overflow-hidden border border-transparent hover:border-brandRed transition transform hover:-translate-y-1 shadow-lg"
-                style={{ background: g.thumbnail ? undefined : g.bg }}
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-2 md:gap-3">
+            {inhouseGames.map((g, idx) => (
+              <Link key={g.id} href={g.href}
+                className="group relative rounded-2xl overflow-hidden border border-white/8 hover:border-yellow-400/60 hover:scale-[1.04] hover:shadow-[0_0_18px_rgba(250,204,21,0.25)] transition-all duration-200 shadow-md"
+                style={{ aspectRatio: "3/4", background: g.thumbnail ? undefined : fallback(idx) }}
               >
-                {g.thumbnail ? (
-                  <img src={g.thumbnail} alt={g.name} className="absolute inset-0 h-full w-full object-cover" />
-                ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-5xl drop-shadow-lg">{g.emoji}</span>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                <div className="absolute top-2 right-2">
-                  <span className="text-[9px] font-bold uppercase tracking-wider bg-brandYellow/90 text-black px-1.5 py-0.5 rounded">IN-HOUSE</span>
+                {g.thumbnail
+                  ? <img src={g.thumbnail} alt={g.name} className="absolute inset-0 w-full h-full object-cover" />
+                  : <div className="absolute inset-0 flex items-center justify-center"><span className="text-4xl drop-shadow-lg">{g.emoji}</span></div>
+                }
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+                <div className="absolute top-1.5 right-1.5">
+                  <span className="text-[8px] font-bold uppercase bg-yellow-400/90 text-black px-1.5 py-0.5 rounded-full tracking-wide">OUR</span>
                 </div>
-                <div className="absolute bottom-0 inset-x-0 p-2 text-left">
-                  <p className="font-bold text-sm leading-tight text-white">{g.name}</p>
-                  <p className="text-[10px] uppercase tracking-wider text-brandYellow">{g.description}</p>
+                <div className="absolute bottom-0 inset-x-0 p-2">
+                  <p className="font-bold text-[11px] md:text-xs leading-tight text-white truncate">{g.name}</p>
+                  {g.description && <p className="text-[9px] text-yellow-400/70 truncate mt-0.5">{g.description}</p>}
                 </div>
               </Link>
             ))}
@@ -105,68 +127,54 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
         </div>
       )}
 
-      {/* Provider Games from Admin */}
-      {(providers.length > 0 || apiGames.length > 0) && (
+      {/* ── Provider Games ── */}
+      {apiGames.length > 0 && (
         <>
-          <div className="flex items-center gap-3 mb-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-white/60 bg-white/5 border border-white/10 px-3 py-1 rounded-full">Provider Games</span>
-            <div className="flex-1 h-px bg-white/10" />
-            <div className="relative w-52">
-              <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50" />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search game" className="bg-transparent border border-gray-600 rounded-full pl-4 pr-9 py-1.5 text-xs w-full focus:outline-none focus:border-brandRed text-white" />
-            </div>
-          </div>
-
           {providers.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
-              <Chip label="All" active={providerKey === "All"} onClick={() => setProviderKey("All")} />
-              {providers.map((p) => <Chip key={p} label={p} active={providerKey === p} onClick={() => setProviderKey(p)} />)}
-            </div>
-          )}
-
-          {categories.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              <Chip label="All" active={categoryKey === "All"} onClick={() => setCategoryKey("All")} />
-              {categories.map((c) => <Chip key={c} label={c} active={categoryKey === c} onClick={() => setCategoryKey(c)} />)}
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-white/50 bg-white/5 border border-white/10 px-3 py-1 rounded-full">All Games</span>
+              <div className="flex-1 h-px bg-white/8" />
+              <span className="text-[10px] text-white/30">{filtered.length} games</span>
             </div>
           )}
 
           {filtered.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-8 gap-3">
-              {filtered.map((g) => (
-                <button
-                  key={g.id}
-                  className="group relative aspect-[4/5] rounded-xl overflow-hidden glass border border-transparent hover:border-brandRed transition transform hover:-translate-y-1"
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-2 md:gap-3">
+              {filtered.map((g, idx) => (
+                <button key={g.id}
+                  className="group relative rounded-2xl overflow-hidden border border-white/8 hover:border-brandRed/60 hover:scale-[1.04] hover:shadow-[0_0_18px_rgba(168,18,46,0.3)] transition-all duration-200 shadow-md text-left"
+                  style={{ aspectRatio: "3/4", background: g.thumbnail ? undefined : fallback(idx) }}
                 >
-                  {g.thumbnail ? (
-                    <img src={g.thumbnail} alt={g.name} className="absolute inset-0 h-full w-full object-cover" />
-                  ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-                      <span className="text-4xl opacity-30">🎮</span>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                  <div className="absolute bottom-0 inset-x-0 p-2 text-left">
-                    <p className="font-bold text-sm leading-tight text-white">{g.name}</p>
-                    <p className="text-[10px] uppercase tracking-wider text-brandYellow">{g.provider.name}</p>
-                  </div>
+                  {g.thumbnail
+                    ? <img src={g.thumbnail} alt={g.name} className="absolute inset-0 w-full h-full object-cover" />
+                    : <div className="absolute inset-0 flex items-center justify-center"><span className="text-3xl opacity-50">🎮</span></div>
+                  }
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
                   {g.isLive && (
-                    <div className="absolute top-2 left-2">
-                      <span className="text-[9px] font-bold uppercase tracking-wider bg-red-600/90 text-white px-1.5 py-0.5 rounded">LIVE</span>
+                    <div className="absolute top-1.5 left-1.5">
+                      <span className="flex items-center gap-1 text-[8px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded-full uppercase">
+                        <span className="w-1 h-1 rounded-full bg-white animate-pulse inline-block" />LIVE
+                      </span>
                     </div>
                   )}
+                  <div className="absolute bottom-0 inset-x-0 p-2">
+                    <p className="font-bold text-[11px] md:text-xs leading-tight text-white line-clamp-2">{g.name}</p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <p className="text-[8px] md:text-[9px] text-white/50 truncate">{g.provider.name}</p>
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
           ) : (
             <div className="text-center py-12 text-white/30 text-sm">
-              {q || providerKey !== "All" || categoryKey !== "All" ? "No games match your filter." : "No provider games yet. Add games from the admin panel."}
+              {q || providerKey !== "All" ? "No games match your filter." : "No games yet."}
             </div>
           )}
         </>
       )}
 
-      {/* No games at all and no in-house */}
+      {/* Empty state */}
       {!showInHouse && apiGames.length === 0 && (
         <div className="text-center py-20 text-white/30">
           <span className="text-6xl block mb-4">🎮</span>
@@ -175,21 +183,5 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
         </div>
       )}
     </div>
-  );
-}
-
-function Chip({ label, active, onClick }: { label: string; active?: boolean; onClick?: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "px-4 py-2 rounded text-xs font-bold transition border",
-        active
-          ? "bg-accent-grad text-white border-transparent"
-          : "bg-transparent text-white border-gray-600 hover:border-white",
-      )}
-    >
-      {label}
-    </button>
   );
 }
