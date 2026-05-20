@@ -250,11 +250,18 @@ export class AdminController {
   async getSettings() {
     const settings = await this.admin.getPlatformSettings() as any;
     const defaultInhouseGames = [
-      { id: "roulette", name: "Roulette", description: "European Roulette",     href: "/roulette", thumbnail: null, emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
-      { id: "mines",    name: "Mines",    description: "Mines Game",             href: "/mines",    thumbnail: null, emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
-      { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko",   href: "/plinko",   thumbnail: null, emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", sortOrder: 2 },
+      { id: "roulette", name: "Roulette", description: "European Roulette",     href: "/roulette", thumbnail: "/game-thumbs/roulette.svg", emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
+      { id: "mines",    name: "Mines",    description: "Mines Game",             href: "/mines",    thumbnail: "/game-thumbs/mines.svg",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
+      { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko",   href: "/plinko",   thumbnail: "/game-thumbs/plinko.svg",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", sortOrder: 2 },
+      { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",     href: "/balloon",  thumbnail: "/game-thumbs/balloon.svg",  emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", sortOrder: 3 },
     ];
-    return { ...settings, inhouseGames: settings.inhouseGames ?? defaultInhouseGames };
+    const storedGames: any[] = settings.inhouseGames ?? [];
+    if (!storedGames.length) return { ...settings, inhouseGames: defaultInhouseGames };
+    const defaultMap = new Map(defaultInhouseGames.map(g => [g.id, g]));
+    const merged = storedGames.map(g => (!g.thumbnail && defaultMap.has(g.id)) ? { ...g, thumbnail: defaultMap.get(g.id)!.thumbnail } : g);
+    const storedIds = new Set(storedGames.map((g: any) => g.id));
+    const missing = defaultInhouseGames.filter(g => !storedIds.has(g.id));
+    return { ...settings, inhouseGames: [...merged, ...missing].sort((a, b) => (a.sortOrder ?? 99) - (b.sortOrder ?? 99)) };
   }
 
   @Post("platform-settings")
@@ -374,9 +381,10 @@ export class PublicPlatformController {
   async getPublicSettings() {
     const settings = await this.admin.getPlatformSettings();
     const defaultInhouseGames = [
-      { id: "roulette", name: "Roulette", description: "European Roulette",   href: "/roulette", thumbnail: null, emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
-      { id: "mines",    name: "Mines",    description: "Mines Game",           href: "/mines",    thumbnail: null, emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
-      { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko", href: "/plinko",   thumbnail: null, emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", sortOrder: 2 },
+      { id: "roulette", name: "Roulette", description: "European Roulette",   href: "/roulette", thumbnail: "/game-thumbs/roulette.svg", emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
+      { id: "mines",    name: "Mines",    description: "Mines Game",           href: "/mines",    thumbnail: "/game-thumbs/mines.svg",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
+      { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko", href: "/plinko",   thumbnail: "/game-thumbs/plinko.svg",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", sortOrder: 2 },
+      { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",   href: "/balloon",  thumbnail: "/game-thumbs/balloon.svg",  emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", sortOrder: 3 },
     ];
     const defaultNavItems = [
       { href: "/exchange",   label: "EXCHANGE",    emoji: "🎰", enabled: true },
@@ -389,10 +397,15 @@ export class PublicPlatformController {
       { href: "/sportsbook", label: "SPORTS BOOK", emoji: "🎯", enabled: true },
     ];
     // Merge: always include all default built-in games; admin-added extras are appended.
+    // If a stored game has no thumbnail, fall back to the built-in SVG default.
     const storedGames: any[] = (settings as any).inhouseGames ?? [];
+    const defaultMap = new Map(defaultInhouseGames.map(g => [g.id, g]));
     const storedIds = new Set(storedGames.map((g: any) => g.id));
     const missingDefaults = defaultInhouseGames.filter(g => !storedIds.has(g.id));
-    const mergedGames = [...storedGames, ...missingDefaults].sort((a, b) => (a.sortOrder ?? 99) - (b.sortOrder ?? 99));
+    const mergedGames = [
+      ...storedGames.map(g => (!g.thumbnail && defaultMap.has(g.id)) ? { ...g, thumbnail: defaultMap.get(g.id)!.thumbnail } : g),
+      ...missingDefaults,
+    ].sort((a, b) => (a.sortOrder ?? 99) - (b.sortOrder ?? 99));
 
     return {
       subBanner:     (settings as any).subBanner     ?? "Bet Now in Line Market and Get Commission Upto 2%",

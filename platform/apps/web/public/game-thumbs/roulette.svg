@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="45%" r="70%">
+      <stop offset="0%" stop-color="#1a1200"/>
+      <stop offset="100%" stop-color="#080600"/>
+    </radialGradient>
+    <radialGradient id="wheelCenter" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c9a227"/>
+      <stop offset="60%" stop-color="#8b6914"/>
+      <stop offset="100%" stop-color="#5a430c"/>
+    </radialGradient>
+    <radialGradient id="innerRing" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2a1f00"/>
+      <stop offset="100%" stop-color="#1a1200"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="goldglow">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <linearGradient id="overlay" x1="0" y1="0.5" x2="0" y2="1">
+      <stop offset="0%" stop-color="#080600" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#080600" stop-opacity="1"/>
+    </linearGradient>
+    <linearGradient id="ballGrad" cx="35%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#cccccc"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="300" height="400" fill="url(#bg)"/>
+
+  <!-- Subtle felt texture lines -->
+  <line x1="0" y1="100" x2="300" y2="100" stroke="rgba(201,162,39,0.04)" stroke-width="1"/>
+  <line x1="0" y1="200" x2="300" y2="200" stroke="rgba(201,162,39,0.04)" stroke-width="1"/>
+
+  <!-- Roulette wheel centered at (150, 148) radius 118 -->
+  <!-- Outer gold ring -->
+  <circle cx="150" cy="148" r="118" fill="#c9a227" filter="url(#goldglow)" opacity="0.3"/>
+  <circle cx="150" cy="148" r="116" fill="#5a430c" stroke="#c9a227" stroke-width="2.5"/>
+
+  <!-- Number segments — 37 slots, alternating red/black/green -->
+  <!-- We'll draw simplified colored arcs for visual effect -->
+  <!-- Using 16 segments for visual approximation -->
+  <g transform="translate(150,148)">
+    <!-- segment group: 16 arcs alternating red/black with 1 green -->
+    <!-- Arc calculations: each segment is 360/37 ≈ 9.73° -->
+    <!-- Draw using path arcs for 36 number slots + 1 zero (green) -->
+
+    <!-- Simplified visual: 18 red, 18 black, 1 green, drawn as sectors -->
+    <!-- Green zero at top -->
+    <path d="M0,0 L-5,-98 A98,98 0 0,1 5,-98 Z" fill="#16a34a"/>
+
+    <!-- Alternating red/black pairs around the wheel (simplified 18 pairs) -->
+    <!-- Using transform rotate for each sector, ~10° each -->
+    <g>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(10)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(20)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(30)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(40)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(50)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(60)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(70)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(80)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(90)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(100)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(110)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(120)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(130)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(140)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(150)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(160)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(170)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(180)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(190)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(200)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(210)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(220)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(230)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(240)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(250)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(260)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(270)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(280)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(290)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(300)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(310)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(320)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(330)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#1a1a1a" transform="rotate(340)"/>
+      <path d="M0,0 L-16,-96.7 A98,98 0 0,1 -5,-97.9 Z" fill="#dc2626" transform="rotate(350)"/>
+    </g>
+
+    <!-- Inner gold dividers ring -->
+    <circle cx="0" cy="0" r="98" fill="none" stroke="#c9a227" stroke-width="1.5" opacity="0.7"/>
+
+    <!-- Gold spoke separators (simplified) -->
+    <g stroke="#c9a227" stroke-width="0.8" opacity="0.5">
+      <line x1="0" y1="-98" x2="0" y2="-62"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(20)"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(40)"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(60)"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(80)"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(100)"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(120)"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(140)"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(160)"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(180)"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(200)"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(220)"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(240)"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(260)"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(280)"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(300)"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(320)"/>
+      <line x1="0" y1="-98" x2="0" y2="-62" transform="rotate(340)"/>
+    </g>
+
+    <!-- Inner ring (dark) -->
+    <circle cx="0" cy="0" r="62" fill="url(#innerRing)" stroke="#c9a227" stroke-width="2"/>
+
+    <!-- Inner spokes -->
+    <g stroke="#c9a227" stroke-width="1.2" opacity="0.6">
+      <line x1="0" y1="-62" x2="0" y2="-30" transform="rotate(0)"/>
+      <line x1="0" y1="-62" x2="0" y2="-30" transform="rotate(45)"/>
+      <line x1="0" y1="-62" x2="0" y2="-30" transform="rotate(90)"/>
+      <line x1="0" y1="-62" x2="0" y2="-30" transform="rotate(135)"/>
+      <line x1="0" y1="-62" x2="0" y2="-30" transform="rotate(180)"/>
+      <line x1="0" y1="-62" x2="0" y2="-30" transform="rotate(225)"/>
+      <line x1="0" y1="-62" x2="0" y2="-30" transform="rotate(270)"/>
+      <line x1="0" y1="-62" x2="0" y2="-30" transform="rotate(315)"/>
+    </g>
+
+    <!-- Center hub -->
+    <circle cx="0" cy="0" r="30" fill="url(#wheelCenter)" stroke="#c9a227" stroke-width="2"/>
+    <circle cx="0" cy="0" r="18" fill="#1a1200" stroke="#c9a227" stroke-width="1.5"/>
+    <circle cx="0" cy="0" r="8" fill="#c9a227" filter="url(#goldglow)"/>
+    <circle cx="0" cy="0" r="4" fill="#fff8e1"/>
+
+    <!-- Ball on wheel at ~60° position on outer track -->
+    <circle cx="85" cy="-49" r="7" fill="white" filter="url(#glow)"/>
+    <circle cx="83" cy="-51" r="2.5" fill="rgba(255,255,255,0.6)"/>
+  </g>
+
+  <!-- Outer gold border of wheel -->
+  <circle cx="150" cy="148" r="116" fill="none" stroke="#c9a227" stroke-width="3" opacity="0.6"/>
+  <circle cx="150" cy="148" r="120" fill="none" stroke="#c9a227" stroke-width="1" opacity="0.3"/>
+
+  <!-- Bottom overlay -->
+  <rect width="300" height="400" fill="url(#overlay)"/>
+
+  <!-- Text area -->
+  <rect x="0" y="305" width="300" height="95" fill="rgba(8,6,0,0.92)"/>
+  <line x1="20" y1="311" x2="280" y2="311" stroke="rgba(201,162,39,0.4)" stroke-width="1"/>
+
+  <!-- Provably fair badge -->
+  <rect x="90" y="317" width="120" height="16" rx="8" fill="rgba(201,162,39,0.15)" stroke="rgba(201,162,39,0.5)" stroke-width="1"/>
+  <text x="150" y="329" font-family="system-ui,sans-serif" font-size="8" font-weight="600" fill="rgba(201,162,39,0.9)" text-anchor="middle" letter-spacing="2">PROVABLY FAIR</text>
+
+  <!-- Game name -->
+  <text x="150" y="362" font-family="system-ui,sans-serif" font-size="28" font-weight="900" fill="white" text-anchor="middle" letter-spacing="3">ROULETTE</text>
+
+  <!-- Tagline -->
+  <text x="150" y="383" font-family="system-ui,sans-serif" font-size="10" font-weight="500" fill="rgba(201,162,39,0.7)" text-anchor="middle" letter-spacing="1">Spin the wheel of fortune</text>
+</svg>
