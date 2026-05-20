@@ -64,6 +64,10 @@ export function Providers({ children, initialSettings }: { children: React.React
         fetcher,
         revalidateOnFocus: false,
         shouldRetryOnError: false,
+        dedupingInterval: 5000,
+        keepPreviousData: true,
+        revalidateIfStale: true,
+        revalidateOnReconnect: true,
         fallback: initialSettings ? { "/api/platform/settings": initialSettings } : {},
       }}
     >

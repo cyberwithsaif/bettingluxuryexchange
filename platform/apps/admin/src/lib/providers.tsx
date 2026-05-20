@@ -8,8 +8,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       value={{
         fetcher,
         revalidateOnFocus: false,
-        revalidateOnReconnect: false,
-        dedupingInterval: 30000,
+        revalidateOnReconnect: true,
+        dedupingInterval: 10000,
+        keepPreviousData: true,
         errorRetryCount: 2,
       }}
     >

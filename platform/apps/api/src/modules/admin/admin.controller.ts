@@ -65,6 +65,7 @@ class PlatformSettingsDto {
   @IsOptional() heroBanners?: any[];
   // Small promo banner strip
   @IsOptional() promoBanners?: any[];
+  @IsOptional() @IsNumber() @Min(5) @Max(120) promoBannerSpeed?: number;
   // Deposit methods blob (arbitrary JSON)
   @IsOptional() depositMethods?: any;
   // Mines game config
@@ -401,6 +402,7 @@ export class PublicPlatformController {
       inhouseGames:  mergedGames,
       heroBanners:   (settings as any).heroBanners   ?? [],
       promoBanners:  (settings as any).promoBanners  ?? [],
+      promoBannerSpeed: Number((settings as any).promoBannerSpeed ?? 45),
       minesMinBet:   Number((settings as any).minesMinBet  ?? 10),
       minesMaxBet:   Number((settings as any).minesMaxBet  ?? 100000),
       minesEnabled:  (settings as any).minesEnabled !== false,

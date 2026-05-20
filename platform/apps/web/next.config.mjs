@@ -2,7 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@exch/shared"],
-  experimental: { typedRoutes: false },
+  typedRoutes: false,
+  compress: true,
+  poweredByHeader: false,
   generateBuildId: async () => {
     return `build-${Date.now()}`;
   },

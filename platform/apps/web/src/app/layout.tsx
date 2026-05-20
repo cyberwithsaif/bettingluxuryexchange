@@ -12,14 +12,12 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const fetchCache = "force-no-store";
+export const revalidate = 60;
 
 async function fetchPlatformSettings(): Promise<Record<string, unknown> | null> {
   try {
     const base = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:4000";
-    const res = await fetch(`${base}/api/platform/settings`, { cache: "no-store" });
+    const res = await fetch(`${base}/api/platform/settings`, { next: { revalidate: 60 } });
     if (!res.ok) return null;
     return res.json() as Promise<Record<string, unknown>>;
   } catch {

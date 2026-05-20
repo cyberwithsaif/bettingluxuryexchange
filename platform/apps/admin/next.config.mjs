@@ -3,6 +3,8 @@ const nextConfig = {
   basePath: "/admin",
   reactStrictMode: true,
   transpilePackages: ["@exch/shared"],
+  compress: true,
+  poweredByHeader: false,
   generateBuildId: async () => {
     return `build-${Date.now()}`;
   },
