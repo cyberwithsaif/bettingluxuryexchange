@@ -139,6 +139,8 @@ export default function UserProfilePage() {
   const [adjustAmt, setAdjustAmt] = useState("");
   const [adjustNote, setAdjustNote] = useState("");
   const [adjusting, setAdjusting] = useState(false);
+  const [adjustMode, setAdjustMode] = useState<"credit" | "debit">("credit");
+  const [adjustStatus, setAdjustStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
 
   const key = `/admin/users/${id}/profile`;
   const { data, isLoading, error } = useSWR<ProfileData>(key);
@@ -181,13 +183,24 @@ export default function UserProfilePage() {
   }
 
   async function handleAdjust() {
-    const amt = parseFloat(adjustAmt);
-    if (!amt) return;
+    const raw = parseFloat(adjustAmt);
+    if (!raw || raw <= 0) {
+      setAdjustStatus({ kind: "err", msg: "Enter a positive amount." });
+      return;
+    }
+    const signed = adjustMode === "credit" ? raw : -raw;
+    const verb = adjustMode === "credit" ? "credit" : "debit";
+    if (!confirm(`Confirm ${verb} of ₹${raw.toLocaleString("en-IN")} for ${user.username}?`)) return;
     setAdjusting(true);
+    setAdjustStatus(null);
     try {
-      await api.post("/admin/wallet/adjust", { userId: id, amount: amt, note: adjustNote || "Admin adjustment" });
+      await api.post("/admin/wallet/adjust", { userId: id, amount: signed, note: adjustNote || `Admin ${verb}` });
       setAdjustAmt(""); setAdjustNote("");
+      setAdjustStatus({ kind: "ok", msg: `₹${raw.toLocaleString("en-IN")} ${verb}ed successfully.` });
       refresh();
+      setTimeout(() => setAdjustStatus(null), 4000);
+    } catch (e: any) {
+      setAdjustStatus({ kind: "err", msg: e?.response?.data?.message ?? "Adjustment failed." });
     } finally { setAdjusting(false); }
   }
 
@@ -384,6 +397,147 @@ export default function UserProfilePage() {
               <StatCard label="Total Losses"    value={fmt(totalLosses)}       color="text-bad" />
               <StatCard label="Net P&L"         value={fmt(netPL)}             color={netPL >= 0 ? "text-ok" : "text-bad"} />
             </div>
+          </SectionCard>
+
+          {/* Balance Management */}
+          <SectionCard title="Balance Management" icon={DollarSign}>
+            {(() => {
+              const amt = parseFloat(adjustAmt) || 0;
+              const signed = adjustMode === "credit" ? amt : -amt;
+              const projected = wallet.balance + signed;
+              const QUICK = [100, 500, 1000, 5000, 10000, 50000, 100000];
+              const isCredit = adjustMode === "credit";
+              return (
+                <div className="space-y-4">
+                  {/* Mode toggle */}
+                  <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-panel/40 border border-line/40">
+                    <button
+                      type="button"
+                      onClick={() => setAdjustMode("credit")}
+                      className={cn(
+                        "flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-sm transition",
+                        isCredit
+                          ? "bg-gradient-to-br from-emerald-500/30 to-emerald-600/20 border border-emerald-400/40 text-emerald-300 shadow-[0_0_18px_-4px_rgba(16,185,129,0.45)]"
+                          : "text-white/40 hover:text-white/70",
+                      )}
+                    >
+                      <Plus size={16} /> Credit (Add)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAdjustMode("debit")}
+                      className={cn(
+                        "flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-sm transition",
+                        !isCredit
+                          ? "bg-gradient-to-br from-red-500/30 to-red-600/20 border border-red-400/40 text-red-300 shadow-[0_0_18px_-4px_rgba(239,68,68,0.45)]"
+                          : "text-white/40 hover:text-white/70",
+                      )}
+                    >
+                      <span className="text-lg leading-none">−</span> Debit (Remove)
+                    </button>
+                  </div>
+
+                  {/* Amount input + preview */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1.5">
+                        Amount
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 font-bold">₹</span>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          min={0}
+                          step="0.01"
+                          value={adjustAmt}
+                          onChange={(e) => { setAdjustAmt(e.target.value); setAdjustStatus(null); }}
+                          placeholder="0.00"
+                          className="w-full pl-7 pr-3 py-3 bg-panel/60 border border-line/60 rounded-lg text-lg font-display tabular-nums focus:outline-none focus:border-accent transition"
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {QUICK.map(v => (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => { setAdjustAmt(String(v)); setAdjustStatus(null); }}
+                            className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-white/5 border border-white/10 text-white/70 hover:bg-accent/15 hover:border-accent/40 hover:text-accent transition"
+                          >
+                            +{v >= 1000 ? `${v/1000}K` : v}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="bg-panel/40 border border-line/40 rounded-lg p-3 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] uppercase tracking-wider text-white/40">Current Balance</span>
+                        <span className="font-display text-sm tabular-nums text-white/80">{fmt(wallet.balance)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] uppercase tracking-wider text-white/40">Adjustment</span>
+                        <span className={cn("font-display text-sm tabular-nums font-bold", isCredit ? "text-emerald-400" : "text-red-400")}>
+                          {amt > 0 ? `${isCredit ? "+" : "−"}${fmt(amt)}` : "—"}
+                        </span>
+                      </div>
+                      <div className="border-t border-line/40 pt-2 flex justify-between items-center">
+                        <span className="text-[11px] uppercase tracking-wider text-white/60 font-bold">New Balance</span>
+                        <span className={cn("font-display text-xl tabular-nums font-bold", projected >= 0 ? "text-ok" : "text-bad")}>
+                          {fmt(projected)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Note */}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1.5">
+                      Note (optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={adjustNote}
+                      onChange={(e) => setAdjustNote(e.target.value)}
+                      maxLength={200}
+                      placeholder="Reason or reference (e.g. manual deposit, bonus, correction)"
+                      className="w-full px-3 py-2 bg-panel/60 border border-line/60 rounded-lg text-sm focus:outline-none focus:border-accent transition"
+                    />
+                  </div>
+
+                  {/* Status + Submit */}
+                  {adjustStatus && (
+                    <div className={cn(
+                      "rounded-lg px-3 py-2 text-sm flex items-center gap-2 border",
+                      adjustStatus.kind === "ok"
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                        : "bg-red-500/10 border-red-500/30 text-red-300",
+                    )}>
+                      {adjustStatus.kind === "ok" ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
+                      {adjustStatus.msg}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleAdjust}
+                    disabled={adjusting || !amt}
+                    className={cn(
+                      "w-full py-3 rounded-lg font-bold text-sm tracking-wide transition disabled:opacity-40 disabled:cursor-not-allowed",
+                      isCredit
+                        ? "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-[0_4px_20px_-4px_rgba(16,185,129,0.6)]"
+                        : "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white shadow-[0_4px_20px_-4px_rgba(239,68,68,0.6)]",
+                    )}
+                  >
+                    {adjusting
+                      ? "Processing…"
+                      : amt > 0
+                        ? `${isCredit ? "Credit" : "Debit"} ₹${amt.toLocaleString("en-IN")}`
+                        : `${isCredit ? "Credit" : "Debit"} Account`}
+                  </button>
+                </div>
+              );
+            })()}
           </SectionCard>
 
           {/* Recent Transactions */}
