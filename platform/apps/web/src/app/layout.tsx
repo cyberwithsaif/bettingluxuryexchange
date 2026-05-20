@@ -12,7 +12,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 async function fetchPlatformSettings(): Promise<Record<string, unknown> | null> {
   try {
