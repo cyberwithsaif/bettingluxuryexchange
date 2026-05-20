@@ -11,7 +11,7 @@ interface PromoBanner {
 }
 
 export function PromoBannerStrip() {
-  const { data: settings } = useSWR<{ promoBanners?: PromoBanner[] }>(
+  const { data: settings, isLoading } = useSWR<{ promoBanners?: PromoBanner[] }>(
     "/api/platform/settings",
     (url: string) => fetch(url).then(r => r.ok ? r.json() : {}),
     { refreshInterval: 300_000 },
@@ -22,6 +22,7 @@ export function PromoBannerStrip() {
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .filter(b => b.imageUrl);
 
+  if (isLoading) return <PromoBannerSkeleton />;
   if (!banners.length) return null;
 
   // Duplicate the list so the CSS marquee loop is seamless
@@ -65,6 +66,16 @@ export function PromoBannerStrip() {
           100% { transform: translateX(-50%); }
         }
       `}</style>
+    </div>
+  );
+}
+
+function PromoBannerSkeleton() {
+  return (
+    <div className="flex gap-3 mb-3">
+      {[1, 2].map(i => (
+        <div key={i} className="shrink-0 rounded-lg animate-pulse bg-white/10 border border-white/5" style={{ width: 260, height: 90 }} />
+      ))}
     </div>
   );
 }

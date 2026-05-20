@@ -13,7 +13,7 @@ interface BannerSlide {
 }
 
 export function HeroBanner() {
-  const { data: settings } = useSWR<{ heroBanners?: BannerSlide[] }>(
+  const { data: settings, isLoading } = useSWR<{ heroBanners?: BannerSlide[] }>(
     "/api/platform/settings",
     (url: string) => fetch(url).then(r => r.ok ? r.json() : {}),
     { refreshInterval: 300_000 },
@@ -46,6 +46,7 @@ export function HeroBanner() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [resetTimer]);
 
+  if (isLoading) return <HeroBannerSkeleton />;
   if (!slides.length) return null;
 
   const slide = slides[idx % slides.length]!;
@@ -122,6 +123,18 @@ export function HeroBanner() {
         >
           <ChevronRight size={28} className="text-white" />
         </button>
+      </div>
+    </div>
+  );
+}
+
+function HeroBannerSkeleton() {
+  return (
+    <div className="w-full mb-3">
+      <div className="flex items-stretch gap-0">
+        <div className="shrink-0 w-9 md:w-12 bg-white/5 rounded-l-xl border border-white/10 border-r-0 animate-pulse" />
+        <div className="flex-1 bg-white/5 animate-pulse rounded-none" style={{ aspectRatio: "16/5", maxHeight: 300 }} />
+        <div className="shrink-0 w-9 md:w-12 bg-white/5 rounded-r-xl border border-white/10 border-l-0 animate-pulse" />
       </div>
     </div>
   );
