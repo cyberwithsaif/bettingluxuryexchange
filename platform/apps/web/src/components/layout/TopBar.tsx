@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Wallet, ArrowDownToLine, ArrowUpToLine, User2, LogOut, Bell, Sun, Volume2, ChevronDown } from "lucide-react";
+import { Wallet, ArrowDownToLine, ArrowUpToLine, User2, LogOut, Bell, Sun, Volume2, ChevronDown, Menu } from "lucide-react";
 import useSWR from "swr";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
 import { cn } from "@/lib/cn";
+import { MobileSidebar } from "../mobile/MobileSidebar";
 
 const DEFAULT_MARQUEE_FALLBACK = "📢 Live Matka Markets Now Available — Play Smart, Win Big! • Bet Now in Line Markets and Get Commission Upto 2%";
 
@@ -28,6 +29,7 @@ function useLiveClock() {
 export function TopBar() {
   const clock = useLiveClock();
   const { user, clear } = useAuthStore();
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const { data: wallet, mutate } = useSWR(user ? "/wallet/summary" : null);
   const pFetch = (url: string) => fetch(url).then(r => r.json());
   const { data: announcements } = useSWR<Array<{ id: string; text: string }>>("/api/announcements/active", pFetch, { refreshInterval: 60_000 });
@@ -45,13 +47,21 @@ export function TopBar() {
 
   return (
     <header className="sticky top-0 z-50 bg-brandRed text-white shadow-md">
+      <MobileSidebar open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       <div className="mx-auto max-w-[1600px] flex items-center justify-between px-3 md:px-4 h-14 md:h-16">
-        
-        {/* Left: Logo & Clock */}
-        <div className="flex items-center gap-4">
+
+        {/* Left: Hamburger (mobile) + Logo */}
+        <div className="flex items-center gap-2 md:gap-4">
+          <button
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Open menu"
+            className="md:hidden -ml-1 p-1.5 rounded hover:bg-black/10"
+          >
+            <Menu size={22} />
+          </button>
           <Link href="/" className="flex flex-col leading-none">
-            <span className="font-display italic text-2xl md:text-3xl font-black tracking-tight flex items-center gap-1 uppercase">
-              {platformSettings?.siteName ?? "Future9"} <span className="text-lg md:text-xl">🏏</span>
+            <span className="font-display italic text-xl md:text-3xl font-black tracking-tight flex items-center gap-1 uppercase">
+              {platformSettings?.siteName ?? "Future9"} <span className="text-base md:text-xl">🏏</span>
             </span>
             <span className="hidden sm:block text-[10px] uppercase tracking-widest font-semibold text-white/90">
               — {platformSettings?.siteTagline ?? "Sports & Casino"} —
@@ -78,26 +88,32 @@ export function TopBar() {
 
           {user ? (
             <>
-              <div className="flex items-center gap-1.5">
+              {/* Deposit/Withdraw: hidden on smallest, shown sm+ */}
+              <div className="hidden sm:flex items-center gap-1.5">
                 <Link
                   href="/account/deposit"
                   className="flex items-center gap-1 rounded bg-white px-2.5 sm:px-4 py-1.5 text-xs sm:text-sm font-bold text-brandRed hover:bg-gray-100 transition"
                 >
                   <ArrowDownToLine size={14} />
-                  <span className="hidden xs:inline sm:inline">DEPOSIT</span>
+                  <span>DEPOSIT</span>
                 </Link>
                 <Link
                   href="/account/withdraw"
                   className="flex items-center gap-1 rounded bg-white px-2.5 sm:px-4 py-1.5 text-xs sm:text-sm font-bold text-brandRed hover:bg-gray-100 transition"
                 >
                   <ArrowUpToLine size={14} />
-                  <span className="hidden xs:inline sm:inline">WITHDRAW</span>
+                  <span>WITHDRAW</span>
                 </Link>
               </div>
 
-              <div className="hidden sm:flex flex-col text-right leading-tight ml-2">
-                <span className="text-[11px] font-semibold">Points: <span className="font-bold">{fmtMoney(wallet?.available)}</span></span>
-                <span className="text-[11px] font-semibold text-white/80">Exposure: <span className="font-bold">{fmtMoney(wallet?.exposure)}</span></span>
+              {/* Points / Exposure — compact pill on mobile, stacked on sm+ */}
+              <div className="flex flex-col text-right leading-tight">
+                <span className="text-[10px] sm:text-[11px] font-semibold">
+                  Points: <span className="font-bold">{fmtMoney(wallet?.available)}</span>
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-semibold text-white/80">
+                  Exp: <span className="font-bold">{fmtMoney(wallet?.exposure)}</span>
+                </span>
               </div>
 
               <ProfileMenu username={user.username} onLogout={clear} />

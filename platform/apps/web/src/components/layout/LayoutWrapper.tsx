@@ -7,6 +7,7 @@ import { AnnouncementBar } from "./AnnouncementBar";
 import { TopNav } from "./TopNav";
 import { Footer } from "./Footer";
 import { NavigationProgress } from "../NavigationProgress";
+import { MobileBottomNav } from "./MobileBottomNav";
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -27,8 +28,9 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
       <TopBar />
       <AnnouncementBar />
       <TopNav />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 pb-16 md:pb-0">{children}</main>
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 }
