@@ -130,7 +130,7 @@ export default function RoulettePage() {
         const myBets = (data.bets as any[]).filter(b => b.userId === user.id);
         const totalPayout = myBets.reduce((sum, b) => sum + Number(b.payout), 0);
         const anyWin = myBets.some(b => b.isWin);
-        if (anyWin && totalPayout > 0) { setMyWin({ winningNumber: data.winningNumber, payout: totalPayout }); playSound("win"); setTimeout(() => setMyWin(null), 5000); }
+        if (anyWin && totalPayout > 0) { setMyWin({ winningNumber: data.winningNumber, payout: totalPayout }); playSound("win"); setTimeout(() => setMyWin(null), 3000); }
       }
     };
     const onBetPlaced = () => setGlobalBetCount(c => c + 1);
@@ -343,15 +343,43 @@ export default function RoulettePage() {
                 </div>
               </div>
 
-              {/* Winning number badge — shown below wheel on mobile only */}
-              {status === "SETTLED" && round?.winningNumber != null && (
-                <div className="flex md:hidden items-center gap-2">
-                  <div className="px-4 py-1.5 rounded-full font-extrabold text-lg text-white shadow-lg" style={{ background: color(round.winningNumber), minWidth: 56, textAlign: "center" }}>
-                    {round.winningNumber}
-                  </div>
-                  <span className="text-xs text-white/50 uppercase tracking-widest">{round.winningColor}</span>
-                </div>
-              )}
+              {/* Below-wheel area: win amount for 3s, otherwise winning number badge */}
+              <div className="h-10 flex items-center justify-center">
+                <AnimatePresence mode="wait">
+                  {myWin && myWin.payout > 0 ? (
+                    <motion.div
+                      key="win"
+                      initial={{ scale: 0.6, opacity: 0, y: 8 }}
+                      animate={{ scale: 1, opacity: 1, y: 0 }}
+                      exit={{ scale: 0.8, opacity: 0, y: -6 }}
+                      transition={{ type: "spring", stiffness: 420, damping: 26 }}
+                      className="flex items-center gap-2 px-4 py-1.5 rounded-full border-2 border-yellow-400/70"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(120,53,15,0.95), rgba(161,72,14,0.95))",
+                        boxShadow: "0 0 20px rgba(234,179,8,0.45)",
+                      }}
+                    >
+                      <Trophy size={14} className="text-yellow-300 shrink-0" />
+                      <span className="text-base font-extrabold text-yellow-200 tabular-nums">
+                        +{fmt(myWin.payout)}
+                      </span>
+                    </motion.div>
+                  ) : status === "SETTLED" && round?.winningNumber != null ? (
+                    <motion.div
+                      key="num"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex items-center gap-2"
+                    >
+                      <div className="px-4 py-1 rounded-full font-extrabold text-base text-white shadow-lg" style={{ background: color(round.winningNumber), minWidth: 48, textAlign: "center" }}>
+                        {round.winningNumber}
+                      </div>
+                      <span className="text-[10px] text-white/50 uppercase tracking-widest">{round.winningColor}</span>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
             </div>
 
             {/* Controls column */}
@@ -505,31 +533,6 @@ export default function RoulettePage() {
         )}
       </AnimatePresence>
 
-      {/* ── My win banner (non-blocking toast at bottom of screen) ── */}
-      <AnimatePresence>
-        {myWin && myWin.payout > 0 && (
-          <motion.div
-            initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="fixed bottom-16 left-1/2 z-50 pointer-events-none"
-            style={{ transform: "translateX(-50%)" }}
-          >
-            <div className="flex items-center gap-3 px-5 py-3 rounded-2xl border-2 border-yellow-400/60 shadow-[0_0_30px_rgba(234,179,8,0.4)] backdrop-blur-md"
-              style={{ background: "linear-gradient(135deg, rgba(120,53,15,0.95), rgba(92,44,13,0.95))" }}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-extrabold text-white border-2 border-white/30 shrink-0"
-                style={{ background: color(myWin.winningNumber), boxShadow: `0 0 14px ${color(myWin.winningNumber)}99` }}>
-                {myWin.winningNumber}
-              </div>
-              <div>
-                <div className="text-[9px] uppercase tracking-widest text-yellow-300/70 font-semibold">You Won!</div>
-                <div className="text-xl font-extrabold text-yellow-200 flex items-center gap-1.5 leading-none">
-                  <Trophy size={16} className="text-yellow-400" /> {fmt(myWin.payout)}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ── Error toast ── */}
       <AnimatePresence>
