@@ -28,10 +28,10 @@ export default function MinesControls({ isLoggedIn, gameState, setGameState, han
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 md:space-y-4">
       {/* Bet Amount */}
       <div>
-        <div className="flex justify-between text-sm text-gray-400 mb-1 font-semibold">
+        <div className="flex justify-between text-xs md:text-sm text-gray-400 mb-1 font-semibold">
           <span>Bet Amount</span>
           <span>₹</span>
         </div>
@@ -68,7 +68,7 @@ export default function MinesControls({ isLoggedIn, gameState, setGameState, han
 
       {/* Mines Count */}
       <div>
-        <label className="text-sm text-gray-400 mb-1 font-semibold block">Mines</label>
+        <label className="text-xs md:text-sm text-gray-400 mb-1 font-semibold block">Mines</label>
         <select
           className="w-full bg-[#0f212e] text-white p-2 rounded border border-gray-700 outline-none focus:border-gray-500 font-semibold disabled:opacity-50"
           value={gameState.minesCount}
@@ -82,11 +82,11 @@ export default function MinesControls({ isLoggedIn, gameState, setGameState, han
       </div>
 
       {/* Action Button */}
-      <div className="pt-2">
+      <div className="pt-1 md:pt-2">
         {!isLoggedIn ? (
           <button
             onClick={() => window.location.href = "/auth/login"}
-            className="w-full bg-[#00e701] hover:bg-[#1fff20] text-[#0f212e] font-bold text-lg py-3 rounded shadow-[0_0_10px_rgba(0,231,1,0.3)] transition transform active:scale-95"
+            className="w-full bg-[#00e701] hover:bg-[#1fff20] text-[#0f212e] font-bold text-base md:text-lg py-2.5 md:py-3 rounded shadow-[0_0_10px_rgba(0,231,1,0.3)] transition transform active:scale-95"
           >
             Login to Play
           </button>
@@ -94,7 +94,7 @@ export default function MinesControls({ isLoggedIn, gameState, setGameState, han
           <button
             onClick={handleBet}
             disabled={loading}
-            className="w-full bg-[#00e701] hover:bg-[#1fff20] text-[#0f212e] font-bold text-lg py-3 rounded shadow-[0_0_10px_rgba(0,231,1,0.3)] transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#00e701] hover:bg-[#1fff20] text-[#0f212e] font-bold text-base md:text-lg py-2.5 md:py-3 rounded shadow-[0_0_10px_rgba(0,231,1,0.3)] transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Starting..." : "Bet"}
           </button>
@@ -102,7 +102,7 @@ export default function MinesControls({ isLoggedIn, gameState, setGameState, han
           <button
             onClick={handleCashout}
             disabled={loading || gameState.clickedTiles.length === 0}
-            className="w-full bg-[#00e701] hover:bg-[#1fff20] text-[#0f212e] font-bold text-lg py-3 rounded shadow-[0_0_10px_rgba(0,231,1,0.3)] transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#00e701] hover:bg-[#1fff20] text-[#0f212e] font-bold text-base md:text-lg py-2.5 md:py-3 rounded shadow-[0_0_10px_rgba(0,231,1,0.3)] transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Cashing out..." : `Cashout ${gameState.clickedTiles.length > 0 ? (gameState.betAmount * gameState.multiplier).toFixed(2) : ""}`}
           </button>

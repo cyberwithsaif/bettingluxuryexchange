@@ -66,7 +66,8 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone, o
     const padX = 10, padTop = 28, padBot = 60;
     const slotW = (W - padX * 2) / (rows + 1);
     const rowH  = (H - padTop - padBot) / (rows + 1);
-    return { W, H, padX, padTop, padBot, slotW, rowH, centerX: W / 2 };
+    const ballR = Math.max(4, Math.min(9, W * 0.022));
+    return { W, H, padX, padTop, padBot, slotW, rowH, centerX: W / 2, ballR };
   }, [rows]);
 
   const buildWaypoints = useCallback((canvas: HTMLCanvasElement, path: number[]) => {
@@ -93,7 +94,7 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone, o
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const { W, H, padX, padTop, padBot, slotW, rowH, centerX } = getLayout(canvas);
+    const { W, H, padX, padTop, padBot, slotW, rowH, centerX, ballR } = getLayout(canvas);
     const balls = activeBalls.current;
 
     ctx.clearRect(0, 0, W, H);
@@ -175,7 +176,7 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone, o
       for (const t of ball.trail) {
         const a = Math.max(0, 1 - t.age / 12);
         ctx.beginPath();
-        ctx.arc(t.x, t.y, 8 * a, 0, Math.PI * 2);
+        ctx.arc(t.x, t.y, ballR * a, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255,255,255,${a * 0.3})`;
         ctx.fill();
       }
@@ -184,12 +185,12 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone, o
     // Balls
     for (const ball of balls) {
       if (ball.settled) continue;
-      const g = ctx.createRadialGradient(ball.ballX - 3, ball.ballY - 3, 1, ball.ballX, ball.ballY, 9);
+      const g = ctx.createRadialGradient(ball.ballX - ballR * 0.33, ball.ballY - ballR * 0.33, 1, ball.ballX, ball.ballY, ballR);
       g.addColorStop(0, "#ff9999");
       g.addColorStop(0.5, "#ef4444");
       g.addColorStop(1, "#991b1b");
       ctx.beginPath();
-      ctx.arc(ball.ballX, ball.ballY, 9, 0, Math.PI * 2);
+      ctx.arc(ball.ballX, ball.ballY, ballR, 0, Math.PI * 2);
       ctx.fillStyle   = g;
       ctx.shadowColor = "rgba(239,68,68,0.9)";
       ctx.shadowBlur  = 14;

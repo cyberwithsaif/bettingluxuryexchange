@@ -656,21 +656,21 @@ export default function PlinkoPage() {
 
         {/* Bet amount row */}
         <div className="flex items-center gap-2">
-          <div className="relative flex-1">
+          <div className="relative w-24 shrink-0">
             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/40 text-xs">₹</span>
             <input type="number" min={config?.minBet ?? 1} max={config?.maxBet ?? 100000}
               value={betAmount} onChange={e => setBetAmount(Math.max(1, Number(e.target.value)))}
               className="w-full bg-[#0b0c12] border border-white/10 rounded-lg pl-6 pr-2 py-1.5 text-xs focus:outline-none focus:border-violet-500 transition" />
           </div>
-          <div className="flex gap-0.5">
+          <div className="flex gap-0.5 overflow-x-auto no-scrollbar flex-1">
             {[10, 50, 100, 500, 1000].map(v => (
               <button key={v} onClick={() => setBetAmount(v)}
-                className="px-2 py-1.5 rounded text-[10px] bg-white/[0.06] hover:bg-white/[0.13] transition font-medium">
+                className="shrink-0 px-2 py-1.5 rounded text-[10px] bg-white/[0.06] hover:bg-white/[0.13] transition font-medium">
                 {v >= 1000 ? "1k" : v}
               </button>
             ))}
             <button onClick={() => setBetAmount(Math.floor(balance ?? 100))}
-              className="px-2 py-1.5 rounded text-[10px] bg-white/[0.06] hover:bg-white/[0.13] transition">Max</button>
+              className="shrink-0 px-2 py-1.5 rounded text-[10px] bg-white/[0.06] hover:bg-white/[0.13] transition">Max</button>
           </div>
         </div>
 

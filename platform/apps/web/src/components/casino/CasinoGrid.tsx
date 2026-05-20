@@ -65,8 +65,8 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
   return (
     <div className="mx-auto max-w-[1600px] px-4 py-6">
       <div className="flex flex-col mb-4">
-        <h1 className="font-display text-5xl font-black text-brandRed tracking-tight uppercase">{title}</h1>
-        <h2 className="font-display text-2xl font-bold text-white uppercase mt-1">BET NOW ON MULTIPLE {title}</h2>
+        <h1 className="font-display text-3xl md:text-5xl font-black text-brandRed tracking-tight uppercase">{title}</h1>
+        <h2 className="font-display text-base md:text-2xl font-bold text-white uppercase mt-1">BET NOW ON MULTIPLE {title}</h2>
       </div>
 
       {/* In-House Featured Games */}

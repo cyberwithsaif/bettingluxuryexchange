@@ -29,7 +29,7 @@ export default function MinesGrid({ gameState, onTileClick }: MinesGridProps) {
         tileBg = "bg-red-500 shadow-none";
         content = (
           <motion.div initial={{ scale: 0, rotate: -45 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring" }}>
-            <svg viewBox="0 0 64 64" className="w-10 h-10 drop-shadow-[0_0_12px_rgba(255,80,80,0.8)]" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="0 0 64 64" className="w-7 h-7 sm:w-10 sm:h-10 drop-shadow-[0_0_12px_rgba(255,80,80,0.8)]" fill="none" xmlns="http://www.w3.org/2000/svg">
               <text x="50%" y="54%" fontSize="42" textAnchor="middle" dominantBaseline="middle">💣</text>
             </svg>
           </motion.div>
@@ -38,7 +38,7 @@ export default function MinesGrid({ gameState, onTileClick }: MinesGridProps) {
         tileBg = "bg-[#0f212e] shadow-none";
         content = (
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", bounce: 0.6 }}>
-            <svg viewBox="0 0 64 64" className="w-10 h-10 drop-shadow-[0_0_15px_rgba(0,255,180,0.8)]" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="0 0 64 64" className="w-7 h-7 sm:w-10 sm:h-10 drop-shadow-[0_0_15px_rgba(0,255,180,0.8)]" fill="none" xmlns="http://www.w3.org/2000/svg">
               {/* Diamond gem shape */}
               <polygon points="32,4 60,24 32,60 4,24" fill="url(#gemGrad)" stroke="rgba(0,255,200,0.6)" strokeWidth="1.5"/>
               <polygon points="32,4 60,24 32,28 4,24" fill="url(#gemTop)" opacity="0.9"/>
@@ -67,9 +67,9 @@ export default function MinesGrid({ gameState, onTileClick }: MinesGridProps) {
     } else if (shouldReveal) {
       tileBg = "bg-[#0f212e] shadow-none opacity-50";
       content = isMine ? (
-        <span className="text-3xl opacity-70">💣</span>
+        <span className="text-xl sm:text-3xl opacity-70">💣</span>
       ) : (
-        <span className="text-3xl opacity-70">💎</span>
+        <span className="text-xl sm:text-3xl opacity-70">💎</span>
       );
     }
 
@@ -88,7 +88,7 @@ export default function MinesGrid({ gameState, onTileClick }: MinesGridProps) {
   };
 
   return (
-    <div className="grid grid-cols-5 gap-3 p-4 bg-[#213743] rounded-xl shadow-inner w-full max-w-lg aspect-square">
+    <div className="grid grid-cols-5 gap-1.5 sm:gap-3 p-2 sm:p-4 bg-[#213743] rounded-xl shadow-inner w-full max-w-lg aspect-square">
       {Array.from({ length: 25 }, (_, i) => renderTile(i))}
     </div>
   );

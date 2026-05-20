@@ -279,17 +279,17 @@ export default function MinesLayout() {
   const profit = (gameState.multiplier - 1) * gameState.betAmount;
 
   return (
-    <div className="h-screen bg-[#0F1923] text-white flex flex-col font-sans w-full overflow-hidden">
-      {/* Minimal Header with Wallet Balance */}
-      <header className="px-3 md:px-6 py-2.5 flex items-center justify-between gap-2 border-b border-gray-800 bg-[#0f212e] w-full shrink-0">
+    <div className="h-[100dvh] bg-[#0F1923] text-white flex flex-col font-sans w-full">
+      {/* Header */}
+      <header className="px-3 md:px-6 py-2 md:py-2.5 flex items-center justify-between gap-2 border-b border-gray-800 bg-[#0f212e] w-full shrink-0">
         <Link href="/" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition font-bold text-sm shrink-0">
           <ArrowLeft size={16} />
           <span className="hidden sm:inline">Back to Lobby</span>
         </Link>
         <div className="font-bold tracking-widest text-xs sm:text-sm text-green-400 uppercase whitespace-nowrap">
-          💣 Mines Game
+          💣 Mines
         </div>
-        <div className="flex items-center gap-1.5 bg-[#1a2c38] px-2 sm:px-3 py-1.5 rounded-lg border border-gray-700 shrink-0">
+        <div className="flex items-center gap-1.5 bg-[#1a2c38] px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-gray-700 shrink-0">
           <span className="text-xs text-gray-400 font-semibold hidden sm:inline">Balance:</span>
           <span className="text-xs sm:text-sm font-bold text-white whitespace-nowrap">
             ₹{(liveBalance ?? (walletData ? Number(walletData.available) : null))?.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? "0.00"}
@@ -297,11 +297,11 @@ export default function MinesLayout() {
         </div>
       </header>
 
-      {/* Main Game Container */}
-      <div className="flex-1 flex items-center justify-center p-2 md:p-6 w-full max-w-6xl mx-auto overflow-hidden">
-        <div className="w-full flex flex-col md:flex-row bg-[#0f212e] rounded-xl overflow-hidden shadow-2xl border border-gray-800">
-          {/* Left Sidebar - Controls */}
-          <div className="w-full md:w-80 bg-[#213743] p-4 flex flex-col justify-between">
+      {/* Main Game Container — scrollable on mobile, centered on desktop */}
+      <div className="flex-1 overflow-y-auto md:overflow-hidden md:flex md:items-center md:justify-center p-2 md:p-6 w-full max-w-6xl mx-auto">
+        <div className="w-full flex flex-col-reverse md:flex-row bg-[#0f212e] rounded-xl overflow-hidden shadow-2xl border border-gray-800">
+          {/* Controls — below grid on mobile, left sidebar on desktop */}
+          <div className="w-full md:w-80 bg-[#213743] p-3 md:p-4 flex flex-col justify-between">
             <MinesControls
               isLoggedIn={!!user}
               gameState={gameState}
@@ -312,7 +312,7 @@ export default function MinesLayout() {
               minBet={minBet}
               maxBet={maxBet}
             />
-            <div className="mt-auto pt-4 flex justify-between gap-2">
+            <div className="mt-3 md:mt-auto pt-3 md:pt-4 flex justify-between gap-2">
               <button
                 className="flex-1 bg-gray-800 hover:bg-gray-700 p-2 rounded text-xs text-gray-400 flex items-center justify-center gap-2 transition"
                 onClick={() => setShowFairModal(true)}
@@ -322,27 +322,27 @@ export default function MinesLayout() {
             </div>
           </div>
 
-          {/* Right Area - Grid */}
-          <div className="flex-1 bg-[#0f212e] p-4 md:p-6 relative flex flex-col items-center justify-center">
-            {/* Top Header inside Game Area */}
+          {/* Grid area — top on mobile, right on desktop */}
+          <div className="flex-1 bg-[#0f212e] p-3 md:p-6 relative flex flex-col items-center justify-center min-h-[300px]">
+            {/* In-progress stats strip */}
             {gameState.status === "IN_PROGRESS" && (
-              <div className="absolute top-4 left-4 right-4 flex flex-wrap justify-center gap-3 text-xs md:text-sm font-semibold pointer-events-none z-10">
-                <div className="bg-[#1a2c38] px-3 py-1.5 rounded shadow text-green-400 border border-green-500/20">
-                  Multiplier: {gameState.multiplier.toFixed(2)}x
+              <div className="w-full flex flex-wrap justify-center gap-1.5 md:gap-3 mb-2 md:mb-0 md:absolute md:top-4 md:left-4 md:right-4 text-[10px] md:text-xs font-semibold pointer-events-none z-10">
+                <div className="bg-[#1a2c38] px-2 md:px-3 py-1 md:py-1.5 rounded shadow text-green-400 border border-green-500/20">
+                  {gameState.multiplier.toFixed(2)}×
                 </div>
-                <div className="bg-[#1a2c38] px-3 py-1.5 rounded shadow text-yellow-400 border border-yellow-500/20">
-                  Bet: ₹{gameState.betAmount}
+                <div className="bg-[#1a2c38] px-2 md:px-3 py-1 md:py-1.5 rounded shadow text-yellow-400 border border-yellow-500/20">
+                  ₹{gameState.betAmount}
                 </div>
-                <div className="bg-[#1a2c38] px-3 py-1.5 rounded shadow text-white border border-gray-700">
-                  Gems: {clickedSafeCount} / {totalSafeCount}
+                <div className="bg-[#1a2c38] px-2 md:px-3 py-1 md:py-1.5 rounded shadow text-white border border-gray-700">
+                  💎 {clickedSafeCount}/{totalSafeCount}
                 </div>
-                <div className="bg-[#1a2c38] px-3 py-1.5 rounded shadow text-green-300 border border-gray-700">
-                  Profit: +₹{profit.toFixed(2)}
+                <div className="bg-[#1a2c38] px-2 md:px-3 py-1 md:py-1.5 rounded shadow text-green-300 border border-gray-700">
+                  +₹{profit.toFixed(2)}
                 </div>
               </div>
             )}
 
-            <div className="w-full max-w-[480px] mt-4 relative">
+            <div className={`w-full max-w-[480px] relative ${gameState.status === "IN_PROGRESS" ? "md:mt-10" : ""}`}>
               <MinesGrid gameState={gameState} onTileClick={handleTileClick} />
 
               {/* Result Overlay */}
@@ -355,21 +355,21 @@ export default function MinesLayout() {
                     onClick={() => setResultPopup(null)}
                     className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-[3px] z-20 rounded-xl cursor-pointer select-none"
                   >
-                    <div className={`w-64 text-center p-6 rounded-2xl shadow-2xl border-2 transition transform active:scale-95 ${
-                      resultPopup.win 
-                        ? "bg-[#0f212e]/90 border-[#00e701] text-[#00e701] shadow-[0_0_20px_rgba(0,231,1,0.2)]" 
+                    <div className={`w-56 md:w-64 text-center p-5 md:p-6 rounded-2xl shadow-2xl border-2 transition transform active:scale-95 ${
+                      resultPopup.win
+                        ? "bg-[#0f212e]/90 border-[#00e701] text-[#00e701] shadow-[0_0_20px_rgba(0,231,1,0.2)]"
                         : "bg-[#0f212e]/90 border-red-500 text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.2)]"
                     }`}>
-                      <div className="text-xl font-bold uppercase tracking-wider mb-1">
+                      <div className="text-lg md:text-xl font-bold uppercase tracking-wider mb-1">
                         {resultPopup.win ? `${resultPopup.multiplier.toFixed(2)}x Payout` : "Busted!"}
                       </div>
                       {resultPopup.win && (
-                        <div className="text-3xl font-black text-white mt-2">
+                        <div className="text-2xl md:text-3xl font-black text-white mt-2">
                           ₹{resultPopup.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </div>
                       )}
-                      <div className="text-[10px] text-gray-500 mt-4 uppercase tracking-widest font-semibold">
-                        Click to Dismiss
+                      <div className="text-[10px] text-gray-500 mt-3 md:mt-4 uppercase tracking-widest font-semibold">
+                        Tap to Dismiss
                       </div>
                     </div>
                   </motion.div>
@@ -380,6 +380,8 @@ export default function MinesLayout() {
 
           {showFairModal && <ProvablyFairModal gameState={gameState} onClose={() => setShowFairModal(false)} />}
         </div>
+        {/* Spacer so content doesn't butt up against bottom on mobile */}
+        <div className="h-4 md:hidden shrink-0" />
       </div>
 
       {/* ── Beautiful Premium Toast Notification ── */}
