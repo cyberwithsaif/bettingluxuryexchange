@@ -495,17 +495,15 @@ function ThumbnailField({ value, onChange, label = "Thumbnail URL (optional, ove
       </p>
       {value && (
         <div className="mt-2 flex items-start gap-3">
-          {/* Preview matches exact tile ratio used on site */}
-          <div className="relative w-[75px] shrink-0" style={{ aspectRatio: "3/4" }}>
-            <img
-              src={value}
-              alt="preview"
-              className="absolute inset-0 w-full h-full object-cover rounded-lg border border-line"
-              onError={(e) => (e.currentTarget.style.display = "none")}
-            />
-          </div>
+          <img
+            src={value}
+            alt="preview"
+            className="rounded-lg border border-line bg-white/5 object-contain"
+            style={{ maxWidth: 120, maxHeight: 160, width: "auto", height: "auto" }}
+            onError={(e) => (e.currentTarget.style.display = "none")}
+          />
           <div className="flex flex-col gap-1 pt-1">
-            <span className="text-[10px] text-white/40">Preview (actual tile size)</span>
+            <span className="text-[10px] text-white/40">Preview</span>
             <button type="button" onClick={() => onChange(null)} className="text-[10px] text-bad/70 hover:text-bad">✕ Remove image</button>
           </div>
         </div>
