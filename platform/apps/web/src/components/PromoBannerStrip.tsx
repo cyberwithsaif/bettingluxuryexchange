@@ -104,12 +104,11 @@ export function PromoBannerStrip() {
         onPointerUp={onPointerUp}
         onPointerLeave={onPointerUp}
       >
-        <div className="flex gap-4" style={{ width: "max-content" }}>
+        <div className="flex gap-2 md:gap-4" style={{ width: "max-content" }}>
           {items.map((b, i) => {
             const img = (
               <div
-                className="shrink-0 rounded-lg overflow-hidden border border-white/10 hover:border-brandYellow/50 transition-all duration-200 hover:scale-[1.02]"
-                style={{ width: 380, height: 180 }}
+                className="shrink-0 rounded-lg overflow-hidden border border-white/10 hover:border-brandYellow/50 transition-all duration-200 md:hover:scale-[1.02] w-[92vw] aspect-[19/9] md:w-[380px] md:h-[180px] md:aspect-auto"
               >
                 <img
                   src={b.imageUrl}
@@ -134,9 +133,12 @@ export function PromoBannerStrip() {
 
 function PromoBannerSkeleton() {
   return (
-    <div className="flex gap-4 mb-3 overflow-hidden">
+    <div className="flex gap-2 md:gap-4 mb-3 overflow-hidden">
       {[1, 2].map(i => (
-        <div key={i} className="shrink-0 rounded-lg animate-pulse bg-white/10 border border-white/5" style={{ width: 380, height: 180 }} />
+        <div
+          key={i}
+          className="shrink-0 rounded-lg animate-pulse bg-white/10 border border-white/5 w-[92vw] aspect-[19/9] md:w-[380px] md:h-[180px] md:aspect-auto"
+        />
       ))}
     </div>
   );

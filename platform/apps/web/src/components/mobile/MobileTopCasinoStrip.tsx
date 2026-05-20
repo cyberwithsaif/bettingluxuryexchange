@@ -36,19 +36,19 @@ export function MobileTopCasinoStrip() {
           <Link
             key={g.id}
             href={g.href}
-            className="shrink-0 w-[88px] rounded-lg overflow-hidden relative border border-white/10 hover:border-brandYellow/40 transition"
+            className="shrink-0 w-[145px] rounded-lg overflow-hidden relative border border-white/10 hover:border-brandYellow/40 transition"
             style={{ background: g.thumbnail ? undefined : g.bg }}
           >
-            <div className="relative w-full aspect-[4/5]">
+            <div className="relative w-full aspect-square">
               {g.thumbnail ? (
                 <img src={g.thumbnail} alt={g.name} className="absolute inset-0 h-full w-full object-cover" draggable={false} />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-3xl">{g.emoji}</span>
+                  <span className="text-4xl">{g.emoji}</span>
                 </div>
               )}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-1.5 py-1">
-                <p className="text-[10px] font-bold text-white leading-tight truncate">{g.name}</p>
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-2 py-1.5">
+                <p className="text-xs font-bold text-white leading-tight truncate">{g.name}</p>
               </div>
             </div>
           </Link>
