@@ -18,7 +18,7 @@ import { MarketsService } from "../markets/markets.service";
 import { WalletService } from "../wallet/wallet.service";
 import { SettlementService } from "../settlement/settlement.service";
 import { CasinoService } from "../casino/casino.service";
-import { IsBoolean, IsEnum, IsIn, IsInt, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import { IsBoolean, IsEnum, IsIn, IsInt, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 class SetOddsDto {
   @IsString() runnerId!: string;
