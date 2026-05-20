@@ -400,6 +400,7 @@ export class PublicPlatformController {
       marqueeText:   (settings as any).marqueeText   ?? "📢 Live Markets Now Available — Play Smart, Win Big! • Bet Now in Line Markets and Get Commission Upto 2%",
       inhouseGames:  mergedGames,
       heroBanners:   (settings as any).heroBanners   ?? [],
+      promoBanners:  (settings as any).promoBanners  ?? [],
       minesMinBet:   Number((settings as any).minesMinBet  ?? 10),
       minesMaxBet:   Number((settings as any).minesMaxBet  ?? 100000),
       minesEnabled:  (settings as any).minesEnabled !== false,
