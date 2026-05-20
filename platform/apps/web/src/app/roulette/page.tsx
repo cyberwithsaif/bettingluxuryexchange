@@ -87,8 +87,17 @@ export default function RoulettePage() {
     return namePoolRef.current.shift() ?? `Player${Math.floor(Math.random() * 9999)}`;
   }, [fetchNames]);
 
-  // Pre-fetch names on mount
-  useEffect(() => { fetchNames(); }, [fetchNames]);
+  // Pre-fetch names on mount + lock orientation to landscape on mobile
+  useEffect(() => {
+    fetchNames();
+    try {
+      const scr = window.screen as any;
+      if (scr?.orientation?.lock) scr.orientation.lock("landscape").catch(() => {});
+    } catch {}
+    return () => {
+      try { (window.screen as any)?.orientation?.unlock?.(); } catch {}
+    };
+  }, [fetchNames]);
 
   const showError = useCallback((msg: string) => {
     if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
@@ -273,6 +282,28 @@ export default function RoulettePage() {
     @media(min-width:768px){ .casino-chip span{font-size:16px;} }
     @keyframes chipPulse { 0%{box-shadow:0 0 10px currentColor}50%{box-shadow:0 0 22px currentColor}100%{box-shadow:0 0 10px currentColor} }
     @keyframes tickerScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+    /* ── Portrait overlay (mobile only) ── */
+    .rl-rotate-prompt { display:none; position:fixed; inset:0; z-index:9999; background:#0F1923; flex-direction:column; align-items:center; justify-content:center; gap:16px; }
+    @media (max-width:900px) and (orientation:portrait) { .rl-rotate-prompt { display:flex; } }
+
+    /* ── Landscape mobile compact layout ── */
+    @media (orientation:landscape) and (max-height:520px) {
+      .rl-header { padding:3px 10px!important; }
+      .rl-bottom-bar { padding:3px 10px!important; }
+      .rl-casino-stage { padding:3px 4px 2px!important; }
+      .rl-status-row { margin-bottom:3px!important; }
+      .rl-layout { display:grid!important; grid-template-columns:168px 1fr!important; gap:6px!important; align-items:start; }
+      .wheel-outer { width:152px!important; height:152px!important; }
+      .wheel-inner { transform:scale(0.345)!important; }
+      .rl-below-wheel { height:22px!important; }
+      .rl-scroll { overflow:hidden!important; }
+      .rl-controls { overflow-y:auto; max-height:calc(100dvh - 74px); padding-right:2px; }
+      .rl-live-feed { display:none!important; }
+      .casino-chip { width:34px!important; height:34px!important; }
+      .casino-chip span { font-size:11px!important; }
+      .rl-ctrl { width:34px!important; height:34px!important; font-size:14px!important; }
+    }
     .rl-ctrl { width:42px;height:42px;border:none;outline:none;border-radius:10px;background:#0f172a;color:white;font-size:16px;font-weight:700;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 1px rgba(255,255,255,.05),0 0 10px rgba(0,0,0,.4); }
     @media(min-width:768px){ .rl-ctrl{width:52px;height:52px;font-size:20px;} }
     .rl-ctrl:hover:not(:disabled){transform:translateY(-2px);background:#1e293b;}
@@ -284,8 +315,16 @@ export default function RoulettePage() {
     <div className="h-[100dvh] bg-[#0F1923] text-white flex flex-col font-sans w-full overflow-hidden">
       <style>{chipStyle}</style>
 
+      {/* ── Portrait rotate prompt (mobile only, portrait orientation) ── */}
+      <div className="rl-rotate-prompt">
+        <div style={{ fontSize: 64, lineHeight: 1, animation: "spin 2s linear infinite", display: "inline-block" }}>⟳</div>
+        <p style={{ color: "#fff", fontSize: 20, fontWeight: 700, margin: 0 }}>Rotate your device</p>
+        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, margin: 0 }}>Roulette is best in landscape</p>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      </div>
+
       {/* ── Header ── */}
-      <header className="px-3 py-2 flex items-center justify-between border-b border-gray-800 bg-[#0f212e] shrink-0">
+      <header className="rl-header px-3 py-2 flex items-center justify-between border-b border-gray-800 bg-[#0f212e] shrink-0">
         <Link href="/" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition font-bold text-xs">
           <ArrowLeft size={15} /><span>Back</span>
         </Link>
@@ -298,16 +337,16 @@ export default function RoulettePage() {
       </header>
 
       {/* ── Scrollable body ── */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden">
+      <div className="rl-scroll flex-1 overflow-y-auto overflow-x-hidden">
 
         {/* Casino stage */}
         <div
-          className="px-2 pt-2 pb-3"
+          className="rl-casino-stage px-2 pt-2 pb-3"
           style={{ background: "radial-gradient(ellipse at top, #1a1a20 0%, #0a0a0c 70%), repeating-linear-gradient(60deg,rgba(255,255,255,0.012) 0 1px,transparent 1px 28px), repeating-linear-gradient(-60deg,rgba(255,255,255,0.012) 0 1px,transparent 1px 28px)" }}
         >
 
           {/* Status row */}
-          <div className="flex items-center justify-between mb-2 gap-1">
+          <div className="rl-status-row flex items-center justify-between mb-2 gap-1">
             <div className="flex items-center gap-1.5">
               <div className={`px-2 py-0.5 rounded text-[9px] uppercase tracking-widest font-bold border ${
                 status === "BETTING"  ? "bg-emerald-900/60 border-emerald-500/50 text-emerald-300" :
@@ -345,7 +384,7 @@ export default function RoulettePage() {
           </div>
 
           {/* ── Two-column on md+, single column on mobile ── */}
-          <div className="flex flex-col md:grid md:grid-cols-[286px_1fr] lg:grid-cols-[360px_1fr] gap-2 md:gap-4">
+          <div className="rl-layout flex flex-col md:grid md:grid-cols-[286px_1fr] lg:grid-cols-[360px_1fr] gap-2 md:gap-4">
 
             {/* Wheel column */}
             <div className="flex flex-col items-center gap-2">
@@ -367,7 +406,7 @@ export default function RoulettePage() {
               </div>
 
               {/* Below-wheel area: win amount for 3s, otherwise winning number badge */}
-              <div className="h-10 flex items-center justify-center">
+              <div className="rl-below-wheel h-10 flex items-center justify-center">
                 <AnimatePresence mode="wait">
                   {myWin && myWin.payout > 0 ? (
                     <motion.div
@@ -406,7 +445,7 @@ export default function RoulettePage() {
             </div>
 
             {/* Controls column */}
-            <div className="space-y-2">
+            <div className="rl-controls space-y-2">
 
               {/* Betting table */}
               <div className="overflow-x-auto mt-0 md:mt-4">
@@ -457,7 +496,7 @@ export default function RoulettePage() {
         </div>
 
         {/* ── Live Wins Ticker ── */}
-        <div className="border-t border-white/10 bg-black/50 py-2">
+        <div className="rl-live-feed border-t border-white/10 bg-black/50 py-2">
           <div className="flex items-center gap-2 px-3 mb-1.5">
             <span className="text-[8px] uppercase tracking-[0.18em] text-white/35 font-semibold">Live Wins</span>
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -496,7 +535,7 @@ export default function RoulettePage() {
       </div>
 
       {/* ── Bottom bar — outside scroll, always pinned to viewport bottom ── */}
-      <div className="bg-[#0a0a0c] px-3 py-2 border-t border-white/10 flex items-center justify-between gap-2 shrink-0">
+      <div className="rl-bottom-bar bg-[#0a0a0c] px-3 py-2 border-t border-white/10 flex items-center justify-between gap-2 shrink-0">
         <button onClick={() => setMuted(m => !m)} className="flex items-center gap-1 text-white/60 hover:text-white transition shrink-0">
           {muted ? <VolumeX size={13} /> : <Volume2 size={13} />}
           <span className="text-[9px] hidden sm:inline">{muted ? "Muted" : "Sound"}</span>
