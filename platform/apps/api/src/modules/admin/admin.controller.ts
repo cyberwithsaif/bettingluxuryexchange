@@ -251,7 +251,7 @@ export class AdminController {
     const settings = await this.admin.getPlatformSettings() as any;
     const defaultInhouseGames = [
       { id: "roulette", name: "Roulette", description: "European Roulette",     href: "/roulette", thumbnail: "/game-thumbs/roulette.svg", emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
-      { id: "mines",    name: "Mines",    description: "Mines Game",             href: "/mines",    thumbnail: "/game-thumbs/mines.svg",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
+      { id: "mines",    name: "Mines",    description: "Mines Game",             href: "/mines",    thumbnail: "/game-thumbs/mines.webp",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
       { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko",   href: "/plinko",   thumbnail: "/game-thumbs/plinko.svg",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", sortOrder: 2 },
       { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",     href: "/balloon",  thumbnail: "/game-thumbs/balloon.svg",  emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", sortOrder: 3 },
     ];
@@ -319,8 +319,10 @@ export class AdminController {
       ? { width: 300,  height: 400 }
       : { width: 1920, height: 480 };
     try {
+      const fit = uploadType === "thumbnail" ? "contain" : "cover";
+      const bg  = uploadType === "thumbnail" ? { r: 10, g: 14, b: 26, alpha: 1 } : { r: 0, g: 0, b: 0, alpha: 1 };
       await sharp(file.path)
-        .resize({ ...dims, fit: "cover", withoutEnlargement: false })
+        .resize({ ...dims, fit, background: bg, withoutEnlargement: false })
         .webp({ quality: 88 })
         .toFile(outPath);
       await unlink(file.path);
@@ -384,7 +386,7 @@ export class PublicPlatformController {
     const settings = await this.admin.getPlatformSettings();
     const defaultInhouseGames = [
       { id: "roulette", name: "Roulette", description: "European Roulette",   href: "/roulette", thumbnail: "/game-thumbs/roulette.svg", emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
-      { id: "mines",    name: "Mines",    description: "Mines Game",           href: "/mines",    thumbnail: "/game-thumbs/mines.svg",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
+      { id: "mines",    name: "Mines",    description: "Mines Game",           href: "/mines",    thumbnail: "/game-thumbs/mines.webp",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
       { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko", href: "/plinko",   thumbnail: "/game-thumbs/plinko.svg",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", sortOrder: 2 },
       { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",   href: "/balloon",  thumbnail: "/game-thumbs/balloon.svg",  emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", sortOrder: 3 },
     ];
