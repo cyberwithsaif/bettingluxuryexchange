@@ -31,7 +31,7 @@ export function MobileTopCasinoStrip() {
           See All <ChevronRight size={14} />
         </Link>
       </div>
-      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-2 px-2 pb-1">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-2 px-2 pb-1" style={{ touchAction: "pan-x" }}>
         {games.map((g) => (
           <Link
             key={g.id}
