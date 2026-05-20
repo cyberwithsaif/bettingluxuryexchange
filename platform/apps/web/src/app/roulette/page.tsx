@@ -106,7 +106,7 @@ export default function RoulettePage() {
       setRound({ id: data.roundId, roundNumber: data.roundNumber, status: "BETTING",
         serverSeedHash: data.serverSeedHash, winningNumber: null, winningColor: null,
         phaseEndsAt: data.phaseEndsAt, betsCount: 0 });
-      setBets([]); setGlobalBetCount(0); setResultPopup(null);
+      setBets([]); setGlobalBetCount(0); setMyWin(null);
     };
     const onSpin = (data: any) => {
       setRound(r => r ? { ...r, status: "SPINNING", winningNumber: data.winningNumber, winningColor: data.winningColor, phaseEndsAt: data.phaseEndsAt } : null);
