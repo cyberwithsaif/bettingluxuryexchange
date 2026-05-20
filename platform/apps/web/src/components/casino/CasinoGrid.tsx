@@ -188,8 +188,9 @@ type GameCardProps =
   | (GameCardBase & { as: "button"; href?: never });
 
 function GameCard({ name, publisher, thumbnail, fallbackBg, fallbackEmoji, clean, isLive, ...rest }: GameCardProps) {
-  // clean cards (in-house): object-contain to show FULL image, no crop; card bg matches page so any blank space is invisible
-  const imgFit = clean ? "object-contain" : "object-cover";
+  // clean cards (in-house): stretch image to fill card completely — no bars, no crop
+  // Slight stretch is invisible for near-3:4 images and guarantees edge-to-edge fill
+  const imgFit = clean ? "object-fill" : "object-cover";
   const cardBgStyle: React.CSSProperties = clean ? { background: "#0f1923" } : {};
   const inner = (
     <div className="relative w-full h-full" style={cardBgStyle}>

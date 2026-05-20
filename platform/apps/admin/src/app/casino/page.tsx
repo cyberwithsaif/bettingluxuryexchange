@@ -500,7 +500,7 @@ function ThumbnailField({ value, onChange, label = "Thumbnail URL (optional, ove
             <img
               src={value}
               alt="preview"
-              className="absolute inset-0 w-full h-full object-contain"
+              className="absolute inset-0 w-full h-full object-fill"
               onError={(e) => (e.currentTarget.style.display = "none")}
             />
           </div>
