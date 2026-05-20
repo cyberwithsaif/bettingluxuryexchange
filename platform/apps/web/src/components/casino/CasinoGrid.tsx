@@ -188,11 +188,14 @@ type GameCardProps =
   | (GameCardBase & { as: "button"; href?: never });
 
 function GameCard({ name, publisher, thumbnail, fallbackBg, fallbackEmoji, clean, isLive, ...rest }: GameCardProps) {
+  // clean cards (in-house): object-contain to show FULL image, no crop; card bg matches page so any blank space is invisible
+  const imgFit = clean ? "object-contain" : "object-cover";
+  const cardBgStyle: React.CSSProperties = clean ? { background: "#0f1923" } : {};
   const inner = (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full" style={cardBgStyle}>
       {/* Image / fallback */}
       {thumbnail
-        ? <img src={thumbnail} alt={name} className="absolute inset-0 w-full h-full object-cover" draggable={false} />
+        ? <img src={thumbnail} alt={name} className={`absolute inset-0 w-full h-full ${imgFit}`} draggable={false} />
         : (
           <div className="absolute inset-0 flex items-center justify-center" style={{ background: fallbackBg }}>
             <span className="text-5xl drop-shadow-xl">{fallbackEmoji ?? "🎮"}</span>

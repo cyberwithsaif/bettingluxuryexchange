@@ -491,16 +491,16 @@ function ThumbnailField({ value, onChange, label = "Thumbnail URL (optional, ove
       </div>
       {uploadErr && <p className="text-[10px] text-bad mt-1">{uploadErr}</p>}
       <p className="text-[10px] text-white/35 mt-1">
-        Recommended: <strong>300 × 400 px</strong> (portrait 3:4) · JPG/PNG/WEBP · max 5 MB · auto-resized on upload
+        Any size · HD up to 600×800 · JPG/PNG/WEBP · max 5 MB · auto-compressed under 900 KB · full image always visible
       </p>
       {value && (
         <div className="mt-2 flex items-start gap-3">
           {/* Tile preview — same aspect-ratio + object-cover as the actual site tile */}
-          <div className="relative shrink-0 rounded-xl overflow-hidden border border-line" style={{ width: 90, aspectRatio: "3/4" }}>
+          <div className="relative shrink-0 rounded-xl overflow-hidden border border-line" style={{ width: 110, aspectRatio: "3/4", background: "#0f1923" }}>
             <img
               src={value}
               alt="preview"
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-contain"
               onError={(e) => (e.currentTarget.style.display = "none")}
             />
           </div>

@@ -250,10 +250,10 @@ export class AdminController {
   async getSettings() {
     const settings = await this.admin.getPlatformSettings() as any;
     const defaultInhouseGames = [
-      { id: "roulette", name: "Roulette", description: "European Roulette",     href: "/roulette", thumbnail: "/game-thumbs/roulette.svg", emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
+      { id: "roulette", name: "Roulette", description: "European Roulette",     href: "/roulette", thumbnail: "/game-thumbs/roulette.webp", emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
       { id: "mines",    name: "Mines",    description: "Mines Game",             href: "/mines",    thumbnail: "/game-thumbs/mines.webp",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
-      { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko",   href: "/plinko",   thumbnail: "/game-thumbs/plinko.svg",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", sortOrder: 2 },
-      { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",     href: "/balloon",  thumbnail: "/game-thumbs/balloon.svg",  emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", sortOrder: 3 },
+      { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko",   href: "/plinko",   thumbnail: "/game-thumbs/plinko.webp",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", sortOrder: 2 },
+      { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",     href: "/balloon",  thumbnail: "/game-thumbs/balloon.webp",  emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", sortOrder: 3 },
     ];
     const storedGames: any[] = settings.inhouseGames ?? [];
     if (!storedGames.length) return { ...settings, inhouseGames: defaultInhouseGames };
@@ -312,19 +312,23 @@ export class AdminController {
     const uploadsDir = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
     const outName = randomBytes(10).toString("hex") + ".webp";
     const outPath = join(uploadsDir, outName);
-    // hero: 1920×480; promo: 600×200; thumbnail (game tile 3:4): 300×400; default: 1920×480
+    // Sizing rules per type:
+    //   thumbnail → HD 600×800 max, preserve full image (fit: inside, no crop, no padding)
+    //   hero      → 1920×480 cover
+    //   promo     → 600×200 cover
+    const isThumbnail = uploadType === "thumbnail";
     const dims = uploadType === "promo"
-      ? { width: 600,  height: 200 }
-      : uploadType === "thumbnail"
-      ? { width: 300,  height: 400 }
-      : { width: 1920, height: 480 };
+      ? { width: 600,  height: 200, fit: "cover" as const }
+      : isThumbnail
+      ? { width: 600,  height: 800, fit: "inside" as const }   // HD, full image, no crop
+      : { width: 1920, height: 480, fit: "cover" as const };
     try {
       const MAX_BYTES = 900 * 1024; // 900 KB hard cap
-      const resized = sharp(file.path).resize({ ...dims, fit: "cover", withoutEnlargement: false });
-      let quality = 90;
+      const resized = sharp(file.path).resize({ ...dims, withoutEnlargement: false });
+      let quality = isThumbnail ? 92 : 88;   // start higher for thumbnails (HD)
       let buf = await resized.webp({ quality }).toBuffer();
       while (buf.length > MAX_BYTES && quality > 60) {
-        quality -= 5;
+        quality -= 4;
         buf = await resized.webp({ quality }).toBuffer();
       }
       await writeFile(outPath, buf);
@@ -388,10 +392,10 @@ export class PublicPlatformController {
   async getPublicSettings() {
     const settings = await this.admin.getPlatformSettings();
     const defaultInhouseGames = [
-      { id: "roulette", name: "Roulette", description: "European Roulette",   href: "/roulette", thumbnail: "/game-thumbs/roulette.svg", emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
+      { id: "roulette", name: "Roulette", description: "European Roulette",   href: "/roulette", thumbnail: "/game-thumbs/roulette.webp", emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
       { id: "mines",    name: "Mines",    description: "Mines Game",           href: "/mines",    thumbnail: "/game-thumbs/mines.webp",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
-      { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko", href: "/plinko",   thumbnail: "/game-thumbs/plinko.svg",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", sortOrder: 2 },
-      { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",   href: "/balloon",  thumbnail: "/game-thumbs/balloon.svg",  emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", sortOrder: 3 },
+      { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko", href: "/plinko",   thumbnail: "/game-thumbs/plinko.webp",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", sortOrder: 2 },
+      { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",   href: "/balloon",  thumbnail: "/game-thumbs/balloon.webp",  emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", sortOrder: 3 },
     ];
     const defaultNavItems = [
       { href: "/exchange",   label: "EXCHANGE",    emoji: "🎰", enabled: true },
