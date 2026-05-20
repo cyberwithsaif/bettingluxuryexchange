@@ -141,7 +141,7 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
               thumbnail={g.thumbnail}
               fallbackBg={fallback(idx)}
               fallbackEmoji={g.emoji}
-              badge="OUR"
+              clean
               isLive={false}
             />
           ))}
@@ -180,14 +180,14 @@ interface GameCardBase {
   thumbnail: string | null;
   fallbackBg: string;
   fallbackEmoji?: string;
-  badge?: string;
+  clean?: boolean;  // no overlay, no text, no badge — for cards whose thumbnail already has info baked in
   isLive?: boolean;
 }
 type GameCardProps =
   | (GameCardBase & { as: "link"; href: string })
   | (GameCardBase & { as: "button"; href?: never });
 
-function GameCard({ name, publisher, thumbnail, fallbackBg, fallbackEmoji, badge, isLive, ...rest }: GameCardProps) {
+function GameCard({ name, publisher, thumbnail, fallbackBg, fallbackEmoji, clean, isLive, ...rest }: GameCardProps) {
   const inner = (
     <div className="relative w-full h-full">
       {/* Image / fallback */}
@@ -200,27 +200,22 @@ function GameCard({ name, publisher, thumbnail, fallbackBg, fallbackEmoji, badge
         )
       }
 
-      {/* Dark gradient at bottom */}
-      <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 45%, transparent 100%)" }} />
-
-      {/* Badges */}
-      {badge && (
-        <div className="absolute top-1.5 left-1.5">
-          <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: "#f5c518", color: "#000" }}>{badge}</span>
-        </div>
+      {/* Dark gradient + text — hidden for clean cards */}
+      {!clean && (
+        <>
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 45%, transparent 100%)" }} />
+          {isLive && (
+            <div className="absolute top-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded" style={{ background: "#dc2626" }}>
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse block" />
+              <span className="text-[8px] font-black uppercase text-white tracking-wide">LIVE</span>
+            </div>
+          )}
+          <div className="absolute bottom-0 inset-x-0 p-2 pb-2.5">
+            <p className="font-black text-white uppercase leading-tight line-clamp-2" style={{ fontSize: "clamp(10px, 2vw, 14px)" }}>{name}</p>
+            <p className="text-white/45 uppercase tracking-wider mt-0.5" style={{ fontSize: "clamp(8px, 1.4vw, 10px)" }}>{publisher}</p>
+          </div>
+        </>
       )}
-      {isLive && (
-        <div className="absolute top-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded" style={{ background: "#dc2626" }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse block" />
-          <span className="text-[8px] font-black uppercase text-white tracking-wide">LIVE</span>
-        </div>
-      )}
-
-      {/* Name + publisher */}
-      <div className="absolute bottom-0 inset-x-0 p-2 pb-2.5">
-        <p className="font-black text-white uppercase leading-tight line-clamp-2" style={{ fontSize: "clamp(10px, 2vw, 14px)" }}>{name}</p>
-        <p className="text-white/45 uppercase tracking-wider mt-0.5" style={{ fontSize: "clamp(8px, 1.4vw, 10px)" }}>{publisher}</p>
-      </div>
 
       {/* Hover ring */}
       <div className="absolute inset-0 rounded-xl ring-2 ring-white/0 hover:ring-white/20 transition-all duration-150 group-hover:ring-white/20" />
