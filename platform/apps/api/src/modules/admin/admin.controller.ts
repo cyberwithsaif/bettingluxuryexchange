@@ -319,10 +319,8 @@ export class AdminController {
       ? { width: 300,  height: 400 }
       : { width: 1920, height: 480 };
     try {
-      const fit = uploadType === "thumbnail" ? "contain" : "cover";
-      const bg  = uploadType === "thumbnail" ? { r: 10, g: 14, b: 26, alpha: 1 } : { r: 0, g: 0, b: 0, alpha: 1 };
       await sharp(file.path)
-        .resize({ ...dims, fit, background: bg, withoutEnlargement: false })
+        .resize({ ...dims, fit: "cover", withoutEnlargement: false })
         .webp({ quality: 88 })
         .toFile(outPath);
       await unlink(file.path);
