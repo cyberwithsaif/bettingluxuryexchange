@@ -44,7 +44,8 @@ interface HistoryRound {
   winningNumber: number; winningColor: string; settledAt: string;
 }
 interface LocalBet { betType: BetType; betValue?: string | null; amount: number; }
-interface WinEntry { id: string; winningNumber: number; winningColor: string; payout: number; ts: number; }
+interface WinEntry { id: string; winningNumber: number; winningColor: string; payout: number; username: string; ts: number; }
+
 
 function color(n: number) { return n === 0 ? "#0d9b3f" : RED.has(n) ? "#c8102e" : "#1a1a1a"; }
 function fmt(n: number) { return new Intl.NumberFormat("en-IN").format(n); }
@@ -66,6 +67,28 @@ export default function RoulettePage() {
   const audioCtxRef                   = useRef<AudioContext | null>(null);
   const spinAudioRef                  = useRef<HTMLAudioElement | null>(null);
   const lastBetsRef                   = useRef<LocalBet[]>([]);
+  const namePoolRef                   = useRef<string[]>([]);
+  const nameFetchingRef               = useRef(false);
+
+  const fetchNames = useCallback(async () => {
+    if (nameFetchingRef.current) return;
+    nameFetchingRef.current = true;
+    try {
+      const r = await fetch("https://randomuser.me/api/?results=100&inc=login&noinfo");
+      const j = await r.json();
+      const names: string[] = (j.results as any[]).map(u => u.login.username as string);
+      namePoolRef.current = [...namePoolRef.current, ...names];
+    } catch {}
+    nameFetchingRef.current = false;
+  }, []);
+
+  const nextName = useCallback((): string => {
+    if (namePoolRef.current.length < 15) fetchNames();
+    return namePoolRef.current.shift() ?? `Player${Math.floor(Math.random() * 9999)}`;
+  }, [fetchNames]);
+
+  // Pre-fetch names on mount
+  useEffect(() => { fetchNames(); }, [fetchNames]);
 
   const showError = useCallback((msg: string) => {
     if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
@@ -123,7 +146,7 @@ export default function RoulettePage() {
       const winners: WinEntry[] = Array.from(byUser.entries()).map(([uid, payout]) => ({
         id: `${data.winningNumber}-${uid}-${Date.now()}`,
         winningNumber: data.winningNumber, winningColor: data.winningColor,
-        payout, ts: Date.now(),
+        payout, username: nextName(), ts: Date.now(),
       }));
       if (winners.length > 0) setWinFeed(prev => [...winners, ...prev].slice(0, 30));
       if (user) {
@@ -145,7 +168,7 @@ export default function RoulettePage() {
       s.off("roulette:result", onResult);
       s.off("roulette:betPlaced", onBetPlaced);
     };
-  }, [user, mutateHistory, mutateWallet]);
+  }, [user, mutateHistory, mutateWallet, nextName]);
 
   useEffect(() => {
     if (!round) return;
@@ -456,19 +479,8 @@ export default function RoulettePage() {
                     className="shrink-0 flex items-center gap-2 rounded-xl px-3 py-1.5 border border-white/10"
                     style={{ background: "rgba(255,255,255,0.05)" }}
                   >
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold text-white shrink-0"
-                      style={{
-                        background: color(w.winningNumber),
-                        boxShadow: `0 0 12px ${color(w.winningNumber) === "#1a1a1a" ? "rgba(255,255,255,0.2)" : color(w.winningNumber)}88`,
-                        border: "2px solid rgba(255,255,255,0.2)",
-                      }}
-                    >
-                      {w.winningNumber}
-                    </div>
-                    <div className="text-sm font-extrabold text-yellow-300 tabular-nums">
-                      +{fmt(w.payout)}
-                    </div>
+                    <span className="text-[11px] font-semibold text-white/70 truncate max-w-[90px]">{w.username}</span>
+                    <span className="text-sm font-extrabold text-yellow-300 tabular-nums whitespace-nowrap">+{fmt(w.payout)}</span>
                   </div>
                 ))}
               </div>
