@@ -44,7 +44,7 @@ interface HistoryRound {
   winningNumber: number; winningColor: string; settledAt: string;
 }
 interface LocalBet { betType: BetType; betValue?: string | null; amount: number; }
-interface WinEntry { id: string; winningNumber: number; winningColor: string; payout: number; betType: string; ts: number; }
+interface WinEntry { id: string; winningNumber: number; winningColor: string; payout: number; ts: number; }
 
 function color(n: number) { return n === 0 ? "#0d9b3f" : RED.has(n) ? "#c8102e" : "#1a1a1a"; }
 function fmt(n: number) { return new Intl.NumberFormat("en-IN").format(n); }
@@ -56,7 +56,7 @@ export default function RoulettePage() {
   const [bets, setBets]               = useState<LocalBet[]>([]);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [muted, setMuted]             = useState(false);
-  const [resultPopup, setResultPopup] = useState<{ winningNumber: number; payout: number } | null>(null);
+  const [myWin, setMyWin]             = useState<{ winningNumber: number; payout: number } | null>(null);
   const [globalBetCount, setGlobalBetCount] = useState(0);
   const [bettingAlert, setBettingAlert] = useState<{ type: "open" | "closed"; key: number } | null>(null);
   const [errorToast, setErrorToast]   = useState<string | null>(null);
@@ -115,16 +115,22 @@ export default function RoulettePage() {
     const onResult = (data: any) => {
       setRound(r => r ? { ...r, status: "SETTLED", winningNumber: data.winningNumber, winningColor: data.winningColor, phaseEndsAt: data.phaseEndsAt } : null);
       mutateHistory(); mutateWallet();
-      // Collect all winners for the live feed
-      const winners: WinEntry[] = (data.bets as any[])
-        .filter(b => b.isWin && Number(b.payout) > 0)
-        .map(b => ({ id: `${data.winningNumber}-${b.userId}-${Date.now()}-${Math.random()}`, winningNumber: data.winningNumber, winningColor: data.winningColor, payout: Number(b.payout), betType: b.betType, ts: Date.now() }));
-      if (winners.length > 0) setWinFeed(prev => [...winners, ...prev].slice(0, 20));
+      // Aggregate wins by user — one card per winning user
+      const byUser = new Map<string, number>();
+      (data.bets as any[]).filter(b => b.isWin && Number(b.payout) > 0).forEach(b => {
+        byUser.set(b.userId, (byUser.get(b.userId) ?? 0) + Number(b.payout));
+      });
+      const winners: WinEntry[] = Array.from(byUser.entries()).map(([uid, payout]) => ({
+        id: `${data.winningNumber}-${uid}-${Date.now()}`,
+        winningNumber: data.winningNumber, winningColor: data.winningColor,
+        payout, ts: Date.now(),
+      }));
+      if (winners.length > 0) setWinFeed(prev => [...winners, ...prev].slice(0, 30));
       if (user) {
         const myBets = (data.bets as any[]).filter(b => b.userId === user.id);
         const totalPayout = myBets.reduce((sum, b) => sum + Number(b.payout), 0);
         const anyWin = myBets.some(b => b.isWin);
-        if (myBets.length > 0) { setResultPopup({ winningNumber: data.winningNumber, payout: totalPayout }); if (anyWin) playSound("win"); }
+        if (anyWin && totalPayout > 0) { setMyWin({ winningNumber: data.winningNumber, payout: totalPayout }); playSound("win"); setTimeout(() => setMyWin(null), 5000); }
       }
     };
     const onBetPlaced = () => setGlobalBetCount(c => c + 1);
@@ -207,7 +213,7 @@ export default function RoulettePage() {
 
   const totalStaked = bets.reduce((sum, b) => sum + b.amount, 0);
   const status = round?.status ?? "BETTING";
-  const lastWin = round?.status === "SETTLED" && resultPopup ? resultPopup.payout : 0;
+  const lastWin = myWin?.payout ?? 0;
 
   const { hotNumbers, coldNumbers } = useMemo(() => {
     const freq: Record<number, number> = {};
@@ -243,6 +249,7 @@ export default function RoulettePage() {
     .casino-chip span { position:relative;z-index:3;font-size:13px;font-weight:700;color:white;text-shadow:0 0 6px rgba(255,255,255,0.6); }
     @media(min-width:768px){ .casino-chip span{font-size:16px;} }
     @keyframes chipPulse { 0%{box-shadow:0 0 10px currentColor}50%{box-shadow:0 0 22px currentColor}100%{box-shadow:0 0 10px currentColor} }
+    @keyframes tickerScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
     .rl-ctrl { width:42px;height:42px;border:none;outline:none;border-radius:10px;background:#0f172a;color:white;font-size:16px;font-weight:700;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 1px rgba(255,255,255,.05),0 0 10px rgba(0,0,0,.4); }
     @media(min-width:768px){ .rl-ctrl{width:52px;height:52px;font-size:20px;} }
     .rl-ctrl:hover:not(:disabled){transform:translateY(-2px);background:#1e293b;}
@@ -398,34 +405,45 @@ export default function RoulettePage() {
           </div>
         </div>
 
-        {/* ── Live Wins Feed ── */}
-        <div className="border-t border-white/10 bg-black/40 px-3 py-2">
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[8px] uppercase tracking-[0.18em] text-white/40 font-semibold">Live Wins</span>
+        {/* ── Live Wins Ticker ── */}
+        <div className="border-t border-white/10 bg-black/50 py-2">
+          <div className="flex items-center gap-2 px-3 mb-1.5">
+            <span className="text-[8px] uppercase tracking-[0.18em] text-white/35 font-semibold">Live Wins</span>
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           </div>
           {winFeed.length === 0 ? (
-            <p className="text-[10px] text-white/25 italic">Waiting for results…</p>
+            <p className="px-3 text-[10px] text-white/20 italic">Waiting for results…</p>
           ) : (
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5" style={{ touchAction: "pan-x" }}>
-              {winFeed.map(w => (
-                <div
-                  key={w.id}
-                  className="shrink-0 flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 border border-white/10"
-                  style={{ background: "rgba(255,255,255,0.04)", minWidth: 110 }}
-                >
+            <div className="overflow-hidden">
+              <div
+                className="flex gap-2 px-2"
+                style={{
+                  width: "max-content",
+                  animation: `tickerScroll ${Math.max(winFeed.length * 4, 16)}s linear infinite`,
+                }}
+              >
+                {[...winFeed, ...winFeed].map((w, i) => (
                   <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold text-white shrink-0 shadow-md"
-                    style={{ background: color(w.winningNumber), boxShadow: `0 0 10px ${color(w.winningNumber)}99` }}
+                    key={`${w.id}-${i}`}
+                    className="shrink-0 flex items-center gap-2 rounded-xl px-3 py-1.5 border border-white/10"
+                    style={{ background: "rgba(255,255,255,0.05)" }}
                   >
-                    {w.winningNumber}
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold text-white shrink-0"
+                      style={{
+                        background: color(w.winningNumber),
+                        boxShadow: `0 0 12px ${color(w.winningNumber) === "#1a1a1a" ? "rgba(255,255,255,0.2)" : color(w.winningNumber)}88`,
+                        border: "2px solid rgba(255,255,255,0.2)",
+                      }}
+                    >
+                      {w.winningNumber}
+                    </div>
+                    <div className="text-sm font-extrabold text-yellow-300 tabular-nums">
+                      +{fmt(w.payout)}
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-[9px] text-white/40 capitalize truncate">{w.betType.replace(/_/g, " ").toLowerCase()}</div>
-                    <div className="text-xs font-bold text-yellow-300 leading-none">+{fmt(w.payout)}</div>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -487,28 +505,28 @@ export default function RoulettePage() {
         )}
       </AnimatePresence>
 
-      {/* ── Result popup ── */}
+      {/* ── My win banner (non-blocking toast at bottom of screen) ── */}
       <AnimatePresence>
-        {resultPopup && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setResultPopup(null)}>
-            <motion.div initial={{ scale:.7,y:30 }} animate={{ scale:1,y:0 }} exit={{ scale:.7,y:30 }}
-              className={`rounded-2xl p-8 max-w-sm w-full text-center border-4 ${resultPopup.payout > 0 ? "bg-gradient-to-br from-yellow-600 to-amber-700 border-yellow-200" : "bg-gradient-to-br from-neutral-800 to-neutral-900 border-neutral-700"}`}>
-              <div className="text-7xl mb-2">{resultPopup.payout > 0 ? "🎉" : "🎲"}</div>
-              <h2 className="text-3xl font-bold text-white mb-2">{resultPopup.payout > 0 ? "You Won!" : "Better luck next time"}</h2>
-              <div className="text-white/80 text-sm mb-4">
-                Winning number: <span className="font-bold text-2xl" style={{ color: color(resultPopup.winningNumber) === "#1a1a1a" ? "#999" : color(resultPopup.winningNumber) }}>{resultPopup.winningNumber}</span>
+        {myWin && myWin.payout > 0 && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="fixed bottom-16 left-1/2 z-50 pointer-events-none"
+            style={{ transform: "translateX(-50%)" }}
+          >
+            <div className="flex items-center gap-3 px-5 py-3 rounded-2xl border-2 border-yellow-400/60 shadow-[0_0_30px_rgba(234,179,8,0.4)] backdrop-blur-md"
+              style={{ background: "linear-gradient(135deg, rgba(120,53,15,0.95), rgba(92,44,13,0.95))" }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-extrabold text-white border-2 border-white/30 shrink-0"
+                style={{ background: color(myWin.winningNumber), boxShadow: `0 0 14px ${color(myWin.winningNumber)}99` }}>
+                {myWin.winningNumber}
               </div>
-              {resultPopup.payout > 0 && (
-                <div className="bg-black/30 rounded-lg p-3 mb-4">
-                  <div className="text-xs uppercase tracking-wider text-white/60">Payout</div>
-                  <div className="text-4xl font-bold text-yellow-200 flex items-center justify-center gap-2">
-                    <Trophy size={28} /> {fmt(resultPopup.payout)}
-                  </div>
+              <div>
+                <div className="text-[9px] uppercase tracking-widest text-yellow-300/70 font-semibold">You Won!</div>
+                <div className="text-xl font-extrabold text-yellow-200 flex items-center gap-1.5 leading-none">
+                  <Trophy size={16} className="text-yellow-400" /> {fmt(myWin.payout)}
                 </div>
-              )}
-              <button onClick={() => setResultPopup(null)} className="w-full bg-black/40 hover:bg-black/60 text-white font-semibold py-2 rounded-lg transition">Continue</button>
-            </motion.div>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
