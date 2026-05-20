@@ -13,9 +13,8 @@ interface CryptoMethod { enabled: boolean; address: string; network: string; coi
 interface DepositMethods { upi?: UpiMethod; bank?: BankMethod; crypto?: CryptoMethod; }
 
 // fetcher without auth for public endpoint
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:4000";
 async function publicFetch(url: string) {
-  const r = await fetch(`${API_BASE}/api${url}`);
+  const r = await fetch(`/api${url}`);
   return r.json();
 }
 
