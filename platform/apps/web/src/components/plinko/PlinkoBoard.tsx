@@ -66,7 +66,7 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone, o
     const padX = 10, padTop = 28, padBot = 60;
     const slotW = (W - padX * 2) / (rows + 1);
     const rowH  = (H - padTop - padBot) / (rows + 1);
-    const ballR = Math.max(4, Math.min(9, W * 0.022));
+    const ballR = Math.max(3, Math.min(8, W * 0.014));
     return { W, H, padX, padTop, padBot, slotW, rowH, centerX: W / 2, ballR };
   }, [rows]);
 
