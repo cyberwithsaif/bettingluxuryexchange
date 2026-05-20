@@ -32,7 +32,7 @@ export function MatchList({ sport }: { sport: string }) {
 
   if (isLoading) return <SkeletonRows />;
   if (error) return <p className="glass rounded-xl p-6 text-bad">Failed to load matches.</p>;
-  if (!data?.length) return <EmptyState sport={sport} />;
+  if (!data?.length) return <EmptyState />;
 
   return (
     <div className="space-y-3">
@@ -73,13 +73,6 @@ function SkeletonRows() {
   );
 }
 
-function EmptyState({ sport }: { sport: string }) {
-  return (
-    <div className="glass rounded-xl p-8 text-center">
-      <h3 className="font-display text-2xl">No live {sport} matches yet</h3>
-      <p className="text-white/60 text-sm mt-2">
-        Run the cricket ingest from the admin panel, or wait for the operator to add markets.
-      </p>
-    </div>
-  );
+function EmptyState() {
+  return null;
 }
