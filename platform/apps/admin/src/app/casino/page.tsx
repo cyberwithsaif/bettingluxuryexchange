@@ -491,12 +491,12 @@ function ThumbnailField({ value, onChange, label = "Thumbnail URL (optional, ove
       </div>
       {uploadErr && <p className="text-[10px] text-bad mt-1">{uploadErr}</p>}
       <p className="text-[10px] text-white/35 mt-1">
-        Recommended: <strong>400 × 500 px</strong> (portrait 4:5) · JPG/PNG/WEBP · max 5 MB · auto-resized on upload
+        Recommended: <strong>300 × 400 px</strong> (portrait 3:4) · JPG/PNG/WEBP · max 5 MB · auto-resized on upload
       </p>
       {value && (
         <div className="mt-2 flex items-start gap-3">
           {/* Tile preview — same aspect-ratio + object-cover as the actual site tile */}
-          <div className="relative shrink-0 rounded-xl overflow-hidden border border-line" style={{ width: 90, aspectRatio: "4/5" }}>
+          <div className="relative shrink-0 rounded-xl overflow-hidden border border-line" style={{ width: 90, aspectRatio: "3/4" }}>
             <img
               src={value}
               alt="preview"
