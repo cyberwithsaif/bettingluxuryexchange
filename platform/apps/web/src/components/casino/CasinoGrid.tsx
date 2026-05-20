@@ -62,6 +62,8 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
   const showInHouse = category === "LIVE" || category === "VR" || !category;
 
   return (
+    <div className="min-h-screen" style={{ backgroundImage: "url('/casino-bg.jpg')", backgroundSize: "cover", backgroundPosition: "center top", backgroundAttachment: "fixed" }}>
+    <div className="min-h-screen" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(5,0,10,0.82) 40%, rgba(5,0,10,0.95) 100%)" }}>
     <div className="mx-auto max-w-[1600px] px-3 md:px-6 py-4 md:py-6">
 
       {/* Page header */}
@@ -182,6 +184,8 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
           <p className="text-sm mt-1">Check back soon or contact support.</p>
         </div>
       )}
+    </div>
+    </div>
     </div>
   );
 }
