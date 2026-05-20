@@ -42,15 +42,66 @@ function totalForCell(bets: Bet[], betType: BetType, betValue?: string | null) {
     .reduce((sum, b) => sum + b.amount, 0);
 }
 
+const CHIP_COLORS = [
+  { max: 50,   bg: "radial-gradient(circle at 35% 35%, #fef08a, #eab308 55%, #713f12)", glow: "rgba(234,179,8,0.8)",  text: "#422006" },
+  { max: 100,  bg: "radial-gradient(circle at 35% 35%, #bfdbfe, #3b82f6 55%, #1e3a8a)", glow: "rgba(59,130,246,0.8)", text: "#fff" },
+  { max: 500,  bg: "radial-gradient(circle at 35% 35%, #bbf7d0, #22c55e 55%, #14532d)", glow: "rgba(34,197,94,0.8)",  text: "#fff" },
+  { max: 1000, bg: "radial-gradient(circle at 35% 35%, #e9d5ff, #a855f7 55%, #4a044e)", glow: "rgba(168,85,247,0.8)", text: "#fff" },
+  { max: Infinity, bg: "radial-gradient(circle at 35% 35%, #fecaca, #ef4444 55%, #7f1d1d)", glow: "rgba(239,68,68,0.8)", text: "#fff" },
+];
+
+function chipStyle(amount: number) {
+  return CHIP_COLORS.find(c => amount <= c.max) ?? CHIP_COLORS[CHIP_COLORS.length - 1]!;
+}
+
+function fmt(n: number) {
+  if (n >= 1000) return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k`;
+  return String(n);
+}
+
 function Chip({ amount, small }: { amount: number; small?: boolean }) {
   if (!amount) return null;
+  const s = chipStyle(amount);
+  const size = small ? 18 : 22;
   return (
     <motion.div
       initial={{ scale: 0, x: "-50%", y: "-50%" }}
       animate={{ scale: 1, x: "-50%", y: "-50%" }}
-      className={`absolute top-1/2 left-1/2 ${small ? "min-w-[14px] h-[14px] text-[7px]" : "min-w-[18px] h-[18px] text-[8px]"} px-0.5 rounded-full bg-gradient-to-br from-yellow-300 via-yellow-500 to-yellow-700 border border-yellow-100 shadow-[0_2px_6px_rgba(0,0,0,0.6)] flex items-center justify-center font-black text-yellow-950 z-20 pointer-events-none`}
+      className="absolute top-1/2 left-1/2 z-20 pointer-events-none flex items-center justify-center font-black"
+      style={{
+        width: size, height: size, borderRadius: "50%",
+        background: s.bg,
+        boxShadow: `0 0 8px ${s.glow}, 0 2px 4px rgba(0,0,0,0.6)`,
+        border: "1.5px solid rgba(255,255,255,0.35)",
+        fontSize: size <= 18 ? 7 : 8,
+        color: s.text,
+        transform: "translate(-50%, -50%)",
+      }}
     >
-      {amount >= 1000 ? `${(amount / 1000).toFixed(amount % 1000 === 0 ? 0 : 1)}k` : amount}
+      {fmt(amount)}
+    </motion.div>
+  );
+}
+
+// Chip shown ON the split zone divider line
+function SplitChip({ amount }: { amount: number }) {
+  if (!amount) return null;
+  const s = chipStyle(amount);
+  return (
+    <motion.div
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      className="flex items-center justify-center font-black pointer-events-none z-30"
+      style={{
+        width: 20, height: 20, borderRadius: "50%",
+        background: s.bg,
+        boxShadow: `0 0 10px ${s.glow}, 0 2px 6px rgba(0,0,0,0.7)`,
+        border: "2px solid rgba(255,255,255,0.4)",
+        fontSize: 7, color: s.text,
+        flexShrink: 0,
+      }}
+    >
+      {fmt(amount)}
     </motion.div>
   );
 }
@@ -112,16 +163,9 @@ export function BettingTable({ chip, bets, disabled, onPlaceBet }: Props) {
   // Cell class — no gap; borders are the separators
   const cell = "relative h-7 md:h-9 w-full flex items-center justify-center text-white font-bold text-[10px] md:text-xs cursor-pointer select-none transition-all hover:brightness-125 active:brightness-150";
 
-  // Split dot indicator
-  const SplitDot = ({ amount }: { amount: number }) => (
-    <div style={{
-      width: amount > 0 ? 8 : 4, height: amount > 0 ? 8 : 4,
-      borderRadius: "50%",
-      background: amount > 0 ? "#fde047" : "rgba(255,255,255,0.25)",
-      boxShadow: amount > 0 ? "0 0 5px rgba(253,224,71,0.9)" : "none",
-      transition: "all 0.12s",
-      flexShrink: 0,
-    }} />
+  // Tiny intersection dot shown when no bet placed on a split zone
+  const SplitDotEmpty = () => (
+    <div style={{ width: 5, height: 5, borderRadius: "50%", background: "rgba(255,255,255,0.18)", flexShrink: 0, transition: "all 0.12s" }} />
   );
 
   return (
@@ -211,17 +255,29 @@ export function BettingTable({ chip, bets, disabled, onPlaceBet }: Props) {
                           {straightAmt > 0 && <Chip amount={straightAmt} small />}
                         </button>
 
-                        {/* Right-border split zone (always clickable) */}
+                        {/* Right-border split zone — wide tap area with visible divider */}
                         {rightN != null && (
                           <div
                             onClick={(e) => rSplitVal && placeSplit(n, rightN, e)}
                             className="absolute top-0 bottom-0 flex items-center justify-center cursor-pointer z-30 group"
-                            style={{ right: -7, width: 14, pointerEvents: disabled ? "none" : "auto" }}
+                            style={{ right: -13, width: 26, pointerEvents: disabled ? "none" : "auto" }}
                             title={`Split ${n}|${rightN}`}
                           >
-                            <div className="group-hover:scale-[2] transition-transform">
-                              <SplitDot amount={rSplitAmt} />
-                            </div>
+                            {/* Visible divider line */}
+                            <div
+                              className="absolute inset-y-0.5 transition-all duration-100 group-hover:opacity-100"
+                              style={{
+                                left: "50%", transform: "translateX(-50%)",
+                                width: rSplitAmt > 0 ? 2 : 1,
+                                background: rSplitAmt > 0 ? "rgba(253,224,71,0.7)" : "rgba(255,255,255,0.22)",
+                                boxShadow: rSplitAmt > 0 ? "0 0 6px rgba(253,224,71,0.6)" : "none",
+                              }}
+                            />
+                            {rSplitAmt > 0 ? <SplitChip amount={rSplitAmt} /> : (
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <SplitDotEmpty />
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -241,28 +297,40 @@ export function BettingTable({ chip, bets, disabled, onPlaceBet }: Props) {
 
                 {/* ── Horizontal split band between rows ── */}
                 {rowIdx < 2 && (
-                  <div className="flex" style={{ gap: 0, height: 9 }}>
+                  <div className="flex" style={{ gap: 0, height: 14 }}>
                     {row.map((n, colIdx) => {
-                      const nBelow    = TABLE_ROWS[rowIdx + 1]![colIdx]!;
-                      const splitVal  = [Math.min(n, nBelow), Math.max(n, nBelow)].join("/");
-                      const splitAmt  = totalForCell(bets, "split", splitVal);
+                      const nBelow   = TABLE_ROWS[rowIdx + 1]![colIdx]!;
+                      const splitVal = [Math.min(n, nBelow), Math.max(n, nBelow)].join("/");
+                      const splitAmt = totalForCell(bets, "split", splitVal);
                       return (
                         <div
                           key={`hs-${n}`}
                           onClick={() => { if (!disabled) place("split", splitVal); }}
-                          className="flex-1 flex items-center justify-center cursor-pointer group"
+                          className="flex-1 relative flex items-center justify-center cursor-pointer group"
                           style={{
-                            background: splitAmt > 0 ? "rgba(253,224,71,0.1)" : "rgba(255,255,255,0.04)",
+                            background: splitAmt > 0 ? "rgba(253,224,71,0.08)" : "transparent",
                             borderRight: "1px solid rgba(255,255,255,0.06)",
                             transition: "background 0.1s",
                           }}
-                          onMouseEnter={e => (e.currentTarget.style.background = "rgba(253,224,71,0.25)")}
-                          onMouseLeave={e => (e.currentTarget.style.background = splitAmt > 0 ? "rgba(253,224,71,0.1)" : "rgba(255,255,255,0.04)")}
+                          onMouseEnter={e => (e.currentTarget.style.background = "rgba(253,224,71,0.2)")}
+                          onMouseLeave={e => (e.currentTarget.style.background = splitAmt > 0 ? "rgba(253,224,71,0.08)" : "transparent")}
                           title={`Split ${nBelow}|${n}`}
                         >
-                          <div className="group-hover:scale-[2] transition-transform">
-                            <SplitDot amount={splitAmt} />
-                          </div>
+                          {/* Horizontal divider line */}
+                          <div
+                            className="absolute left-1 right-1 pointer-events-none transition-all"
+                            style={{
+                              top: "50%", transform: "translateY(-50%)",
+                              height: splitAmt > 0 ? 2 : 1,
+                              background: splitAmt > 0 ? "rgba(253,224,71,0.6)" : "rgba(255,255,255,0.18)",
+                              boxShadow: splitAmt > 0 ? "0 0 5px rgba(253,224,71,0.55)" : "none",
+                            }}
+                          />
+                          {splitAmt > 0 ? <SplitChip amount={splitAmt} /> : (
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                              <SplitDotEmpty />
+                            </div>
+                          )}
                         </div>
                       );
                     })}
