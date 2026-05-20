@@ -15,101 +15,114 @@ interface BannerSlide {
 export function HeroBanner() {
   const { data: settings } = useSWR<{ heroBanners?: BannerSlide[] }>(
     "/api/platform/settings",
-    (url: string) => fetch(url).then((r) => r.ok ? r.json() : {}),
+    (url: string) => fetch(url).then(r => r.ok ? r.json() : {}),
     { refreshInterval: 300_000 },
   );
 
   const slides: BannerSlide[] = (settings?.heroBanners ?? [])
     .slice()
     .sort((a, b) => a.sortOrder - b.sortOrder)
-    .filter((s) => s.imageUrl);
+    .filter(s => s.imageUrl);
 
-  const [idx, setIdx] = useState(0);
+  const [idx, setIdx]           = useState(0);
+  const [animDir, setAnimDir]   = useState<"left" | "right">("left");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const next = useCallback(() => setIdx((i) => (i + 1) % Math.max(slides.length, 1)), [slides.length]);
-  const prev = useCallback(() => setIdx((i) => (i - 1 + Math.max(slides.length, 1)) % Math.max(slides.length, 1)), [slides.length]);
-
-  useEffect(() => {
-    if (slides.length <= 1) return;
-    timerRef.current = setInterval(next, 5000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [next, slides.length]);
+  const go = useCallback((dir: "prev" | "next") => {
+    setAnimDir(dir === "next" ? "left" : "right");
+    setIdx(i => dir === "next"
+      ? (i + 1) % Math.max(slides.length, 1)
+      : (i - 1 + Math.max(slides.length, 1)) % Math.max(slides.length, 1),
+    );
+  }, [slides.length]);
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    if (slides.length > 1) timerRef.current = setInterval(next, 5000);
-  }, [next, slides.length]);
+    if (slides.length > 1) timerRef.current = setInterval(() => go("next"), 5000);
+  }, [go, slides.length]);
+
+  useEffect(() => {
+    resetTimer();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [resetTimer]);
 
   if (!slides.length) return null;
 
   const slide = slides[idx % slides.length]!;
 
-  const inner = (
-    <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "16/4", maxHeight: 280 }}>
-      {/* Slides */}
-      {slides.map((s, i) => (
-        <div
-          key={s.id}
-          className="absolute inset-0 transition-opacity duration-700"
-          style={{ opacity: i === idx ? 1 : 0, pointerEvents: i === idx ? "auto" : "none" }}
+  return (
+    <div className="w-full mb-3">
+      {/* Outer wrapper: side arrows + banner inline */}
+      <div className="flex items-stretch gap-0">
+
+        {/* Left arrow */}
+        <button
+          onClick={() => { go("prev"); resetTimer(); }}
+          aria-label="Previous banner"
+          className="shrink-0 z-10 flex items-center justify-center w-9 md:w-12 bg-black/60 hover:bg-brandRed/80 transition-colors duration-200 rounded-l-xl border border-white/10 border-r-0"
         >
-          <img
-            src={s.imageUrl}
-            alt={s.title ?? ""}
-            className="w-full h-full object-cover object-center"
-            draggable={false}
-            loading={i === 0 ? "eager" : "lazy"}
-            decoding="async"
-          />
-          {s.title && (
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-              <span className="text-white font-bold text-lg drop-shadow">{s.title}</span>
+          <ChevronLeft size={28} className="text-white" />
+        </button>
+
+        {/* Banner viewport */}
+        <div className="relative flex-1 overflow-hidden rounded-none" style={{ aspectRatio: "16/5", maxHeight: 300 }}>
+          {slides.map((s, i) => (
+            <div
+              key={s.id}
+              className="absolute inset-0 transition-opacity duration-500"
+              style={{ opacity: i === idx ? 1 : 0, pointerEvents: i === idx ? "auto" : "none" }}
+            >
+              {s.link ? (
+                <Link href={s.link} className="block w-full h-full">
+                  <img
+                    src={s.imageUrl}
+                    alt={s.title ?? ""}
+                    className="w-full h-full object-cover object-center"
+                    draggable={false}
+                    loading={i === 0 ? "eager" : "lazy"}
+                  />
+                </Link>
+              ) : (
+                <img
+                  src={s.imageUrl}
+                  alt={s.title ?? ""}
+                  className="w-full h-full object-cover object-center"
+                  draggable={false}
+                  loading={i === 0 ? "eager" : "lazy"}
+                />
+              )}
+              {s.title && (
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-5 py-4">
+                  <span className="text-white font-bold text-lg drop-shadow">{s.title}</span>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Dot indicators */}
+          {slides.length > 1 && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+              {slides.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => { setAnimDir(i > idx ? "left" : "right"); setIdx(i); resetTimer(); }}
+                  aria-label={`Slide ${i + 1}`}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${i === idx ? "w-6 bg-white" : "w-1.5 bg-white/40 hover:bg-white/70"}`}
+                />
+              ))}
             </div>
           )}
         </div>
-      ))}
 
-      {/* Nav arrows */}
-      {slides.length > 1 && (
-        <>
-          <button
-            onClick={(e) => { e.preventDefault(); prev(); resetTimer(); }}
-            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-black/50 hover:bg-black/80 flex items-center justify-center text-white transition"
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <button
-            onClick={(e) => { e.preventDefault(); next(); resetTimer(); }}
-            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-black/50 hover:bg-black/80 flex items-center justify-center text-white transition"
-          >
-            <ChevronRight size={18} />
-          </button>
-        </>
-      )}
-
-      {/* Dot indicators */}
-      {slides.length > 1 && (
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={(e) => { e.preventDefault(); setIdx(i); resetTimer(); }}
-              className={`h-1.5 rounded-full transition-all ${i === idx ? "w-5 bg-white" : "w-1.5 bg-white/40"}`}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  return (
-    <div className="w-full mb-4">
-      {slide.link ? (
-        <Link href={slide.link}>
-          {inner}
-        </Link>
-      ) : inner}
+        {/* Right arrow */}
+        <button
+          onClick={() => { go("next"); resetTimer(); }}
+          aria-label="Next banner"
+          className="shrink-0 z-10 flex items-center justify-center w-9 md:w-12 bg-black/60 hover:bg-brandRed/80 transition-colors duration-200 rounded-r-xl border border-white/10 border-l-0"
+        >
+          <ChevronRight size={28} className="text-white" />
+        </button>
+      </div>
     </div>
   );
 }

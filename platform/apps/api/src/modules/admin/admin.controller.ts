@@ -63,6 +63,8 @@ class PlatformSettingsDto {
   @IsOptional() inhouseGames?: any[];
   // Hero banner slides list
   @IsOptional() heroBanners?: any[];
+  // Small promo banner strip
+  @IsOptional() promoBanners?: any[];
   // Deposit methods blob (arbitrary JSON)
   @IsOptional() depositMethods?: any;
   // Mines game config
@@ -294,18 +296,25 @@ export class AdminController {
       cb(null, /image\/(jpeg|png|webp|gif)/.test(file.mimetype));
     },
   }))
-  async uploadFile(@UploadedFile() file: { filename: string; path: string; mimetype: string }, @Req() _req: Request) {
+  async uploadFile(
+    @UploadedFile() file: { filename: string; path: string; mimetype: string },
+    @Query("type") uploadType: string,
+    @Req() _req: Request,
+  ) {
     const uploadsDir = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
     const outName = randomBytes(10).toString("hex") + ".webp";
     const outPath = join(uploadsDir, outName);
+    // hero: 1920×480 high-res; promo: 600×200 strip thumbnail; default: 1920×480
+    const dims = uploadType === "promo"
+      ? { width: 600, height: 200 }
+      : { width: 1920, height: 480 };
     try {
       await sharp(file.path)
-        .resize({ width: 900, height: 400, fit: "inside", withoutEnlargement: true })
-        .webp({ quality: 82 })
+        .resize({ ...dims, fit: "cover", withoutEnlargement: false })
+        .webp({ quality: 88 })
         .toFile(outPath);
       await unlink(file.path);
     } catch {
-      // If sharp fails (e.g. animated gif), keep the original
       await rename(file.path, join(uploadsDir, outName.replace(".webp", extname(file.path))));
       return { url: `/api/uploads/${outName.replace(".webp", extname(file.path))}` };
     }
