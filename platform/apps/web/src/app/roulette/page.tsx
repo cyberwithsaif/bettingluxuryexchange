@@ -308,23 +308,21 @@ export default function RoulettePage() {
       </header>
 
       {/* Main Game Container */}
-      <div className="flex-1 flex items-start md:items-center justify-center p-2 md:p-4 w-full max-w-7xl mx-auto">
-        <div className="w-full rounded-xl border border-yellow-700/30 bg-[#0a0a0c] flex flex-col">
+      <div className="flex-1 flex items-start md:items-center justify-center p-0 md:p-4 w-full max-w-7xl mx-auto">
+        <div className="w-full rounded-none md:rounded-xl border-0 md:border border-yellow-700/30 bg-[#0a0a0c] flex flex-col">
 
-        {/* ===== MAIN CASINO STAGE — wheel left, betting controls right ===== */}
+        {/* ===== MAIN CASINO STAGE ===== */}
         <div
-          className="relative px-2 md:px-4 pt-3 pb-4"
+          className="relative px-2 md:px-4 pt-2 md:pt-3 pb-3 md:pb-4"
           style={{
-            background:
-              "radial-gradient(ellipse at top, #1a1a20 0%, #0a0a0c 70%)",
-            backgroundImage:
-              "repeating-linear-gradient(60deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 28px), repeating-linear-gradient(-60deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 28px), radial-gradient(ellipse at top, #1a1a20 0%, #0a0a0c 70%)",
+            background: "radial-gradient(ellipse at top, #1a1a20 0%, #0a0a0c 70%)",
+            backgroundImage: "repeating-linear-gradient(60deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 28px), repeating-linear-gradient(-60deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 28px), radial-gradient(ellipse at top, #1a1a20 0%, #0a0a0c 70%)",
           }}
         >
           {/* Top status bar */}
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-2 md:mb-3">
             <div className="flex items-center gap-2">
-              <div className={`px-2 py-1 rounded text-[10px] uppercase tracking-widest font-bold border ${
+              <div className={`px-2 py-0.5 md:py-1 rounded text-[10px] uppercase tracking-widest font-bold border ${
                 status === "BETTING" ? "bg-emerald-900/60 border-emerald-500/50 text-emerald-300" :
                 status === "SPINNING" ? "bg-red-900/60 border-red-500/50 text-red-300 animate-pulse" :
                 "bg-yellow-900/60 border-yellow-500/50 text-yellow-300"
@@ -334,15 +332,13 @@ export default function RoulettePage() {
               <span className="text-white/40 text-[10px]">Round #{round?.roundNumber ?? "—"}</span>
             </div>
 
-            {/* Hot/Cold compact strip — visible on desktop */}
+            {/* Hot/Cold — desktop only */}
             <div className="hidden lg:flex items-center gap-3 bg-black/40 border border-white/10 rounded px-3 py-1">
               <div className="flex items-center gap-1.5">
                 <span className="text-[9px] uppercase tracking-widest text-orange-400">Hot</span>
                 {hotNumbers.slice(0, 4).map(({ n }) => (
                   <div key={`hot-${n}`} className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                    style={{ background: color(n), border: "1.5px solid #fca5a5" }}>
-                    {n}
-                  </div>
+                    style={{ background: color(n), border: "1.5px solid #fca5a5" }}>{n}</div>
                 ))}
               </div>
               <div className="w-px h-5 bg-white/15" />
@@ -350,16 +346,14 @@ export default function RoulettePage() {
                 <span className="text-[9px] uppercase tracking-widest text-blue-400">Cold</span>
                 {coldNumbers.slice(0, 4).map(({ n }) => (
                   <div key={`cold-${n}`} className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                    style={{ background: color(n), border: "1.5px solid rgba(255,255,255,0.4)" }}>
-                    {n}
-                  </div>
+                    style={{ background: color(n), border: "1.5px solid rgba(255,255,255,0.4)" }}>{n}</div>
                 ))}
               </div>
             </div>
 
             <div className="bg-black/60 rounded px-2 py-1 text-[10px] text-white/80 border border-white/10 flex items-center gap-1">
               <Clock size={10} />
-              <span className="font-bold tabular-nums text-base" style={{
+              <span className="font-bold tabular-nums text-sm md:text-base" style={{
                 color: status === "BETTING" ? (secondsLeft <= 5 ? "#ef4444" : "#facc15") : "#fff",
               }}>
                 {secondsLeft}s
@@ -367,12 +361,12 @@ export default function RoulettePage() {
             </div>
           </div>
 
-          {/* Two-column layout: wheel left, controls right (stacks on mobile) */}
-          <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[380px_1fr] gap-4">
-            {/* LEFT: Wheel — bigger on all screens */}
+          {/* Two-column: wheel left, controls right. Stacks on mobile */}
+          <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[380px_1fr] gap-2 md:gap-4">
+            {/* Wheel — large on mobile, constrained on desktop */}
             <div className="flex flex-col items-center gap-2 mx-auto md:mx-0">
-              <div className="w-[260px] h-[260px] md:w-[300px] md:h-[300px] lg:w-[380px] lg:h-[380px] overflow-visible">
-                <div className="scale-[0.55] md:scale-[0.65] lg:scale-[0.82]" style={{ transformOrigin: "center center" }}>
+              <div className="w-[330px] h-[330px] md:w-[300px] md:h-[300px] lg:w-[380px] lg:h-[380px] overflow-visible shrink-0">
+                <div className="scale-[0.75] md:scale-[0.65] lg:scale-[0.82]" style={{ transformOrigin: "center center" }}>
                   <RouletteWheel
                     winningNumber={round?.winningNumber ?? null}
                     spinning={status === "SPINNING"}
@@ -380,15 +374,13 @@ export default function RoulettePage() {
                   />
                 </div>
               </div>
-
             </div>
 
-            {/* RIGHT: Betting table, chips, buttons */}
+            {/* Betting table, chips, buttons */}
             <div className="space-y-2">
 
-
-              {/* Betting table */}
-              <div className="relative mt-5">
+              {/* Betting table — scrollable on mobile */}
+              <div className="relative mt-2 md:mt-5 overflow-x-auto">
                 <BettingTable
                   chip={chip}
                   bets={bets}
@@ -498,7 +490,7 @@ export default function RoulettePage() {
 
               <div className="bg-black/30 rounded-lg p-2 border border-white/10">
                 <div className="text-[9px] uppercase tracking-wider text-white/60 mb-2">Chip Value</div>
-                <div className="flex items-center gap-1.5 justify-center flex-wrap">
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar justify-start md:justify-center">
                   {CHIPS.map(c => {
                     const active = chip === c;
                     const chipGradients: Record<number, string> = {
@@ -617,13 +609,13 @@ export default function RoulettePage() {
         </div>
 
         {/* ===== BOTTOM STATUS BAR ===== */}
-        <div className="relative bg-gradient-to-b from-[#1a1a1c] to-[#0a0a0c] px-4 py-3 border-t border-white/10 flex items-center justify-between gap-4">
-          <button onClick={() => setMuted(m => !m)} className="flex items-center gap-2">
+        <div className="relative bg-gradient-to-b from-[#1a1a1c] to-[#0a0a0c] px-2 md:px-4 py-2 md:py-3 border-t border-white/10 flex items-center justify-between gap-2 md:gap-4">
+          <button onClick={() => setMuted(m => !m)} className="flex items-center gap-1 md:gap-2 shrink-0">
             {muted ? <VolumeX size={12} /> : <Volume2 size={12} />}
-            <span className="text-[9px] text-white/60">{muted ? "Muted" : "Sound"}</span>
+            <span className="text-[9px] text-white/60 hidden sm:inline">{muted ? "Muted" : "Sound"}</span>
           </button>
 
-          <div className="flex items-center gap-6 text-[10px] uppercase tracking-widest">
+          <div className="flex items-center gap-2 md:gap-6 text-[10px] uppercase tracking-widest">
             <div>
               <span className="text-white/40">Cash: </span>
               <span className="text-yellow-400 font-bold">{user ? fmt(Math.floor(wallet?.available ?? 0)) : "—"}</span>
@@ -638,7 +630,7 @@ export default function RoulettePage() {
             </div>
           </div>
 
-          <div className="text-[9px] text-white/50">
+          <div className="text-[9px] text-white/50 shrink-0 hidden sm:block">
             {globalBetCount} bets placed
           </div>
         </div>
