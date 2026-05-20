@@ -310,32 +310,42 @@ export class AdminController {
     @Req() _req: Request,
   ) {
     const uploadsDir = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
-    const outName = randomBytes(10).toString("hex") + ".webp";
+    // Detect input format and keep the original extension (.png/.jpg/.jpeg/.webp/.gif)
+    const srcExt = (extname(file.path) || ".png").toLowerCase();
+    const ext = srcExt === ".jpeg" ? ".jpg" : srcExt;
+    const outName = randomBytes(10).toString("hex") + ext;
     const outPath = join(uploadsDir, outName);
     // Sizing rules per type:
     //   thumbnail → HD 600×800 max, preserve full image (fit: inside, no crop, no padding)
     //   hero      → 1920×480 cover
     //   promo     → 600×200 cover
-    const isThumbnail = uploadType === "thumbnail";
+    //   default (missing/unknown type) → safer thumbnail fallback instead of hero crop
+    const isThumbnail = uploadType === "thumbnail" || !uploadType;   // safe fallback
     const dims = uploadType === "promo"
       ? { width: 600,  height: 200, fit: "cover" as const }
-      : isThumbnail
-      ? { width: 600,  height: 800, fit: "inside" as const }   // HD, full image, no crop
-      : { width: 1920, height: 480, fit: "cover" as const };
+      : uploadType === "hero"
+      ? { width: 1920, height: 480, fit: "cover" as const }
+      : { width: 600,  height: 800, fit: "inside" as const };        // HD, full image, no crop
     try {
       const MAX_BYTES = 900 * 1024; // 900 KB hard cap
-      const resized = sharp(file.path).resize({ ...dims, withoutEnlargement: false });
-      let quality = isThumbnail ? 92 : 88;   // start higher for thumbnails (HD)
-      let buf = await resized.webp({ quality }).toBuffer();
+      // Choose output encoder matching the original format — NO format conversion
+      const pipeline = sharp(file.path).resize({ ...dims, withoutEnlargement: false });
+      let quality = isThumbnail ? 92 : 88;
+      const encode = (q: number) => {
+        if (ext === ".png")  return pipeline.clone().png({ quality: q, compressionLevel: 9 }).toBuffer();
+        if (ext === ".webp") return pipeline.clone().webp({ quality: q }).toBuffer();
+        if (ext === ".gif")  return pipeline.clone().gif().toBuffer();
+        return pipeline.clone().jpeg({ quality: q, mozjpeg: true }).toBuffer();   // .jpg fallback
+      };
+      let buf = await encode(quality);
       while (buf.length > MAX_BYTES && quality > 60) {
         quality -= 4;
-        buf = await resized.webp({ quality }).toBuffer();
+        buf = await encode(quality);
       }
       await writeFile(outPath, buf);
       await unlink(file.path);
     } catch {
-      await rename(file.path, join(uploadsDir, outName.replace(".webp", extname(file.path))));
-      return { url: `/api/uploads/${outName.replace(".webp", extname(file.path))}` };
+      await rename(file.path, outPath);
     }
     return { url: `/api/uploads/${outName}` };
   }
