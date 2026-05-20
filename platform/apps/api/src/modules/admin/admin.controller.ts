@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, Uploaded
 import { FileInterceptor } from "@nestjs/platform-express";
 import { extname, join } from "path";
 import { randomBytes } from "crypto";
-import { rename, unlink } from "fs/promises";
+import { rename, unlink, writeFile } from "fs/promises";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const multer = require("multer");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -319,10 +319,15 @@ export class AdminController {
       ? { width: 300,  height: 400 }
       : { width: 1920, height: 480 };
     try {
-      await sharp(file.path)
-        .resize({ ...dims, fit: "cover", withoutEnlargement: false })
-        .webp({ quality: 88 })
-        .toFile(outPath);
+      const MAX_BYTES = 900 * 1024; // 900 KB hard cap
+      const resized = sharp(file.path).resize({ ...dims, fit: "cover", withoutEnlargement: false });
+      let quality = 90;
+      let buf = await resized.webp({ quality }).toBuffer();
+      while (buf.length > MAX_BYTES && quality > 60) {
+        quality -= 5;
+        buf = await resized.webp({ quality }).toBuffer();
+      }
+      await writeFile(outPath, buf);
       await unlink(file.path);
     } catch {
       await rename(file.path, join(uploadsDir, outName.replace(".webp", extname(file.path))));
