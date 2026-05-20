@@ -7,10 +7,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SWRConfig
       value={{
         fetcher,
-        revalidateOnFocus: false,
+        revalidateOnFocus: true,
         revalidateOnReconnect: true,
-        dedupingInterval: 10000,
-        keepPreviousData: true,
+        dedupingInterval: 2000,
+        keepPreviousData: false,
         errorRetryCount: 2,
       }}
     >
