@@ -7,7 +7,7 @@ import { getSocket } from "@/lib/socket";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth";
 import { RouletteWheel } from "@/components/roulette/RouletteWheel";
-import { BettingTable, type BetType, type BetMode } from "@/components/roulette/BettingTable";
+import { BettingTable, type BetType } from "@/components/roulette/BettingTable";
 import useSWR from "swr";
 
 export const dynamic = "force-dynamic";
@@ -55,7 +55,6 @@ export default function RoulettePage() {
   const [bets, setBets]               = useState<LocalBet[]>([]);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [muted, setMuted]             = useState(false);
-  const [betMode, setBetMode]         = useState<BetMode>("straight");
   const [resultPopup, setResultPopup] = useState<{ winningNumber: number; payout: number } | null>(null);
   const [globalBetCount, setGlobalBetCount] = useState(0);
   const [bettingAlert, setBettingAlert] = useState<{ type: "open" | "closed"; key: number } | null>(null);
@@ -105,7 +104,7 @@ export default function RoulettePage() {
       setRound({ id: data.roundId, roundNumber: data.roundNumber, status: "BETTING",
         serverSeedHash: data.serverSeedHash, winningNumber: null, winningColor: null,
         phaseEndsAt: data.phaseEndsAt, betsCount: 0 });
-      setBets([]); setGlobalBetCount(0); setResultPopup(null); setBetMode("straight");
+      setBets([]); setGlobalBetCount(0); setResultPopup(null);
     };
     const onSpin = (data: any) => {
       setRound(r => r ? { ...r, status: "SPINNING", winningNumber: data.winningNumber, winningColor: data.winningColor, phaseEndsAt: data.phaseEndsAt } : null);
@@ -346,7 +345,7 @@ export default function RoulettePage() {
 
               {/* Betting table */}
               <div className="overflow-x-auto mt-0 md:mt-4">
-                <BettingTable chip={chip} bets={bets} disabled={status !== "BETTING"} betMode={betMode} onPlaceBet={placeBet} />
+                <BettingTable chip={chip} bets={bets} disabled={status !== "BETTING"} onPlaceBet={placeBet} />
               </div>
 
               {/* Last results */}
@@ -392,27 +391,27 @@ export default function RoulettePage() {
           </div>
         </div>
 
-        {/* ── Bottom bar ── */}
-        <div className="bg-[#0a0a0c] px-3 py-2 border-t border-white/10 flex items-center justify-between gap-2 shrink-0">
-          <button onClick={() => setMuted(m => !m)} className="flex items-center gap-1 text-white/60 hover:text-white transition shrink-0">
-            {muted ? <VolumeX size={13} /> : <Volume2 size={13} />}
-            <span className="text-[9px] hidden sm:inline">{muted ? "Muted" : "Sound"}</span>
-          </button>
-
-          <div className="flex items-center gap-3 md:gap-6 text-[10px] uppercase tracking-widest">
-            <div><span className="text-white/40">Cash: </span><span className="text-yellow-400 font-bold">{user ? fmt(Math.floor(wallet?.available ?? 0)) : "—"}</span></div>
-            <div><span className="text-white/40">Bet: </span><span className="text-white font-bold">{fmt(totalStaked)}</span></div>
-            <div><span className="text-white/40">Win: </span><span className="text-emerald-400 font-bold">{fmt(lastWin)}</span></div>
-          </div>
-
-          <span className="text-[9px] text-white/40 shrink-0 hidden md:block">{globalBetCount} bets</span>
-        </div>
-
         {!user && (
           <div className="bg-red-900/30 border-t border-red-700/40 p-2 text-center text-xs">
             Please <a href="/auth/login" className="underline text-yellow-400 font-semibold">log in</a> to place bets.
           </div>
         )}
+      </div>
+
+      {/* ── Bottom bar — outside scroll, always pinned to viewport bottom ── */}
+      <div className="bg-[#0a0a0c] px-3 py-2 border-t border-white/10 flex items-center justify-between gap-2 shrink-0">
+        <button onClick={() => setMuted(m => !m)} className="flex items-center gap-1 text-white/60 hover:text-white transition shrink-0">
+          {muted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+          <span className="text-[9px] hidden sm:inline">{muted ? "Muted" : "Sound"}</span>
+        </button>
+
+        <div className="flex items-center gap-3 md:gap-6 text-[10px] uppercase tracking-widest">
+          <div><span className="text-white/40">Cash: </span><span className="text-yellow-400 font-bold">{user ? fmt(Math.floor(wallet?.available ?? 0)) : "—"}</span></div>
+          <div><span className="text-white/40">Bet: </span><span className="text-white font-bold">{fmt(totalStaked)}</span></div>
+          <div><span className="text-white/40">Win: </span><span className="text-emerald-400 font-bold">{fmt(lastWin)}</span></div>
+        </div>
+
+        <span className="text-[9px] text-white/40 shrink-0 hidden md:block">{globalBetCount} bets</span>
       </div>
 
       {/* ── Desktop wheel sizing override (md+) ── */}

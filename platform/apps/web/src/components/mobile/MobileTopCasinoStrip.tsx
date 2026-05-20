@@ -38,7 +38,7 @@ export function MobileTopCasinoStrip() {
             style={{ aspectRatio: "4/5", background: g.thumbnail ? undefined : g.bg }}
           >
             {g.thumbnail ? (
-              <img src={g.thumbnail} alt={g.name} className="absolute inset-0 h-full w-full object-cover" draggable={false} />
+              <img src={g.thumbnail} alt={g.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "fill" }} draggable={false} />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-4xl">{g.emoji}</span>

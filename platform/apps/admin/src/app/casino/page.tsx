@@ -514,20 +514,30 @@ function ThumbnailField({ value, onChange, label = "Thumbnail URL (optional, ove
         <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleFile} />
       </div>
       {uploading && (
-        <div className="mt-2 space-y-1">
-          <div className="h-2 w-full rounded-full bg-white/8 overflow-hidden">
+        <div className="mt-2 rounded-lg overflow-hidden" style={{ background: "rgba(255,255,255,0.06)", padding: "10px 12px" }}>
+          {/* Track */}
+          <div style={{ height: 6, width: "100%", borderRadius: 999, background: "rgba(255,255,255,0.12)", overflow: "hidden", marginBottom: 8 }}>
             <div
-              className={`h-full transition-all duration-150 ${phase === "processing" ? "bg-yellow-400 animate-pulse" : "bg-accent"}`}
-              style={{ width: `${progress}%` }}
+              style={{
+                height: "100%",
+                width: `${progress}%`,
+                borderRadius: 999,
+                transition: "width 0.2s ease",
+                background: phase === "processing" ? "#facc15" : "#ff7a18",
+                minWidth: progress > 0 ? 12 : 0,
+              }}
             />
           </div>
-          <div className="flex items-center justify-between text-[10px] text-white/55 font-mono">
+          {/* Labels */}
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontFamily: "monospace", color: "rgba(255,255,255,0.7)" }}>
             <span>
               {phase === "processing"
-                ? "⚡ Processing image on server…"
-                : `📤 Uploading ${progress}% · ${speedLabel}`}
+                ? "⚡ Processing on server…"
+                : `📤 ${progress}%  ${speedLabel}`}
             </span>
-            <span>{phase === "uploading" && etaSec !== null ? `ETA ${etaLabel}` : ""}</span>
+            <span style={{ color: "rgba(255,255,255,0.45)" }}>
+              {phase === "uploading" && etaSec !== null ? `ETA ${etaLabel}` : phase === "processing" ? "almost done…" : ""}
+            </span>
           </div>
         </div>
       )}
@@ -542,7 +552,7 @@ function ThumbnailField({ value, onChange, label = "Thumbnail URL (optional, ove
             <img
               src={value}
               alt="preview"
-              className="absolute inset-0 w-full h-full object-fill"
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "fill" }}
               onError={(e) => (e.currentTarget.style.display = "none")}
             />
           </div>
