@@ -105,10 +105,9 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone, o
     // Active ball positions for peg glow
     const bpos = balls.filter(b => !b.settled).map(b => ({ x: b.ballX, y: b.ballY }));
 
-    // Pegs — skip top rows (isolated dots look bad at the top)
-    const SKIP = rows <= 8 ? 2 : rows <= 12 ? 3 : 4;
+    // Pegs — full triangle from row 0
     const pegR = rows <= 8 ? 7 : rows <= 12 ? 6 : rows <= 16 ? 5 : 4;
-    for (let row = SKIP; row < rows; row++) {
+    for (let row = 0; row < rows; row++) {
       const numPegs = row + 1;
       const pegY    = padTop + row * rowH + rowH / 2;
       for (let p = 0; p < numPegs; p++) {
