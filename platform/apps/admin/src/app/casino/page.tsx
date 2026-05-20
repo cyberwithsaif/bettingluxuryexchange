@@ -391,7 +391,7 @@ function AddInHouseGameModal({ nextOrder, onClose }: { nextOrder: number; onClos
       <div className="flex gap-2 justify-end pt-1">
         <button onClick={() => onClose()} className="px-4 py-2 rounded border border-line text-sm">Cancel</button>
         <button disabled={busy} onClick={async () => {
-          if (!form.id) { setErr("ID (slug) is required."); return; }
+          if (!form.thumbnail) { setErr("Thumbnail is required."); return; }
           setBusy(true); setErr(null);
           try { onClose(form); }
           catch (e: any) { setErr("Failed"); setBusy(false); }
@@ -421,6 +421,7 @@ function EditInHouseGameModal({ game, onClose }: { game: InHouseGame; onClose: (
       <div className="flex gap-2 justify-end pt-1">
         <button onClick={() => onClose()} className="px-4 py-2 rounded border border-line text-sm">Cancel</button>
         <button disabled={busy} onClick={async () => {
+          if (!form.thumbnail) { setErr("Thumbnail is required."); return; }
           setBusy(true); setErr(null);
           try { onClose(form); }
           catch (e: any) { setErr("Failed"); setBusy(false); }
