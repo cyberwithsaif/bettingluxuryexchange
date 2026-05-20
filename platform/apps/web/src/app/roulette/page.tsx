@@ -368,7 +368,7 @@ export default function RoulettePage() {
                 <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                   {CHIPS.map(c => (
                     <button key={c} onClick={() => setChip(c)} className={`casino-chip shrink-0 ${chip === c ? "active" : ""}`}
-                      style={{ background: CHIP_GRADIENTS[c], boxShadow: chip === c ? `0 0 18px ${CHIP_GLOW[c]}` : `0 0 10px ${CHIP_GLOW[c].replace("0.6","0.25")}` }}>
+                      style={{ background: CHIP_GRADIENTS[c] ?? CHIP_GRADIENTS[10], boxShadow: chip === c ? `0 0 18px ${CHIP_GLOW[c] ?? "rgba(255,200,0,0.6)"}` : `0 0 10px ${(CHIP_GLOW[c] ?? "rgba(255,200,0,0.6)").replace("0.6","0.25")}` }}>
                       <span>{c >= 1000 ? `${c/1000}k` : c}</span>
                     </button>
                   ))}
