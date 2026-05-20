@@ -44,6 +44,7 @@ interface HistoryRound {
   winningNumber: number; winningColor: string; settledAt: string;
 }
 interface LocalBet { betType: BetType; betValue?: string | null; amount: number; }
+interface WinEntry { id: string; winningNumber: number; winningColor: string; payout: number; betType: string; ts: number; }
 
 function color(n: number) { return n === 0 ? "#0d9b3f" : RED.has(n) ? "#c8102e" : "#1a1a1a"; }
 function fmt(n: number) { return new Intl.NumberFormat("en-IN").format(n); }
@@ -59,6 +60,7 @@ export default function RoulettePage() {
   const [globalBetCount, setGlobalBetCount] = useState(0);
   const [bettingAlert, setBettingAlert] = useState<{ type: "open" | "closed"; key: number } | null>(null);
   const [errorToast, setErrorToast]   = useState<string | null>(null);
+  const [winFeed, setWinFeed]         = useState<WinEntry[]>([]);
   const toastTimeoutRef               = useRef<NodeJS.Timeout | null>(null);
   const prevStatusRef                 = useRef<string | null>(null);
   const audioCtxRef                   = useRef<AudioContext | null>(null);
@@ -113,6 +115,11 @@ export default function RoulettePage() {
     const onResult = (data: any) => {
       setRound(r => r ? { ...r, status: "SETTLED", winningNumber: data.winningNumber, winningColor: data.winningColor, phaseEndsAt: data.phaseEndsAt } : null);
       mutateHistory(); mutateWallet();
+      // Collect all winners for the live feed
+      const winners: WinEntry[] = (data.bets as any[])
+        .filter(b => b.isWin && Number(b.payout) > 0)
+        .map(b => ({ id: `${data.winningNumber}-${b.userId}-${Date.now()}-${Math.random()}`, winningNumber: data.winningNumber, winningColor: data.winningColor, payout: Number(b.payout), betType: b.betType, ts: Date.now() }));
+      if (winners.length > 0) setWinFeed(prev => [...winners, ...prev].slice(0, 20));
       if (user) {
         const myBets = (data.bets as any[]).filter(b => b.userId === user.id);
         const totalPayout = myBets.reduce((sum, b) => sum + Number(b.payout), 0);
@@ -389,6 +396,38 @@ export default function RoulettePage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* ── Live Wins Feed ── */}
+        <div className="border-t border-white/10 bg-black/40 px-3 py-2">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-[8px] uppercase tracking-[0.18em] text-white/40 font-semibold">Live Wins</span>
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          </div>
+          {winFeed.length === 0 ? (
+            <p className="text-[10px] text-white/25 italic">Waiting for results…</p>
+          ) : (
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-0.5" style={{ touchAction: "pan-x" }}>
+              {winFeed.map(w => (
+                <div
+                  key={w.id}
+                  className="shrink-0 flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 border border-white/10"
+                  style={{ background: "rgba(255,255,255,0.04)", minWidth: 110 }}
+                >
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold text-white shrink-0 shadow-md"
+                    style={{ background: color(w.winningNumber), boxShadow: `0 0 10px ${color(w.winningNumber)}99` }}
+                  >
+                    {w.winningNumber}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[9px] text-white/40 capitalize truncate">{w.betType.replace(/_/g, " ").toLowerCase()}</div>
+                    <div className="text-xs font-bold text-yellow-300 leading-none">+{fmt(w.payout)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {!user && (
