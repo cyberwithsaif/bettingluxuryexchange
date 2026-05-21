@@ -82,10 +82,41 @@ export default function RoulettePage() {
     nameFetchingRef.current = false;
   }, []);
 
+  const FALLBACK_NAMES = [
+    "lucky7star","goldpanda89","silvertiger","reddragon77","kingcobra88",
+    "blueshark99","wildfire22","icewolf33","sunbear44","moonfox55",
+    "starbolt11","darkraven66","flashhawk77","ironwolf88","speedcat99",
+    "neonviper11","shadowfox22","blazewing","crystalace","purplebull",
+    "goldeneagle","rapidfire","steelshark","nighthawk","thunderbolt",
+  ];
+
   const nextName = useCallback((): string => {
     if (namePoolRef.current.length < 15) fetchNames();
-    return namePoolRef.current.shift() ?? `Player${Math.floor(Math.random() * 9999)}`;
+    if (namePoolRef.current.length > 0) return namePoolRef.current.shift()!;
+    return FALLBACK_NAMES[Math.floor(Math.random() * FALLBACK_NAMES.length)]! +
+           Math.floor(Math.random() * 90 + 10);
   }, [fetchNames]);
+
+  const fakeWinTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const makeFakeWin = useCallback((): WinEntry => {
+    const n = Math.floor(Math.random() * 37);
+    const wc = n === 0 ? "green" : RED.has(n) ? "red" : "black";
+    const bases = [10, 50, 100, 500, 1000, 5000];
+    const mults = [2, 3, 6, 9, 12, 18, 36];
+    const payout = bases[Math.floor(Math.random() * bases.length)]! *
+                   mults[Math.floor(Math.random() * mults.length)]!;
+    return { id: `fake-${Date.now()}-${Math.random()}`, winningNumber: n,
+             winningColor: wc, payout, username: nextName(), ts: Date.now() };
+  }, [nextName]);
+
+  const scheduleFakeWin = useCallback(() => {
+    const delay = Math.random() * 3000 + 3000; // 3–6 s
+    fakeWinTimerRef.current = setTimeout(() => {
+      setWinFeed(prev => [makeFakeWin(), ...prev].slice(0, 30));
+      scheduleFakeWin();
+    }, delay);
+  }, [makeFakeWin]);
 
   // Pre-fetch names on mount + lock orientation to landscape on mobile
   useEffect(() => {
@@ -94,10 +125,17 @@ export default function RoulettePage() {
       const scr = window.screen as any;
       if (scr?.orientation?.lock) scr.orientation.lock("landscape").catch(() => {});
     } catch {}
+    // Seed initial fake wins after 1.2 s (names likely loaded by then)
+    const seed = setTimeout(() => {
+      setWinFeed(Array.from({ length: 15 }, () => makeFakeWin()));
+      scheduleFakeWin();
+    }, 1200);
     return () => {
+      clearTimeout(seed);
+      if (fakeWinTimerRef.current) clearTimeout(fakeWinTimerRef.current);
       try { (window.screen as any)?.orientation?.unlock?.(); } catch {}
     };
-  }, [fetchNames]);
+  }, [fetchNames, makeFakeWin, scheduleFakeWin]);
 
   const showError = useCallback((msg: string) => {
     if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
@@ -501,9 +539,7 @@ export default function RoulettePage() {
             <span className="text-[8px] uppercase tracking-[0.18em] text-white/35 font-semibold">Live Wins</span>
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           </div>
-          {winFeed.length === 0 ? (
-            <p className="px-3 text-[10px] text-white/20 italic">Waiting for results…</p>
-          ) : (
+          {winFeed.length === 0 ? null : (
             <div className="overflow-hidden">
               <div
                 className="flex gap-2 px-2"
@@ -519,7 +555,7 @@ export default function RoulettePage() {
                     style={{ background: "rgba(255,255,255,0.05)" }}
                   >
                     <span className="text-[11px] font-semibold text-white/70 truncate max-w-[90px]">{w.username}</span>
-                    <span className="text-sm font-extrabold text-yellow-300 tabular-nums whitespace-nowrap">+{fmt(w.payout)}</span>
+                    <span className="text-sm font-extrabold text-emerald-400 tabular-nums whitespace-nowrap">+{fmt(w.payout)}</span>
                   </div>
                 ))}
               </div>
