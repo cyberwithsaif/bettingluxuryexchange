@@ -79,7 +79,7 @@ export function TopBar() {
 
       <div className="flex items-center h-16 px-3 justify-between gap-4">
 
-        {/* ── Left section (logo + toggle) ──────────────────── */}
+        {/* ── Left section (toggle) ──────────────────── */}
         <div className="flex items-center gap-2 shrink-0">
           {/* Sidebar toggle (desktop) */}
           <button
@@ -110,13 +110,6 @@ export function TopBar() {
               <rect y="10" width="8" height="2" rx="1" fill="currentColor" />
             </svg>
           </button>
-
-          {/* Logo — both mobile and desktop */}
-          <Link href="/" className="flex flex-col leading-none">
-            <span className="font-display italic text-lg font-black tracking-tight text-white uppercase">
-              {platformSettings?.siteName ?? "DiamondPlay22"}
-            </span>
-          </Link>
         </div>
 
         {/* ── Center section (balance + deposit) ────────────── */}
