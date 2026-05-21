@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
 import { TopBar } from "./TopBar";
-import { TopNav } from "./TopNav";
 import { Footer } from "./Footer";
 import { NavigationProgress } from "../NavigationProgress";
 import { MobileBottomNav } from "./MobileBottomNav";
@@ -25,7 +24,6 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col">
       <Suspense fallback={null}><NavigationProgress /></Suspense>
       <TopBar />
-      <TopNav />
       <main className="flex-1 pb-16 md:pb-0">{children}</main>
       <Footer />
       <MobileBottomNav />
