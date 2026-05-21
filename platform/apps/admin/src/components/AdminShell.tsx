@@ -107,7 +107,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               href === "/"
                 ? path === "/"
                 : path === href || (href !== "/settings" && path?.startsWith(href + "/"));
-            const isSubItem = href === "/settings/banners" || href === "/settings/nav";
+            const isSubItem = href === "/settings/banners";
             return (
               <Link
                 key={href}
