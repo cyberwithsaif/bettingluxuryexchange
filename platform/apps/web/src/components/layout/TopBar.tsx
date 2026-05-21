@@ -77,7 +77,7 @@ export function TopBar() {
     <header className="sticky top-0 z-50 bg-[#191938] text-white shadow-sm rounded-br-2xl">
       <MobileSidebar open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
-      <div className="flex items-center h-16 px-3 justify-center gap-2 md:gap-4">
+      <div className="flex items-center h-16 px-3 justify-between gap-4">
 
         {/* ── Left section (logo + toggle) ──────────────────── */}
         <div className="flex items-center gap-2 shrink-0">
@@ -111,8 +111,8 @@ export function TopBar() {
             </svg>
           </button>
 
-          {/* Mobile logo */}
-          <Link href="/" className="md:hidden flex flex-col leading-none">
+          {/* Logo — both mobile and desktop */}
+          <Link href="/" className="flex flex-col leading-none">
             <span className="font-display italic text-lg font-black tracking-tight text-white uppercase">
               {platformSettings?.siteName ?? "DiamondPlay22"}
             </span>
@@ -121,7 +121,7 @@ export function TopBar() {
 
         {/* ── Center section (balance + deposit) ────────────── */}
         {user ? (
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-2 md:gap-3 justify-center flex-1">
 
             {/* Balance pill */}
             <div
@@ -162,7 +162,7 @@ export function TopBar() {
             </Link>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-center flex-1">
             <Link
               href="/auth/login"
               className="rounded-lg border border-white/20 px-4 py-2 text-[13px] font-bold text-white hover:bg-white/10 transition"
