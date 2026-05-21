@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Suspense } from "react";
 
 const DEFAULT_CATEGORIES = [
   { id: "casino", title: "Casino", subtitle: "Thousands of Games", href: "/casino", emoji: "🎰", gradient: "linear-gradient(135deg,#3d0810 0%,#6b0e1a 40%,#1a0408 100%)" },
@@ -11,9 +10,9 @@ const CASINO_GAMES = [
   { name: "Mines",    href: "/mines",    thumb: "/game-thumbs/mines2.png" },
   { name: "Plinko",   href: "/plinko",   thumb: "/game-thumbs/plinko2.png" },
   { name: "Pump",     href: "/crash",    thumb: "/game-thumbs/pump.png" },
-  { name: "Dice",     href: "/mini-games", thumb: "/game-thumbs/dice.png" },
-  { name: "Towers",   href: "/mini-games", thumb: "/game-thumbs/towers.png" },
-  { name: "Coinflip", href: "/mini-games", thumb: "/game-thumbs/coinflip.png" },
+  { name: "Dice",     href: "/dice",     thumb: "/game-thumbs/dice.png" },
+  { name: "Towers",   href: "/towers",   thumb: "/game-thumbs/towers.png" },
+  { name: "Coinflip", href: "/coinflip", thumb: "/game-thumbs/coinflip.png" },
 ];
 
 async function getCategoryBanners() {
