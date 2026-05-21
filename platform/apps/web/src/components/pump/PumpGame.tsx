@@ -159,11 +159,11 @@ function GameVisual({
   const NOZZLE_Y = 350;
 
   // Balloon dimensions
-  // deflated: wide flat oval just above nozzle
-  // inflated: grows from radius~32 to ~120 as scale increases
-  const inflatedR  = Math.min(32 + (scale - 1) * 145, 122);
-  const balloonRx  = showDeflated ? 54 : inflatedR;
-  const balloonRy  = showDeflated ? 34 : inflatedR;
+  // deflated: small circular shape at nozzle
+  // inflated: grows round from ~20 to ~130 radius as scale increases
+  const inflatedR  = Math.min(20 + (scale - 1) * 170, 132);
+  const balloonRx  = showDeflated ? 42 : inflatedR;
+  const balloonRy  = showDeflated ? 36 : inflatedR;
   const balloonCy  = NOZZLE_Y - balloonRy - 4; // bottom of balloon sits on nozzle
   const knotCy     = balloonCy + balloonRy + 6;
   const neckTop    = knotCy + 10;
@@ -349,17 +349,6 @@ function GameVisual({
         transition={{ duration: 0.22, ease: "easeInOut" }}
       />
 
-      {/* T-handle bar */}
-      <motion.g
-        animate={{ y: pumping ? [0, 14, 0] : 0 }}
-        transition={{ duration: 0.22, ease: "easeInOut" }}
-      >
-        <rect x="133" y="326" width="54" height="14" rx="7" fill="#2e4e66" />
-        {/* Grip lines */}
-        <rect x="147" y="329" width="7" height="7" rx="2" fill="rgba(255,255,255,0.1)" />
-        <rect x="162" y="329" width="7" height="7" rx="2" fill="rgba(255,255,255,0.1)" />
-      </motion.g>
-
     </svg>
   );
 }
@@ -527,7 +516,7 @@ export function PumpGame() {
   // ── Derived ───────────────────────────────────────────────────────────────
   const currentMult  = session?.currentMult ?? 1.00;
   const balloonScale = useMemo(
-    () => session ? Math.min(1 + session.pumpsCount * 0.06, 1.6) : 1,
+    () => session ? Math.min(1 + session.pumpsCount * 0.12, 1.65) : 1,
     [session],
   );
   const balloonColor = DIFFICULTIES.find(d => d.value === difficulty)?.color ?? "#22C55E";
