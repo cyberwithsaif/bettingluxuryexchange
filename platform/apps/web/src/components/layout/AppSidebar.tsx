@@ -122,7 +122,7 @@ function SidebarInner() {
             key={href}
             href={href}
             className={cn(
-              "flex items-center gap-3 px-3 py-1.5 rounded-xl text-[15px] font-bold transition-all",
+              "flex items-center gap-3 px-3 py-1.5 rounded-2xl text-[15px] font-bold transition-all",
               pathname === href
                 ? "text-white"
                 : "text-white hover:text-white",
@@ -137,7 +137,7 @@ function SidebarInner() {
 
         <Link
           href="/contact"
-          className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[15px] font-bold text-white hover:text-white transition-all"
+          className="flex items-center gap-3 px-3 py-1.5 rounded-2xl text-[15px] font-bold text-white hover:text-white transition-all"
           style={{ background: "rgba(139, 92, 246, 0.08)" }}
         >
           <Headphones size={20} strokeWidth={2.5} className="text-white" />
@@ -162,7 +162,7 @@ function SectionToggle({ label, open, onToggle, iconBg, icon }: {
   return (
     <button
       onClick={onToggle}
-      className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[15px] font-bold text-white transition-all cursor-pointer"
+      className="w-full flex items-center justify-between px-4 py-2 rounded-2xl text-[15px] font-bold text-white transition-all cursor-pointer"
       style={{ background: open ? "#7740ed" : "rgba(139, 92, 246, 0.08)" }}
     >
       <div className="flex items-center gap-3">
