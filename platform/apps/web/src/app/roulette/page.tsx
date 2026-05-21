@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth";
 import { RouletteWheel } from "@/components/roulette/RouletteWheel";
 import { BettingTable, type BetType } from "@/components/roulette/BettingTable";
+import { INDIAN_NAMES } from "@/lib/roulette-names";
 import useSWR from "swr";
 
 export const dynamic = "force-dynamic";
@@ -82,18 +83,10 @@ export default function RoulettePage() {
     nameFetchingRef.current = false;
   }, []);
 
-  const FALLBACK_NAMES = [
-    "lucky7star","goldpanda89","silvertiger","reddragon77","kingcobra88",
-    "blueshark99","wildfire22","icewolf33","sunbear44","moonfox55",
-    "starbolt11","darkraven66","flashhawk77","ironwolf88","speedcat99",
-    "neonviper11","shadowfox22","blazewing","crystalace","purplebull",
-    "goldeneagle","rapidfire","steelshark","nighthawk","thunderbolt",
-  ];
-
   const nextName = useCallback((): string => {
     if (namePoolRef.current.length < 15) fetchNames();
     if (namePoolRef.current.length > 0) return namePoolRef.current.shift()!;
-    return FALLBACK_NAMES[Math.floor(Math.random() * FALLBACK_NAMES.length)]! +
+    return INDIAN_NAMES[Math.floor(Math.random() * INDIAN_NAMES.length)]! +
            Math.floor(Math.random() * 90 + 10);
   }, [fetchNames]);
 
