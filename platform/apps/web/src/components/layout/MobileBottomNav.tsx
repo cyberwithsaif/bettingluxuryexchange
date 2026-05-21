@@ -5,7 +5,7 @@ import { Menu, Search, Gamepad2, Trophy, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const ITEMS = [
-  { href: "#",       label: "Menu",   icon: Menu },
+  { href: "/",       label: "Home",   icon: Menu },
   { href: "#",       label: "Search", icon: Search },
   { href: "/casino", label: "Casino", icon: Gamepad2 },
   { href: "/exchange",   label: "Sports", icon: Trophy },
