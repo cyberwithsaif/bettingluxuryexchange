@@ -305,32 +305,32 @@ function GameVisual({
         </motion.g>
       )}
 
-      {/* ── Nozzle tube connecting pump to balloon ── */}
-      <line x1="240" y1="350" x2="240" y2="388" stroke="#253d51" strokeWidth="12" strokeLinecap="round" />
-
       {/* ── Pump machine (right side) ── */}
 
+      {/* Nozzle connector (from pump to balloon) */}
+      <rect x="235" y="350" width="10" height="48" rx="5" fill="#253d51" />
+
       {/* Pump base platform */}
-      <rect x="200" y="395" width="80" height="60" rx="8" fill="#1a2d3d" />
+      <rect x="190" y="398" width="100" height="58" rx="8" fill="#1a2d3d" />
 
       {/* Pump body (cylinder) */}
-      <rect x="215" y="405" width="50" height="42" rx="4" fill="#253d51" />
-      <rect x="217" y="407" width="46" height="6" rx="2" fill="rgba(255,255,255,0.06)" />
+      <rect x="210" y="410" width="60" height="40" rx="6" fill="#253d51" stroke="#3d5a75" strokeWidth="1.5" />
+      <rect x="213" y="413" width="54" height="7" rx="2" fill="rgba(255,255,255,0.08)" />
 
       {/* Pump handle (piston rod - animates on pump) */}
       <motion.g
-        animate={{ y: pumping ? [0, 14, 0] : 0 }}
+        animate={{ y: pumping ? [0, 16, 0] : 0 }}
         transition={{ duration: 0.22, ease: "easeInOut" }}
       >
-        <rect x="228" y="395" width="14" height="32" rx="4" fill="#2d4659" />
-        <rect x="224" y="388" width="22" height="10" rx="3" fill="#3d5a75" />
+        <rect x="228" y="398" width="14" height="28" rx="4" fill="#2d4659" />
+        <rect x="224" y="392" width="22" height="10" rx="3" fill="#3d5a75" />
       </motion.g>
 
-      {/* Pump count dots — on base */}
+      {/* Pump count dots — on base platform */}
       {Array.from({ length: dotCount }).map((_, i) => (
         <circle key={i}
-          cx={210 + i * 11}
-          cy="420"
+          cx={200 + i * 11}
+          cy="425"
           r="3.5"
           fill={pumpsCount > i ? color : "rgba(255,255,255,0.14)"}
         />
