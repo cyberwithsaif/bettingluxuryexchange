@@ -114,11 +114,10 @@ export default function TowersPage() {
 
   return (
     <>
-      <div className="md:hidden flex items-center gap-2 px-4 py-3 bg-[#0F1923] border-b border-white/10 sticky top-0 z-10">
+      <div className="md:hidden flex items-center justify-end gap-2 px-4 py-3 bg-[#0F1923] border-b border-white/10 sticky top-0 z-10">
         <Link href="/" className="flex items-center gap-1.5 text-white/60 hover:text-white text-sm font-semibold transition">
           <ArrowLeft size={16} /> Back
         </Link>
-        <span className="text-white font-bold text-sm">Towers</span>
       </div>
 
       <div className="min-h-screen bg-gradient-to-b from-[#0f111a] via-[#0f111a] to-[#0a0c14] text-white">
