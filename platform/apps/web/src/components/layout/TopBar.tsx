@@ -127,7 +127,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
                 <div className="flex flex-col leading-tight">
                   <span className="text-[9px] text-white/50 leading-none">Balance</span>
                   <span className="text-[13px] font-bold text-white tabular-nums">
-                    ${Number(wallet?.available ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ₹{Number(wallet?.available ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>
