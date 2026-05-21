@@ -16,10 +16,7 @@ html, body {
 }
 
 body {
-  background:
-    radial-gradient(1200px 800px at 20% -10%, rgba(220,47,47,0.15) 0, transparent 60%),
-    radial-gradient(900px 600px at 110% 10%, rgba(92,13,27,0.3) 0, transparent 60%),
-    linear-gradient(180deg, #15080c 0%, #0b0608 100%);
+  background: #090c1c;
 }
 
 /* Glass panel utility */
