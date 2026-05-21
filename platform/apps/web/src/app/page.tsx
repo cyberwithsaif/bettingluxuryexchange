@@ -9,17 +9,17 @@ export default async function HomePage() {
       {/* Ads Banners */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Casino Banner */}
-        <div className="group relative rounded-3xl overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-300 min-h-[160px] md:min-h-[220px] hover:shadow-2xl hover:scale-[1.02] cursor-pointer">
+        <div className="group relative rounded-3xl overflow-visible border border-white/10 hover:border-white/20 transition-all duration-300 min-h-[160px] md:min-h-[220px] hover:shadow-2xl hover:scale-[1.02] cursor-pointer">
           {/* Background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-900" />
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-900 rounded-3xl" />
 
-          {/* Background image */}
-          <div className="absolute inset-0 right-0 w-4/5 opacity-75 group-hover:opacity-90 transition-opacity">
+          {/* Background image - zoomed and overflowing */}
+          <div className="absolute inset-0 right-0 w-full h-full opacity-75 group-hover:opacity-90 transition-opacity" style={{ overflow: 'visible' }}>
             <Image
               src="/images/bannerlogo.png"
               alt="Casino"
               fill
-              className="object-contain object-right"
+              className="object-cover object-right scale-125"
               priority
             />
           </div>
