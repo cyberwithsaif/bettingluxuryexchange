@@ -1,10 +1,13 @@
 import Link from "next/link";
 
 const CASINO_GAMES = [
-  { name: "Roulette", href: "/roulette", thumb: "/game-thumbs/roulette.webp" },
-  { name: "Mines",    href: "/mines",    thumb: "/game-thumbs/mines.webp" },
-  { name: "Plinko",   href: "/plinko",   thumb: "/game-thumbs/plinko.webp" },
-  { name: "Pump",     href: "/crash",    thumb: "/game-thumbs/balloon.webp" },
+  { name: "Roulette", href: "/roulette", thumb: "/game-thumbs/roulette2.png" },
+  { name: "Mines",    href: "/mines",    thumb: "/game-thumbs/mines2.png" },
+  { name: "Plinko",   href: "/plinko",   thumb: "/game-thumbs/plinko2.png" },
+  { name: "Pump",     href: "/crash",    thumb: "/game-thumbs/pump.png" },
+  { name: "Dice",     href: "/mini-games", thumb: "/game-thumbs/dice.png" },
+  { name: "Towers",   href: "/mini-games", thumb: "/game-thumbs/towers.png" },
+  { name: "Coinflip", href: "/mini-games", thumb: "/game-thumbs/coinflip.png" },
 ];
 
 export default function HomePage() {
@@ -39,7 +42,7 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-3">
             {CASINO_GAMES.map(game => (
               <Link key={game.href} href={game.href} className="group block">
                 <div className="relative rounded-2xl overflow-hidden bg-[#1a1433] border border-white/5 group-hover:border-purple-500/40 transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-xl shadow-black/40">
