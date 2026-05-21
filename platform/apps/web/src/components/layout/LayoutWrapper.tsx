@@ -1,14 +1,14 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useState, createContext } from "react";
 import { TopBar } from "./TopBar";
 import { Footer } from "./Footer";
 import { NavigationProgress } from "../NavigationProgress";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { AppSidebar } from "./AppSidebar";
 
-export const SidebarContext = require("react").createContext<{ collapsed: boolean; setCollapsed: (v: boolean) => void } | null>(null);
+export const SidebarContext = createContext<{ collapsed: boolean; setCollapsed: (v: boolean) => void } | null>(null);
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
