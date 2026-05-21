@@ -13,13 +13,13 @@ export default async function HomePage() {
           {/* Background gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-900 rounded-3xl" />
 
-          {/* Background image - zoomed and overflowing */}
-          <div className="absolute inset-0 right-0 w-full h-full opacity-75 group-hover:opacity-90 transition-opacity" style={{ overflow: 'visible' }}>
+          {/* Background image - right positioned with slight overflow */}
+          <div className="absolute -right-8 top-0 w-2/3 h-full opacity-80 group-hover:opacity-95 transition-opacity">
             <Image
               src="/images/bannerlogo.png"
               alt="Casino"
               fill
-              className="object-cover object-right scale-125"
+              className="object-contain object-right"
               priority
             />
           </div>
