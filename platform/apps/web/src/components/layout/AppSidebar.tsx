@@ -6,6 +6,8 @@ import useSWR from "swr";
 import {
   Gamepad2, Trophy, ChevronDown, Headphones,
   Ticket, Target, Monitor, Glasses, Gift, Shield,
+  TrendingUp, Award, Activity, Megaphone, Share2, Gift as GiftBox,
+  Crown, Heart, Globe, MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -28,7 +30,15 @@ const CASINO_GAMES = [
 ];
 
 const EXTRA_NAV = [
-  { href: "/sportsbook", label: "Sports Book",  iconEl: <Target  size={13} className="text-orange-400" />,  iconBg: "bg-orange-500/15" },
+  { href: "/predictions", label: "Predictions",  iconEl: <TrendingUp size={13} className="text-blue-400" />,  iconBg: "bg-blue-500/15" },
+  { href: "/rewards", label: "Rewards",  iconEl: <Award size={13} className="text-amber-400" />,  iconBg: "bg-amber-500/15" },
+  { href: "/live-rtp", label: "Live RTP",  iconEl: <Activity size={13} className="text-green-400" />,  iconBg: "bg-green-500/15" },
+  { href: "/promotions", label: "Promotions",  iconEl: <Megaphone size={13} className="text-pink-400" />,  iconBg: "bg-pink-500/15" },
+  { href: "/refer-earn", label: "Refer & Earn",  iconEl: <Share2 size={13} className="text-purple-400" />,  iconBg: "bg-purple-500/15" },
+  { href: "/redeem", label: "Redeem",  iconEl: <GiftBox size={13} className="text-red-400" />,  iconBg: "bg-red-500/15" },
+  { href: "/vip-club", label: "VIP Club",  iconEl: <Crown size={13} className="text-yellow-400" />,  iconBg: "bg-yellow-500/15" },
+  { href: "/responsible", label: "Roo Responsibly",  iconEl: <Heart size={13} className="text-rose-400" />,  iconBg: "bg-rose-500/15" },
+  { href: "/language", label: "English",  iconEl: <Globe size={13} className="text-cyan-400" />,  iconBg: "bg-cyan-500/15" },
 ];
 
 function SidebarInner() {
