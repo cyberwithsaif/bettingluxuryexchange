@@ -54,11 +54,6 @@ export default function HomePage() {
                       className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500"
                     />
                   </div>
-                  {/* Name label */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-3 py-3">
-                    <p className="text-white font-bold text-sm tracking-wide uppercase leading-none">{game.name}</p>
-                    <p className="text-purple-400 text-[10px] mt-0.5">DiamondPlay</p>
-                  </div>
                 </div>
               </Link>
             ))}
