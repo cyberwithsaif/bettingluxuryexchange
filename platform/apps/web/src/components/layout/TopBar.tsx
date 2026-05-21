@@ -59,12 +59,10 @@ export function TopBar() {
           >
             <Menu size={22} />
           </button>
-          <Link href="/" className="flex flex-col leading-none">
-            <span className="font-display italic text-xl md:text-3xl font-black tracking-tight flex items-center gap-1 uppercase">
-              {platformSettings?.siteName ?? "Future9"} <span className="text-base md:text-xl">🏏</span>
-            </span>
-            <span className="hidden sm:block text-[10px] uppercase tracking-widest font-semibold text-white/90">
-              — {platformSettings?.siteTagline ?? "Sports & Casino"} —
+          {/* Logo: visible on mobile only; desktop sidebar has it */}
+          <Link href="/" className="flex flex-col leading-none md:hidden">
+            <span className="font-display italic text-xl font-black tracking-tight flex items-center gap-1 uppercase">
+              {platformSettings?.siteName ?? "DiamondPlay22"} <span className="text-base">🏏</span>
             </span>
           </Link>
           <div className="hidden lg:block text-xs font-medium text-white/90">
