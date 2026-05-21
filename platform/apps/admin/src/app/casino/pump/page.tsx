@@ -7,34 +7,46 @@ import {
   Shield, Settings, AlertTriangle, RefreshCw,
 } from "lucide-react";
 
+type Difficulty = "EASY" | "MEDIUM" | "HARD" | "EXPERT" | "INSANE";
+
+interface DifficultyParams {
+  popChance: number;
+  maxPumps: number;
+}
+
 interface PumpConfig {
   enabled: boolean;
   minBet: number;
   maxBet: number;
   maxPayout: number;
   rtpPercent: number;
-  autoCashLimit: number;
-  forceNextCrash: number | null;
+  difficulties: Record<Difficulty, DifficultyParams>;
+  forceWinUserId: string | null;
+  forceWinPumps: number | null;
+  forceLossUserId: string | null;
+  forceNextPopPump: number | null;
 }
 
 interface PumpStats {
-  totalRounds: number;
-  totalBets: number;
+  totalSessions: number;
+  totalCashed: number;
+  totalPopped: number;
   totalWagered: number;
   totalPaid: number;
   houseProfit: number;
   actualRTP: number;
   avgBet: number;
-  avgCashout: number;
+  avgCashoutX: number;
   activePlayers: number;
-  currentRound: string | null;
-  bigWins: { id: string; username: string; betAmount: number; cashOutAt: number; payout: number; createdAt: string }[];
+  bigWins: { id: string; username: string; betAmount: number; multiplier: number; difficulty: string; payout: number; createdAt: string }[];
 }
 
 const CONFIG_KEY = "/casino/pump/admin/config";
 const STATS_KEY  = "/casino/pump/admin/stats";
 
 const RTP_PRESETS = [85, 90, 92, 95, 97, 99];
+
+const DIFFICULTIES: Difficulty[] = ["EASY", "MEDIUM", "HARD", "EXPERT", "INSANE"];
 
 export default function PumpAdminPage() {
   const { data: rawConfig, isLoading: configLoading } = useSWR<PumpConfig>(CONFIG_KEY, fetcher);
@@ -43,12 +55,23 @@ export default function PumpAdminPage() {
   const [form,   setForm]   = useState<Partial<PumpConfig> | null>(null);
   const [busy,   setBusy]   = useState(false);
   const [msg,    setMsg]    = useState<{ text: string; ok: boolean } | null>(null);
-  const [forceCrash, setForceCrash] = useState("");
 
-  const config  = { ...(rawConfig ?? {}), ...(form ?? {}) } as PumpConfig;
+  // Win control inputs
+  const [winUsername,  setWinUsername]  = useState("");
+  const [winPumps,     setWinPumps]     = useState("5");
+  const [lossUsername, setLossUsername] = useState("");
+  const [globalPop,    setGlobalPop]    = useState("");
+
+  const config = { ...(rawConfig ?? {}), ...(form ?? {}) } as PumpConfig;
 
   function patch<K extends keyof PumpConfig>(key: K, value: PumpConfig[K]) {
     setForm(prev => ({ ...(prev ?? rawConfig ?? {}), [key]: value }));
+  }
+
+  function patchDifficulty(d: Difficulty, field: keyof DifficultyParams, value: number) {
+    const prev = (form?.difficulties ?? rawConfig?.difficulties ?? {}) as Record<Difficulty, DifficultyParams>;
+    const nextDiff = { ...prev, [d]: { ...prev[d], [field]: value } } as Record<Difficulty, DifficultyParams>;
+    setForm(p => ({ ...(p ?? rawConfig ?? {}), difficulties: nextDiff }));
   }
 
   async function save() {
@@ -64,27 +87,60 @@ export default function PumpAdminPage() {
     } finally { setBusy(false); }
   }
 
-  async function applyForceNextCrash() {
-    const v = parseFloat(forceCrash);
-    if (isNaN(v) || v < 1) { setMsg({ text: "Enter a valid multiplier ≥ 1.00", ok: false }); return; }
+  async function applyForceWin() {
+    const pumps = parseInt(winPumps);
+    if (!winUsername.trim()) { setMsg({ text: "Enter a username", ok: false }); return; }
+    if (isNaN(pumps) || pumps < 1) { setMsg({ text: "Enter valid pump count", ok: false }); return; }
     setBusy(true); setMsg(null);
     try {
-      await api.post(CONFIG_KEY, { forceNextCrash: v });
+      await api.post(CONFIG_KEY, { forceWinUsername: winUsername.trim(), forceWinPumps: pumps });
       mutate(CONFIG_KEY);
-      setForceCrash("");
-      setMsg({ text: `Next round will crash at ${v.toFixed(2)}×`, ok: true });
+      setMsg({ text: `Next bet from '${winUsername}' will let them cash out up to pump #${pumps - 1}`, ok: true });
     } catch (e: any) {
       setMsg({ text: e?.response?.data?.message ?? "Failed", ok: false });
     } finally { setBusy(false); }
   }
 
-  async function clearForceNextCrash() {
-    setBusy(true);
+  async function applyForceLoss() {
+    if (!lossUsername.trim()) { setMsg({ text: "Enter a username", ok: false }); return; }
+    setBusy(true); setMsg(null);
     try {
-      await api.post(CONFIG_KEY, { forceNextCrash: null });
+      await api.post(CONFIG_KEY, { forceLossUsername: lossUsername.trim() });
       mutate(CONFIG_KEY);
-      setMsg({ text: "Force crash cleared.", ok: true });
+      setMsg({ text: `Next bet from '${lossUsername}' will pop on pump #1`, ok: true });
+    } catch (e: any) {
+      setMsg({ text: e?.response?.data?.message ?? "Failed", ok: false });
     } finally { setBusy(false); }
+  }
+
+  async function clearForceWin() {
+    setBusy(true);
+    try { await api.post(CONFIG_KEY, { forceWinUsername: null }); mutate(CONFIG_KEY); setMsg({ text: "Force-win cleared.", ok: true }); }
+    finally { setBusy(false); }
+  }
+  async function clearForceLoss() {
+    setBusy(true);
+    try { await api.post(CONFIG_KEY, { forceLossUsername: null }); mutate(CONFIG_KEY); setMsg({ text: "Force-loss cleared.", ok: true }); }
+    finally { setBusy(false); }
+  }
+
+  async function applyGlobalPop() {
+    const v = parseInt(globalPop);
+    if (isNaN(v) || v < 1) { setMsg({ text: "Enter valid pop pump #", ok: false }); return; }
+    setBusy(true); setMsg(null);
+    try {
+      await api.post(CONFIG_KEY, { forceNextPopPump: v });
+      mutate(CONFIG_KEY);
+      setGlobalPop("");
+      setMsg({ text: `Next session (any user) will pop on pump #${v}`, ok: true });
+    } catch (e: any) {
+      setMsg({ text: e?.response?.data?.message ?? "Failed", ok: false });
+    } finally { setBusy(false); }
+  }
+  async function clearGlobalPop() {
+    setBusy(true);
+    try { await api.post(CONFIG_KEY, { forceNextPopPump: null }); mutate(CONFIG_KEY); setMsg({ text: "Global pop override cleared.", ok: true }); }
+    finally { setBusy(false); }
   }
 
   function fmt(n: number) { return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(n); }
@@ -92,7 +148,7 @@ export default function PumpAdminPage() {
   if (configLoading) return <div className="animate-pulse h-40 bg-panel/60 rounded-xl" />;
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 max-w-6xl">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-3xl flex items-center gap-3">
           <span className="text-3xl">🎈</span> Pump Game Admin
@@ -111,18 +167,18 @@ export default function PumpAdminPage() {
         </div>
       )}
 
-      {/* Stats cards */}
+      {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: "Total Rounds",  value: stats.totalRounds,                     icon: BarChart2,   color: "#3B82F6" },
-            { label: "Total Bets",    value: stats.totalBets,                        icon: Users,       color: "#8A5CFF" },
-            { label: "Wagered (₹)",   value: `₹${fmt(stats.totalWagered)}`,          icon: DollarSign,  color: "#00FFB2" },
-            { label: "House Profit",  value: `₹${fmt(stats.houseProfit)}`,           icon: TrendingUp,  color: "#FFD700" },
-            { label: "Actual RTP",    value: `${stats.actualRTP}%`,                  icon: Shield,      color: stats.actualRTP > 100 ? "#FF375F" : "#00FFB2" },
-            { label: "Avg Bet",       value: `₹${fmt(stats.avgBet)}`,                icon: DollarSign,  color: "#3B82F6" },
-            { label: "Avg Cashout",   value: `${(stats.avgCashout || 0).toFixed(2)}×`, icon: Zap,       color: "#FFD700" },
-            { label: "Active (1h)",   value: stats.activePlayers,                    icon: Users,       color: "#00FFB2" },
+            { label: "Total Sessions", value: stats.totalSessions,                   icon: BarChart2,   color: "#3B82F6" },
+            { label: "Cashed Out",     value: stats.totalCashed,                     icon: TrendingUp,  color: "#22C55E" },
+            { label: "Popped",         value: stats.totalPopped,                     icon: AlertTriangle, color: "#EF4444" },
+            { label: "Active (1h)",    value: stats.activePlayers,                   icon: Users,       color: "#A855F7" },
+            { label: "Wagered",        value: `₹${fmt(stats.totalWagered)}`,         icon: DollarSign,  color: "#00FFB2" },
+            { label: "Paid Out",       value: `₹${fmt(stats.totalPaid)}`,            icon: DollarSign,  color: "#3B82F6" },
+            { label: "House Profit",   value: `₹${fmt(stats.houseProfit)}`,          icon: TrendingUp,  color: "#FFD700" },
+            { label: "Actual RTP",     value: `${stats.actualRTP}%`,                 icon: Shield,      color: stats.actualRTP > 100 ? "#EF4444" : "#22C55E" },
           ].map(s => (
             <div key={s.label} className="rounded-xl border border-line bg-panel/60 p-4">
               <div className="flex items-center gap-2 mb-1">
@@ -135,7 +191,7 @@ export default function PumpAdminPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* ── Game Config ─────────────────────────────────────── */}
         <section className="rounded-xl border border-line bg-panel/60 p-5 space-y-4">
@@ -143,7 +199,6 @@ export default function PumpAdminPage() {
             <Settings size={18} className="text-accentSoft" /> Game Config
           </h2>
 
-          {/* Enable/disable */}
           <label className="flex items-center justify-between rounded-lg border border-line bg-panel/40 px-4 py-3 cursor-pointer hover:border-accent transition">
             <span className="text-sm">Game Enabled</span>
             <input
@@ -154,7 +209,6 @@ export default function PumpAdminPage() {
             />
           </label>
 
-          {/* Betting limits */}
           <div className="grid grid-cols-2 gap-3">
             <Fld label="Min Bet (₹)">
               <input type="number" min={1} value={config.minBet ?? 10} className="inp"
@@ -168,10 +222,6 @@ export default function PumpAdminPage() {
               <input type="number" min={1000} value={config.maxPayout ?? 5000000} className="inp"
                 onChange={e => patch("maxPayout", Number(e.target.value))} />
             </Fld>
-            <Fld label="Auto Cash Limit (×)">
-              <input type="number" min={2} step={1} value={config.autoCashLimit ?? 100} className="inp"
-                onChange={e => patch("autoCashLimit", Number(e.target.value))} />
-            </Fld>
           </div>
 
           <button
@@ -183,16 +233,15 @@ export default function PumpAdminPage() {
           </button>
         </section>
 
-        {/* ── RTP Control ─────────────────────────────────────── */}
+        {/* ── RTP Control ────────────────────────────────────── */}
         <section className="rounded-xl border border-line bg-panel/60 p-5 space-y-4">
           <h2 className="font-display text-xl flex items-center gap-2">
             <Shield size={18} className="text-accentSoft" /> RTP Control
           </h2>
           <p className="text-xs text-white/50">
-            Controls crash-point probability distribution. Higher RTP = rarer early crashes. Current: <span className="font-bold text-white">{config.rtpPercent ?? 97}%</span>
+            Global RTP multiplier — scales every multiplier in every difficulty. Current: <span className="font-bold text-white">{config.rtpPercent ?? 97}%</span>
           </p>
 
-          {/* Preset buttons */}
           <div className="grid grid-cols-3 gap-2">
             {RTP_PRESETS.map(rtp => (
               <button
@@ -203,9 +252,7 @@ export default function PumpAdminPage() {
                   background: (config.rtpPercent ?? 97) === rtp
                     ? "linear-gradient(135deg,#ff7a18,#ff4500)"
                     : "rgba(255,255,255,0.05)",
-                  borderColor: (config.rtpPercent ?? 97) === rtp
-                    ? "#ff7a18"
-                    : "rgba(255,255,255,0.08)",
+                  borderColor: (config.rtpPercent ?? 97) === rtp ? "#ff7a18" : "rgba(255,255,255,0.08)",
                   color: (config.rtpPercent ?? 97) === rtp ? "#fff" : "rgba(255,255,255,0.6)",
                 }}
               >
@@ -214,7 +261,6 @@ export default function PumpAdminPage() {
             ))}
           </div>
 
-          {/* Custom RTP slider */}
           <Fld label={`Custom RTP: ${config.rtpPercent ?? 97}%`}>
             <input
               type="range" min={80} max={99} step={1}
@@ -237,83 +283,183 @@ export default function PumpAdminPage() {
           </button>
         </section>
 
-        {/* ── Win Control (Force Crash) ────────────────────────── */}
-        <section className="rounded-xl border border-red-900/40 bg-red-950/10 p-5 space-y-4">
-          <h2 className="font-display text-xl flex items-center gap-2 text-red-400">
-            <AlertTriangle size={18} /> Winning Control
+        {/* ── Per-difficulty controls ──────────────────────────── */}
+        <section className="rounded-xl border border-line bg-panel/60 p-5 space-y-4 lg:col-span-2">
+          <h2 className="font-display text-xl flex items-center gap-2">
+            <Zap size={18} className="text-accentSoft" /> Difficulty Tuning
           </h2>
           <p className="text-xs text-white/50">
-            Force the next round to crash at a specific multiplier. Overrides the provably fair result for ONE round only.
-            {rawConfig?.forceNextCrash && (
-              <span className="ml-1 font-bold text-red-400">
-                Active: next crash at {rawConfig.forceNextCrash.toFixed(2)}×
+            Pop chance = probability balloon pops on each pump (higher = more loss per pump, bigger multipliers).
+            Max pumps = hard ceiling on pump count.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-[11px] uppercase tracking-wider text-white/40">
+                  <th className="text-left py-2 pr-2">Difficulty</th>
+                  <th className="text-left py-2 pr-2">Pop Chance / Pump</th>
+                  <th className="text-left py-2 pr-2">Max Pumps</th>
+                  <th className="text-left py-2 pr-2">First × (preview)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {DIFFICULTIES.map(d => {
+                  const params = config.difficulties?.[d] ?? { popChance: 0.04, maxPumps: 25 };
+                  const rtp = config.rtpPercent ?? 97;
+                  const firstMult = ((rtp / 100) / (1 - params.popChance)).toFixed(2);
+                  return (
+                    <tr key={d} className="border-t border-white/5">
+                      <td className="py-3 pr-2 font-bold">{d}</td>
+                      <td className="py-3 pr-2">
+                        <input
+                          type="number"
+                          step="0.01" min="0.01" max="0.95"
+                          value={params.popChance}
+                          onChange={e => patchDifficulty(d, "popChance", Math.min(0.95, Math.max(0.01, Number(e.target.value))))}
+                          className="inp w-28"
+                        />
+                        <span className="text-[10px] text-white/40 ml-2">{(params.popChance * 100).toFixed(1)}%</span>
+                      </td>
+                      <td className="py-3 pr-2">
+                        <input
+                          type="number" min={3} max={50}
+                          value={params.maxPumps}
+                          onChange={e => patchDifficulty(d, "maxPumps", Math.min(50, Math.max(3, Number(e.target.value))))}
+                          className="inp w-20"
+                        />
+                      </td>
+                      <td className="py-3 pr-2 text-white/70 tabular-nums">{firstMult}×</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <button
+            onClick={save}
+            disabled={busy || !form}
+            className="w-full rounded-lg bg-accent-grad py-2.5 font-bold text-ink shadow-glow disabled:opacity-40 hover:brightness-110 transition text-sm"
+          >
+            {busy ? "Saving…" : "Save Difficulty Settings"}
+          </button>
+        </section>
+
+        {/* ── Win Control ─────────────────────────────────────── */}
+        <section className="rounded-xl border border-emerald-900/40 bg-emerald-950/10 p-5 space-y-3">
+          <h2 className="font-display text-xl flex items-center gap-2 text-emerald-400">
+            <TrendingUp size={18} /> Force Win
+          </h2>
+          <p className="text-xs text-white/50">
+            Make a specific user's next session pop at pump #N — they can cash out anywhere up to pump #N-1.
+            {rawConfig?.forceWinUserId && (
+              <span className="ml-1 font-bold text-emerald-400">
+                Active: pop pump #{rawConfig.forceWinPumps}
               </span>
             )}
           </p>
-
-          <Fld label="Force Next Crash At (×)">
-            <input
-              type="number"
-              step="0.01"
-              min="1"
-              placeholder="e.g. 1.50"
-              value={forceCrash}
-              onChange={e => setForceCrash(e.target.value)}
-              className="inp border-red-900/40 focus:border-red-500"
-            />
+          <Fld label="Username">
+            <input type="text" value={winUsername} onChange={e => setWinUsername(e.target.value)} placeholder="player_username" className="inp" />
           </Fld>
-
-          <div className="grid grid-cols-2 gap-2">
-            {/* Quick presets */}
-            {[1.00, 1.50, 2.00, 5.00].map(v => (
-              <button
-                key={v}
-                onClick={() => setForceCrash(String(v))}
-                className="py-1.5 rounded-lg text-xs font-bold border border-red-900/40 hover:border-red-600/60 text-red-400 hover:text-red-300 transition"
-              >
-                {v.toFixed(2)}×
-              </button>
-            ))}
-          </div>
-
+          <Fld label="Pop on Pump #">
+            <input type="number" min={2} value={winPumps} onChange={e => setWinPumps(e.target.value)} className="inp" />
+          </Fld>
           <div className="flex gap-2">
             <button
-              onClick={applyForceNextCrash}
-              disabled={busy || !forceCrash}
+              onClick={applyForceWin}
+              disabled={busy}
+              className="flex-1 py-2.5 rounded-lg font-bold text-sm bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 transition text-white"
+            >
+              Set Force Win
+            </button>
+            {rawConfig?.forceWinUserId && (
+              <button
+                onClick={clearForceWin}
+                disabled={busy}
+                className="px-4 py-2.5 rounded-lg font-bold text-sm border border-emerald-900/40 hover:border-emerald-600 text-emerald-400 transition"
+              >Clear</button>
+            )}
+          </div>
+        </section>
+
+        {/* ── Loss Control ────────────────────────────────────── */}
+        <section className="rounded-xl border border-red-900/40 bg-red-950/10 p-5 space-y-3">
+          <h2 className="font-display text-xl flex items-center gap-2 text-red-400">
+            <AlertTriangle size={18} /> Force Loss
+          </h2>
+          <p className="text-xs text-white/50">
+            Make a specific user's next session pop on pump #1 (instant loss). One-time use.
+            {rawConfig?.forceLossUserId && <span className="ml-1 font-bold text-red-400">Active</span>}
+          </p>
+          <Fld label="Username">
+            <input type="text" value={lossUsername} onChange={e => setLossUsername(e.target.value)} placeholder="player_username" className="inp" />
+          </Fld>
+          <div className="flex gap-2">
+            <button
+              onClick={applyForceLoss}
+              disabled={busy}
               className="flex-1 py-2.5 rounded-lg font-bold text-sm bg-red-600 hover:bg-red-500 disabled:opacity-40 transition text-white"
             >
-              Set Force Crash
+              Set Force Loss
             </button>
-            {rawConfig?.forceNextCrash && (
+            {rawConfig?.forceLossUserId && (
               <button
-                onClick={clearForceNextCrash}
+                onClick={clearForceLoss}
                 disabled={busy}
                 className="px-4 py-2.5 rounded-lg font-bold text-sm border border-red-900/40 hover:border-red-600 text-red-400 transition"
-              >
-                Clear
-              </button>
+              >Clear</button>
+            )}
+          </div>
+        </section>
+
+        {/* ── Global pop override ─────────────────────────────── */}
+        <section className="rounded-xl border border-amber-900/40 bg-amber-950/10 p-5 space-y-3">
+          <h2 className="font-display text-xl flex items-center gap-2 text-amber-400">
+            <AlertTriangle size={18} /> Global Next-Pop Override
+          </h2>
+          <p className="text-xs text-white/50">
+            Force the next session (any user, any difficulty) to pop on a specific pump #.
+            One-time use.
+            {rawConfig?.forceNextPopPump != null && (
+              <span className="ml-1 font-bold text-amber-400">Active: pop #{rawConfig.forceNextPopPump}</span>
+            )}
+          </p>
+          <Fld label="Pop on Pump #">
+            <input type="number" min={1} value={globalPop} onChange={e => setGlobalPop(e.target.value)} className="inp" />
+          </Fld>
+          <div className="flex gap-2">
+            <button
+              onClick={applyGlobalPop}
+              disabled={busy || !globalPop}
+              className="flex-1 py-2.5 rounded-lg font-bold text-sm bg-amber-600 hover:bg-amber-500 disabled:opacity-40 transition text-white"
+            >
+              Set Override
+            </button>
+            {rawConfig?.forceNextPopPump != null && (
+              <button
+                onClick={clearGlobalPop}
+                disabled={busy}
+                className="px-4 py-2.5 rounded-lg font-bold text-sm border border-amber-900/40 hover:border-amber-600 text-amber-400 transition"
+              >Clear</button>
             )}
           </div>
         </section>
 
         {/* ── Big Wins ────────────────────────────────────────── */}
-        <section className="rounded-xl border border-line bg-panel/60 p-5 space-y-3">
+        <section className="rounded-xl border border-line bg-panel/60 p-5 space-y-3 lg:col-span-2">
           <h2 className="font-display text-xl flex items-center gap-2">
             <TrendingUp size={18} className="text-accentSoft" /> Top Wins
           </h2>
           {statsLoading && <div className="animate-pulse h-24 bg-white/5 rounded-lg" />}
-          {stats?.bigWins?.length === 0 && (
-            <p className="text-sm text-white/40">No wins yet.</p>
-          )}
+          {stats?.bigWins?.length === 0 && <p className="text-sm text-white/40">No wins yet.</p>}
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {stats?.bigWins?.map(w => (
               <div key={w.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-white/4 border border-line">
                 <div>
                   <p className="text-sm font-bold text-white">{w.username}</p>
-                  <p className="text-[11px] text-white/50">Bet ₹{fmt(w.betAmount)}</p>
+                  <p className="text-[11px] text-white/50">Bet ₹{fmt(w.betAmount)} · {w.difficulty}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-black" style={{ color: "#FFD700" }}>{w.cashOutAt.toFixed(2)}×</p>
+                  <p className="font-black" style={{ color: "#FFD700" }}>{w.multiplier.toFixed(2)}×</p>
                   <p className="text-xs text-white/70">₹{fmt(w.payout)}</p>
                 </div>
               </div>

@@ -1,31 +1,42 @@
-import { Injectable, Logger, BadRequestException, OnModuleInit } from "@nestjs/common";
+import { Injectable, Logger, BadRequestException } from "@nestjs/common";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { WalletService } from "../wallet/wallet.service";
 import { PumpGateway } from "./pump.gateway";
-import { Prisma, LedgerKind, PumpRoundStatus } from "@prisma/client";
+import { Prisma, LedgerKind, PumpStatus, PumpDifficulty } from "@prisma/client";
 import * as crypto from "crypto";
 
-// ── Timing constants ────────────────────────────────────────────
-const BETTING_MS = 10_000; // 10 s betting window
-const RESULT_MS  =  5_000; //  5 s to view crash before next round
+// ── Difficulty configs ──────────────────────────────────────────
+// popChance per pump (constant per difficulty)
+// houseEdge controls overall RTP per pump
 
-// ── Multiplier growth: e^(0.045 * t_seconds) ───────────────────
-function multiplierAtMs(elapsedMs: number): number {
-  return Math.round(Math.exp(0.045 * (elapsedMs / 1000)) * 100) / 100;
+export interface DifficultyParams {
+  popChance: number;   // 0..1
+  maxPumps: number;    // hard cap on pump count (safety, prevents infinite mult)
 }
 
-function msForMultiplier(m: number): number {
-  return (Math.log(Math.max(m, 1.001)) / 0.045) * 1000;
-}
+const DIFFICULTY_DEFAULTS: Record<PumpDifficulty, DifficultyParams> = {
+  EASY:   { popChance: 0.04, maxPumps: 25 },
+  MEDIUM: { popChance: 0.10, maxPumps: 25 },
+  HARD:   { popChance: 0.20, maxPumps: 15 },
+  EXPERT: { popChance: 0.33, maxPumps: 12 },
+  INSANE: { popChance: 0.50, maxPumps: 10 },
+};
 
 export interface PumpConfig {
   enabled: boolean;
   minBet: number;
   maxBet: number;
   maxPayout: number;
-  rtpPercent: number;     // 80–100; scales crash probability
-  autoCashLimit: number;  // max multiplier for auto-cashout
-  forceNextCrash: number | null; // admin override: force crash at this multiplier
+  rtpPercent: number;          // 80..99 — multiplies every multiplier
+  difficulties: Record<PumpDifficulty, DifficultyParams>;
+  // Win-control overrides:
+  // forceWinUserId — if set, the next bet from that user is forced to a specific outcome
+  forceWinUserId: string | null;
+  forceWinPumps: number | null;   // pop after exactly this many pumps (player wins if cashes before)
+  // forceLossUserId — next bet from that user pops on pump 1 (instant loss)
+  forceLossUserId: string | null;
+  // forceNextWinPumps — global: pop pump for next session
+  forceNextPopPump: number | null;
 }
 
 const DEFAULT_CONFIG: PumpConfig = {
@@ -34,20 +45,17 @@ const DEFAULT_CONFIG: PumpConfig = {
   maxBet: 100_000,
   maxPayout: 5_000_000,
   rtpPercent: 97,
-  autoCashLimit: 100,
-  forceNextCrash: null,
+  difficulties: DIFFICULTY_DEFAULTS,
+  forceWinUserId: null,
+  forceWinPumps: null,
+  forceLossUserId: null,
+  forceNextPopPump: null,
 };
 
 @Injectable()
-export class PumpService implements OnModuleInit {
+export class PumpService {
   private readonly logger = new Logger(PumpService.name);
   private config: PumpConfig = { ...DEFAULT_CONFIG };
-
-  private currentRoundId: string | null = null;
-  private flyingStartedAt: number | null = null;
-  private currentCrashPoint: number | null = null;
-  private crashTimer: ReturnType<typeof setTimeout> | null = null;
-  private autoCashTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -55,221 +63,223 @@ export class PumpService implements OnModuleInit {
     private readonly gateway: PumpGateway,
   ) {}
 
-  async onModuleInit() {
-    await this.loadConfig();
-    // Settle any lingering round from a previous process restart
-    await this.prisma.pumpRound.updateMany({
-      where: { status: { in: [PumpRoundStatus.BETTING, PumpRoundStatus.FLYING] } },
-      data: { status: PumpRoundStatus.SETTLED, settledAt: new Date() },
-    });
-    setTimeout(() => this.runLoop(), 2_000);
-  }
+  // ── Multiplier table ────────────────────────────────────────
+  // M(n) = (rtp/100) / (1 - popChance)^n
+  // The next pump (pump n+1) is shown to the player as the "next multiplier"
+  // pump n=0 → 1.00 (no pumps yet). Cashout payout is at currentMult.
 
-  // ── Loop ──────────────────────────────────────────────────────
-
-  private async runLoop() {
-    try {
-      await this.startBetting();
-    } catch (e) {
-      this.logger.error(`Pump loop error: ${(e as Error).message}`);
-      setTimeout(() => this.runLoop(), 5_000);
+  private buildMultTable(difficulty: PumpDifficulty, rtpPercent: number, cfg?: DifficultyParams): number[] {
+    const p = cfg ?? this.config.difficulties[difficulty] ?? DIFFICULTY_DEFAULTS[difficulty];
+    const table: number[] = [];
+    for (let n = 1; n <= p.maxPumps; n++) {
+      const m = (rtpPercent / 100) / Math.pow(1 - p.popChance, n);
+      table.push(Math.max(1.00, Math.round(m * 100) / 100));
     }
+    return table;
   }
 
-  // ── Phase 1: BETTING ─────────────────────────────────────────
+  // ── Provably fair pop-pump derivation ───────────────────────
+  // Use HMAC(serverSeed, "pump:popPump:v1:<clientSeed>:<nonce>") → uniform u in [0,1)
+  // Then popPump = floor(log(1 - u) / log(1 - p)) + 1   (geometric distribution)
 
-  private async startBetting() {
-    const config = await this.loadConfig();
+  private derivePopPump(
+    serverSeed: string,
+    clientSeed: string,
+    nonce: number,
+    difficulty: PumpDifficulty,
+  ): number {
+    const params = this.config.difficulties[difficulty] ?? DIFFICULTY_DEFAULTS[difficulty];
+    const msg = `pump:popPump:v1:${clientSeed}:${nonce}:${difficulty}`;
+    const hash = crypto.createHmac("sha256", serverSeed).update(msg).digest("hex");
+    const u = parseInt(hash.slice(0, 8), 16) / 0xffffffff;
+    // Avoid log(0)
+    const safeU = Math.min(0.999999, Math.max(0.000001, u));
+    const pop = Math.floor(Math.log(1 - safeU) / Math.log(1 - params.popChance)) + 1;
+    return Math.min(Math.max(1, pop), params.maxPumps);
+  }
+
+  // ── Place bet (start session) ───────────────────────────────
+
+  async placeBet(userId: string, input: {
+    betAmount: number;
+    difficulty: PumpDifficulty;
+    clientSeed?: string;
+  }) {
+    const cfg = await this.loadConfig();
+    if (!cfg.enabled) throw new BadRequestException("Pump game is currently disabled");
+
+    if (input.betAmount < cfg.minBet) throw new BadRequestException(`Minimum bet is ₹${cfg.minBet}`);
+    if (input.betAmount > cfg.maxBet) throw new BadRequestException(`Maximum bet is ₹${cfg.maxBet}`);
+
+    // One active session per user at a time
+    const existing = await this.prisma.pumpBet.findFirst({
+      where: { userId, status: PumpStatus.ACTIVE },
+    });
+    if (existing) throw new BadRequestException("You already have an active Pump session — finish it first");
 
     const serverSeed     = crypto.randomBytes(32).toString("hex");
     const serverSeedHash = crypto.createHash("sha256").update(serverSeed).digest("hex");
+    const clientSeed     = (input.clientSeed ?? "").slice(0, 64);
+    const nonce          = Math.floor(Math.random() * 1_000_000);
 
-    const round = await this.prisma.pumpRound.create({
-      data: { status: PumpRoundStatus.BETTING, serverSeed, serverSeedHash },
-    });
+    // Determine pop pump
+    let popPump = this.derivePopPump(serverSeed, clientSeed, nonce, input.difficulty);
 
-    this.currentRoundId  = round.id;
-    this.flyingStartedAt = null;
-    this.currentCrashPoint = null;
-
-    this.gateway.broadcast("pump:betting", {
-      roundId:        round.id,
-      roundNumber:    round.roundNumber,
-      serverSeedHash: round.serverSeedHash,
-      endsAt:         Date.now() + BETTING_MS,
-    });
-
-    setTimeout(() => this.startFlying(round.id), BETTING_MS);
-  }
-
-  // ── Phase 2: FLYING ──────────────────────────────────────────
-
-  private async startFlying(roundId: string) {
-    if (this.currentRoundId !== roundId) return;
-
-    const config = await this.loadConfig();
-    const round  = await this.prisma.pumpRound.findUnique({ where: { id: roundId } });
-    if (!round) return;
-
-    // Determine crash point (admin override or provably fair)
-    const crashPoint = config.forceNextCrash != null
-      ? Math.max(1.00, config.forceNextCrash)
-      : this.generateCrashPoint(round.serverSeed, config.rtpPercent);
-
-    // Clear admin override for next round
-    if (config.forceNextCrash != null) {
-      await this.saveConfig({ forceNextCrash: null });
+    // Apply admin overrides
+    if (cfg.forceLossUserId && cfg.forceLossUserId === userId) {
+      popPump = 1; // instant pop on first pump
+      await this.saveConfig({ forceLossUserId: null });
+    } else if (cfg.forceWinUserId && cfg.forceWinUserId === userId && cfg.forceWinPumps != null) {
+      popPump = Math.max(1, cfg.forceWinPumps);
+      await this.saveConfig({ forceWinUserId: null, forceWinPumps: null });
+    } else if (cfg.forceNextPopPump != null) {
+      popPump = Math.max(1, cfg.forceNextPopPump);
+      await this.saveConfig({ forceNextPopPump: null });
     }
 
-    this.flyingStartedAt  = Date.now();
-    this.currentCrashPoint = crashPoint;
+    // Debit bet
+    await this.wallet.applyLedger({
+      userId,
+      amount:  -input.betAmount,
+      kind:    LedgerKind.CASINO_BET,
+      refType: "pump",
+      refId:   `pump-bet-${Date.now()}-${userId.slice(0, 6)}`,
+      note:    `Pump bet (${input.difficulty})`,
+    });
 
-    await this.prisma.pumpRound.update({
-      where: { id: roundId },
+    const bet = await this.prisma.pumpBet.create({
       data: {
-        status:     PumpRoundStatus.FLYING,
-        flyingAt:   new Date(),
-        crashPoint: new Prisma.Decimal(crashPoint),
+        userId,
+        betAmount:      new Prisma.Decimal(input.betAmount),
+        difficulty:     input.difficulty,
+        serverSeed,
+        serverSeedHash,
+        clientSeed,
+        nonce,
+        popPump,
+        pumpsCount:     0,
+        currentMult:    new Prisma.Decimal(1.00),
+        status:         PumpStatus.ACTIVE,
       },
+      include: { user: { select: { username: true } } },
     });
 
-    const crashMs = msForMultiplier(crashPoint);
+    const multTable = this.buildMultTable(input.difficulty, cfg.rtpPercent);
 
-    // Schedule hard crash
-    this.crashTimer = setTimeout(() => this.crashRound(roundId), crashMs);
-
-    // Schedule auto-cashouts for all bets in this round
-    const bets = await this.prisma.pumpBet.findMany({
-      where: { roundId, autoCashAt: { not: null }, cashOutAt: null, settledAt: null },
+    // Live feed: announce new session
+    this.gateway.broadcast("pump:session", {
+      betId:     bet.id,
+      username:  bet.user.username,
+      betAmount: input.betAmount,
+      difficulty: input.difficulty,
     });
 
-    for (const bet of bets) {
-      const target = Number(bet.autoCashAt!);
-      if (target > 1.00 && target < crashPoint) {
-        const delayMs = msForMultiplier(target);
-        const timer   = setTimeout(() => this.autoCashOut(bet.id, bet.userId, target), delayMs);
-        this.autoCashTimers.set(bet.id, timer);
-      }
-    }
-
-    this.gateway.broadcast("pump:flying", {
-      roundId,
-      roundNumber:    round.roundNumber,
-      flyingStartedAt: this.flyingStartedAt,
-    });
+    return {
+      betId: bet.id,
+      difficulty: bet.difficulty,
+      serverSeedHash: bet.serverSeedHash,
+      clientSeed: bet.clientSeed,
+      nonce: bet.nonce,
+      pumpsCount: 0,
+      currentMult: 1.00,
+      maxPumps: this.config.difficulties[input.difficulty].maxPumps,
+      multTable,
+      status: PumpStatus.ACTIVE,
+    };
   }
 
-  // ── Phase 3: CRASH ──────────────────────────────────────────
+  // ── Pump (inflate balloon by one step) ──────────────────────
 
-  private async crashRound(roundId: string) {
-    if (this.currentRoundId !== roundId) return;
-    this.clearTimers();
+  async pump(userId: string, betId: string) {
+    const cfg = await this.loadConfig();
 
-    const round = await this.prisma.pumpRound.findUnique({ where: { id: roundId } });
-    if (!round || round.status !== PumpRoundStatus.FLYING) return;
-
-    const crashPoint = Number(round.crashPoint ?? 1.00);
-
-    await this.prisma.pumpRound.update({
-      where: { id: roundId },
-      data: { status: PumpRoundStatus.CRASHED, crashedAt: new Date() },
-    });
-
-    this.gateway.broadcast("pump:crash", {
-      roundId,
-      roundNumber: round.roundNumber,
-      crashPoint,
-      serverSeed:  round.serverSeed, // reveal for provably fair
-    });
-
-    // Settle all remaining (uncashed) bets as losses
-    const lossBets = await this.prisma.pumpBet.findMany({
-      where: { roundId, cashOutAt: null, settledAt: null },
-    });
-
-    for (const bet of lossBets) {
-      await this.prisma.pumpBet.update({
-        where: { id: bet.id },
-        data: { isWin: false, payout: 0, settledAt: new Date() },
-      });
-    }
-
-    await this.prisma.pumpRound.update({
-      where: { id: roundId },
-      data: { status: PumpRoundStatus.SETTLED, settledAt: new Date() },
-    });
-
-    this.gateway.broadcast("pump:settled", {
-      roundId,
-      roundNumber: round.roundNumber,
-      crashPoint,
-      losers: lossBets.length,
-    });
-
-    this.flyingStartedAt   = null;
-    this.currentCrashPoint = null;
-
-    setTimeout(() => this.runLoop(), RESULT_MS);
-  }
-
-  // ── Auto-cashout (server-scheduled) ─────────────────────────
-
-  private async autoCashOut(betId: string, userId: string, targetMultiplier: number) {
-    this.autoCashTimers.delete(betId);
-    try {
-      await this.settleCashOut(betId, userId, targetMultiplier);
-      this.gateway.broadcast("pump:cashedOut", { betId, userId, multiplier: targetMultiplier, auto: true });
-    } catch (e) {
-      this.logger.warn(`Auto-cashout failed for ${betId}: ${(e as Error).message}`);
-    }
-  }
-
-  // ── Manual cashout (player request) ─────────────────────────
-
-  async cashOut(userId: string, roundId: string) {
-    if (this.currentRoundId !== roundId) throw new BadRequestException("Wrong round");
-    if (!this.flyingStartedAt || !this.currentCrashPoint) {
-      throw new BadRequestException("Game not in flying phase");
-    }
-
-    const elapsed   = Date.now() - this.flyingStartedAt;
-    const multiplier = multiplierAtMs(elapsed);
-
-    if (multiplier >= this.currentCrashPoint) {
-      throw new BadRequestException("Too late — balloon already crashed");
-    }
-
-    const bet = await this.prisma.pumpBet.findFirst({
-      where: { roundId, userId, cashOutAt: null, settledAt: null },
-    });
-    if (!bet) throw new BadRequestException("No active bet in this round");
-
-    // Cancel pending auto-cashout timer if one existed
-    const timer = this.autoCashTimers.get(bet.id);
-    if (timer) { clearTimeout(timer); this.autoCashTimers.delete(bet.id); }
-
-    const result = await this.settleCashOut(bet.id, userId, multiplier);
-    this.gateway.broadcast("pump:cashedOut", { betId: bet.id, userId, multiplier, auto: false });
-    return result;
-  }
-
-  // ── Core cashout settlement ───────────────────────────────────
-
-  private async settleCashOut(betId: string, userId: string, multiplier: number) {
     const bet = await this.prisma.pumpBet.findUnique({ where: { id: betId } });
     if (!bet) throw new BadRequestException("Bet not found");
-    if (bet.settledAt) throw new BadRequestException("Bet already settled");
+    if (bet.userId !== userId) throw new BadRequestException("Not your bet");
+    if (bet.status !== PumpStatus.ACTIVE) throw new BadRequestException("Session already finished");
 
-    const config  = await this.loadConfig();
-    const betAmt  = Number(bet.betAmount);
-    const payout  = Math.min(Math.round(betAmt * multiplier * 100) / 100, config.maxPayout);
+    const newPumps = bet.pumpsCount + 1;
+    const diffParams = cfg.difficulties[bet.difficulty] ?? DIFFICULTY_DEFAULTS[bet.difficulty];
+
+    if (newPumps > diffParams.maxPumps) {
+      throw new BadRequestException("Max pumps reached — please cash out");
+    }
+
+    // POP check
+    if (newPumps >= bet.popPump) {
+      // balloon pops on this pump → loss
+      await this.prisma.pumpBet.update({
+        where: { id: betId },
+        data: {
+          pumpsCount: newPumps,
+          status:     PumpStatus.POPPED,
+          isWin:      false,
+          payout:     new Prisma.Decimal(0),
+          settledAt:  new Date(),
+        },
+      });
+
+      this.gateway.broadcast("pump:popped", {
+        betId,
+        userId,
+        difficulty: bet.difficulty,
+        betAmount:  Number(bet.betAmount),
+        pumpsCount: newPumps,
+      });
+
+      return {
+        popped:        true,
+        pumpsCount:    newPumps,
+        popPump:       bet.popPump,
+        finalMult:     0,
+        serverSeed:    bet.serverSeed,
+        serverSeedHash: bet.serverSeedHash,
+        status:        PumpStatus.POPPED,
+      };
+    }
+
+    // Survives → multiplier increases
+    const newMult = (cfg.rtpPercent / 100) / Math.pow(1 - diffParams.popChance, newPumps);
+    const newMultRounded = Math.round(newMult * 100) / 100;
 
     await this.prisma.pumpBet.update({
       where: { id: betId },
       data: {
-        cashOutAt: new Prisma.Decimal(multiplier),
-        payout:    new Prisma.Decimal(payout),
+        pumpsCount:  newPumps,
+        currentMult: new Prisma.Decimal(newMultRounded),
+      },
+    });
+
+    return {
+      popped:        false,
+      pumpsCount:    newPumps,
+      currentMult:   newMultRounded,
+      maxPumps:      diffParams.maxPumps,
+      status:        PumpStatus.ACTIVE,
+    };
+  }
+
+  // ── Cashout ────────────────────────────────────────────────
+
+  async cashout(userId: string, betId: string) {
+    const cfg = await this.loadConfig();
+    const bet = await this.prisma.pumpBet.findUnique({ where: { id: betId } });
+    if (!bet) throw new BadRequestException("Bet not found");
+    if (bet.userId !== userId) throw new BadRequestException("Not your bet");
+    if (bet.status !== PumpStatus.ACTIVE) throw new BadRequestException("Session already finished");
+    if (bet.pumpsCount === 0) throw new BadRequestException("Pump at least once before cashing out");
+
+    const betAmt    = Number(bet.betAmount);
+    const mult      = Number(bet.currentMult);
+    const grossWin  = Math.round(betAmt * mult * 100) / 100;
+    const payout    = Math.min(grossWin, cfg.maxPayout);
+
+    await this.prisma.pumpBet.update({
+      where: { id: betId },
+      data: {
+        status:    PumpStatus.CASHED,
         isWin:     true,
+        payout:    new Prisma.Decimal(payout),
         settledAt: new Date(),
       },
     });
@@ -280,124 +290,146 @@ export class PumpService implements OnModuleInit {
       kind:    LedgerKind.CASINO_WIN,
       refType: "pump",
       refId:   betId,
-      note:    `Pump cashout ×${multiplier.toFixed(2)}`,
+      note:    `Pump cashout ×${mult.toFixed(2)} (${bet.difficulty})`,
     });
 
-    return { betId, multiplier, payout };
-  }
-
-  // ── Place bet ────────────────────────────────────────────────
-
-  async placeBet(userId: string, input: {
-    betAmount: number;
-    autoCashAt?: number | null;
-  }) {
-    const config = await this.loadConfig();
-
-    if (!config.enabled) throw new BadRequestException("Pump game is currently disabled");
-    if (!this.currentRoundId) throw new BadRequestException("No active round");
-
-    const round = await this.prisma.pumpRound.findUnique({ where: { id: this.currentRoundId } });
-    if (!round || round.status !== PumpRoundStatus.BETTING) {
-      throw new BadRequestException("Betting phase is closed for this round");
-    }
-
-    if (input.betAmount < config.minBet) {
-      throw new BadRequestException(`Minimum bet is ₹${config.minBet}`);
-    }
-    if (input.betAmount > config.maxBet) {
-      throw new BadRequestException(`Maximum bet is ₹${config.maxBet}`);
-    }
-
-    // Prevent duplicate bets per round
-    const existing = await this.prisma.pumpBet.findFirst({
-      where: { roundId: this.currentRoundId, userId },
-    });
-    if (existing) throw new BadRequestException("You already have a bet in this round");
-
-    const autoCashAt = input.autoCashAt != null && input.autoCashAt > 1.01
-      ? Math.min(input.autoCashAt, config.autoCashLimit)
-      : null;
-
-    await this.wallet.applyLedger({
+    this.gateway.broadcast("pump:cashed", {
+      betId,
       userId,
-      amount:  -input.betAmount,
-      kind:    LedgerKind.CASINO_BET,
-      refType: "pump",
-      refId:   round.id,
-      note:    `Pump bet`,
+      difficulty: bet.difficulty,
+      betAmount:  betAmt,
+      multiplier: mult,
+      payout,
+      pumpsCount: bet.pumpsCount,
     });
-
-    const bet = await this.prisma.pumpBet.create({
-      data: {
-        userId,
-        roundId:   round.id,
-        betAmount: new Prisma.Decimal(input.betAmount),
-        autoCashAt: autoCashAt != null ? new Prisma.Decimal(autoCashAt) : null,
-      },
-      include: { user: { select: { username: true } } },
-    });
-
-    this.gateway.broadcast("pump:betPlaced", {
-      betId:     bet.id,
-      username:  bet.user.username,
-      betAmount: input.betAmount,
-      roundId:   round.id,
-    });
-
-    return { betId: bet.id, roundId: round.id };
-  }
-
-  // ── Provably fair crash point ─────────────────────────────────
-
-  private generateCrashPoint(serverSeed: string, rtpPercent: number): number {
-    const hash = crypto.createHmac("sha256", serverSeed).update("pump:v1").digest("hex");
-    const h    = parseInt(hash.slice(0, 8), 16) / 0xffffffff;
-
-    // Base formula: 0.99 / (1 - h) gives 99% RTP distribution
-    // ~1% of rounds crash at exactly 1.00x (house takes full bet)
-    if (h >= 0.99) return 1.00;
-
-    const base   = 0.99 / (1 - h);
-    const scaled = base * (rtpPercent / 99);
-    return Math.max(1.00, Math.round(scaled * 100) / 100);
-  }
-
-  // ── Provably fair verification ────────────────────────────────
-
-  async verifyRound(roundId: string) {
-    const round = await this.prisma.pumpRound.findUnique({ where: { id: roundId } });
-    if (!round) throw new BadRequestException("Round not found");
-    if (round.status !== PumpRoundStatus.SETTLED) {
-      throw new BadRequestException("Round not yet settled");
-    }
-
-    const config   = await this.loadConfig();
-    const hash     = crypto.createHmac("sha256", round.serverSeed).update("pump:v1").digest("hex");
-    const h        = parseInt(hash.slice(0, 8), 16) / 0xffffffff;
-    const computed = h >= 0.99 ? 1.00 :
-      Math.max(1.00, Math.round(0.99 / (1 - h) * (config.rtpPercent / 99) * 100) / 100);
-    const seedHashOk = crypto.createHash("sha256").update(round.serverSeed).digest("hex") === round.serverSeedHash;
 
     return {
-      roundId:         round.id,
-      roundNumber:     round.roundNumber,
-      serverSeed:      round.serverSeed,
-      serverSeedHash:  round.serverSeedHash,
-      recordedCrash:   Number(round.crashPoint),
-      computedCrash:   computed,
-      seedHashMatches: seedHashOk,
-      crashMatches:    Math.abs(computed - Number(round.crashPoint)) < 0.01,
+      betId,
+      multiplier:    mult,
+      payout,
+      pumpsCount:    bet.pumpsCount,
+      serverSeed:    bet.serverSeed,
+      serverSeedHash: bet.serverSeedHash,
+      status:        PumpStatus.CASHED,
     };
   }
 
-  // ── Config ────────────────────────────────────────────────────
+  // ── Queries ──────────────────────────────────────────────────
+
+  async getActiveSession(userId: string) {
+    const bet = await this.prisma.pumpBet.findFirst({
+      where: { userId, status: PumpStatus.ACTIVE },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!bet) return null;
+    const cfg = await this.loadConfig();
+    const params = cfg.difficulties[bet.difficulty] ?? DIFFICULTY_DEFAULTS[bet.difficulty];
+    return {
+      betId:          bet.id,
+      betAmount:      Number(bet.betAmount),
+      difficulty:     bet.difficulty,
+      pumpsCount:     bet.pumpsCount,
+      currentMult:    Number(bet.currentMult),
+      serverSeedHash: bet.serverSeedHash,
+      clientSeed:     bet.clientSeed,
+      nonce:          bet.nonce,
+      maxPumps:       params.maxPumps,
+      multTable:      this.buildMultTable(bet.difficulty, cfg.rtpPercent),
+      status:         bet.status,
+    };
+  }
+
+  async getMultTableForDifficulty(difficulty: PumpDifficulty) {
+    const cfg = await this.loadConfig();
+    const params = cfg.difficulties[difficulty] ?? DIFFICULTY_DEFAULTS[difficulty];
+    return {
+      difficulty,
+      popChance: params.popChance,
+      maxPumps:  params.maxPumps,
+      table:     this.buildMultTable(difficulty, cfg.rtpPercent),
+    };
+  }
+
+  async verifySession(betId: string) {
+    const bet = await this.prisma.pumpBet.findUnique({ where: { id: betId } });
+    if (!bet) throw new BadRequestException("Bet not found");
+    if (bet.status === PumpStatus.ACTIVE) throw new BadRequestException("Session still active");
+
+    const params = this.config.difficulties[bet.difficulty] ?? DIFFICULTY_DEFAULTS[bet.difficulty];
+    const msg  = `pump:popPump:v1:${bet.clientSeed}:${bet.nonce}:${bet.difficulty}`;
+    const hash = crypto.createHmac("sha256", bet.serverSeed).update(msg).digest("hex");
+    const u    = parseInt(hash.slice(0, 8), 16) / 0xffffffff;
+    const safeU = Math.min(0.999999, Math.max(0.000001, u));
+    const computedPop = Math.min(Math.max(1, Math.floor(Math.log(1 - safeU) / Math.log(1 - params.popChance)) + 1), params.maxPumps);
+    const seedHashOk = crypto.createHash("sha256").update(bet.serverSeed).digest("hex") === bet.serverSeedHash;
+
+    return {
+      betId:           bet.id,
+      difficulty:      bet.difficulty,
+      serverSeed:      bet.serverSeed,
+      serverSeedHash:  bet.serverSeedHash,
+      clientSeed:      bet.clientSeed,
+      nonce:           bet.nonce,
+      recordedPopPump: bet.popPump,
+      computedPopPump: computedPop,
+      seedHashMatches: seedHashOk,
+      popMatches:      computedPop === bet.popPump,
+    };
+  }
+
+  async getUserBets(userId: string, limit = 50) {
+    const bets = await this.prisma.pumpBet.findMany({
+      where:   { userId },
+      orderBy: { createdAt: "desc" },
+      take:    Math.min(limit, 200),
+    });
+    return bets.map(b => ({
+      id:           b.id,
+      betAmount:    Number(b.betAmount),
+      difficulty:   b.difficulty,
+      pumpsCount:   b.pumpsCount,
+      currentMult:  Number(b.currentMult),
+      payout:       Number(b.payout),
+      isWin:        b.isWin,
+      status:       b.status,
+      createdAt:    b.createdAt,
+      settledAt:    b.settledAt,
+    }));
+  }
+
+  async getRecentSettled(limit = 30) {
+    const bets = await this.prisma.pumpBet.findMany({
+      where:   { status: { in: [PumpStatus.CASHED, PumpStatus.POPPED] } },
+      orderBy: { settledAt: "desc" },
+      take:    Math.min(limit, 50),
+      include: { user: { select: { username: true } } },
+    });
+    return bets.map(b => ({
+      id:          b.id,
+      username:    b.user.username,
+      betAmount:   Number(b.betAmount),
+      difficulty:  b.difficulty,
+      multiplier:  Number(b.currentMult),
+      payout:      Number(b.payout),
+      isWin:       b.isWin,
+      status:      b.status,
+      pumpsCount:  b.pumpsCount,
+      settledAt:   b.settledAt,
+    }));
+  }
+
+  // ── Config ───────────────────────────────────────────────────
 
   async loadConfig(): Promise<PumpConfig> {
     try {
       const row = await this.prisma.systemConfig.findUnique({ where: { key: "pump_config" } });
-      if (row) this.config = { ...DEFAULT_CONFIG, ...(row.value as any) };
-    } catch { /* use defaults */ }
+      if (row) {
+        const merged = { ...DEFAULT_CONFIG, ...(row.value as any) };
+        // Ensure all difficulty entries exist (in case schema changed)
+        merged.difficulties = { ...DIFFICULTY_DEFAULTS, ...(merged.difficulties ?? {}) };
+        this.config = merged;
+      }
+    } catch { /* defaults */ }
     return this.config;
   }
 
@@ -406,7 +438,14 @@ export class PumpService implements OnModuleInit {
   }
 
   async saveConfig(patch: Partial<PumpConfig>) {
-    const next = { ...this.config, ...patch };
+    await this.loadConfig();
+    const next: PumpConfig = {
+      ...this.config,
+      ...patch,
+      difficulties: patch.difficulties
+        ? { ...this.config.difficulties, ...patch.difficulties }
+        : this.config.difficulties,
+    };
     await this.prisma.systemConfig.upsert({
       where:  { key: "pump_config" },
       create: { key: "pump_config", value: next as any },
@@ -416,78 +455,16 @@ export class PumpService implements OnModuleInit {
     return next;
   }
 
-  // ── Queries ───────────────────────────────────────────────────
-
-  async getCurrentRound() {
-    if (!this.currentRoundId) return null;
-    const round = await this.prisma.pumpRound.findUnique({
-      where: { id: this.currentRoundId },
-      include: { bets: { select: { id: true, userId: true, betAmount: true, cashOutAt: true, isWin: true }, take: 50 } },
-    });
-    return {
-      ...round,
-      flyingStartedAt: this.flyingStartedAt,
-      // Do NOT reveal crashPoint while flying
-      crashPoint: round?.status === PumpRoundStatus.SETTLED || round?.status === PumpRoundStatus.CRASHED
-        ? Number(round.crashPoint) : null,
-    };
-  }
-
-  async getRecentRounds(limit = 20) {
-    const rounds = await this.prisma.pumpRound.findMany({
-      where:   { status: PumpRoundStatus.SETTLED },
-      orderBy: { settledAt: "desc" },
-      take:    Math.min(limit, 50),
-      select:  { id: true, roundNumber: true, crashPoint: true, settledAt: true, serverSeedHash: true },
-    });
-    return rounds.map(r => ({ ...r, crashPoint: Number(r.crashPoint) }));
-  }
-
-  async getUserBets(userId: string, limit = 50) {
-    const bets = await this.prisma.pumpBet.findMany({
-      where:   { userId },
-      orderBy: { createdAt: "desc" },
-      take:    Math.min(limit, 200),
-      include: { round: { select: { roundNumber: true, crashPoint: true, status: true } } },
-    });
-    return bets.map(b => ({
-      ...b,
-      betAmount:  Number(b.betAmount),
-      cashOutAt:  b.cashOutAt ? Number(b.cashOutAt) : null,
-      autoCashAt: b.autoCashAt ? Number(b.autoCashAt) : null,
-      payout:     Number(b.payout),
-      round:      { ...b.round, crashPoint: b.round.crashPoint ? Number(b.round.crashPoint) : null },
-    }));
-  }
-
-  async getLiveBets(limit = 30) {
-    const bets = await this.prisma.pumpBet.findMany({
-      orderBy: { createdAt: "desc" },
-      take:    Math.min(limit, 50),
-      select: {
-        id: true, betAmount: true, cashOutAt: true, payout: true, isWin: true, createdAt: true,
-        user: { select: { username: true } },
-        round: { select: { roundNumber: true, crashPoint: true } },
-      },
-    });
-    return bets.map(b => ({
-      ...b,
-      betAmount: Number(b.betAmount),
-      cashOutAt: b.cashOutAt ? Number(b.cashOutAt) : null,
-      payout:    Number(b.payout),
-      round:     { ...b.round, crashPoint: b.round.crashPoint ? Number(b.round.crashPoint) : null },
-    }));
-  }
-
-  // ── Admin stats ───────────────────────────────────────────────
+  // ── Admin stats ─────────────────────────────────────────────
 
   async getAdminStats() {
-    const [totalRounds, totalBets, agg, bigWins] = await Promise.all([
-      this.prisma.pumpRound.count({ where: { status: PumpRoundStatus.SETTLED } }),
+    const [totalSessions, totalCashed, totalPopped, agg, bigWins] = await Promise.all([
       this.prisma.pumpBet.count(),
+      this.prisma.pumpBet.count({ where: { status: PumpStatus.CASHED } }),
+      this.prisma.pumpBet.count({ where: { status: PumpStatus.POPPED } }),
       this.prisma.pumpBet.aggregate({
         _sum: { betAmount: true, payout: true },
-        _avg: { betAmount: true, cashOutAt: true },
+        _avg: { betAmount: true, currentMult: true },
       }),
       this.prisma.pumpBet.findMany({
         where:   { isWin: true },
@@ -497,7 +474,7 @@ export class PumpService implements OnModuleInit {
       }),
     ]);
 
-    const hourAgo       = new Date(Date.now() - 3_600_000);
+    const hourAgo = new Date(Date.now() - 3_600_000);
     const activePlayers = await this.prisma.pumpBet.groupBy({
       by:    ["userId"],
       where: { createdAt: { gte: hourAgo } },
@@ -507,32 +484,32 @@ export class PumpService implements OnModuleInit {
     const totalPaid    = Number(agg._sum.payout ?? 0);
 
     return {
-      totalRounds,
-      totalBets,
+      totalSessions,
+      totalCashed,
+      totalPopped,
       totalWagered,
       totalPaid,
       houseProfit:  totalWagered - totalPaid,
       actualRTP:    totalWagered > 0 ? Math.round((totalPaid / totalWagered) * 10000) / 100 : 0,
       avgBet:       Math.round(Number(agg._avg.betAmount ?? 0) * 100) / 100,
-      avgCashout:   Math.round(Number(agg._avg.cashOutAt ?? 0) * 100) / 100,
+      avgCashoutX:  Math.round(Number(agg._avg.currentMult ?? 0) * 100) / 100,
       activePlayers: activePlayers.length,
-      currentRound:  this.currentRoundId,
       bigWins: bigWins.map(b => ({
-        id:        b.id,
-        username:  b.user.username,
-        betAmount: Number(b.betAmount),
-        cashOutAt: Number(b.cashOutAt),
-        payout:    Number(b.payout),
-        createdAt: b.createdAt,
+        id:         b.id,
+        username:   b.user.username,
+        betAmount:  Number(b.betAmount),
+        multiplier: Number(b.currentMult),
+        difficulty: b.difficulty,
+        payout:     Number(b.payout),
+        createdAt:  b.createdAt,
       })),
     };
   }
 
-  // ── Helpers ───────────────────────────────────────────────────
-
-  private clearTimers() {
-    if (this.crashTimer) { clearTimeout(this.crashTimer); this.crashTimer = null; }
-    for (const t of this.autoCashTimers.values()) clearTimeout(t);
-    this.autoCashTimers.clear();
+  async findUserByUsername(username: string) {
+    return this.prisma.user.findUnique({
+      where: { username },
+      select: { id: true, username: true },
+    });
   }
 }
