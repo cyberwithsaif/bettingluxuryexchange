@@ -60,7 +60,7 @@ function SidebarInner() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* ── Logo ─────────────────────────────────────────────── */}
-      <div className="px-4 pt-5 pb-4 shrink-0">
+      <div className="px-4 pt-3 pb-2 shrink-0">
         <Link href="/" className="flex flex-col leading-none group">
           <span className="font-display italic text-[21px] font-black tracking-tight text-white uppercase group-hover:text-red-300 transition-colors">
             {siteName}
@@ -72,7 +72,7 @@ function SidebarInner() {
       </div>
 
       {/* ── Nav ──────────────────────────────────────────────── */}
-      <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <nav className="flex-1 px-2 py-1 overflow-y-auto space-y-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
         {/* Casino section */}
         <SectionToggle
@@ -122,14 +122,14 @@ function SidebarInner() {
             key={href}
             href={href}
             className={cn(
-              "flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-semibold transition-all",
+              "flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[14px] font-semibold transition-all",
               pathname === href
                 ? "text-white"
                 : "text-white hover:text-white",
             )}
             style={pathname === href ? { background: "rgba(139, 92, 246, 0.2)" } : { background: "rgba(139, 92, 246, 0.08)" }}
           >
-            <div className={`w-6 h-6 rounded-md ${iconBg} flex items-center justify-center shrink-0`}>
+            <div className={`w-6 h-6 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
               {iconEl}
             </div>
             {label}
@@ -139,7 +139,7 @@ function SidebarInner() {
 
         <Link
           href="/contact"
-          className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-semibold text-white hover:text-white transition-all"
+          className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[14px] font-semibold text-white hover:text-white transition-all"
           style={{ background: "rgba(139, 92, 246, 0.08)" }}
         >
           <div className="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center shrink-0">
@@ -150,7 +150,7 @@ function SidebarInner() {
       </nav>
 
       {/* ── Total Bets ───────────────────────────────────────── */}
-      <div className="px-4 py-3 shrink-0" style={{ background: "rgba(139, 92, 246, 0.06)" }}>
+      <div className="px-4 py-2 shrink-0" style={{ background: "rgba(139, 92, 246, 0.06)" }}>
         <div className="text-[9px] uppercase tracking-wider text-white/30 mb-0.5">Total Bets Placed</div>
         <div className="text-sm font-bold text-white/50 tabular-nums tracking-tight">14,012,645,500</div>
       </div>
@@ -166,7 +166,7 @@ function SectionToggle({ label, open, onToggle, iconBg, icon }: {
   return (
     <button
       onClick={onToggle}
-      className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[13px] font-bold text-white transition-all"
+      className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[14px] font-bold text-white transition-all"
       style={{ background: "#463e7a" }}
     >
       <div className="flex items-center gap-2.5">
