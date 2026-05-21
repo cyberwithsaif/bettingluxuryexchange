@@ -127,7 +127,7 @@ function SidebarInner() {
                 ? "text-white"
                 : "text-white hover:text-white",
             )}
-            style={pathname === href ? { background: "rgba(139, 92, 246, 0.2)" } : { background: "rgba(139, 92, 246, 0.08)" }}
+            style={pathname === href ? { background: "#7740ed" } : { background: "rgba(139, 92, 246, 0.08)" }}
           >
             {iconEl}
             {label}
@@ -162,8 +162,8 @@ function SectionToggle({ label, open, onToggle, iconBg, icon }: {
   return (
     <button
       onClick={onToggle}
-      className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[15px] font-bold text-white transition-all"
-      style={{ background: "rgba(139, 92, 246, 0.08)" }}
+      className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[15px] font-bold text-white transition-all cursor-pointer"
+      style={{ background: open ? "#7740ed" : "rgba(139, 92, 246, 0.08)" }}
     >
       <div className="flex items-center gap-3">
         {iconBg ? (
@@ -175,7 +175,7 @@ function SectionToggle({ label, open, onToggle, iconBg, icon }: {
         )}
         {label}
       </div>
-      <ChevronDown size={16} strokeWidth={2.5} className={cn("text-white/60 transition-transform", open && "rotate-180")} />
+      <ChevronDown size={16} strokeWidth={2.5} className={cn("text-white transition-transform", open && "rotate-180")} />
     </button>
   );
 }
