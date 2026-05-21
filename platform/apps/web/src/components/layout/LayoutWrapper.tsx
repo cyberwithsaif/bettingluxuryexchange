@@ -6,6 +6,7 @@ import { TopBar } from "./TopBar";
 import { Footer } from "./Footer";
 import { NavigationProgress } from "../NavigationProgress";
 import { MobileBottomNav } from "./MobileBottomNav";
+import { MobileTopBalance } from "../mobile/MobileTopBalance";
 import { AppSidebar } from "./AppSidebar";
 
 export const SidebarContext = createContext<{ collapsed: boolean; setCollapsed: (v: boolean) => void } | null>(null);
@@ -50,6 +51,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
         {/* ── Main column ──────────────────────────────────── */}
         <div className="flex-1 flex flex-col min-w-0">
           <TopBar onToggleSidebar={() => setSidebarCollapsed(c => !c)} />
+          <MobileTopBalance />
           <main className="flex-1 pb-16 md:pb-0 overflow-x-hidden">{children}</main>
           <div className="hidden md:block">
             <Footer />
