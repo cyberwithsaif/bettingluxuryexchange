@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpToLine,
   Settings, Key, ListChecks, ShieldAlert, LogOut, Trophy,
-  Ticket, BarChart3, Bell, Menu, X, CreditCard, Megaphone, Navigation,
+  Ticket, BarChart3, Bell, Menu, X, CreditCard, Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -26,7 +26,6 @@ const NAV = [
   { href: "/logs",                     label: "Audit Logs",      Icon: ListChecks },
   { href: "/settings",                 label: "Settings",        Icon: Settings },
   { href: "/settings/banners",         label: "Banner Settings", Icon: Megaphone },
-  { href: "/settings/nav",             label: "Navigation Bar",  Icon: Navigation },
 ] as const;
 
 function Spinner() {
@@ -88,12 +87,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
       )}>
         {/* Logo */}
-        <div className="px-5 py-4 flex items-center justify-between border-b border-line shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="h-9 w-9 grid place-items-center rounded-md bg-accent-grad font-display text-xl text-ink">E</span>
+        <div className="px-5 py-4 flex items-center justify-between border-b border-line shrink-0" style={{ background: "linear-gradient(135deg, rgba(212,66,63,0.15) 0%, rgba(26,15,46,0.4) 100%)" }}>
+          <div className="flex items-center gap-2.5">
+            <span className="h-9 w-9 grid place-items-center rounded-md font-display text-xl text-white font-black" style={{ background: "linear-gradient(135deg, #d4423f 0%, #a01628 100%)" }}>D</span>
             <div>
-              <div className="font-display text-lg bg-accent-grad bg-clip-text text-transparent">Exch</div>
-              <div className="text-[9px] uppercase tracking-wider text-white/50">Admin</div>
+              <div className="font-display text-base font-black text-white tracking-tight">DiamondPlay22</div>
+              <div className="text-[9px] uppercase tracking-[0.2em] text-white/40">Admin Panel</div>
             </div>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="md:hidden p-1 hover:bg-panel2 rounded">
