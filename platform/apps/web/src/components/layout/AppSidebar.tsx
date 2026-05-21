@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
+import React from "react";
 import useSWR from "swr";
 import {
   Gamepad2, Trophy, ChevronDown, Headphones,
@@ -117,32 +118,46 @@ function SidebarInner() {
 
 
         {/* Extra nav items */}
-        {EXTRA_NAV.map(({ href, label, iconEl }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              "flex items-center gap-3 px-3 py-1.5 rounded-2xl text-[15px] font-bold transition-all",
-              pathname === href
-                ? "text-white"
-                : "text-white hover:text-white",
-            )}
-            style={pathname === href ? { background: "#7740ed" } : { background: "#463e7a" }}
-          >
-            {iconEl}
-            {label}
-          </Link>
-        ))}
+        {EXTRA_NAV.map(({ href, label, iconEl }) => {
+          const isActive = pathname === href;
+          const [isHovered, setIsHovered] = React.useState(false);
+          const bgColor = isActive ? "#7740ed" : "#463e7a";
+          const hoverColor = isActive ? "#8a50f5" : "#5a5a8a";
+
+          return (
+            <Link
+              key={href}
+              href={href}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+              className={cn(
+                "flex items-center gap-3 px-3 py-1.5 rounded-2xl text-[15px] font-bold transition-all",
+                isActive ? "text-white" : "text-white hover:text-white",
+              )}
+              style={{ background: isHovered ? hoverColor : bgColor }}
+            >
+              {iconEl}
+              {label}
+            </Link>
+          );
+        })}
 
 
-        <Link
-          href="/contact"
-          className="flex items-center gap-3 px-3 py-1.5 rounded-2xl text-[15px] font-bold text-white hover:text-white transition-all"
-          style={{ background: "#463e7a" }}
-        >
-          <Headphones size={20} strokeWidth={2.5} className="text-white" />
-          Live Support
-        </Link>
+        {(() => {
+          const [isHovered, setIsHovered] = React.useState(false);
+          return (
+            <Link
+              href="/contact"
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+              className="flex items-center gap-3 px-3 py-1.5 rounded-2xl text-[15px] font-bold text-white hover:text-white transition-all"
+              style={{ background: isHovered ? "#5a5a8a" : "#463e7a" }}
+            >
+              <Headphones size={20} strokeWidth={2.5} className="text-white" />
+              Live Support
+            </Link>
+          );
+        })()}
       </nav>
 
       {/* ── Total Bets ───────────────────────────────────────── */}
@@ -159,11 +174,17 @@ function SidebarInner() {
 function SectionToggle({ label, open, onToggle, iconBg, icon }: {
   label: string; open: boolean; onToggle: () => void; iconBg: string; icon: React.ReactNode;
 }) {
+  const [isHovered, setIsHovered] = React.useState(false);
+  const bgColor = open ? "#7740ed" : "#463e7a";
+  const hoverColor = open ? "#8a50f5" : "#5a5a8a";
+
   return (
     <button
       onClick={onToggle}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className="w-full flex items-center justify-between px-4 py-2 rounded-2xl text-[15px] font-bold text-white transition-all cursor-pointer"
-      style={{ background: open ? "#7740ed" : "#463e7a" }}
+      style={{ background: isHovered ? hoverColor : bgColor }}
     >
       <div className="flex items-center gap-3">
         {iconBg ? (
