@@ -195,14 +195,14 @@ function SubLink({ href, active, emoji, children }: {
     <Link
       href={href}
       className={cn(
-        "flex items-center gap-2 px-2 py-1.5 text-[12px] transition-all",
+        "flex items-center gap-2.5 px-3 py-2 text-[14px] font-semibold transition-all rounded-lg",
         active
-          ? "text-white font-semibold rounded-lg"
-          : "text-white/52 hover:text-white hover:bg-white/5 rounded-md",
+          ? "text-white"
+          : "text-white/80 hover:text-white",
       )}
-      style={active ? { background: "#7740ed" } : undefined}
+      style={{ background: "#2c2852" }}
     >
-      <span className="text-sm leading-none">{emoji}</span>
+      <span className="text-base leading-none">{emoji}</span>
       {children}
     </Link>
   );
