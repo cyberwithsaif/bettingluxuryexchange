@@ -135,12 +135,12 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
                 href="/account/deposit"
                 className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0 transition-all active:scale-95 hover:brightness-110"
                 style={{
-                  background: "linear-gradient(160deg, #ffe135 0%, #ffd700 50%, #e6a800 100%)",
-                  boxShadow: "0 4px 14px rgba(255,215,0,0.45), inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -3px 6px rgba(0,0,0,0.25)",
-                  border: "1px solid rgba(255,220,0,0.5)",
+                  background: "linear-gradient(160deg, #ffd580 0%, #ffb347 50%, #ff9f43 100%)",
+                  boxShadow: "0 4px 14px rgba(255,195,0,0.45), inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -3px 6px rgba(0,0,0,0.25)",
+                  border: "1px solid rgba(255,200,0,0.5)",
                 }}
               >
-                <Plus size={18} className="text-black" strokeWidth={3} />
+                <Plus size={18} className="text-white" strokeWidth={3} />
               </Link>
             </div>
 
