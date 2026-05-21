@@ -18,7 +18,7 @@ export function MobileBottomNav() {
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[#191a38] border-t border-white/5 shadow-[0_-2px_8px_rgba(0,0,0,0.3)]">
       <ul className="grid grid-cols-5">
         {ITEMS.map(({ href, label, icon: Icon }) => {
-          const active = path === href || (href === "/exchange" && path === "/");
+          const active = path === href;
           return (
             <li key={href}>
               <Link
