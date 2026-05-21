@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { GameCarousel } from "@/components/GameCarousel";
 
 export default async function HomePage() {
@@ -12,8 +13,19 @@ export default async function HomePage() {
           {/* Background gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-900" />
 
+          {/* Background image */}
+          <div className="absolute inset-0 right-0 w-3/5 opacity-70 group-hover:opacity-80 transition-opacity">
+            <Image
+              src="/images/bannerlogo.png"
+              alt="Casino"
+              fill
+              className="object-cover object-right"
+              priority
+            />
+          </div>
+
           {/* Overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/30 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent pointer-events-none" />
 
           {/* Content */}
           <div className="relative z-10 h-full p-4 md:p-6 flex flex-col justify-between">
@@ -30,11 +42,6 @@ export default async function HomePage() {
                 Play Now →
               </button>
             </div>
-          </div>
-
-          {/* Decorative image placeholder */}
-          <div className="absolute right-0 bottom-0 text-8xl opacity-20 group-hover:opacity-30 transition-opacity pointer-events-none">
-            🎰
           </div>
         </div>
 
@@ -63,10 +70,6 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Decorative image placeholder */}
-          <div className="absolute right-0 bottom-0 text-8xl opacity-20 group-hover:opacity-30 transition-opacity pointer-events-none">
-            ⚽
-          </div>
         </div>
       </div>
 
