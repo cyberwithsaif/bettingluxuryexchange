@@ -4,8 +4,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpToLine,
-  Settings, Key, ListChecks, ShieldAlert, LogOut, Gamepad2, Trophy,
-  Ticket, BarChart3, Bell, Menu, X, CreditCard, Megaphone, Navigation, Target,
+  Settings, Key, ListChecks, ShieldAlert, LogOut, Trophy,
+  Ticket, BarChart3, Bell, Menu, X, CreditCard, Megaphone, Navigation,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -18,7 +18,6 @@ const NAV = [
   { href: "/deposits",                 label: "Deposits",        Icon: ArrowDownToLine },
   { href: "/withdrawals",              label: "Withdrawals",     Icon: ArrowUpToLine },
   { href: "/markets",                  label: "Markets",         Icon: Trophy },
-  { href: "/casino",                   label: "Casino",          Icon: Gamepad2 },
   { href: "/risk",                     label: "Live Risk",       Icon: ShieldAlert },
   { href: "/reports",                  label: "Reports",         Icon: BarChart3 },
   { href: "/notifications",            label: "Announcements",   Icon: Bell },
@@ -28,8 +27,6 @@ const NAV = [
   { href: "/settings",                 label: "Settings",        Icon: Settings },
   { href: "/settings/banners",         label: "Banner Settings", Icon: Megaphone },
   { href: "/settings/nav",             label: "Navigation Bar",  Icon: Navigation },
-  { href: "/casino/mines",             label: "Mines",           Icon: Gamepad2 },
-  { href: "/casino/plinko",            label: "Plinko",          Icon: Target },
 ] as const;
 
 function Spinner() {
@@ -110,8 +107,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             const active =
               href === "/"
                 ? path === "/"
-                : path === href || (href !== "/settings" && href !== "/casino" && path?.startsWith(href + "/"));
-            const isSubItem = href === "/settings/banners" || href === "/settings/nav" || href === "/casino/mines" || href === "/casino/plinko";
+                : path === href || (href !== "/settings" && path?.startsWith(href + "/"));
+            const isSubItem = href === "/settings/banners" || href === "/settings/nav";
             return (
               <Link
                 key={href}
