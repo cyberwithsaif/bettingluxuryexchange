@@ -73,14 +73,14 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
     <header className="sticky top-0 z-50 bg-[#191938] text-white shadow-sm rounded-br-2xl">
       <MobileSidebar open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
-      <div className="flex items-center h-16 px-3 justify-between gap-4">
+      <div className="flex items-center h-20 px-4 justify-between gap-4">
 
         {/* ── Left section (toggle) ──────────────────── */}
         <div className="flex items-center gap-2 shrink-0">
           {/* Sidebar toggle (desktop) */}
           <button
             onClick={toggleSidebar}
-            className="hidden md:flex w-10 h-10 rounded-xl items-center justify-center transition-all group"
+            className="hidden md:flex w-12 h-12 rounded-xl items-center justify-center transition-all group"
             style={{
               background: "linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(168, 85, 247, 0.2))",
               boxShadow: "0 8px 20px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 8px rgba(0, 0, 0, 0.3)",
@@ -98,7 +98,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
           <button
             onClick={() => setDrawerOpen(true)}
             aria-label="Open menu"
-            className="md:hidden w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition shrink-0"
+            className="md:hidden w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition shrink-0"
           >
             <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
               <rect width="16" height="2" rx="1" fill="currentColor" />
@@ -133,7 +133,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
               </div>
               <Link
                 href="/account/deposit"
-                className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0 transition-all active:scale-95 hover:brightness-110"
+                className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-all active:scale-95 hover:brightness-110"
                 style={{
                   background: "linear-gradient(160deg, #ffd580 0%, #ffb347 50%, #ff9f43 100%)",
                   boxShadow: "0 4px 14px rgba(255,195,0,0.45), inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -3px 6px rgba(0,0,0,0.25)",
@@ -170,7 +170,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
             {/* Desktop deposit button — yellow like Roobet */}
             <Link
               href="/account/deposit"
-              className="hidden md:flex items-center gap-1.5 rounded-xl font-bold text-[13px] px-5 py-2.5 transition-all hover:brightness-125 active:scale-95 shrink-0 hover:scale-105 shadow-lg"
+              className="hidden md:flex items-center gap-2 rounded-xl font-bold text-[14px] px-6 py-2.5 transition-all hover:brightness-125 active:scale-95 shrink-0 hover:scale-105 shadow-lg"
               style={{
                 background: "linear-gradient(135deg,#ffd700,#ffed4e)",
                 color: "#1a0a00",
@@ -212,12 +212,12 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
             </Link>
 
             {/* Search */}
-            <button className="hidden sm:flex w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 items-center justify-center transition">
+            <button className="hidden sm:flex w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 items-center justify-center transition">
               <Search size={15} className="text-white/55" />
             </button>
 
             {/* Lightning / promo — purple like Roobet */}
-            <button className="relative hidden sm:flex w-9 h-9 rounded-lg items-center justify-center transition hover:brightness-110"
+            <button className="relative hidden sm:flex w-10 h-10 rounded-lg items-center justify-center transition hover:brightness-110"
               style={{ background: "linear-gradient(135deg,#5b21b6,#7c3aed)" }}>
               <Zap size={15} className="text-yellow-300" fill="currentColor" />
             </button>
@@ -242,7 +242,7 @@ function NotificationBell() {
   return (
     <Link
       href="/account/notifications"
-      className="relative flex w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 items-center justify-center transition"
+      className="relative flex w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 items-center justify-center transition"
       title="Notifications"
     >
       <Bell size={15} className="text-white/55" />
