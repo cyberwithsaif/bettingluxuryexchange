@@ -5,17 +5,67 @@ export default async function HomePage() {
   return (
     <div className="w-full px-3 md:px-5 py-4 space-y-6 max-w-[1400px] mx-auto">
 
-      {/* Ads Banner */}
-      <div className="w-full rounded-3xl overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-300 min-h-[160px] md:min-h-[220px] bg-gradient-to-r from-yellow-600 via-yellow-500 to-amber-500 hover:shadow-2xl hover:scale-[1.01]">
-        <div className="relative w-full h-full flex items-center justify-center">
-          <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/20 pointer-events-none" />
-          <div className="relative z-10 text-center">
-            <p className="text-white/80 text-sm md:text-base font-semibold uppercase tracking-widest mb-2">Special Promotion</p>
-            <h2 className="text-white font-black text-3xl md:text-5xl mb-3">Up to 50% Bonus</h2>
-            <p className="text-white/90 text-base md:text-lg mb-6">Deposit now and claim your welcome bonus</p>
-            <button className="px-6 md:px-8 py-2.5 md:py-3 bg-white text-amber-600 font-bold rounded-full hover:bg-white/90 transition-all active:scale-95">
-              Claim Now
-            </button>
+      {/* Ads Banners */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Casino Banner */}
+        <div className="group relative rounded-3xl overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-300 min-h-[160px] md:min-h-[220px] hover:shadow-2xl hover:scale-[1.02] cursor-pointer">
+          {/* Background gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-900" />
+
+          {/* Overlay gradient */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/30 to-transparent pointer-events-none" />
+
+          {/* Content */}
+          <div className="relative z-10 h-full p-4 md:p-6 flex flex-col justify-between">
+            <div>
+              <p className="text-purple-300 text-[10px] md:text-[11px] font-bold uppercase tracking-widest mb-2 opacity-80">
+                DiamondPlay
+              </p>
+              <h3 className="text-white font-black text-2xl md:text-3xl mb-1">Casino</h3>
+              <p className="text-white/80 text-sm md:text-base font-medium">Thousands of Games</p>
+            </div>
+
+            <div>
+              <button className="px-4 md:px-5 py-2 md:py-2.5 bg-purple-500/40 text-white font-bold rounded-full hover:bg-purple-500/60 transition-all active:scale-95 border border-purple-400/50 backdrop-blur-sm text-sm md:text-base">
+                Play Now →
+              </button>
+            </div>
+          </div>
+
+          {/* Decorative image placeholder */}
+          <div className="absolute right-0 bottom-0 text-8xl opacity-20 group-hover:opacity-30 transition-opacity pointer-events-none">
+            🎰
+          </div>
+        </div>
+
+        {/* Sports Banner */}
+        <div className="group relative rounded-3xl overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-300 min-h-[160px] md:min-h-[220px] hover:shadow-2xl hover:scale-[1.02] cursor-pointer">
+          {/* Background gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500 via-orange-600 to-orange-800" />
+
+          {/* Overlay gradient */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/30 to-transparent pointer-events-none" />
+
+          {/* Content */}
+          <div className="relative z-10 h-full p-4 md:p-6 flex flex-col justify-between">
+            <div>
+              <p className="text-amber-300 text-[10px] md:text-[11px] font-bold uppercase tracking-widest mb-2 opacity-80">
+                DiamondPlay
+              </p>
+              <h3 className="text-white font-black text-2xl md:text-3xl mb-1">Sports Betting</h3>
+              <p className="text-white/80 text-sm md:text-base font-medium">Support Your Team</p>
+            </div>
+
+            <div>
+              <button className="px-4 md:px-5 py-2 md:py-2.5 bg-amber-500/40 text-white font-bold rounded-full hover:bg-amber-500/60 transition-all active:scale-95 border border-amber-400/50 backdrop-blur-sm text-sm md:text-base">
+                Play Now →
+              </button>
+            </div>
+          </div>
+
+          {/* Decorative image placeholder */}
+          <div className="absolute right-0 bottom-0 text-8xl opacity-20 group-hover:opacity-30 transition-opacity pointer-events-none">
+            ⚽
           </div>
         </div>
       </div>
