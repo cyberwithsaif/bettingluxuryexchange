@@ -16,7 +16,7 @@ export default async function HomePage() {
           {/* Background image - right positioned with slight overflow */}
           <div className="absolute -right-8 top-0 w-2/3 h-full">
             <Image
-              src="/images/bannerlogo.png"
+              src="/images/bannerlogo.png?v=2"
               alt="Casino"
               fill
               className="object-contain object-right"
