@@ -6,7 +6,6 @@ import { TopBar } from "./TopBar";
 import { Footer } from "./Footer";
 import { NavigationProgress } from "../NavigationProgress";
 import { MobileBottomNav } from "./MobileBottomNav";
-import { MobileBalanceBar } from "../mobile/MobileBalanceBar";
 import { AppSidebar } from "./AppSidebar";
 
 export const SidebarContext = createContext<{ collapsed: boolean; setCollapsed: (v: boolean) => void } | null>(null);
@@ -56,9 +55,6 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
             <Footer />
           </div>
         </div>
-
-        {/* ── Mobile balance bar ──────────────────────────── */}
-        <MobileBalanceBar />
 
         {/* ── Mobile bottom nav ────────────────────────────── */}
         <MobileBottomNav />
