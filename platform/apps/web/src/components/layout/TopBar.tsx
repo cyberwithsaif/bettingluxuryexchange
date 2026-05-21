@@ -1,23 +1,29 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Wallet, ArrowDownToLine, ArrowUpToLine, User2, LogOut, Bell, Sun, Volume2, ChevronDown, Menu } from "lucide-react";
+import {
+  ArrowDownToLine, ArrowUpToLine, User2, LogOut, Bell,
+  ChevronDown, Search, Zap, MessageCircle, PanelLeftClose, PanelLeftOpen,
+} from "lucide-react";
 import useSWR from "swr";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
 import { cn } from "@/lib/cn";
 import { MobileSidebar } from "../mobile/MobileSidebar";
 
-const DEFAULT_MARQUEE_FALLBACK = "📢 Live Matka Markets Now Available — Play Smart, Win Big! • Bet Now in Line Markets and Get Commission Upto 2%";
-
-interface PublicSettings { subBanner?: string; siteName?: string; siteTagline?: string; marqueeText?: string; }
+interface PublicSettings { siteName?: string; siteTagline?: string; }
 
 function useLiveClock() {
-  const [now, setNow] = useState<string>("");
+  const [now, setNow] = useState("");
   useEffect(() => {
     const tick = () => {
       const d = new Date();
-      setNow(d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) + " " + d.toLocaleTimeString("en-US", { hour12: true }) + "(+05:30)");
+      setNow(
+        d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
+        " " +
+        d.toLocaleTimeString("en-US", { hour12: true }) +
+        " (+05:30)",
+      );
     };
     tick();
     const id = setInterval(tick, 1000);
@@ -26,17 +32,30 @@ function useLiveClock() {
   return now;
 }
 
+function fmtMoney(n: number | undefined) {
+  if (n == null) return "—";
+  return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(n);
+}
+
 export function TopBar() {
   const clock = useLiveClock();
   const { user, clear } = useAuthStore();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const { data: wallet, mutate } = useSWR(user ? "/wallet/summary" : null);
   const pFetch = (url: string) => fetch(url).then(r => r.json());
-  const { data: announcements } = useSWR<Array<{ id: string; text: string }>>("/api/announcements/active", pFetch, { refreshInterval: 60_000 });
-  const { data: platformSettings } = useSWR<PublicSettings>("/api/platform/settings", pFetch, { refreshInterval: 300_000 });
-  const marqueeText = announcements && announcements.length > 0
-    ? announcements.map((a) => `📢 ${a.text}`).join(" • ")
-    : (platformSettings?.marqueeText ?? DEFAULT_MARQUEE_FALLBACK);
+  const { data: announcements } = useSWR<{ id: string; text: string }[]>(
+    "/api/announcements/active", pFetch, { refreshInterval: 60_000 },
+  );
+  const { data: platformSettings } = useSWR<PublicSettings>(
+    "/api/platform/settings", pFetch, { refreshInterval: 300_000 },
+  );
+
+  const marqueeText =
+    announcements?.length
+      ? announcements.map(a => `📢 ${a.text}`).join("  •  ")
+      : "🎉 Welcome to " + (platformSettings?.siteName ?? "DiamondPlay22") + " — Bet Now & Win Big!";
 
   useEffect(() => {
     if (!user) return;
@@ -45,151 +64,161 @@ export function TopBar() {
     return () => { s.off("wallet:update"); };
   }, [user, mutate]);
 
+  // Toggle sidebar by flipping data attribute on the sidebar aside element
+  function toggleSidebar() {
+    setSidebarCollapsed(c => !c);
+    const sidebar = document.querySelector("aside.app-sidebar") as HTMLElement | null;
+    if (sidebar) {
+      sidebar.style.display = sidebar.style.display === "none" ? "" : "none";
+    }
+  }
+
   return (
-    <header className="sticky top-0 z-50 bg-brandRed text-white shadow-md">
+    <header className="sticky top-0 z-50 bg-[#160b14] border-b border-white/6 text-white shadow-sm">
       <MobileSidebar open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      <div className="mx-auto max-w-[1600px] flex items-center justify-between px-3 md:px-4 h-14 md:h-16">
 
-        {/* Left: Hamburger (mobile) + Logo */}
-        <div className="flex items-center gap-2 md:gap-4">
-          <button
-            onClick={() => setDrawerOpen(true)}
-            aria-label="Open menu"
-            className="md:hidden -ml-1 p-1.5 rounded hover:bg-black/10"
-          >
-            <Menu size={22} />
-          </button>
-          {/* Logo: visible on mobile only; desktop sidebar has it */}
-          <Link href="/" className="flex flex-col leading-none md:hidden">
-            <span className="font-display italic text-xl font-black tracking-tight flex items-center gap-1 uppercase">
-              {platformSettings?.siteName ?? "DiamondPlay22"} <span className="text-base">🏏</span>
-            </span>
-          </Link>
-          <div className="hidden lg:block text-xs font-medium text-white/90">
-            {clock}
+      <div className="flex items-center h-[58px] px-3 gap-2 md:gap-3">
+
+        {/* ── Sidebar toggle (desktop) ───────────────────────── */}
+        <button
+          onClick={toggleSidebar}
+          className="hidden md:flex w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 items-center justify-center transition shrink-0"
+          title="Toggle sidebar"
+        >
+          {sidebarCollapsed
+            ? <PanelLeftOpen size={16} className="text-white/60" />
+            : <PanelLeftClose size={16} className="text-white/60" />
+          }
+        </button>
+
+        {/* ── Mobile hamburger ──────────────────────────────── */}
+        <button
+          onClick={() => setDrawerOpen(true)}
+          aria-label="Open menu"
+          className="md:hidden w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition shrink-0"
+        >
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+            <rect width="16" height="2" rx="1" fill="currentColor" />
+            <rect y="5" width="12" height="2" rx="1" fill="currentColor" />
+            <rect y="10" width="8" height="2" rx="1" fill="currentColor" />
+          </svg>
+        </button>
+
+        {/* ── Mobile logo ───────────────────────────────────── */}
+        <Link href="/" className="md:hidden flex flex-col leading-none shrink-0">
+          <span className="font-display italic text-lg font-black tracking-tight text-white uppercase">
+            {platformSettings?.siteName ?? "DiamondPlay22"}
+          </span>
+        </Link>
+
+        {/* ── Clock (desktop, subtle) ───────────────────────── */}
+        <span className="hidden lg:block text-[11px] text-white/30 tabular-nums shrink-0 font-medium">
+          {clock}
+        </span>
+
+        {/* ── Marquee (desktop) ────────────────────────────── */}
+        <div className="hidden md:flex flex-1 min-w-0 items-center overflow-hidden">
+          <div className="overflow-hidden w-full">
+            <p className="text-[12px] text-white/40 font-medium whitespace-nowrap animate-marquee">
+              {marqueeText}
+            </p>
           </div>
         </div>
 
-        {/* Middle: Marquee */}
-        <div className="hidden md:flex flex-1 max-w-2xl mx-8 items-center overflow-hidden whitespace-nowrap text-sm font-semibold">
-          <div className="flex items-center gap-2 animate-marquee w-full">
-            <Volume2 size={16} className="shrink-0" />
-            <span>{marqueeText}</span>
-          </div>
-        </div>
+        {/* ── Flex spacer (mobile) ─────────────────────────── */}
+        <div className="flex-1 md:hidden" />
 
-        {/* Right: Actions & User */}
-        <div className="flex items-center gap-4">
-          <button className="hidden sm:block hover:text-white/80 transition">
-            <Sun size={18} />
-          </button>
+        {/* ── Authenticated user area ───────────────────────── */}
+        {user ? (
+          <div className="flex items-center gap-2">
 
-          {user ? (
-            <>
-              {/* Deposit/Withdraw: hidden on smallest, shown sm+ */}
-              <div className="hidden sm:flex items-center gap-1.5">
-                <Link
-                  href="/account/deposit"
-                  className="flex items-center gap-1 rounded bg-white px-2.5 sm:px-4 py-1.5 text-xs sm:text-sm font-bold text-brandRed hover:bg-gray-100 transition"
-                >
-                  <ArrowDownToLine size={14} />
-                  <span>DEPOSIT</span>
-                </Link>
-                <Link
-                  href="/account/withdraw"
-                  className="flex items-center gap-1 rounded bg-white px-2.5 sm:px-4 py-1.5 text-xs sm:text-sm font-bold text-brandRed hover:bg-gray-100 transition"
-                >
-                  <ArrowUpToLine size={14} />
-                  <span>WITHDRAW</span>
-                </Link>
-              </div>
-
-              {/* Points / Exposure — compact pill on mobile, stacked on sm+ */}
-              <div className="flex flex-col text-right leading-tight">
-                <span className="text-[10px] sm:text-[11px] font-semibold">
-                  Points: <span className="font-bold">{fmtMoney(wallet?.available)}</span>
+            {/* Balance pill */}
+            <div className="hidden sm:flex items-center gap-1.5 bg-white/6 border border-white/10 rounded-full px-3 py-1.5 cursor-default">
+              <span className="text-base leading-none">₹</span>
+              <div className="flex flex-col items-end leading-tight">
+                <span className="text-[12px] font-bold text-white tabular-nums">
+                  {fmtMoney(wallet?.available)}
                 </span>
-                <span className="text-[10px] sm:text-[11px] font-semibold text-white/80">
-                  Exp: <span className="font-bold">{fmtMoney(wallet?.exposure)}</span>
-                </span>
+                {(wallet?.exposure ?? 0) > 0 && (
+                  <span className="text-[9px] text-red-400 tabular-nums">
+                    -{fmtMoney(wallet?.exposure)}
+                  </span>
+                )}
               </div>
-
-              <ProfileMenu username={user.username} onLogout={clear} />
-            </>
-          ) : (
-            <div className="flex items-center gap-3">
-              <Link href="/auth/login" className="rounded bg-white px-5 py-1.5 text-sm font-bold text-brandRed hover:bg-gray-100">Login</Link>
-              <Link href="/auth/register" className="rounded bg-brandYellow px-5 py-1.5 text-sm font-bold text-ink hover:brightness-110">Sign up</Link>
+              <ChevronDown size={12} className="text-white/30" />
             </div>
-          )}
-        </div>
+
+            {/* Deposit button — yellow like Roobet */}
+            <Link
+              href="/account/deposit"
+              className="flex items-center gap-1.5 rounded-lg font-bold text-[13px] px-4 py-2 transition hover:brightness-110 active:scale-95 shrink-0"
+              style={{ background: "linear-gradient(135deg,#d4a017,#f0c030)", color: "#1a0a00" }}
+            >
+              <ArrowDownToLine size={13} />
+              <span className="hidden sm:inline">Deposit</span>
+            </Link>
+
+            {/* Withdraw — outline on desktop */}
+            <Link
+              href="/account/withdraw"
+              className="hidden sm:flex items-center gap-1.5 rounded-lg border border-white/15 text-white/60 hover:text-white hover:border-white/30 font-semibold text-[13px] px-3 py-2 transition"
+            >
+              <ArrowUpToLine size={13} />
+            </Link>
+
+            {/* Search */}
+            <button className="hidden sm:flex w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 items-center justify-center transition">
+              <Search size={15} className="text-white/55" />
+            </button>
+
+            {/* Lightning / promo — purple like Roobet */}
+            <button className="relative hidden sm:flex w-9 h-9 rounded-lg items-center justify-center transition hover:brightness-110"
+              style={{ background: "linear-gradient(135deg,#5b21b6,#7c3aed)" }}>
+              <Zap size={15} className="text-yellow-300" fill="currentColor" />
+            </button>
+
+            {/* Notification bell */}
+            <NotificationBell />
+
+            {/* User menu */}
+            <ProfileMenu username={user.username} onLogout={clear} />
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Link
+              href="/auth/login"
+              className="rounded-lg border border-white/20 px-4 py-2 text-[13px] font-bold text-white hover:bg-white/10 transition"
+            >
+              Login
+            </Link>
+            <Link
+              href="/auth/register"
+              className="rounded-lg font-bold text-[13px] px-4 py-2 transition hover:brightness-110"
+              style={{ background: "linear-gradient(135deg,#d4a017,#f0c030)", color: "#1a0a00" }}
+            >
+              Sign up
+            </Link>
+          </div>
+        )}
       </div>
     </header>
   );
 }
 
-function Stat({ label, value, highlight, tone }: { label: string; value: string; highlight?: boolean; tone?: "bad" }) {
-  return (
-    <div className="flex flex-col leading-tight">
-      <span className="text-[10px] uppercase tracking-wider text-white/50">{label}</span>
-      <span className={cn(
-        "font-semibold tabular-nums",
-        highlight && "text-accent",
-        tone === "bad" && "text-bad",
-      )}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function ProfileMenu({ username, onLogout }: { username: string; onLogout: () => void }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="relative">
-      <button onClick={() => setOpen(o => !o)} className="flex items-center gap-2 hover:bg-black/10 rounded-full py-1 px-2 transition">
-        <div className="bg-white rounded-full p-1 text-brandRed">
-          <User2 size={16} />
-        </div>
-        <span className="hidden sm:inline font-bold text-sm">{username}</span>
-        <ChevronDown size={14} />
-      </button>
-      {open && (
-        <div className="absolute right-0 mt-2 w-52 rounded-md bg-white border border-gray-200 p-1 shadow-panel text-ink z-50">
-          {(
-            [
-              ["Dashboard", "/account"],
-              ["My Bets", "/account/bets"],
-              ["Account Statement", "/account/statement"],
-              ["Profit / Loss", "/account/pl"],
-              ["Notifications", "/account/notifications"],
-              ["Security & 2FA", "/account/security"],
-            ] as const
-          ).map(([l, h]) => (
-            <Link key={h} href={h} className="block px-3 py-2 text-sm rounded hover:bg-gray-100 font-medium" onClick={() => setOpen(false)}>{l}</Link>
-          ))}
-          <button onClick={onLogout} className="flex w-full items-center gap-2 px-3 py-2 text-sm rounded text-bad hover:bg-gray-100 font-medium">
-            <LogOut size={14}/> Sign out
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
+/* ── Notification Bell ──────────────────────────────────────── */
 function NotificationBell() {
   const pFetch = (url: string) => fetch(url).then(r => r.json());
-  const { data } = useSWR<Array<{ id: string }>>("/api/announcements/active", pFetch, { refreshInterval: 60_000 });
+  const { data } = useSWR<{ id: string }[]>("/api/announcements/active", pFetch, { refreshInterval: 60_000 });
   const count = data?.length ?? 0;
   return (
     <Link
       href="/account/notifications"
-      className="relative inline-flex items-center justify-center h-9 w-9 rounded-md border border-line bg-panel/60 hover:border-accent transition"
+      className="relative flex w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 items-center justify-center transition"
       title="Notifications"
     >
-      <Bell size={15} />
+      <Bell size={15} className="text-white/55" />
       {count > 0 && (
-        <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-0.5 rounded-full bg-bad text-[9px] font-bold grid place-items-center text-white">
+        <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-0.5 rounded-full bg-green-500 text-[9px] font-bold grid place-items-center text-white">
           {count}
         </span>
       )}
@@ -197,7 +226,60 @@ function NotificationBell() {
   );
 }
 
-function fmtMoney(n: number | undefined) {
-  if (n == null) return "—";
-  return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(n);
+/* ── Profile Menu ───────────────────────────────────────────── */
+function ProfileMenu({ username, onLogout }: { username: string; onLogout: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2 h-9 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition"
+      >
+        {/* Hexagon-style avatar like Roobet */}
+        <div
+          className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0"
+          style={{ background: "linear-gradient(135deg,#7c3aed,#c026d3)" }}
+        >
+          {username[0]?.toUpperCase()}
+        </div>
+        <span className="hidden sm:inline text-[13px] font-semibold text-white/80 max-w-[80px] truncate">
+          {username}
+        </span>
+        <ChevronDown size={12} className="text-white/30" />
+      </button>
+
+      {open && (
+        <div
+          className="absolute right-0 mt-2 w-52 rounded-xl border border-white/10 p-1.5 shadow-2xl z-50"
+          style={{ background: "#1e0e18" }}
+        >
+          {([
+            ["Dashboard",         "/account"],
+            ["My Bets",           "/account/bets"],
+            ["Account Statement", "/account/statement"],
+            ["Profit / Loss",     "/account/pl"],
+            ["Notifications",     "/account/notifications"],
+            ["Deposit",           "/account/deposit"],
+            ["Withdraw",          "/account/withdraw"],
+            ["Security & 2FA",    "/account/security"],
+          ] as const).map(([l, h]) => (
+            <Link
+              key={h} href={h}
+              className="block px-3 py-2 text-[13px] rounded-lg hover:bg-white/6 text-white/70 hover:text-white font-medium transition"
+              onClick={() => setOpen(false)}
+            >
+              {l}
+            </Link>
+          ))}
+          <div className="h-px bg-white/8 my-1" />
+          <button
+            onClick={onLogout}
+            className="flex w-full items-center gap-2 px-3 py-2 text-[13px] rounded-lg text-red-400 hover:bg-red-900/20 font-medium transition"
+          >
+            <LogOut size={13} /> Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
