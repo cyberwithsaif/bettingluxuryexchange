@@ -12,7 +12,7 @@ export default {
     extend: {
       colors: {
         ink:        "#0b0608",   // deepest background
-        bg:         "#15080c",   // page bg
+        bg:         "#090c1c",   // page bg
         panel:      "#1f0a12",   // raised panel
         panel2:     "#2b0f1a",   // brighter raised panel
         wine:       "#3a0d1c",
