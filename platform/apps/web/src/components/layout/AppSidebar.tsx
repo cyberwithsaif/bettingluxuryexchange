@@ -30,15 +30,15 @@ const CASINO_GAMES = [
 ];
 
 const EXTRA_NAV = [
-  { href: "/predictions", label: "Predictions",  iconEl: <TrendingUp size={13} className="text-white/80" />,  iconBg: "bg-white/10" },
-  { href: "/rewards",     label: "Rewards",       iconEl: <Award      size={13} className="text-white/80" />,  iconBg: "bg-white/10" },
-  { href: "/live-rtp",   label: "Live RTP",       iconEl: <Activity   size={13} className="text-white/80" />,  iconBg: "bg-white/10" },
-  { href: "/promotions", label: "Promotions",     iconEl: <Megaphone  size={13} className="text-white/80" />,  iconBg: "bg-white/10" },
-  { href: "/refer-earn", label: "Refer & Earn",   iconEl: <Share2     size={13} className="text-white/80" />,  iconBg: "bg-white/10" },
-  { href: "/redeem",     label: "Redeem",         iconEl: <GiftBox    size={13} className="text-white/80" />,  iconBg: "bg-white/10" },
-  { href: "/vip-club",   label: "VIP Club",       iconEl: <Crown      size={13} className="text-white/80" />,  iconBg: "bg-white/10" },
-  { href: "/responsible",label: "Roo Responsibly",iconEl: <Heart      size={13} className="text-white/80" />,  iconBg: "bg-white/10" },
-  { href: "/language",   label: "English",        iconEl: <Globe      size={13} className="text-white/80" />,  iconBg: "bg-white/10" },
+  { href: "/predictions", label: "Predictions",  iconEl: <TrendingUp size={20} strokeWidth={2.5} className="text-white" />,  iconBg: "" },
+  { href: "/rewards",     label: "Rewards",       iconEl: <Award      size={20} strokeWidth={2.5} className="text-white" />,  iconBg: "" },
+  { href: "/live-rtp",   label: "Live RTP",       iconEl: <Activity   size={20} strokeWidth={2.5} className="text-white" />,  iconBg: "" },
+  { href: "/promotions", label: "Promotions",     iconEl: <Megaphone  size={20} strokeWidth={2.5} className="text-white" />,  iconBg: "" },
+  { href: "/refer-earn", label: "Refer & Earn",   iconEl: <Share2     size={20} strokeWidth={2.5} className="text-white" />,  iconBg: "" },
+  { href: "/redeem",     label: "Redeem",         iconEl: <GiftBox    size={20} strokeWidth={2.5} className="text-white" />,  iconBg: "" },
+  { href: "/vip-club",   label: "VIP Club",       iconEl: <Crown      size={20} strokeWidth={2.5} className="text-white" />,  iconBg: "" },
+  { href: "/responsible",label: "Roo Responsibly",iconEl: <Heart      size={20} strokeWidth={2.5} className="text-white" />,  iconBg: "" },
+  { href: "/language",   label: "English",        iconEl: <Globe      size={20} strokeWidth={2.5} className="text-white" />,  iconBg: "" },
 ];
 
 function SidebarInner() {
@@ -117,21 +117,19 @@ function SidebarInner() {
 
 
         {/* Extra nav items */}
-        {EXTRA_NAV.map(({ href, label, iconEl, iconBg }) => (
+        {EXTRA_NAV.map(({ href, label, iconEl }) => (
           <Link
             key={href}
             href={href}
             className={cn(
-              "flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[15px] font-bold transition-all",
+              "flex items-center gap-3 px-3 py-1.5 rounded-xl text-[15px] font-bold transition-all",
               pathname === href
                 ? "text-white"
                 : "text-white hover:text-white",
             )}
             style={pathname === href ? { background: "rgba(139, 92, 246, 0.2)" } : { background: "rgba(139, 92, 246, 0.08)" }}
           >
-            <div className={`w-6 h-6 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
-              {iconEl}
-            </div>
+            {iconEl}
             {label}
           </Link>
         ))}
@@ -139,12 +137,10 @@ function SidebarInner() {
 
         <Link
           href="/contact"
-          className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[15px] font-bold text-white hover:text-white transition-all"
+          className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[15px] font-bold text-white hover:text-white transition-all"
           style={{ background: "rgba(139, 92, 246, 0.08)" }}
         >
-          <div className="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center shrink-0">
-            <Headphones size={13} className="text-white/80" />
-          </div>
+          <Headphones size={20} strokeWidth={2.5} className="text-white" />
           Live Support
         </Link>
       </nav>
