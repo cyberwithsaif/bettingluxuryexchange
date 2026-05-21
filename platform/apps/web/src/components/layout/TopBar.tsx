@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   ArrowDownToLine, ArrowUpToLine, User2, LogOut, Bell,
   ChevronDown, Search, Zap, MessageCircle, PanelLeftClose, PanelLeftOpen,
+  Wallet, Plus,
 } from "lucide-react";
 import useSWR from "swr";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -111,7 +112,40 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
         {user ? (
           <div className="flex items-center gap-2 md:gap-3 justify-center flex-1">
 
-            {/* Balance pill */}
+            {/* Mobile balance + deposit */}
+            <div className="flex md:hidden items-center gap-2 flex-1 justify-center">
+              <div
+                className="flex items-center gap-2 rounded-xl px-3 py-1.5 cursor-default"
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-500 shrink-0">
+                  <Wallet size={14} className="text-white" strokeWidth={2.5} />
+                </div>
+                <div className="flex flex-col leading-tight">
+                  <span className="text-[9px] text-white/50 leading-none">Balance</span>
+                  <span className="text-[13px] font-bold text-white tabular-nums">
+                    ${Number(wallet?.available ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <ChevronDown size={12} className="text-white/40" />
+              </div>
+              <Link
+                href="/account/deposit"
+                className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0 transition-all active:scale-95 hover:brightness-110"
+                style={{
+                  background: "linear-gradient(160deg, #ffe135 0%, #ffd700 50%, #e6a800 100%)",
+                  boxShadow: "0 4px 14px rgba(255,215,0,0.45), inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -3px 6px rgba(0,0,0,0.25)",
+                  border: "1px solid rgba(255,220,0,0.5)",
+                }}
+              >
+                <Plus size={18} className="text-black" strokeWidth={3} />
+              </Link>
+            </div>
+
+            {/* Desktop balance pill */}
             <div
               className="hidden sm:flex items-center gap-1.5 rounded-full px-4 py-2 cursor-default group transition-all hover:scale-105"
               style={{
@@ -134,7 +168,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
               <ChevronDown size={12} className="text-white/40 group-hover:text-white/60 transition-colors" />
             </div>
 
-            {/* Deposit button — yellow like Roobet */}
+            {/* Desktop deposit button — yellow like Roobet */}
             <Link
               href="/account/deposit"
               className="hidden md:flex items-center gap-1.5 rounded-xl font-bold text-[13px] px-5 py-2.5 transition-all hover:brightness-125 active:scale-95 shrink-0 hover:scale-105 shadow-lg"
