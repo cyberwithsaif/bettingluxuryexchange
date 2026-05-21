@@ -82,12 +82,17 @@ export function TopBar() {
         {/* ── Sidebar toggle (desktop) ───────────────────────── */}
         <button
           onClick={toggleSidebar}
-          className="hidden md:flex w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 items-center justify-center transition shrink-0"
+          className="hidden md:flex w-10 h-10 rounded-xl items-center justify-center transition-all shrink-0 group"
+          style={{
+            background: "linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(168, 85, 247, 0.2))",
+            boxShadow: "0 8px 20px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 8px rgba(0, 0, 0, 0.3)",
+            border: "1px solid rgba(139, 92, 246, 0.3)",
+          }}
           title="Toggle sidebar"
         >
           {sidebarCollapsed
-            ? <PanelLeftOpen size={16} className="text-white/60" />
-            : <PanelLeftClose size={16} className="text-white/60" />
+            ? <PanelLeftOpen size={18} className="text-violet-300 group-hover:text-violet-100 transition-colors" />
+            : <PanelLeftClose size={18} className="text-violet-300 group-hover:text-violet-100 transition-colors" />
           }
         </button>
 
@@ -119,10 +124,17 @@ export function TopBar() {
           <div className="flex items-center gap-2">
 
             {/* Balance pill */}
-            <div className="hidden sm:flex items-center gap-1.5 bg-white/6 rounded-full px-3 py-1.5 cursor-default">
-              <span className="text-base leading-none">₹</span>
+            <div
+              className="hidden sm:flex items-center gap-1.5 rounded-full px-4 py-2 cursor-default group transition-all hover:scale-105"
+              style={{
+                background: "linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(168, 85, 247, 0.1))",
+                boxShadow: "0 8px 24px rgba(139, 92, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
+                border: "1px solid rgba(139, 92, 246, 0.3)",
+              }}
+            >
+              <span className="text-base leading-none text-yellow-300">₹</span>
               <div className="flex flex-col items-end leading-tight">
-                <span className="text-[12px] font-bold text-white tabular-nums">
+                <span className="text-[13px] font-bold text-white tabular-nums">
                   {fmtMoney(wallet?.available)}
                 </span>
                 {(wallet?.exposure ?? 0) > 0 && (
@@ -131,16 +143,21 @@ export function TopBar() {
                   </span>
                 )}
               </div>
-              <ChevronDown size={12} className="text-white/30" />
+              <ChevronDown size={12} className="text-white/40 group-hover:text-white/60 transition-colors" />
             </div>
 
             {/* Deposit button — yellow like Roobet */}
             <Link
               href="/account/deposit"
-              className="flex items-center gap-1.5 rounded-lg font-bold text-[13px] px-4 py-2 transition hover:brightness-110 active:scale-95 shrink-0"
-              style={{ background: "linear-gradient(135deg,#d4a017,#f0c030)", color: "#1a0a00" }}
+              className="flex items-center gap-1.5 rounded-xl font-bold text-[13px] px-5 py-2.5 transition-all hover:brightness-125 active:scale-95 shrink-0 hover:scale-105 shadow-lg"
+              style={{
+                background: "linear-gradient(135deg,#ffd700,#ffed4e)",
+                color: "#1a0a00",
+                boxShadow: "0 8px 24px rgba(255, 215, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -2px 8px rgba(0, 0, 0, 0.15)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+              }}
             >
-              <ArrowDownToLine size={13} />
+              <ArrowDownToLine size={14} />
               <span className="hidden sm:inline">Deposit</span>
             </Link>
 
