@@ -61,7 +61,7 @@ export function MobileSidebar({ open, onClose }: { open: boolean; onClose: () =>
       />
       <aside
         className={cn(
-          "md:hidden fixed top-0 left-0 bottom-0 z-[61] w-[85%] max-w-[320px] bg-[#0f0810] border-r border-white/10 shadow-2xl transition-transform overflow-y-auto",
+          "md:hidden fixed top-0 left-0 bottom-0 z-[61] w-1/2 max-w-[260px] bg-[#0f0810] border-r border-white/10 shadow-2xl transition-transform overflow-y-auto",
           open ? "translate-x-0" : "-translate-x-full",
         )}
       >
