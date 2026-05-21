@@ -23,11 +23,11 @@ export function MobileBottomNav() {
             <li key={href}>
               <Link
                 href={href}
-                className="flex flex-col items-center justify-center gap-0.5 py-2 transition"
+                className="flex flex-col items-center justify-center gap-1 py-3 transition"
               >
                 <Icon
-                  size={20}
-                  strokeWidth={1.5}
+                  size={24}
+                  strokeWidth={2.5}
                   className={cn(
                     "transition-colors duration-200",
                     active ? "text-white" : "text-white/50",
@@ -35,7 +35,7 @@ export function MobileBottomNav() {
                 />
                 <span
                   className={cn(
-                    "text-[8px] font-semibold leading-tight transition-colors duration-200",
+                    "text-[10px] font-bold leading-tight transition-colors duration-200",
                     active ? "text-white" : "text-white/50",
                   )}
                 >
