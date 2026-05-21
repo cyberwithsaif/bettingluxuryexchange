@@ -73,7 +73,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
     <header className="sticky top-0 z-50 bg-[#191938] text-white shadow-sm rounded-br-2xl">
       <MobileSidebar open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
-      <div className="flex items-center h-20 px-4 justify-between gap-4">
+      <div className="flex items-center h-[77px] px-4 justify-between gap-4">
 
         {/* ── Left section (toggle) ──────────────────── */}
         <div className="flex items-center gap-2 shrink-0">
