@@ -10,7 +10,6 @@ import {
 
 interface BannerSettings {
   subBanner:   string;
-  marqueeText: string;
   siteName:    string;
   siteTagline: string;
 }
@@ -35,7 +34,6 @@ const SETTINGS_KEY = "/admin/platform-settings";
 
 const DEFAULTS: BannerSettings = {
   subBanner:   "Bet Now in Line Market and Get Commission Upto 2%",
-  marqueeText: "📢 Live Markets Now Available — Play Smart, Win Big! • Bet Now in Line Markets and Get Commission Upto 2%",
   siteName:    "Future9",
   siteTagline: "Sports & Casino",
 };
@@ -234,7 +232,6 @@ export default function BannerSettingsPage() {
     if (!data) return;
     setForm({
       subBanner:   data.subBanner   ?? DEFAULTS.subBanner,
-      marqueeText: data.marqueeText ?? DEFAULTS.marqueeText,
       siteName:    data.siteName    ?? DEFAULTS.siteName,
       siteTagline: data.siteTagline ?? DEFAULTS.siteTagline,
     });
@@ -285,7 +282,7 @@ export default function BannerSettingsPage() {
           Banner Settings
         </h1>
         <p className="text-sm text-white/60 mt-1">
-          Control site identity, marquee text, hero carousel, and promo banner strip.
+          Control site identity, hero carousel, and promo banner strip.
         </p>
       </div>
 
@@ -302,19 +299,6 @@ export default function BannerSettingsPage() {
           />
           <p className="text-xs text-white/40 mt-1">Shown in the yellow pulsing banner just below the main navigation tabs.</p>
         </div>
-      </section>
-
-      {/* Marquee */}
-      <section className="glass rounded-lg p-5 space-y-4">
-        <h2 className="font-bold text-sm uppercase tracking-wider text-white/70">Marquee Fallback</h2>
-        <textarea
-          rows={3}
-          value={form.marqueeText}
-          onChange={e => setForm(p => ({ ...p, marqueeText: e.target.value }))}
-          placeholder="📢 Live Markets Now Available — Play Smart, Win Big!"
-          className="w-full bg-panel/60 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent resize-none"
-        />
-        <p className="text-xs text-white/40">Shown in the top-bar marquee when no active announcements. Use &quot;•&quot; to separate segments.</p>
       </section>
 
       {/* Site Identity */}
