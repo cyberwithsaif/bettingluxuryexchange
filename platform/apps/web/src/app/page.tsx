@@ -14,12 +14,12 @@ export default async function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-900" />
 
           {/* Background image */}
-          <div className="absolute inset-0 right-0 w-3/5 opacity-70 group-hover:opacity-80 transition-opacity">
+          <div className="absolute inset-0 right-0 w-4/5 opacity-75 group-hover:opacity-90 transition-opacity">
             <Image
               src="/images/bannerlogo.png"
               alt="Casino"
               fill
-              className="object-cover object-right"
+              className="object-contain object-right"
               priority
             />
           </div>
