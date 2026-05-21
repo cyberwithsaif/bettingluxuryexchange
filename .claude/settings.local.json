@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(scp -i \"E:\\\\illweb\\\\diamond exc\\\\id_rsa\" \"d:\\\\DEVELOPMENTS\\\\casino betting website exch\\\\platform\\\\apps\\\\web\\\\src\\\\components\\\\GameCarousel.tsx\" root@51.222.84.91:/var/www/exch/platform/apps/web/src/components/GameCarousel.tsx)",
+      "Bash(scp -i \"E:\\\\illweb\\\\diamond exc\\\\id_rsa\" \"d:\\\\DEVELOPMENTS\\\\casino betting website exch\\\\platform\\\\apps\\\\web\\\\src\\\\components/GameCarousel.tsx\" root@51.222.84.91:/var/www/exch/platform/apps/web/src/components/GameCarousel.tsx)",
+      "Bash(scp -i \"E:\\\\illweb\\\\diamond exc\\\\id_rsa\" \"d:\\\\DEVELOPMENTS\\\\casino betting website exch\\\\platform\\\\apps\\\\web\\\\src\\\\components\\\\layout\\\\MobileBottomNav.tsx\" root@51.222.84.91:/var/www/exch/platform/apps/web/src/components/layout/MobileBottomNav.tsx)",
+      "Bash(scp -i \"E:\\\\illweb\\\\diamond exc\\\\id_rsa\" \"d:\\\\DEVELOPMENTS\\\\casino betting website exch\\\\platform\\\\apps\\\\web/src/components/layout/MobileBottomNav.tsx\" root@51.222.84.91:/var/www/exch/platform/apps/web/src/components/layout/MobileBottomNav.tsx)",
+      "Bash(scp -i \"E:\\\\illweb\\\\diamond exc\\\\id_rsa\" \"d:\\\\DEVELOPMENTS\\\\casino betting website exch\\\\platform\\\\apps\\\\web/src/components/mobile/MobileBalanceBar.tsx\" root@51.222.84.91:/var/www/exch/platform/apps/web/src/components/mobile/MobileBalanceBar.tsx)",
+      "Bash(scp -i \"E:\\\\illweb\\\\diamond exc\\\\id_rsa\" \"d:\\\\DEVELOPMENTS\\\\casino betting website exch\\\\platform\\\\apps\\\\web/src/components/layout/LayoutWrapper.tsx\" root@51.222.84.91:/var/www/exch/platform/apps/web/src/components/layout/LayoutWrapper.tsx)",
+      "Bash(scp -i \"E:\\\\illweb\\\\diamond exc\\\\id_rsa\" \"d:\\\\DEVELOPMENTS\\\\casino betting website exch\\\\platform\\\\apps\\\\web/src/components/mobile/MobileTopBalance.tsx\" root@51.222.84.91:/var/www/exch/platform/apps/web/src/components/mobile/MobileTopBalance.tsx)",
+      "Bash(scp -i \"E:\\\\illweb\\\\diamond exc\\\\id_rsa\" \"d:\\\\DEVELOPMENTS\\\\casino betting website exch\\\\platform\\\\apps\\\\web/src/components/mobile/MobileSidebar.tsx\" root@51.222.84.91:/var/www/exch/platform/apps/web/src/components/mobile/MobileSidebar.tsx)",
+      "Bash(ssh root@51.222.84.91 \"cd /home/diamondplay22 && git pull && pm2 restart all\")"
+    ]
+  }
+}
