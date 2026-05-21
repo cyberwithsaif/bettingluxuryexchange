@@ -157,7 +157,7 @@ function SectionToggle({ label, open, onToggle, iconBg, icon }: {
     <button
       onClick={onToggle}
       className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[13px] font-bold text-white transition-all"
-      style={{ background: "rgba(139, 92, 246, 0.15)" }}
+      style={{ background: "#463e7a" }}
     >
       <div className="flex items-center gap-2.5">
         <div className={`w-6 h-6 rounded-md ${iconBg} flex items-center justify-center shrink-0`}>
@@ -172,7 +172,7 @@ function SectionToggle({ label, open, onToggle, iconBg, icon }: {
 
 function SubList({ children }: { children: React.ReactNode }) {
   return (
-    <div className="space-y-0.5 ml-2 pl-3 border-l border-white/8">
+    <div className="space-y-0.5 ml-2 pl-3">
       {children}
     </div>
   );
@@ -187,9 +187,10 @@ function SubLink({ href, active, emoji, children }: {
       className={cn(
         "flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-all",
         active
-          ? "bg-red-900/50 text-white font-semibold"
+          ? "text-white font-semibold"
           : "text-white/52 hover:text-white hover:bg-white/5",
       )}
+      style={active ? { background: "#2c2852" } : undefined}
     >
       <span className="text-sm leading-none">{emoji}</span>
       {children}
