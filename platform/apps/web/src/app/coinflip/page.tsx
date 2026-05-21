@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import useSWR from "swr";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
-import { showToast } from "@/lib/toast";
 
 interface Round {
   id: string;
@@ -28,6 +27,8 @@ export default function CoinflipPage() {
   const [result, setResult] = useState<"HEADS" | "TAILS" | null>(null);
   const [isFlipping, setIsFlipping] = useState(false);
   const [wager, setWager] = useState<{ id: string; result: string; multiplier: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: history } = useSWR(
     `/api/casino/coinflip/history`,
@@ -71,7 +72,9 @@ export default function CoinflipPage() {
 
   const placeBet = useCallback(async () => {
     if (!selectedSide || !user) {
-      showToast("Select Heads or Tails", "error");
+      setError("Select Heads or Tails");
+      if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
+      errorTimeoutRef.current = setTimeout(() => setError(null), 3000);
       return;
     }
 
@@ -86,7 +89,9 @@ export default function CoinflipPage() {
         }),
       });
     } catch (err) {
-      showToast("Bet failed", "error");
+      setError("Bet failed");
+      if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
+      errorTimeoutRef.current = setTimeout(() => setError(null), 3000);
       setIsFlipping(false);
     }
   }, [selectedSide, betAmount, user]);
@@ -170,8 +175,18 @@ export default function CoinflipPage() {
                   {isFlipping ? "Flipping..." : "Flip Coin"}
                 </button>
 
-                {/* Result */}
+                {/* Error/Result */}
                 <AnimatePresence>
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="mt-6 p-4 rounded-xl text-center font-bold bg-red-950/40 border border-red-600/40 text-red-300"
+                    >
+                      {error}
+                    </motion.div>
+                  )}
                   {wager && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}

@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import useSWR from "swr";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
-import { showToast } from "@/lib/toast";
 
 interface Round {
   id: string;
@@ -28,6 +27,8 @@ export default function TowersPage() {
   const [result, setResult] = useState<number[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [wager, setWager] = useState<{ id: string; result: string; multiplier: number; level: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const LEVELS = 8;
   const TOWERS = 3;
 
@@ -75,7 +76,9 @@ export default function TowersPage() {
 
   const startGame = useCallback(async () => {
     if (!user) {
-      showToast("Login required", "error");
+      setError("Login required");
+      if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
+      errorTimeoutRef.current = setTimeout(() => setError(null), 3000);
       return;
     }
 
@@ -89,7 +92,9 @@ export default function TowersPage() {
         }),
       });
     } catch (err) {
-      showToast("Game failed", "error");
+      setError("Game failed");
+      if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
+      errorTimeoutRef.current = setTimeout(() => setError(null), 3000);
       setIsPlaying(false);
     }
   }, [betAmount, user]);
@@ -101,7 +106,9 @@ export default function TowersPage() {
         headers: { "Content-Type": "application/json" },
       });
     } catch (err) {
-      showToast("Cash out failed", "error");
+      setError("Cash out failed");
+      if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
+      errorTimeoutRef.current = setTimeout(() => setError(null), 3000);
     }
   }, []);
 
@@ -184,8 +191,18 @@ export default function TowersPage() {
                   </button>
                 </div>
 
-                {/* Result */}
+                {/* Error/Result */}
                 <AnimatePresence>
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="mt-6 p-4 rounded-xl text-center font-bold bg-red-950/40 border border-red-600/40 text-red-300"
+                    >
+                      {error}
+                    </motion.div>
+                  )}
                   {wager && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}

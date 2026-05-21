@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import useSWR from "swr";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
-import { showToast } from "@/lib/toast";
 
 interface Round {
   id: string;
@@ -28,6 +27,8 @@ export default function DicePage() {
   const [result, setResult] = useState<number | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   const [wager, setWager] = useState<{ id: string; result: string; multiplier: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: history } = useSWR(
     `/api/casino/dice/history`,
@@ -72,7 +73,9 @@ export default function DicePage() {
 
   const placeBet = useCallback(async () => {
     if (!selectedNumber || !user) {
-      showToast("Select a number to bet on", "error");
+      setError("Select a number to bet on");
+      if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
+      errorTimeoutRef.current = setTimeout(() => setError(null), 3000);
       return;
     }
 
@@ -87,7 +90,9 @@ export default function DicePage() {
         }),
       });
     } catch (err) {
-      showToast("Bet failed", "error");
+      setError("Bet failed");
+      if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
+      errorTimeoutRef.current = setTimeout(() => setError(null), 3000);
       setIsRolling(false);
     }
   }, [selectedNumber, betAmount, user]);
@@ -160,8 +165,18 @@ export default function DicePage() {
                   {isRolling ? "Rolling..." : "Roll Dice"}
                 </button>
 
-                {/* Result */}
+                {/* Error/Result */}
                 <AnimatePresence>
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="mt-6 p-4 rounded-xl text-center font-bold bg-red-950/40 border border-red-600/40 text-red-300"
+                    >
+                      {error}
+                    </motion.div>
+                  )}
                   {wager && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
