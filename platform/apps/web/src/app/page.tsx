@@ -1,10 +1,10 @@
 import Link from "next/link";
 
 const CASINO_GAMES = [
-  { name: "Roulette", href: "/roulette", emoji: "🎡", provider: "DiamondPlay" },
-  { name: "Mines", href: "/mines", emoji: "💣", provider: "DiamondPlay" },
-  { name: "Plinko", href: "/plinko", emoji: "🎯", provider: "DiamondPlay" },
-  { name: "Crash", href: "/crash", emoji: "🚀", provider: "DiamondPlay" },
+  { name: "Roulette", href: "/roulette", thumb: "/game-thumbs/roulette.webp" },
+  { name: "Mines",    href: "/mines",    thumb: "/game-thumbs/mines.webp" },
+  { name: "Plinko",   href: "/plinko",   thumb: "/game-thumbs/plinko.webp" },
+  { name: "Pump",     href: "/crash",    thumb: "/game-thumbs/balloon.webp" },
 ];
 
 export default function HomePage() {
@@ -31,21 +31,31 @@ export default function HomePage() {
 
         {/* DiamondPlay Originals */}
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-white tracking-wide">
-              DiamondPlay Originals
-            </h2>
-            <Link href="/casino" className="text-xs text-purple-400 hover:text-purple-300 transition font-semibold">
-              View All →
-            </Link>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-bold text-white tracking-wide">DiamondPlay Originals</h2>
+            <div className="flex items-center gap-2">
+              <Link href="/casino" className="text-xs text-white font-semibold bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition">
+                View All
+              </Link>
+            </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-3">
             {CASINO_GAMES.map(game => (
               <Link key={game.href} href={game.href} className="group block">
-                <div className="relative rounded-xl overflow-hidden aspect-square flex flex-col items-center justify-center bg-gradient-to-br from-purple-900/40 to-blue-900/40 border border-purple-500/30 group-hover:border-purple-400/60 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg shadow-purple-500/20">
-                  <span className="text-5xl md:text-6xl leading-none mb-2">{game.emoji}</span>
-                  <span className="text-sm md:text-base font-bold text-white text-center px-2">{game.name}</span>
-                  <span className="text-[10px] text-purple-300 mt-1">{game.provider}</span>
+                <div className="relative rounded-2xl overflow-hidden bg-[#1a1433] border border-white/5 group-hover:border-purple-500/40 transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-xl shadow-black/40">
+                  {/* Thumbnail */}
+                  <div className="aspect-[3/4] w-full overflow-hidden">
+                    <img
+                      src={game.thumb}
+                      alt={game.name}
+                      className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500"
+                    />
+                  </div>
+                  {/* Name label */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-3 py-3">
+                    <p className="text-white font-bold text-sm tracking-wide uppercase leading-none">{game.name}</p>
+                    <p className="text-purple-400 text-[10px] mt-0.5">DiamondPlay</p>
+                  </div>
                 </div>
               </Link>
             ))}
