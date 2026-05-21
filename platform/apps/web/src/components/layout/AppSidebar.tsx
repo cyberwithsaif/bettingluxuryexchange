@@ -127,7 +127,7 @@ function SidebarInner() {
                 ? "text-white"
                 : "text-white hover:text-white",
             )}
-            style={pathname === href ? { background: "#7740ed" } : { background: "rgba(139, 92, 246, 0.08)" }}
+            style={pathname === href ? { background: "#7740ed" } : { background: "#463e7a" }}
           >
             {iconEl}
             {label}
@@ -138,7 +138,7 @@ function SidebarInner() {
         <Link
           href="/contact"
           className="flex items-center gap-3 px-3 py-1.5 rounded-2xl text-[15px] font-bold text-white hover:text-white transition-all"
-          style={{ background: "rgba(139, 92, 246, 0.08)" }}
+          style={{ background: "#463e7a" }}
         >
           <Headphones size={20} strokeWidth={2.5} className="text-white" />
           Live Support
@@ -163,7 +163,7 @@ function SectionToggle({ label, open, onToggle, iconBg, icon }: {
     <button
       onClick={onToggle}
       className="w-full flex items-center justify-between px-4 py-2 rounded-2xl text-[15px] font-bold text-white transition-all cursor-pointer"
-      style={{ background: open ? "#7740ed" : "rgba(139, 92, 246, 0.08)" }}
+      style={{ background: open ? "#7740ed" : "#463e7a" }}
     >
       <div className="flex items-center gap-3">
         {iconBg ? (
