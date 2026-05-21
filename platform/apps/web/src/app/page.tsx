@@ -77,26 +77,26 @@ function CategoryCard({ href, title, subtitle, emoji, gradient, accentColor }: {
     <Link
       href={href}
       className="group block relative rounded-2xl overflow-hidden border border-white/10 hover:border-white/25 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl"
-      style={{ background: gradient, minHeight: 160 }}
+      style={{ background: gradient, minHeight: '100px', '@media (min-width: 768px)': { minHeight: '160px' } } as any}
     >
       {/* Shine overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-white/8 to-transparent pointer-events-none" />
 
       {/* Content */}
-      <div className="relative z-10 p-4 flex flex-col h-full" style={{ minHeight: 160 }}>
+      <div className="relative z-10 p-3 md:p-4 flex flex-col h-full" style={{ minHeight: 'inherit' }}>
         <div className="flex-1">
           <p
-            className="text-[10px] font-bold uppercase tracking-widest mb-1 opacity-70"
+            className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest mb-0.5 md:mb-1 opacity-70"
             style={{ color: accentColor ?? "#fff" }}
           >
             DiamondPlay
           </p>
-          <h3 className="text-lg md:text-2xl font-black text-white leading-tight">{title}</h3>
-          <p className="text-white/45 text-[11px] mt-1 leading-tight">{subtitle}</p>
+          <h3 className="text-sm md:text-2xl font-black text-white leading-tight">{title}</h3>
+          <p className="text-white/45 text-[9px] md:text-[11px] mt-0.5 md:mt-1 leading-tight hidden md:block">{subtitle}</p>
         </div>
-        <div className="mt-3">
+        <div className="mt-2 md:mt-3">
           <span
-            className="inline-flex items-center gap-1 text-[11px] font-bold px-3 py-1.5 rounded-full transition-opacity group-hover:opacity-90"
+            className="inline-flex items-center gap-1 text-[9px] md:text-[11px] font-bold px-2 md:px-3 py-1 md:py-1.5 rounded-full transition-opacity group-hover:opacity-90"
             style={{
               background: accentColor ? `${accentColor}22` : "rgba(255,255,255,0.12)",
               color: accentColor ?? "#fff",
@@ -109,7 +109,7 @@ function CategoryCard({ href, title, subtitle, emoji, gradient, accentColor }: {
       </div>
 
       {/* Decorative emoji */}
-      <div className="absolute right-2 bottom-1 text-6xl md:text-7xl select-none pointer-events-none opacity-30 group-hover:opacity-45 transition-opacity duration-300 drop-shadow-2xl">
+      <div className="absolute right-1 bottom-0 text-4xl md:text-6xl lg:text-7xl select-none pointer-events-none opacity-25 md:opacity-30 group-hover:opacity-45 transition-opacity duration-300 drop-shadow-2xl">
         {emoji}
       </div>
     </Link>
