@@ -46,8 +46,8 @@ function SidebarInner() {
   const params     = useSearchParams();
   const activeSport = params.get("sport") ?? "cricket";
 
-  const [casinoOpen,   setCasinoOpen]   = useState(pathname !== "/exchange");
-  const [exchangeOpen, setExchangeOpen] = useState(true);
+  const [casinoOpen,   setCasinoOpen]   = useState(false);
+  const [exchangeOpen, setExchangeOpen] = useState(false);
 
   const { data: sports   } = useSWR<Sport[]>("/markets/sports");
   const { data: settings } = useSWR<Settings>(
@@ -72,15 +72,15 @@ function SidebarInner() {
       </div>
 
       {/* ── Nav ──────────────────────────────────────────────── */}
-      <nav className="flex-1 px-2 py-1 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
         {/* Casino section */}
         <SectionToggle
           label="Casino"
           open={casinoOpen}
           onToggle={() => setCasinoOpen(o => !o)}
-          iconBg="bg-red-500/15"
-          icon={<Gamepad2 size={13} className="text-red-400" />}
+          iconBg=""
+          icon={<Gamepad2 size={20} strokeWidth={2.5} className="text-white" />}
         />
         {casinoOpen && (
           <SubList>
@@ -97,8 +97,8 @@ function SidebarInner() {
           label="Sportsbook"
           open={exchangeOpen}
           onToggle={() => setExchangeOpen(o => !o)}
-          iconBg="bg-yellow-500/15"
-          icon={<Trophy size={13} className="text-yellow-400" />}
+          iconBg=""
+          icon={<Trophy size={20} strokeWidth={2.5} className="text-white" />}
         />
         {exchangeOpen && (
           <SubList>
@@ -162,16 +162,20 @@ function SectionToggle({ label, open, onToggle, iconBg, icon }: {
   return (
     <button
       onClick={onToggle}
-      className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[14px] font-bold text-white transition-all"
-      style={{ background: "#463e7a" }}
+      className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[15px] font-bold text-white transition-all"
+      style={{ background: "rgba(139, 92, 246, 0.08)" }}
     >
-      <div className="flex items-center gap-2.5">
-        <div className={`w-6 h-6 rounded-md ${iconBg} flex items-center justify-center shrink-0`}>
-          {icon}
-        </div>
+      <div className="flex items-center gap-3">
+        {iconBg ? (
+          <div className={`w-6 h-6 rounded-lg ${iconBg} flex items-center justify-center shrink-0`}>
+            {icon}
+          </div>
+        ) : (
+          icon
+        )}
         {label}
       </div>
-      <ChevronDown size={13} className={cn("text-white/40 transition-transform", open && "rotate-180")} />
+      <ChevronDown size={16} strokeWidth={2.5} className={cn("text-white/60 transition-transform", open && "rotate-180")} />
     </button>
   );
 }
