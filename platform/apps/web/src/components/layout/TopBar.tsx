@@ -111,29 +111,15 @@ export function TopBar() {
           </span>
         </Link>
 
-        {/* ── Clock (desktop, subtle) ───────────────────────── */}
-        <span className="hidden lg:block text-[11px] text-white/30 tabular-nums shrink-0 font-medium">
-          {clock}
-        </span>
-
-        {/* ── Marquee (desktop) ────────────────────────────── */}
-        <div className="hidden md:flex flex-1 min-w-0 items-center overflow-hidden">
-          <div className="overflow-hidden w-full">
-            <p className="text-[12px] text-white/40 font-medium whitespace-nowrap animate-marquee">
-              {marqueeText}
-            </p>
-          </div>
-        </div>
-
-        {/* ── Flex spacer (mobile) ─────────────────────────── */}
-        <div className="flex-1 md:hidden" />
+        {/* ── Flex spacer (center the balance/deposit) ────────── */}
+        <div className="flex-1" />
 
         {/* ── Authenticated user area ───────────────────────── */}
         {user ? (
           <div className="flex items-center gap-2">
 
             {/* Balance pill */}
-            <div className="hidden sm:flex items-center gap-1.5 bg-white/6 border border-white/10 rounded-full px-3 py-1.5 cursor-default">
+            <div className="hidden sm:flex items-center gap-1.5 bg-white/6 rounded-full px-3 py-1.5 cursor-default">
               <span className="text-base leading-none">₹</span>
               <div className="flex flex-col items-end leading-tight">
                 <span className="text-[12px] font-bold text-white tabular-nums">
