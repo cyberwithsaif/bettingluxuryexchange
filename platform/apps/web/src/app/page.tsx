@@ -1,6 +1,11 @@
 import Link from "next/link";
 
-/* ── Game cards ────────────────────────────────────────────── */
+const CASINO_GAMES = [
+  { name: "Roulette", href: "/roulette", emoji: "🎡", provider: "DiamondPlay" },
+  { name: "Mines", href: "/mines", emoji: "💣", provider: "DiamondPlay" },
+  { name: "Plinko", href: "/plinko", emoji: "🎯", provider: "DiamondPlay" },
+  { name: "Crash", href: "/crash", emoji: "🚀", provider: "DiamondPlay" },
+];
 
 export default function HomePage() {
   return (
@@ -23,6 +28,29 @@ export default function HomePage() {
             gradient="linear-gradient(135deg,#0a1535 0%,#162a60 40%,#040c1a 100%)"
           />
         </div>
+
+        {/* DiamondPlay Originals */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-white tracking-wide">
+              DiamondPlay Originals
+            </h2>
+            <Link href="/casino" className="text-xs text-purple-400 hover:text-purple-300 transition font-semibold">
+              View All →
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+            {CASINO_GAMES.map(game => (
+              <Link key={game.href} href={game.href} className="group block">
+                <div className="relative rounded-xl overflow-hidden aspect-square flex flex-col items-center justify-center bg-gradient-to-br from-purple-900/40 to-blue-900/40 border border-purple-500/30 group-hover:border-purple-400/60 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg shadow-purple-500/20">
+                  <span className="text-5xl md:text-6xl leading-none mb-2">{game.emoji}</span>
+                  <span className="text-sm md:text-base font-bold text-white text-center px-2">{game.name}</span>
+                  <span className="text-[10px] text-purple-300 mt-1">{game.provider}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
 
     </div>
   );
