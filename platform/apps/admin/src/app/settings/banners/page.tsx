@@ -30,6 +30,16 @@ interface PromoBanner {
   sortOrder: number;
 }
 
+interface CategoryBanner {
+  id: string;
+  title: string;
+  subtitle: string;
+  href: string;
+  emoji: string;
+  gradient: string;
+  sortOrder: number;
+}
+
 const SETTINGS_KEY = "/admin/platform-settings";
 
 const DEFAULTS: BannerSettings = {
@@ -221,12 +231,14 @@ export default function BannerSettingsPage() {
   const [form, setForm]         = useState<BannerSettings>(DEFAULTS);
   const [busy, setBusy]         = useState(false);
   const [msg,  setMsg]          = useState<{ text: string; ok: boolean } | null>(null);
-  const [heroSlides, setHeroSlides]   = useState<HeroBannerSlide[]>([]);
-  const [promoSlides, setPromoSlides] = useState<PromoBanner[]>([]);
-  const [promoSpeed, setPromoSpeed]   = useState(45);
-  const [heroSaving, setHeroSaving]   = useState(false);
-  const [promoSaving, setPromoSaving] = useState(false);
-  const [speedSaving, setSpeedSaving] = useState(false);
+  const [heroSlides, setHeroSlides]       = useState<HeroBannerSlide[]>([]);
+  const [promoSlides, setPromoSlides]     = useState<PromoBanner[]>([]);
+  const [categoryBanners, setCategoryBanners] = useState<CategoryBanner[]>([]);
+  const [promoSpeed, setPromoSpeed]       = useState(45);
+  const [heroSaving, setHeroSaving]       = useState(false);
+  const [promoSaving, setPromoSaving]     = useState(false);
+  const [categorySaving, setcategorySaving] = useState(false);
+  const [speedSaving, setSpeedSaving]     = useState(false);
 
   useEffect(() => {
     if (!data) return;
@@ -237,6 +249,7 @@ export default function BannerSettingsPage() {
     });
     setHeroSlides((data.heroBanners ?? []).slice().sort((a: HeroBannerSlide, b: HeroBannerSlide) => a.sortOrder - b.sortOrder));
     setPromoSlides((data.promoBanners ?? []).slice().sort((a: PromoBanner, b: PromoBanner) => a.sortOrder - b.sortOrder));
+    setCategoryBanners((data.categoryBanners ?? []).slice().sort((a: CategoryBanner, b: CategoryBanner) => a.sortOrder - b.sortOrder));
     setPromoSpeed(data.promoBannerSpeed ?? 45);
   }, [data]);
 
@@ -272,6 +285,14 @@ export default function BannerSettingsPage() {
     await api.post(SETTINGS_KEY, { promoBannerSpeed: promoSpeed });
     mutate(SETTINGS_KEY);
     setSpeedSaving(false);
+  }
+
+  async function saveCategoryBanners(updated: CategoryBanner[]) {
+    setcategorySaving(true);
+    await api.post(SETTINGS_KEY, { categoryBanners: updated });
+    setCategoryBanners(updated);
+    mutate(SETTINGS_KEY);
+    setcategorySaving(false);
   }
 
   return (
@@ -352,6 +373,55 @@ export default function BannerSettingsPage() {
           uploadType="hero"
           aspectClass="w-24 h-12"
         />
+      </section>
+
+      {/* ── Category Banners (Homepage) ─────────────────────────────────────── */}
+      <section className="glass rounded-lg p-5 space-y-4">
+        <h2 className="font-bold text-sm uppercase tracking-wider text-white/70 flex items-center gap-2">
+          <Layout size={16} className="text-accent" />
+          Category Cards (Homepage)
+        </h2>
+        <p className="text-xs text-white/40">
+          Manage the Casino and Sports Betting cards shown on the homepage. Configure title, subtitle, link, and gradient colors.
+        </p>
+        <div className="space-y-3">
+          {categoryBanners.map((cat, i) => (
+            <div key={cat.id} className="flex items-center gap-3 bg-panel/40 border border-line rounded-lg p-3">
+              <GripVertical size={16} className="text-white/30 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">{cat.title}</p>
+                <p className="text-xs text-white/40">{cat.subtitle}</p>
+                <p className="text-xs text-white/30">{cat.href}</p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button disabled={i === 0} onClick={async () => {
+                  const updated = [...categoryBanners];
+                  [updated[i], updated[i-1]] = [updated[i-1]!, updated[i]!];
+                  updated.forEach((c, k) => { c.sortOrder = k; });
+                  await saveCategoryBanners(updated);
+                }}
+                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 disabled:opacity-30 text-white/60 text-xs">↑</button>
+                <button disabled={i === categoryBanners.length - 1} onClick={async () => {
+                  const updated = [...categoryBanners];
+                  [updated[i], updated[i+1]] = [updated[i+1]!, updated[i]!];
+                  updated.forEach((c, k) => { c.sortOrder = k; });
+                  await saveCategoryBanners(updated);
+                }}
+                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 disabled:opacity-30 text-white/60 text-xs">↓</button>
+                <button onClick={async () => {
+                  await saveCategoryBanners(categoryBanners.filter((_, j) => j !== i).map((c, k) => ({ ...c, sortOrder: k })));
+                }}
+                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-500/20 text-red-400 transition">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="border border-line/60 rounded-lg p-4 space-y-3 bg-panel/20">
+          <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Add/Edit Card</p>
+          <p className="text-xs text-white/40">Edit cards directly in the code or database for now. Category banners are stored in platform settings.</p>
+        </div>
       </section>
 
       {/* ── Promo Banner Strip ─────────────────────────────────────────────── */}

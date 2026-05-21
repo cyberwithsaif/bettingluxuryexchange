@@ -1,4 +1,10 @@
 import Link from "next/link";
+import { Suspense } from "react";
+
+const DEFAULT_CATEGORIES = [
+  { id: "casino", title: "Casino", subtitle: "Thousands of Games", href: "/casino", emoji: "🎰", gradient: "linear-gradient(135deg,#3d0810 0%,#6b0e1a 40%,#1a0408 100%)" },
+  { id: "sports", title: "Sports Betting", subtitle: "Live Markets — Bet Now", href: "/exchange", emoji: "🏏", gradient: "linear-gradient(135deg,#0a1535 0%,#162a60 40%,#040c1a 100%)" },
+];
 
 const CASINO_GAMES = [
   { name: "Roulette", href: "/roulette", thumb: "/game-thumbs/roulette2.png" },
@@ -10,26 +16,38 @@ const CASINO_GAMES = [
   { name: "Coinflip", href: "/mini-games", thumb: "/game-thumbs/coinflip.png" },
 ];
 
-export default function HomePage() {
+async function getCategoryBanners() {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/platform/settings`,
+      { next: { revalidate: 300 } }
+    );
+    const data = await res.json();
+    return data?.categoryBanners || null;
+  } catch {
+    return null;
+  }
+}
+
+export default async function HomePage() {
+  const categoryBanners = await getCategoryBanners();
+  const categories = categoryBanners || DEFAULT_CATEGORIES;
+
   return (
     <div className="w-full px-3 md:px-5 py-4 space-y-5 max-w-[1400px] mx-auto">
 
         {/* Category cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <CategoryCard
-            href="/casino"
-            title="Casino"
-            subtitle="Thousands of Games"
-            emoji="🎰"
-            gradient="linear-gradient(135deg,#3d0810 0%,#6b0e1a 40%,#1a0408 100%)"
-          />
-          <CategoryCard
-            href="/exchange"
-            title="Sports Betting"
-            subtitle="Live Markets — Bet Now"
-            emoji="🏏"
-            gradient="linear-gradient(135deg,#0a1535 0%,#162a60 40%,#040c1a 100%)"
-          />
+          {categories.map((cat: any) => (
+            <CategoryCard
+              key={cat.id || cat.href}
+              href={cat.href}
+              title={cat.title}
+              subtitle={cat.subtitle}
+              emoji={cat.emoji}
+              gradient={cat.gradient}
+            />
+          ))}
         </div>
 
         {/* DiamondPlay Originals */}
