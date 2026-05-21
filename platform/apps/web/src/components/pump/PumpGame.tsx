@@ -156,7 +156,7 @@ function GameVisual({
   currentMult, status, lastWin,
 }: GameVisualProps) {
 
-  const NOZZLE_Y = 350;
+  const NOZZLE_Y = 310;
 
   // Balloon dimensions
   // deflated: small circular shape at nozzle
@@ -307,36 +307,38 @@ function GameVisual({
 
       {/* ── Pump machine (right side) ── */}
 
-      {/* Nozzle pipe (from balloon to pump) */}
-      <rect x="232" y="345" width="16" height="60" rx="8" fill="#1a2d3d" stroke="#253d51" strokeWidth="2" />
-      <rect x="237" y="350" width="6" height="50" rx="3" fill="#3d5a75" opacity="0.6" />
+      {/* Nozzle pipe outer (from balloon to pump) */}
+      <rect x="230" y="305" width="20" height="85" rx="10" fill="none" stroke="#3d5a75" strokeWidth="3" />
+
+      {/* Nozzle pipe inner (visible fluid path) */}
+      <rect x="236" y="310" width="8" height="75" rx="4" fill="#4a7a99" opacity="0.8" />
 
       {/* Pump base platform */}
-      <rect x="170" y="405" width="140" height="70" rx="12" fill="#1a2d3d" />
-      <rect x="175" y="408" width="130" height="8" rx="4" fill="rgba(255,255,255,0.04)" />
+      <rect x="170" y="390" width="140" height="70" rx="12" fill="#1a2d3d" />
+      <rect x="175" y="393" width="130" height="8" rx="4" fill="rgba(255,255,255,0.04)" />
 
       {/* Pump body (cylinder - larger) */}
-      <rect x="185" y="420" width="110" height="50" rx="8" fill="#253d51" stroke="#3d5a75" strokeWidth="2" />
-      <rect x="190" y="425" width="100" height="9" rx="3" fill="rgba(255,255,255,0.1)" />
+      <rect x="185" y="405" width="110" height="50" rx="8" fill="#253d51" stroke="#3d5a75" strokeWidth="2" />
+      <rect x="190" y="410" width="100" height="9" rx="3" fill="rgba(255,255,255,0.1)" />
 
       {/* Pump inlet (connection point) */}
-      <circle cx="240" cy="420" r="8" fill="#2d4659" stroke="#3d5a75" strokeWidth="1.5" />
+      <circle cx="240" cy="405" r="9" fill="#2d4659" stroke="#4a7a99" strokeWidth="2" />
 
       {/* Pump handle (piston rod - animates on pump) */}
       <motion.g
         animate={{ y: pumping ? [0, 18, 0] : 0 }}
         transition={{ duration: 0.22, ease: "easeInOut" }}
       >
-        <rect x="233" y="405" width="14" height="32" rx="5" fill="#2d4659" stroke="#3d5a75" strokeWidth="1" />
-        <rect x="228" y="397" width="24" height="12" rx="4" fill="#3d5a75" />
-        <circle cx="240" cy="403" r="4" fill="#4a6a88" />
+        <rect x="233" y="390" width="14" height="32" rx="5" fill="#2d4659" stroke="#3d5a75" strokeWidth="1" />
+        <rect x="228" y="382" width="24" height="12" rx="4" fill="#3d5a75" />
+        <circle cx="240" cy="388" r="4" fill="#4a6a88" />
       </motion.g>
 
       {/* Pump count dots — on base platform */}
       {Array.from({ length: dotCount }).map((_, i) => (
         <circle key={i}
           cx={190 + i * 12}
-          cy="445"
+          cy="430"
           r="4"
           fill={pumpsCount > i ? color : "rgba(255,255,255,0.14)"}
         />
