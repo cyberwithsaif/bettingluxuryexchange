@@ -156,15 +156,14 @@ function GameVisual({
   currentMult, status, lastWin,
 }: GameVisualProps) {
 
-  const NOZZLE_Y = 310;
+  const NOZZLE_Y = 260;
 
-  // Balloon dimensions
-  // deflated: small circular shape at nozzle
-  // inflated: grows round from ~20 to ~130 radius as scale increases
+  // Balloon dimensions - loose/droopy appearance
+  // Instead of fully inflated, make it look like a loose bag
   const inflatedR  = Math.min(20 + (scale - 1) * 170, 132);
-  const balloonRx  = showDeflated ? 42 : inflatedR;
-  const balloonRy  = showDeflated ? 36 : inflatedR;
-  const balloonCy  = NOZZLE_Y - balloonRy - 4; // bottom of balloon sits on nozzle
+  const balloonRx  = showDeflated ? 38 : Math.min(inflatedR * 1.1, 145);  // wider horizontally
+  const balloonRy  = showDeflated ? 32 : Math.min(inflatedR * 0.85, 110); // shorter vertically (droopy)
+  const balloonCy  = NOZZLE_Y - balloonRy - 2; // bottom of balloon sits on nozzle
   const knotCy     = balloonCy + balloonRy + 6;
   const neckTop    = knotCy + 10;
   const neckHeight = Math.max(2, NOZZLE_Y - neckTop - 2);
@@ -305,40 +304,40 @@ function GameVisual({
         </motion.g>
       )}
 
-      {/* ── Pump machine (right side) ── */}
+      {/* ── Pump machine (centered) ── */}
 
       {/* Nozzle pipe outer (from balloon to pump) */}
-      <rect x="230" y="305" width="20" height="85" rx="10" fill="none" stroke="#3d5a75" strokeWidth="3" />
+      <rect x="245" y="265" width="20" height="100" rx="10" fill="none" stroke="#3d5a75" strokeWidth="3" />
 
       {/* Nozzle pipe inner (visible fluid path) */}
-      <rect x="236" y="310" width="8" height="75" rx="4" fill="#4a7a99" opacity="0.8" />
+      <rect x="251" y="270" width="8" height="90" rx="4" fill="#4a7a99" opacity="0.8" />
 
       {/* Pump base platform */}
-      <rect x="170" y="390" width="140" height="70" rx="12" fill="#1a2d3d" />
-      <rect x="175" y="393" width="130" height="8" rx="4" fill="rgba(255,255,255,0.04)" />
+      <rect x="180" y="365" width="140" height="70" rx="12" fill="#1a2d3d" />
+      <rect x="185" y="368" width="130" height="8" rx="4" fill="rgba(255,255,255,0.04)" />
 
       {/* Pump body (cylinder - larger) */}
-      <rect x="185" y="405" width="110" height="50" rx="8" fill="#253d51" stroke="#3d5a75" strokeWidth="2" />
-      <rect x="190" y="410" width="100" height="9" rx="3" fill="rgba(255,255,255,0.1)" />
+      <rect x="195" y="380" width="110" height="50" rx="8" fill="#253d51" stroke="#3d5a75" strokeWidth="2" />
+      <rect x="200" y="385" width="100" height="9" rx="3" fill="rgba(255,255,255,0.1)" />
 
       {/* Pump inlet (connection point) */}
-      <circle cx="240" cy="405" r="9" fill="#2d4659" stroke="#4a7a99" strokeWidth="2" />
+      <circle cx="250" cy="380" r="9" fill="#2d4659" stroke="#4a7a99" strokeWidth="2" />
 
       {/* Pump handle (piston rod - animates on pump) */}
       <motion.g
         animate={{ y: pumping ? [0, 18, 0] : 0 }}
         transition={{ duration: 0.22, ease: "easeInOut" }}
       >
-        <rect x="233" y="390" width="14" height="32" rx="5" fill="#2d4659" stroke="#3d5a75" strokeWidth="1" />
-        <rect x="228" y="382" width="24" height="12" rx="4" fill="#3d5a75" />
-        <circle cx="240" cy="388" r="4" fill="#4a6a88" />
+        <rect x="243" y="365" width="14" height="32" rx="5" fill="#2d4659" stroke="#3d5a75" strokeWidth="1" />
+        <rect x="238" y="357" width="24" height="12" rx="4" fill="#3d5a75" />
+        <circle cx="250" cy="363" r="4" fill="#4a6a88" />
       </motion.g>
 
       {/* Pump count dots — on base platform */}
       {Array.from({ length: dotCount }).map((_, i) => (
         <circle key={i}
-          cx={190 + i * 12}
-          cy="430"
+          cx={200 + i * 12}
+          cy="405"
           r="4"
           fill={pumpsCount > i ? color : "rgba(255,255,255,0.14)"}
         />
