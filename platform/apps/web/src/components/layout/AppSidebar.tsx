@@ -58,7 +58,7 @@ function SidebarInner() {
   const siteName = settings?.siteName ?? "DiamondPlay22";
 
   return (
-    <div className="flex flex-col h-full overflow-hidden" style={{ background: "#463e7a" }}>
+    <div className="flex flex-col h-full overflow-hidden">
       {/* ── Logo ─────────────────────────────────────────────── */}
       <div className="px-4 pt-3 pb-2 shrink-0">
         <Link href="/" className="flex flex-col leading-none group">
