@@ -28,14 +28,14 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     return (
       <>
         <Suspense fallback={null}><NavigationProgress /></Suspense>
-        <main className="flex-1 bg-[#0F1923] flex flex-col">{children}</main>
+        <main className="flex-1 bg-[#090c1c] flex flex-col">{children}</main>
       </>
     );
   }
 
   return (
     <SidebarContext.Provider value={{ collapsed: sidebarCollapsed, setCollapsed: setSidebarCollapsed }}>
-      <div className="min-h-screen flex bg-[#100810]">
+      <div className="min-h-screen flex bg-[#090c1c]">
         <Suspense fallback={null}><NavigationProgress /></Suspense>
 
         {/* ── Left Sidebar (desktop only) ───────────────────── */}
