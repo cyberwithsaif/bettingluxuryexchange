@@ -7,16 +7,12 @@
 }
 
 html, body {
-  background: theme(colors.bg);
+  background: #090c1c !important;
   color: #f4e7e7;
   font-family: theme(fontFamily.sans);
   min-height: 100vh;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-}
-
-body {
-  background: #090c1c;
 }
 
 /* Glass panel utility */
