@@ -19,7 +19,6 @@ const SETTINGS_KEY = "/admin/platform-settings";
 
 const DEFAULT_ITEMS: NavItem[] = [
   { href: "/exchange",   label: "EXCHANGE",    emoji: "🎰", enabled: true },
-  { href: "/casino",     label: "LIVE CASINO", emoji: "🎲", enabled: true },
   { href: "/crash",      label: "CRASH GAMES", emoji: "🚀", enabled: true },
   { href: "/virtual",    label: "VIRTUAL GAME",emoji: "🎮", enabled: true },
   { href: "/vr-games",   label: "VR GAMES",    emoji: "🥽", enabled: true },

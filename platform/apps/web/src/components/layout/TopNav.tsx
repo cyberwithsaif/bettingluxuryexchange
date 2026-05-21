@@ -6,7 +6,6 @@ import { cn } from "@/lib/cn";
 
 const DEFAULT_TABS = [
   { href: "/exchange",    label: "EXCHANGE",         emoji: "🎰", enabled: true },
-  { href: "/casino",      label: "LIVE CASINO",      emoji: "🎲", enabled: true },
   { href: "/crash",       label: "CRASH GAMES",      emoji: "🚀", enabled: true },
   { href: "/mini-games",  label: "DIAMOND MINI GAMES", emoji: "💎", enabled: true },
   { href: "/virtual",     label: "VIRTUAL GAME",     emoji: "🎮", enabled: true },
