@@ -116,11 +116,12 @@ function SidebarInner() {
             key={href}
             href={href}
             className={cn(
-              "flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold transition-all",
+              "flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-semibold transition-all",
               pathname === href
-                ? "bg-red-900/40 text-white border border-red-800/30"
-                : "text-white/60 hover:text-white hover:bg-white/5",
+                ? "text-white border border-violet-500/40"
+                : "text-white/60 hover:text-white",
             )}
+            style={pathname === href ? { background: "rgba(139, 92, 246, 0.2)" } : { background: "rgba(139, 92, 246, 0.08)" }}
           >
             <div className={`w-6 h-6 rounded-md ${iconBg} flex items-center justify-center shrink-0`}>
               {iconEl}
@@ -133,9 +134,10 @@ function SidebarInner() {
 
         <Link
           href="/contact"
-          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-semibold text-white/35 hover:text-white/70 hover:bg-white/5 transition-all"
+          className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-semibold text-white/50 hover:text-white/80 transition-all"
+          style={{ background: "rgba(139, 92, 246, 0.08)" }}
         >
-          <div className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center shrink-0">
+          <div className="w-6 h-6 rounded-md bg-white/8 flex items-center justify-center shrink-0">
             <Headphones size={13} />
           </div>
           Live Support
@@ -143,9 +145,9 @@ function SidebarInner() {
       </nav>
 
       {/* ── Total Bets ───────────────────────────────────────── */}
-      <div className="px-4 py-3 border-t border-white/5 shrink-0 bg-black/20">
-        <div className="text-[9px] uppercase tracking-wider text-white/25 mb-0.5">Total Bets Placed</div>
-        <div className="text-sm font-bold text-white/40 tabular-nums tracking-tight">14,012,645,500</div>
+      <div className="px-4 py-3 border-t border-white/8 shrink-0" style={{ background: "rgba(139, 92, 246, 0.06)" }}>
+        <div className="text-[9px] uppercase tracking-wider text-white/30 mb-0.5">Total Bets Placed</div>
+        <div className="text-sm font-bold text-white/50 tabular-nums tracking-tight">14,012,645,500</div>
       </div>
     </div>
   );
@@ -159,7 +161,8 @@ function SectionToggle({ label, open, onToggle, iconBg, icon }: {
   return (
     <button
       onClick={onToggle}
-      className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-bold text-white/85 hover:bg-white/5 transition-all"
+      className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[13px] font-bold text-white transition-all"
+      style={{ background: "rgba(139, 92, 246, 0.15)", border: "1px solid rgba(139, 92, 246, 0.25)" }}
     >
       <div className="flex items-center gap-2.5">
         <div className={`w-6 h-6 rounded-md ${iconBg} flex items-center justify-center shrink-0`}>
@@ -167,7 +170,7 @@ function SectionToggle({ label, open, onToggle, iconBg, icon }: {
         </div>
         {label}
       </div>
-      <ChevronDown size={13} className={cn("text-white/30 transition-transform", open && "rotate-180")} />
+      <ChevronDown size={13} className={cn("text-white/40 transition-transform", open && "rotate-180")} />
     </button>
   );
 }
