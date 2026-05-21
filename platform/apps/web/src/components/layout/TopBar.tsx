@@ -137,7 +137,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
             {/* Deposit button — yellow like Roobet */}
             <Link
               href="/account/deposit"
-              className="flex items-center gap-1.5 rounded-xl font-bold text-[13px] px-5 py-2.5 transition-all hover:brightness-125 active:scale-95 shrink-0 hover:scale-105 shadow-lg"
+              className="hidden md:flex items-center gap-1.5 rounded-xl font-bold text-[13px] px-5 py-2.5 transition-all hover:brightness-125 active:scale-95 shrink-0 hover:scale-105 shadow-lg"
               style={{
                 background: "linear-gradient(135deg,#ffd700,#ffed4e)",
                 color: "#1a0a00",
