@@ -20,6 +20,7 @@ export default async function HomePage() {
               alt="Casino"
               fill
               className="object-contain object-right"
+              style={{ mixBlendMode: "multiply" }}
               priority
             />
           </div>
