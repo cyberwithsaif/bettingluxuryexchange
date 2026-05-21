@@ -74,7 +74,7 @@ export function TopBar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-[#160b14] border-b border-white/6 text-white shadow-sm">
+    <header className="sticky top-0 z-50 bg-[#191938] border-b border-white/6 text-white shadow-sm">
       <MobileSidebar open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       <div className="flex items-center h-[58px] px-3 gap-2 md:gap-3">
@@ -251,7 +251,7 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
       {open && (
         <div
           className="absolute right-0 mt-2 w-52 rounded-xl border border-white/10 p-1.5 shadow-2xl z-50"
-          style={{ background: "#1e0e18" }}
+          style={{ background: "#1a1330" }}
         >
           {([
             ["Dashboard",         "/account"],
