@@ -305,49 +305,15 @@ function GameVisual({
         </motion.g>
       )}
 
-      {/* ── Pump count dots — on hull body, right of portholes ── */}
+      {/* ── Pump count dots ── */}
       {Array.from({ length: dotCount }).map((_, i) => (
         <circle key={i}
-          cx={228 - ((dotCount - 1) * 11) / 2 + i * 11}
-          cy="428"
+          cx={160 - ((dotCount - 1) * 11) / 2 + i * 11}
+          cy="420"
           r="3.5"
           fill={pumpsCount > i ? color : "rgba(255,255,255,0.14)"}
         />
       ))}
-
-      {/* ── Pump machine ── */}
-
-      {/* Nose (left cap) */}
-      <ellipse cx="30" cy="428" rx="22" ry="16" fill="#142230" />
-
-      {/* Main submarine body */}
-      <rect x="22" y="406" width="276" height="50" rx="23" fill="#1a2d3d" />
-
-      {/* Body top highlight */}
-      <rect x="32" y="409" width="230" height="7" rx="3.5" fill="rgba(255,255,255,0.04)" />
-
-      {/* Propeller hub (right) */}
-      <rect x="278" y="409" width="38" height="44" rx="19" fill="#142230" />
-      <circle cx="297" cy="431" r="9" fill="#0e1c28" />
-      <circle cx="297" cy="431" r="4"  fill="#1a2d3d" />
-
-      {/* Portholes × 3 */}
-      {([78, 126, 174] as number[]).map(x => (
-        <g key={x}>
-          <circle cx={x} cy="430" r="10" fill="#0d1c28" stroke="#22384c" strokeWidth="1.5" />
-          <circle cx={x} cy="430" r="4.5" fill="#162738" />
-        </g>
-      ))}
-
-      {/* Piston turret housing */}
-      <rect x="143" y="380" width="34" height="34" rx="8" fill="#1a2d3d" />
-
-      {/* Piston rod */}
-      <motion.rect
-        x="157" width="6" rx="3" fill="#253d51"
-        animate={{ y: pumping ? [336, 350, 336] : 336, height: pumping ? [46, 32, 46] : 46 }}
-        transition={{ duration: 0.22, ease: "easeInOut" }}
-      />
 
     </svg>
   );
