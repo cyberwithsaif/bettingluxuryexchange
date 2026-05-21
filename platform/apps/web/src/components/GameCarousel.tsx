@@ -8,7 +8,7 @@ const CASINO_GAMES = [
   { name: "Roulette", href: "/roulette", thumb: "/game-thumbs/roulette2.png" },
   { name: "Mines",    href: "/mines",    thumb: "/game-thumbs/mines2.png" },
   { name: "Plinko",   href: "/plinko",   thumb: "/game-thumbs/plinko2.png" },
-  { name: "Pump",     href: "/crash",    thumb: "/game-thumbs/pump.png" },
+  { name: "Pump",     href: "/pump",     thumb: "/game-thumbs/pump.png" },
   { name: "Dice",     href: "/dice",     thumb: "/game-thumbs/dice.png" },
   { name: "Towers",   href: "/towers",   thumb: "/game-thumbs/towers.png" },
   { name: "Coinflip", href: "/coinflip", thumb: "/game-thumbs/coinflip.png" },

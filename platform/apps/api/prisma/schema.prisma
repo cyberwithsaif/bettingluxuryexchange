@@ -70,6 +70,7 @@ model User {
   rouletteBets    RouletteBet[]
   minesSessions   MinesSession[]
   plinkoBets      PlinkoBet[]
+  pumpBets        PumpBet[]
 
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -666,4 +667,50 @@ model PlinkoBet {
 
   @@index([userId, createdAt])
   @@index([createdAt])
+}
+
+// -------------------------------------------------------------
+// Pump — Provably fair balloon crash game
+// -------------------------------------------------------------
+
+enum PumpRoundStatus {
+  BETTING   // accepting bets (10s window)
+  FLYING    // balloon inflating, multiplier rising
+  CRASHED   // balloon burst — no more cashouts
+  SETTLED   // payouts complete, next round starting
+}
+
+model PumpRound {
+  id             String          @id @default(cuid())
+  roundNumber    Int             @unique @default(autoincrement())
+  status         PumpRoundStatus @default(BETTING)
+  serverSeed     String          // 32-byte hex; kept secret until SETTLED
+  serverSeedHash String          // sha256(serverSeed) — published at BETTING start
+  crashPoint     Decimal?        @db.Decimal(10, 4) // revealed on CRASHED/SETTLED
+  startedAt      DateTime        @default(now())
+  flyingAt       DateTime?       // when FLYING phase began
+  crashedAt      DateTime?
+  settledAt      DateTime?
+
+  bets PumpBet[]
+
+  @@index([status, startedAt])
+}
+
+model PumpBet {
+  id          String          @id @default(cuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id])
+  roundId     String
+  round       PumpRound       @relation(fields: [roundId], references: [id])
+  betAmount   Decimal         @db.Decimal(20, 4)
+  autoCashAt  Decimal?        @db.Decimal(10, 4) // auto-cashout target multiplier
+  cashOutAt   Decimal?        @db.Decimal(10, 4) // actual cashout multiplier (null = lost)
+  payout      Decimal         @default(0) @db.Decimal(20, 4)
+  isWin       Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  settledAt   DateTime?
+
+  @@index([roundId])
+  @@index([userId, createdAt])
 }

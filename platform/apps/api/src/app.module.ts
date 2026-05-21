@@ -24,6 +24,7 @@ import { AnnouncementsModule } from "./modules/announcements/announcements.modul
 import { RouletteModule } from "./modules/roulette/roulette.module";
 import { MinesModule } from "./modules/mines/mines.module";
 import { PlinkoModule } from "./modules/plinko/plinko.module";
+import { PumpModule } from "./modules/pump/pump.module";
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { PlinkoModule } from "./modules/plinko/plinko.module";
     RouletteModule,
     MinesModule,
     PlinkoModule,
+    PumpModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

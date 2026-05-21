@@ -21,7 +21,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     pathname === "/crash" ||
     pathname === "/dice" ||
     pathname === "/towers" ||
-    pathname === "/coinflip";
+    pathname === "/coinflip" ||
+    pathname === "/pump";
 
   if (isFullScreen) {
     return (
