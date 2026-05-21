@@ -1,11 +1,11 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Gamepad2, Trophy, MessageCircle } from "lucide-react";
+import { House, Search, Gamepad2, Trophy, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const ITEMS = [
-  { href: "/",       label: "Home",   icon: Home },
+  { href: "/",       label: "Home",   icon: House },
   { href: "#",       label: "Search", icon: Search },
   { href: "/casino", label: "Casino", icon: Gamepad2 },
   { href: "/exchange",   label: "Sports", icon: Trophy },
