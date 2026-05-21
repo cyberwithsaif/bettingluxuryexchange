@@ -121,8 +121,8 @@ function SidebarInner() {
         {EXTRA_NAV.map(({ href, label, iconEl }) => {
           const isActive = pathname === href;
           const [isHovered, setIsHovered] = React.useState(false);
-          const bgColor = isActive ? "#7740ed" : "#463e7a";
-          const hoverColor = isActive ? "#8a50f5" : "#5a5a8a";
+          const bgColor = isActive ? "#7740ed" : "#2c2852";
+          const hoverColor = isActive ? "#8a50f5" : "#3d3763";
 
           return (
             <Link
@@ -151,7 +151,7 @@ function SidebarInner() {
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               className="flex items-center gap-3 px-3 py-1.5 rounded-2xl text-[15px] font-bold text-white hover:text-white transition-all"
-              style={{ background: isHovered ? "#5a5a8a" : "#463e7a" }}
+              style={{ background: isHovered ? "#3d3763" : "#2c2852" }}
             >
               <Headphones size={20} strokeWidth={2.5} className="text-white" />
               Live Support
