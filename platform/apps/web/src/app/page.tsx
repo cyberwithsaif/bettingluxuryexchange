@@ -14,7 +14,7 @@ export default async function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-900 rounded-3xl" />
 
           {/* Background image - right positioned with slight overflow */}
-          <div className="absolute -right-8 top-0 w-2/3 h-full opacity-80 group-hover:opacity-95 transition-opacity">
+          <div className="absolute -right-8 top-0 w-2/3 h-full">
             <Image
               src="/images/bannerlogo.png"
               alt="Casino"
