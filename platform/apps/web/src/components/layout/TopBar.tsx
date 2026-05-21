@@ -130,7 +130,6 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
                     ${Number(wallet?.available ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
-                <ChevronDown size={12} className="text-white/40" />
               </div>
               <Link
                 href="/account/deposit"
