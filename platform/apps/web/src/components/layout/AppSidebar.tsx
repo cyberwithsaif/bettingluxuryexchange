@@ -28,9 +28,6 @@ const CASINO_GAMES = [
 ];
 
 const EXTRA_NAV = [
-  { href: "/virtual",    label: "Virtual Game", iconEl: <Monitor size={13} className="text-emerald-400" />, iconBg: "bg-emerald-500/15" },
-  { href: "/vr-games",   label: "VR Games",     iconEl: <Glasses size={13} className="text-violet-400" />,  iconBg: "bg-violet-500/15" },
-  { href: "/lottery",    label: "Lottery",      iconEl: <Ticket  size={13} className="text-pink-400" />,    iconBg: "bg-pink-500/15"   },
   { href: "/sportsbook", label: "Sports Book",  iconEl: <Target  size={13} className="text-orange-400" />,  iconBg: "bg-orange-500/15" },
 ];
 
@@ -53,7 +50,7 @@ function SidebarInner() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* ── Logo ─────────────────────────────────────────────── */}
-      <div className="px-4 pt-5 pb-4 shrink-0 border-b border-white/5">
+      <div className="px-4 pt-5 pb-4 shrink-0">
         <Link href="/" className="flex flex-col leading-none group">
           <span className="font-display italic text-[21px] font-black tracking-tight text-white uppercase group-hover:text-red-300 transition-colors">
             {siteName}
@@ -65,7 +62,7 @@ function SidebarInner() {
       </div>
 
       {/* ── Nav ──────────────────────────────────────────────── */}
-      <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-0.5 scrollbar-thin scrollbar-thumb-white/8 scrollbar-track-transparent">
+      <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
         {/* Casino section */}
         <SectionToggle
@@ -85,9 +82,9 @@ function SidebarInner() {
           </SubList>
         )}
 
-        {/* Exchange section */}
+        {/* Sportsbook section */}
         <SectionToggle
-          label="Exchange"
+          label="Sportsbook"
           open={exchangeOpen}
           onToggle={() => setExchangeOpen(o => !o)}
           iconBg="bg-yellow-500/15"
@@ -108,7 +105,6 @@ function SidebarInner() {
           </SubList>
         )}
 
-        <div className="h-px bg-white/6 my-2 mx-1" />
 
         {/* Extra nav items */}
         {EXTRA_NAV.map(({ href, label, iconEl, iconBg }) => (
@@ -118,7 +114,7 @@ function SidebarInner() {
             className={cn(
               "flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13px] font-semibold transition-all",
               pathname === href
-                ? "text-white border border-violet-500/40"
+                ? "text-white"
                 : "text-white/60 hover:text-white",
             )}
             style={pathname === href ? { background: "rgba(139, 92, 246, 0.2)" } : { background: "rgba(139, 92, 246, 0.08)" }}
@@ -130,7 +126,6 @@ function SidebarInner() {
           </Link>
         ))}
 
-        <div className="h-px bg-white/6 my-2 mx-1" />
 
         <Link
           href="/contact"
@@ -145,7 +140,7 @@ function SidebarInner() {
       </nav>
 
       {/* ── Total Bets ───────────────────────────────────────── */}
-      <div className="px-4 py-3 border-t border-white/8 shrink-0" style={{ background: "rgba(139, 92, 246, 0.06)" }}>
+      <div className="px-4 py-3 shrink-0" style={{ background: "rgba(139, 92, 246, 0.06)" }}>
         <div className="text-[9px] uppercase tracking-wider text-white/30 mb-0.5">Total Bets Placed</div>
         <div className="text-sm font-bold text-white/50 tabular-nums tracking-tight">14,012,645,500</div>
       </div>
@@ -162,7 +157,7 @@ function SectionToggle({ label, open, onToggle, iconBg, icon }: {
     <button
       onClick={onToggle}
       className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-[13px] font-bold text-white transition-all"
-      style={{ background: "rgba(139, 92, 246, 0.15)", border: "1px solid rgba(139, 92, 246, 0.25)" }}
+      style={{ background: "rgba(139, 92, 246, 0.15)" }}
     >
       <div className="flex items-center gap-2.5">
         <div className={`w-6 h-6 rounded-md ${iconBg} flex items-center justify-center shrink-0`}>
@@ -192,7 +187,7 @@ function SubLink({ href, active, emoji, children }: {
       className={cn(
         "flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-all",
         active
-          ? "bg-red-900/50 text-white font-semibold border border-red-800/30"
+          ? "bg-red-900/50 text-white font-semibold"
           : "text-white/52 hover:text-white hover:bg-white/5",
       )}
     >

@@ -74,10 +74,10 @@ export function TopBar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-[#191938] border-b border-white/6 text-white shadow-sm">
+    <header className="sticky top-0 z-50 bg-[#191938] text-white shadow-sm rounded-br-2xl">
       <MobileSidebar open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
-      <div className="flex items-center h-[58px] px-3 gap-2 md:gap-3">
+      <div className="flex items-center h-16 px-3 gap-2 md:gap-3">
 
         {/* ── Sidebar toggle (desktop) ───────────────────────── */}
         <button
