@@ -37,11 +37,10 @@ function fmtMoney(n: number | undefined) {
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(n);
 }
 
-export function TopBar() {
+export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
   const clock = useLiveClock();
   const { user, clear } = useAuthStore();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const { data: wallet, mutate } = useSWR(user ? "/wallet/summary" : null);
   const pFetch = (url: string) => fetch(url).then(r => r.json());
@@ -64,13 +63,9 @@ export function TopBar() {
     return () => { s.off("wallet:update"); };
   }, [user, mutate]);
 
-  // Toggle sidebar by flipping data attribute on the sidebar aside element
+  // Toggle sidebar visibility
   function toggleSidebar() {
-    setSidebarCollapsed(c => !c);
-    const sidebar = document.querySelector("aside.app-sidebar") as HTMLElement | null;
-    if (sidebar) {
-      sidebar.style.display = sidebar.style.display === "none" ? "" : "none";
-    }
+    onToggleSidebar?.();
   }
 
   return (
