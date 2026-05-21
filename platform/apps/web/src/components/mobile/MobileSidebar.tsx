@@ -61,12 +61,12 @@ export function MobileSidebar({ open, onClose }: { open: boolean; onClose: () =>
       />
       <aside
         className={cn(
-          "md:hidden fixed top-0 left-0 bottom-0 z-[61] w-1/2 max-w-[260px] bg-[#0f0810] border-r border-white/10 shadow-2xl transition-transform overflow-y-auto",
+          "md:hidden fixed top-0 left-0 bottom-0 z-[61] w-1/2 max-w-[260px] bg-[#191938] border-r border-white/10 shadow-2xl transition-transform overflow-y-auto",
           open ? "translate-x-0" : "-translate-x-full",
         )}
       >
         {/* Header */}
-        <div className="sticky top-0 h-14 flex items-center justify-between px-4 bg-gradient-to-r from-purple-900 to-purple-800 border-b border-white/10">
+        <div className="sticky top-0 h-14 flex items-center justify-between px-4 bg-[#191938] border-b border-white/10">
           <span className="font-bold text-sm text-white uppercase tracking-wider">
             Menu
           </span>
@@ -82,7 +82,7 @@ export function MobileSidebar({ open, onClose }: { open: boolean; onClose: () =>
               {/* Category header */}
               <button
                 onClick={() => toggleCategory(cat.id)}
-                className="w-full flex items-center justify-between px-4 py-3 bg-purple-900/30 hover:bg-purple-900/40 transition border-b border-white/5"
+                className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/8 transition border-b border-white/5"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-lg">{cat.icon}</span>
@@ -99,7 +99,7 @@ export function MobileSidebar({ open, onClose }: { open: boolean; onClose: () =>
 
               {/* Games list */}
               {expanded === cat.id && (
-                <ul className="bg-black/40">
+                <ul className="bg-white/3">
                   {cat.games.map((game) => (
                     <li key={game.href}>
                       <Link
