@@ -310,8 +310,36 @@ export function PumpGame() {
     };
   }, [autoMode, user, startMultiplierLoop, stopMultiplierLoop, notify, activeBet]);
 
-  // Load recent history on mount
+  // Join room + sync current round state on mount
   useEffect(() => {
+    const s = socketRef.current;
+    if (s) {
+      s.emit("pump:subscribe");
+      // Re-subscribe whenever socket reconnects
+      s.on("connect", () => s.emit("pump:subscribe"));
+    }
+
+    // Fetch current round so we know the phase immediately
+    fetch("/api/casino/pump/current")
+      .then(r => r.json())
+      .then((round: any) => {
+        if (!round) return;
+        setCurrentRoundId(round.id);
+        setServerSeedHash(round.serverSeedHash ?? "");
+        if (round.status === "BETTING") {
+          setPhase("betting");
+          setBettingEndsAt(round.phaseEndsAt ?? (Date.now() + 5000));
+        } else if (round.status === "FLYING" && round.flyingStartedAt) {
+          setPhase("flying");
+          setFlyingStart(round.flyingStartedAt);
+          startMultiplierLoop(round.flyingStartedAt);
+        } else if (round.status === "CRASHED" || round.status === "SETTLED") {
+          setPhase("crashed");
+          if (round.crashPoint) setCrashPoint(round.crashPoint);
+        }
+      })
+      .catch(() => {});
+
     fetch("/api/casino/pump/history?limit=20")
       .then(r => r.json())
       .then((data: any[]) => {
@@ -334,7 +362,11 @@ export function PumpGame() {
         }
       })
       .catch(() => {});
-  }, []);
+
+    return () => {
+      if (s) s.off("connect");
+    };
+  }, [startMultiplierLoop]);
 
   // ── Bet actions ────────────────────────────────────────────────
 
