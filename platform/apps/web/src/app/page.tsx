@@ -1,18 +1,6 @@
 import Link from "next/link";
 
 /* ── Game cards ────────────────────────────────────────────── */
-const ORIGINALS = [
-  { name: "Roulette",   href: "/roulette",   emoji: "🎡", desc: "Spin & Win Big",      from: "#5c0a1a", to: "#2d0510" },
-  { name: "Crash",      href: "/crash",      emoji: "🚀", desc: "Ride the Curve",      from: "#5c2a00", to: "#2d1400" },
-  { name: "Mines",      href: "/mines",      emoji: "💣", desc: "Navigate to Win",     from: "#0a4020", to: "#041a0c" },
-  { name: "Plinko",     href: "/plinko",     emoji: "🎯", desc: "Drop & Earn",         from: "#0a205c", to: "#04102d" },
-  { name: "Slots",      href: "/slots",      emoji: "🎰", desc: "Jackpots & Rewards",  from: "#3d1a5c", to: "#1e0d2d" },
-  { name: "Mini Games", href: "/mini-games", emoji: "💎", desc: "Quick & Fun",         from: "#0a4a4a", to: "#042525" },
-  { name: "Baccarat",   href: "/baccarat",   emoji: "🃏", desc: "Beat the Dealer",     from: "#2d1a0a", to: "#1a0a05" },
-  { name: "Blackjack",  href: "/blackjack",  emoji: "🂡", desc: "Hit or Stand",        from: "#0a2a3d", to: "#051015" },
-  { name: "Virtual",    href: "/virtual",    emoji: "🎮", desc: "Simulated Thrills",   from: "#1a3a00", to: "#0c1e00" },
-  { name: "Lottery",    href: "/lottery",    emoji: "🎟️", desc: "Pick Your Numbers",   from: "#4a001a", to: "#25000d" },
-];
 
 export default function HomePage() {
   return (
@@ -36,31 +24,6 @@ export default function HomePage() {
           />
         </div>
 
-        {/* Originals grid */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-bold text-white tracking-wide">
-              DiamondPlay22 Originals
-            </h2>
-            <Link href="/casino" className="text-xs text-red-400 hover:text-red-300 transition font-semibold">
-              View All →
-            </Link>
-          </div>
-          <div className="grid grid-cols-5 sm:grid-cols-5 lg:grid-cols-10 gap-2 md:gap-3">
-            {ORIGINALS.map(g => (
-              <Link key={g.href + g.name} href={g.href} className="group block">
-                <div
-                  className="relative rounded-xl overflow-hidden aspect-square flex flex-col items-center justify-center gap-1.5 border border-white/8 group-hover:border-white/25 transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg"
-                  style={{ background: `linear-gradient(145deg, ${g.from}, ${g.to})` }}
-                >
-                  <span className="text-3xl md:text-4xl leading-none">{g.emoji}</span>
-                  <span className="text-[10px] md:text-xs font-bold text-white/90 text-center px-1 leading-tight">{g.name}</span>
-                </div>
-                <p className="text-[9px] md:text-[10px] text-white/40 mt-1.5 text-center leading-tight hidden sm:block">{g.desc}</p>
-              </Link>
-            ))}
-          </div>
-        </section>
     </div>
   );
 }
