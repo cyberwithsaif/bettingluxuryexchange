@@ -110,6 +110,110 @@ function PumpMachine({ active }: { active: boolean }) {
   );
 }
 
+// ── Sound Engine (Web Audio API — no files needed) ───────────────────────────
+
+function useSoundEngine() {
+  const ctxRef = useRef<AudioContext | null>(null);
+
+  const getCtx = useCallback((): AudioContext => {
+    if (!ctxRef.current || ctxRef.current.state === "closed") {
+      ctxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (ctxRef.current.state === "suspended") ctxRef.current.resume();
+    return ctxRef.current;
+  }, []);
+
+  const playBet = useCallback(() => {
+    try {
+      const ctx = getCtx(); const now = ctx.currentTime;
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = "sine";
+      o.frequency.setValueAtTime(440, now);
+      o.frequency.exponentialRampToValueAtTime(660, now + 0.08);
+      g.gain.setValueAtTime(0.28, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      o.start(now); o.stop(now + 0.15);
+    } catch {}
+  }, [getCtx]);
+
+  const playPump = useCallback(() => {
+    try {
+      const ctx = getCtx(); const now = ctx.currentTime;
+      // air burst noise
+      const sz = Math.floor(ctx.sampleRate * 0.12);
+      const buf = ctx.createBuffer(1, sz, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < sz; i++) d[i] = (Math.random() * 2 - 1) * 0.5;
+      const noise = ctx.createBufferSource(); noise.buffer = buf;
+      const bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 900; bp.Q.value = 0.6;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.55, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      noise.connect(bp); bp.connect(g); g.connect(ctx.destination);
+      noise.start(now);
+      // low thump
+      const o = ctx.createOscillator(); const og = ctx.createGain();
+      o.connect(og); og.connect(ctx.destination);
+      o.frequency.setValueAtTime(180, now);
+      o.frequency.exponentialRampToValueAtTime(80, now + 0.09);
+      og.gain.setValueAtTime(0.2, now);
+      og.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+      o.start(now); o.stop(now + 0.1);
+    } catch {}
+  }, [getCtx]);
+
+  const playCashout = useCallback(() => {
+    try {
+      const ctx = getCtx(); const now = ctx.currentTime;
+      // whoosh
+      const sz = Math.floor(ctx.sampleRate * 0.55);
+      const buf = ctx.createBuffer(1, sz, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < sz; i++) d[i] = (Math.random() * 2 - 1) * 0.35;
+      const noise = ctx.createBufferSource(); noise.buffer = buf;
+      const hp = ctx.createBiquadFilter(); hp.type = "highpass";
+      hp.frequency.setValueAtTime(150, now);
+      hp.frequency.exponentialRampToValueAtTime(4000, now + 0.45);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.45, now + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+      noise.connect(hp); hp.connect(g); g.connect(ctx.destination);
+      noise.start(now);
+      // win chime C-E-G
+      ([0, 0.18, 0.34] as number[]).forEach((delay, i) => {
+        const freq = ([523, 659, 784] as number[])[i]!;
+        const o = ctx.createOscillator(); const og = ctx.createGain();
+        o.type = "sine"; o.connect(og); og.connect(ctx.destination);
+        o.frequency.value = freq;
+        og.gain.setValueAtTime(0, now + delay);
+        og.gain.linearRampToValueAtTime(0.22, now + delay + 0.04);
+        og.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.45);
+        o.start(now + delay); o.stop(now + delay + 0.5);
+      });
+    } catch {}
+  }, [getCtx]);
+
+  const playPop = useCallback(() => {
+    try {
+      const ctx = getCtx(); const now = ctx.currentTime;
+      const sz = Math.floor(ctx.sampleRate * 0.18);
+      const buf = ctx.createBuffer(1, sz, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < sz; i++) d[i] = (Math.random() * 2 - 1);
+      const noise = ctx.createBufferSource(); noise.buffer = buf;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.9, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      noise.connect(g); g.connect(ctx.destination);
+      noise.start(now);
+    } catch {}
+  }, [getCtx]);
+
+  return { playBet, playPump, playCashout, playPop };
+}
+
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export function PumpGame() {
@@ -121,6 +225,8 @@ export function PumpGame() {
   const maxBet = pumpCfg?.maxBet ?? 100_000;
   const balance = walletData ? Number(walletData.available) : 0;
 
+  const { playBet, playPump, playCashout, playPop } = useSoundEngine();
+
   const [mode,       setMode]       = useState<Mode>("manual");
   const [betAmount,  setBetAmount]  = useState<string>("10");
   const [difficulty, setDifficulty] = useState<Difficulty>("EASY");
@@ -130,6 +236,10 @@ export function PumpGame() {
   const [busy,       setBusy]       = useState<"none" | "bet" | "pump" | "cashout">("none");
   const [poppedMult, setPoppedMult] = useState<number | null>(null);
   const [lastWin,    setLastWin]    = useState<{ mult: number; payout: number } | null>(null);
+
+  // balloon release (fly-up on cashout) and bet-flash feedback
+  const [releasing,  setReleasing]  = useState(false);
+  const [betFlash,   setBetFlash]   = useState(false);
 
   const [multTable,   setMultTable]   = useState<number[]>([]);
   const [tableLoaded, setTableLoaded] = useState(false);
@@ -195,6 +305,7 @@ export function PumpGame() {
     setStatus("IDLE");
     setPoppedMult(null);
     setLastWin(null);
+    setReleasing(false);
   }, []);
 
   // ── Place bet ─────────────────────────────────────────────────────────────
@@ -209,9 +320,13 @@ export function PumpGame() {
     setBusy("bet");
     setPoppedMult(null);
     setLastWin(null);
+    setReleasing(false);
     try {
       const r = await api.post("/casino/pump/bet", { betAmount: amt, difficulty });
       const data = r.data;
+      playBet();
+      setBetFlash(true);
+      setTimeout(() => setBetFlash(false), 600);
       setSession({
         betId:          data.betId,
         betAmount:      amt,
@@ -231,16 +346,18 @@ export function PumpGame() {
     } finally {
       setBusy("none");
     }
-  }, [user, status, betAmount, difficulty, minBet, maxBet, balance, mutateWallet, notify]);
+  }, [user, status, betAmount, difficulty, minBet, maxBet, balance, mutateWallet, notify, playBet]);
 
   // ── Pump ─────────────────────────────────────────────────────────────────
   const pumpOnce = useCallback(async () => {
     if (!session || status !== "ACTIVE" || busy !== "none") return;
     setBusy("pump");
+    playPump();
     try {
       const r = await api.post("/casino/pump/pump", { betId: session.betId });
       const data = r.data;
       if (data.popped) {
+        playPop();
         setPoppedMult(session.currentMult);
         setSession(prev => prev ? { ...prev, pumpsCount: data.pumpsCount } : prev);
         setStatus("POPPED");
@@ -256,7 +373,7 @@ export function PumpGame() {
     } finally {
       setBusy("none");
     }
-  }, [session, status, busy, notify]);
+  }, [session, status, busy, notify, playPump, playPop]);
 
   // ── Cashout ──────────────────────────────────────────────────────────────
   const cashout = useCallback(async () => {
@@ -266,15 +383,20 @@ export function PumpGame() {
     try {
       const r = await api.post("/casino/pump/cashout", { betId: session.betId });
       const data = r.data;
-      setStatus("CASHED");
-      setLastWin({ mult: data.multiplier, payout: data.payout });
+      playCashout();
+      setReleasing(true);
+      setTimeout(() => {
+        setReleasing(false);
+        setStatus("CASHED");
+        setLastWin({ mult: data.multiplier, payout: data.payout });
+      }, 750);
       mutateWallet();
     } catch (e: any) {
       notify(e?.response?.data?.message ?? "Cashout failed", false);
     } finally {
       setBusy("none");
     }
-  }, [session, status, busy, mutateWallet, notify]);
+  }, [session, status, busy, mutateWallet, notify, playCashout]);
 
   // ── Auto-reset after CASHED/POPPED ───────────────────────────────────────
   useEffect(() => {
@@ -557,7 +679,10 @@ export function PumpGame() {
 
         {/* ── Center: Balloon stage ───────────────────────────── */}
         <div className="flex-1 flex flex-col bg-[#0f212e]">
-          <div className="flex-1 flex flex-col items-center justify-end relative px-6 py-10 min-h-[380px]">
+          <div
+            className="flex-1 flex flex-col items-center justify-end relative px-6 py-10 min-h-[380px] transition-all duration-300"
+            style={betFlash ? { boxShadow: "inset 0 0 60px 10px rgba(34,197,94,0.18)" } : undefined}
+          >
 
             {/* Win/Pop banner */}
             <AnimatePresence>
@@ -611,9 +736,16 @@ export function PumpGame() {
                   ) : (
                     <motion.div
                       key="inflated"
-                      initial={{ opacity: 0, scale: 0.6 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0 }}
+                      initial={{ opacity: 0, scale: 0.6, y: 0, rotate: 0 }}
+                      animate={releasing
+                        ? { opacity: 0, y: -480, scale: 1.25, rotate: 12 }
+                        : { opacity: 1, scale: 1,   y: 0,    rotate: 0 }
+                      }
+                      exit={{ opacity: 0, scale: 0.5 }}
+                      transition={releasing
+                        ? { duration: 0.72, ease: [0.22, 0.61, 0.36, 1] }
+                        : { type: "spring", stiffness: 90, damping: 18 }
+                      }
                       className="relative"
                     >
                       <Balloon scale={balloonScale} color={balloonColor} />

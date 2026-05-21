@@ -3,6 +3,8 @@ import {
   UseGuards, BadRequestException,
 } from "@nestjs/common";
 import { SkipThrottle } from "@nestjs/throttler";
+import { IsNumber, IsString, IsOptional, IsBoolean, IsObject, ValidateIf } from "class-validator";
+import { Type } from "class-transformer";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
@@ -11,29 +13,76 @@ import { PumpService } from "./pump.service";
 import { UserRole, PumpDifficulty } from "@prisma/client";
 
 class PlaceBetDto {
+  @IsNumber()
+  @Type(() => Number)
   betAmount!: number;
+
+  @IsString()
   difficulty!: string;
+
+  @IsOptional()
+  @IsString()
   clientSeed?: string;
 }
 
 class PumpDto {
+  @IsString()
   betId!: string;
 }
 
 class CashoutDto {
+  @IsString()
   betId!: string;
 }
 
 class SaveConfigDto {
+  @IsOptional()
+  @IsBoolean()
   enabled?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
   minBet?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
   maxBet?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
   maxPayout?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
   rtpPercent?: number;
+
+  @IsOptional()
+  @IsObject()
   difficulties?: any;
-  forceWinUsername?: string | null;  // by username (admin friendly)
+
+  @IsOptional()
+  @ValidateIf((o) => o.forceWinUsername !== null)
+  @IsString()
+  forceWinUsername?: string | null;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
   forceWinPumps?: number | null;
+
+  @IsOptional()
+  @ValidateIf((o) => o.forceLossUsername !== null)
+  @IsString()
   forceLossUsername?: string | null;
+
+  @IsOptional()
+  @ValidateIf((o) => o.forceNextPopPump !== null)
+  @IsNumber()
+  @Type(() => Number)
   forceNextPopPump?: number | null;
 }
 
