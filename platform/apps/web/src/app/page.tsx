@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { HeroBanner } from "@/components/HeroBanner";
-import { PromoBannerStrip } from "@/components/PromoBannerStrip";
 
 /* ── Game cards ────────────────────────────────────────────── */
 const ORIGINALS = [
@@ -17,9 +16,6 @@ const ORIGINALS = [
 export default function HomePage() {
   return (
     <div className="w-full px-3 md:px-5 py-4 space-y-5 max-w-[1400px] mx-auto">
-
-        {/* Hero carousel (admin-managed) */}
-        <PromoBannerStrip />
 
         {/* Category cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
