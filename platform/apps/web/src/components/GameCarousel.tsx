@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 
 const CASINO_GAMES = [
   { name: "Roulette", href: "/roulette", thumb: "/game-thumbs/roulette2.png" },
@@ -13,6 +14,25 @@ const CASINO_GAMES = [
 ];
 
 export function GameCarousel() {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    let scrollPos = 0;
+    const scrollSpeed = 1;
+    const maxScroll = container.scrollWidth - container.clientWidth;
+
+    const interval = setInterval(() => {
+      scrollPos += scrollSpeed;
+      if (scrollPos > maxScroll) scrollPos = 0;
+      container.scrollLeft = scrollPos;
+    }, 30);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <section>
       {/* Header */}
@@ -26,30 +46,22 @@ export function GameCarousel() {
         </Link>
       </div>
 
-      {/* Scrollable row */}
-      <div className="flex gap-2.5 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-1">
+      {/* Auto-scrolling carousel */}
+      <div
+        ref={scrollRef}
+        className="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+      >
         {CASINO_GAMES.map(game => (
           <Link
             key={game.href}
             href={game.href}
-            className="group block flex-shrink-0 w-[38vw] sm:w-[22vw] lg:w-[calc(14.28%-10px)] max-w-[180px]"
+            className="group block flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden border border-white/10 hover:border-purple-500/40 transition-all duration-200 hover:scale-105 hover:shadow-lg shadow-black/40"
           >
-            <div className="relative rounded-2xl overflow-hidden bg-[#1a1433] border border-white/6 group-hover:border-purple-500/40 transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-xl shadow-black/40">
-              {/* Image */}
-              <div className="aspect-[3/4] w-full overflow-hidden">
-                <img
-                  src={game.thumb}
-                  alt={game.name}
-                  className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500"
-                />
-              </div>
-
-              {/* Name overlay */}
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent pt-8 pb-2.5 px-2.5">
-                <p className="text-white text-[12px] font-bold leading-tight truncate">{game.name}</p>
-                <p className="text-white/40 text-[9px] font-semibold tracking-wide mt-0.5">DiamondPlay</p>
-              </div>
-            </div>
+            <img
+              src={game.thumb}
+              alt={game.name}
+              className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-300"
+            />
           </Link>
         ))}
       </div>
