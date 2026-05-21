@@ -225,6 +225,196 @@ function SlideManager({
   );
 }
 
+const EMPTY_CATEGORY: Omit<CategoryBanner, "id" | "sortOrder"> = {
+  title: "", subtitle: "", href: "/casino", emoji: "🎰",
+  gradient: "linear-gradient(135deg,#3d0810 0%,#6b0e1a 40%,#1a0408 100%)",
+};
+
+const GRADIENT_PRESETS = [
+  { label: "Casino Red",   value: "linear-gradient(135deg,#3d0810 0%,#6b0e1a 40%,#1a0408 100%)" },
+  { label: "Sports Blue",  value: "linear-gradient(135deg,#0a1535 0%,#162a60 40%,#040c1a 100%)" },
+  { label: "Green",        value: "linear-gradient(135deg,#0a3d1a 0%,#0e6b30 40%,#041a08 100%)" },
+  { label: "Purple",       value: "linear-gradient(135deg,#2d0a5c 0%,#4e0e8c 40%,#1a0430 100%)" },
+  { label: "Gold",         value: "linear-gradient(135deg,#3d2d00 0%,#6b4e0a 40%,#1a1200 100%)" },
+];
+
+function CategoryCardManager({ banners, saving, onSave }: {
+  banners: CategoryBanner[];
+  saving: boolean;
+  onSave: (updated: CategoryBanner[]) => Promise<void>;
+}) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Omit<CategoryBanner, "id" | "sortOrder">>(EMPTY_CATEGORY);
+  const [newForm, setNewForm] = useState<Omit<CategoryBanner, "id" | "sortOrder">>(EMPTY_CATEGORY);
+  const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
+
+  function startEdit(cat: CategoryBanner) {
+    setEditingId(cat.id);
+    setEditForm({ title: cat.title, subtitle: cat.subtitle, href: cat.href, emoji: cat.emoji, gradient: cat.gradient });
+  }
+
+  async function saveEdit() {
+    const updated = banners.map(c => c.id === editingId ? { ...c, ...editForm } : c);
+    await onSave(updated);
+    setEditingId(null);
+    setMsg({ text: "Card updated!", ok: true });
+    setTimeout(() => setMsg(null), 3000);
+  }
+
+  async function addCard() {
+    if (!newForm.title) { setMsg({ text: "Title is required.", ok: false }); return; }
+    const card: CategoryBanner = { id: Date.now().toString(), sortOrder: banners.length, ...newForm };
+    await onSave([...banners, card]);
+    setNewForm(EMPTY_CATEGORY);
+    setMsg({ text: "Card added!", ok: true });
+    setTimeout(() => setMsg(null), 3000);
+  }
+
+  async function remove(id: string) {
+    await onSave(banners.filter(c => c.id !== id).map((c, k) => ({ ...c, sortOrder: k })));
+  }
+
+  async function move(i: number, dir: -1 | 1) {
+    const updated = [...banners];
+    const j = i + dir;
+    [updated[i], updated[j]] = [updated[j]!, updated[i]!];
+    updated.forEach((c, k) => { c.sortOrder = k; });
+    await onSave(updated);
+  }
+
+  const fieldClass = "w-full bg-panel/60 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent";
+
+  function CardForm({ value, onChange, onSubmit, submitLabel }: {
+    value: Omit<CategoryBanner, "id" | "sortOrder">;
+    onChange: (v: Omit<CategoryBanner, "id" | "sortOrder">) => void;
+    onSubmit: () => void;
+    submitLabel: string;
+  }) {
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-white/50 mb-1">Title <span className="text-red-400">*</span></label>
+            <input value={value.title} onChange={e => onChange({ ...value, title: e.target.value })}
+              placeholder="Casino" className={fieldClass} />
+          </div>
+          <div>
+            <label className="block text-xs text-white/50 mb-1">Subtitle</label>
+            <input value={value.subtitle} onChange={e => onChange({ ...value, subtitle: e.target.value })}
+              placeholder="Thousands of Games" className={fieldClass} />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-white/50 mb-1">Link (href)</label>
+            <input value={value.href} onChange={e => onChange({ ...value, href: e.target.value })}
+              placeholder="/casino" className={fieldClass} />
+          </div>
+          <div>
+            <label className="block text-xs text-white/50 mb-1">Emoji / Icon</label>
+            <input value={value.emoji} onChange={e => onChange({ ...value, emoji: e.target.value })}
+              placeholder="🎰" className={fieldClass} />
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs text-white/50 mb-1">Background Gradient</label>
+          <div className="flex gap-2 flex-wrap mb-2">
+            {GRADIENT_PRESETS.map(p => (
+              <button key={p.label} onClick={() => onChange({ ...value, gradient: p.value })}
+                className="px-2 py-1 rounded text-[11px] border transition"
+                style={{
+                  background: p.value,
+                  border: value.gradient === p.value ? "1.5px solid #a78bfa" : "1px solid rgba(255,255,255,0.1)",
+                  color: "white",
+                }}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <input value={value.gradient} onChange={e => onChange({ ...value, gradient: e.target.value })}
+            placeholder="linear-gradient(135deg,...)" className={fieldClass} />
+          <div className="mt-2 h-10 rounded-lg border border-white/10" style={{ background: value.gradient }} />
+        </div>
+        <button onClick={onSubmit} disabled={saving}
+          className="flex items-center gap-2 bg-accent-grad px-4 py-2 rounded-lg font-semibold text-ink text-sm shadow-glow hover:brightness-110 disabled:opacity-50 transition">
+          {saving ? "Saving…" : submitLabel}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <section className="glass rounded-lg p-5 space-y-4">
+      <div>
+        <h2 className="font-bold text-sm uppercase tracking-wider text-white/70 flex items-center gap-2">
+          <Layout size={16} className="text-accent" />
+          Category Cards (Homepage)
+        </h2>
+        <p className="text-xs text-white/40 mt-1">
+          The large Casino & Sports Betting cards on the homepage. Size: ~680×140 px each (2-column grid, desktop). Changes apply live on save.
+        </p>
+      </div>
+
+      {/* Existing banners */}
+      <div className="space-y-2">
+        {banners.length === 0 && (
+          <p className="text-xs text-white/30 py-4 text-center border border-dashed border-white/10 rounded-lg">
+            No category cards configured — defaults will show (Casino & Sports Betting).
+          </p>
+        )}
+        {banners.map((cat, i) => (
+          <div key={cat.id} className="border border-line rounded-lg overflow-hidden">
+            {/* Row */}
+            <div className="flex items-center gap-3 p-3 bg-panel/40">
+              <GripVertical size={16} className="text-white/30 shrink-0" />
+              <div className="w-16 h-8 rounded overflow-hidden shrink-0 border border-white/10"
+                style={{ background: cat.gradient }} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">{cat.emoji} {cat.title}</p>
+                <p className="text-xs text-white/40 truncate">{cat.subtitle} · {cat.href}</p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button disabled={i === 0} onClick={() => move(i, -1)}
+                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 disabled:opacity-30 text-white/60 text-xs">↑</button>
+                <button disabled={i === banners.length - 1} onClick={() => move(i, 1)}
+                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 disabled:opacity-30 text-white/60 text-xs">↓</button>
+                <button onClick={() => editingId === cat.id ? setEditingId(null) : startEdit(cat)}
+                  className="px-2.5 h-7 flex items-center justify-center rounded hover:bg-accent/20 text-accent text-xs font-semibold transition">
+                  {editingId === cat.id ? "Cancel" : "Edit"}
+                </button>
+                <button onClick={() => remove(cat.id)}
+                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-500/20 text-red-400 transition">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+            {/* Inline edit form */}
+            {editingId === cat.id && (
+              <div className="p-4 bg-panel/20 border-t border-line">
+                <CardForm value={editForm} onChange={setEditForm} onSubmit={saveEdit} submitLabel="Save Changes" />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Add new card */}
+      <div className="border border-line/60 rounded-lg p-4 space-y-3 bg-panel/20">
+        <p className="text-xs font-semibold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
+          <Plus size={13} /> Add New Category Card
+        </p>
+        <CardForm value={newForm} onChange={setNewForm} onSubmit={addCard} submitLabel="Add Card" />
+      </div>
+
+      {msg && (
+        <p className={`text-sm flex items-center gap-1 ${msg.ok ? "text-ok" : "text-bad"}`}>
+          {msg.ok && <CheckCircle2 size={14} />} {msg.text}
+        </p>
+      )}
+    </section>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function BannerSettingsPage() {
   const { data } = useSWR<Record<string, any>>(SETTINGS_KEY);
@@ -376,53 +566,11 @@ export default function BannerSettingsPage() {
       </section>
 
       {/* ── Category Banners (Homepage) ─────────────────────────────────────── */}
-      <section className="glass rounded-lg p-5 space-y-4">
-        <h2 className="font-bold text-sm uppercase tracking-wider text-white/70 flex items-center gap-2">
-          <Layout size={16} className="text-accent" />
-          Category Cards (Homepage)
-        </h2>
-        <p className="text-xs text-white/40">
-          Manage the Casino and Sports Betting cards shown on the homepage. Configure title, subtitle, link, and gradient colors.
-        </p>
-        <div className="space-y-3">
-          {categoryBanners.map((cat, i) => (
-            <div key={cat.id} className="flex items-center gap-3 bg-panel/40 border border-line rounded-lg p-3">
-              <GripVertical size={16} className="text-white/30 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{cat.title}</p>
-                <p className="text-xs text-white/40">{cat.subtitle}</p>
-                <p className="text-xs text-white/30">{cat.href}</p>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <button disabled={i === 0} onClick={async () => {
-                  const updated = [...categoryBanners];
-                  [updated[i], updated[i-1]] = [updated[i-1]!, updated[i]!];
-                  updated.forEach((c, k) => { c.sortOrder = k; });
-                  await saveCategoryBanners(updated);
-                }}
-                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 disabled:opacity-30 text-white/60 text-xs">↑</button>
-                <button disabled={i === categoryBanners.length - 1} onClick={async () => {
-                  const updated = [...categoryBanners];
-                  [updated[i], updated[i+1]] = [updated[i+1]!, updated[i]!];
-                  updated.forEach((c, k) => { c.sortOrder = k; });
-                  await saveCategoryBanners(updated);
-                }}
-                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 disabled:opacity-30 text-white/60 text-xs">↓</button>
-                <button onClick={async () => {
-                  await saveCategoryBanners(categoryBanners.filter((_, j) => j !== i).map((c, k) => ({ ...c, sortOrder: k })));
-                }}
-                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-500/20 text-red-400 transition">
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="border border-line/60 rounded-lg p-4 space-y-3 bg-panel/20">
-          <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Add/Edit Card</p>
-          <p className="text-xs text-white/40">Edit cards directly in the code or database for now. Category banners are stored in platform settings.</p>
-        </div>
-      </section>
+      <CategoryCardManager
+        banners={categoryBanners}
+        saving={categorySaving}
+        onSave={saveCategoryBanners}
+      />
 
       {/* ── Promo Banner Strip ─────────────────────────────────────────────── */}
       <section className="glass rounded-lg p-5 space-y-4">
