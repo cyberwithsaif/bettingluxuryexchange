@@ -28,6 +28,7 @@ export function MobileBottomNav() {
                 <Icon
                   size={24}
                   strokeWidth={2.5}
+                  fill="currentColor"
                   className={cn(
                     "transition-colors duration-200",
                     active ? "text-white" : "text-white/50",
