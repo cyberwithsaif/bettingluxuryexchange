@@ -77,51 +77,51 @@ export function TopBar() {
     <header className="sticky top-0 z-50 bg-[#191938] text-white shadow-sm rounded-br-2xl">
       <MobileSidebar open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
-      <div className="flex items-center h-16 px-3 gap-2 md:gap-3">
+      <div className="flex items-center h-16 px-3 justify-center gap-2 md:gap-4">
 
-        {/* ── Sidebar toggle (desktop) ───────────────────────── */}
-        <button
-          onClick={toggleSidebar}
-          className="hidden md:flex w-10 h-10 rounded-xl items-center justify-center transition-all shrink-0 group"
-          style={{
-            background: "linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(168, 85, 247, 0.2))",
-            boxShadow: "0 8px 20px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 8px rgba(0, 0, 0, 0.3)",
-            border: "1px solid rgba(139, 92, 246, 0.3)",
-          }}
-          title="Toggle sidebar"
-        >
-          {sidebarCollapsed
-            ? <PanelLeftOpen size={18} className="text-violet-300 group-hover:text-violet-100 transition-colors" />
-            : <PanelLeftClose size={18} className="text-violet-300 group-hover:text-violet-100 transition-colors" />
-          }
-        </button>
+        {/* ── Left section (logo + toggle) ──────────────────── */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Sidebar toggle (desktop) */}
+          <button
+            onClick={toggleSidebar}
+            className="hidden md:flex w-10 h-10 rounded-xl items-center justify-center transition-all group"
+            style={{
+              background: "linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(168, 85, 247, 0.2))",
+              boxShadow: "0 8px 20px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 8px rgba(0, 0, 0, 0.3)",
+              border: "1px solid rgba(139, 92, 246, 0.3)",
+            }}
+            title="Toggle sidebar"
+          >
+            {/* Beautiful custom arrow */}
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="group-hover:text-violet-100 transition-colors" style={{ color: "rgb(196, 181, 253)" }}>
+              <path d="M8 5L3 10M3 10L8 15M3 10H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
 
-        {/* ── Mobile hamburger ──────────────────────────────── */}
-        <button
-          onClick={() => setDrawerOpen(true)}
-          aria-label="Open menu"
-          className="md:hidden w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition shrink-0"
-        >
-          <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-            <rect width="16" height="2" rx="1" fill="currentColor" />
-            <rect y="5" width="12" height="2" rx="1" fill="currentColor" />
-            <rect y="10" width="8" height="2" rx="1" fill="currentColor" />
-          </svg>
-        </button>
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Open menu"
+            className="md:hidden w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition shrink-0"
+          >
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+              <rect width="16" height="2" rx="1" fill="currentColor" />
+              <rect y="5" width="12" height="2" rx="1" fill="currentColor" />
+              <rect y="10" width="8" height="2" rx="1" fill="currentColor" />
+            </svg>
+          </button>
 
-        {/* ── Mobile logo ───────────────────────────────────── */}
-        <Link href="/" className="md:hidden flex flex-col leading-none shrink-0">
-          <span className="font-display italic text-lg font-black tracking-tight text-white uppercase">
-            {platformSettings?.siteName ?? "DiamondPlay22"}
-          </span>
-        </Link>
+          {/* Mobile logo */}
+          <Link href="/" className="md:hidden flex flex-col leading-none">
+            <span className="font-display italic text-lg font-black tracking-tight text-white uppercase">
+              {platformSettings?.siteName ?? "DiamondPlay22"}
+            </span>
+          </Link>
+        </div>
 
-        {/* ── Flex spacer (center the balance/deposit) ────────── */}
-        <div className="flex-1" />
-
-        {/* ── Authenticated user area ───────────────────────── */}
+        {/* ── Center section (balance + deposit) ────────────── */}
         {user ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 md:gap-3">
 
             {/* Balance pill */}
             <div
@@ -160,7 +160,28 @@ export function TopBar() {
               <ArrowDownToLine size={14} />
               <span className="hidden sm:inline">Deposit</span>
             </Link>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Link
+              href="/auth/login"
+              className="rounded-lg border border-white/20 px-4 py-2 text-[13px] font-bold text-white hover:bg-white/10 transition"
+            >
+              Login
+            </Link>
+            <Link
+              href="/auth/register"
+              className="rounded-lg font-bold text-[13px] px-4 py-2 transition hover:brightness-110"
+              style={{ background: "linear-gradient(135deg,#d4a017,#f0c030)", color: "#1a0a00" }}
+            >
+              Sign up
+            </Link>
+          </div>
+        )}
 
+        {/* ── Right section (icons) ────────────────────────────── */}
+        {user && (
+          <div className="flex items-center gap-2 shrink-0">
             {/* Withdraw — outline on desktop */}
             <Link
               href="/account/withdraw"
@@ -185,22 +206,6 @@ export function TopBar() {
 
             {/* User menu */}
             <ProfileMenu username={user.username} onLogout={clear} />
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Link
-              href="/auth/login"
-              className="rounded-lg border border-white/20 px-4 py-2 text-[13px] font-bold text-white hover:bg-white/10 transition"
-            >
-              Login
-            </Link>
-            <Link
-              href="/auth/register"
-              className="rounded-lg font-bold text-[13px] px-4 py-2 transition hover:brightness-110"
-              style={{ background: "linear-gradient(135deg,#d4a017,#f0c030)", color: "#1a0a00" }}
-            >
-              Sign up
-            </Link>
           </div>
         )}
       </div>
