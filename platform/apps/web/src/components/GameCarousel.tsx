@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const CASINO_GAMES = [
   { name: "Roulette", href: "/roulette", thumb: "/game-thumbs/roulette2.png" },
@@ -15,53 +13,41 @@ const CASINO_GAMES = [
 ];
 
 export function GameCarousel() {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const scroll = (dir: "left" | "right") => {
-    scrollRef.current?.scrollBy({ left: dir === "left" ? -300 : 300, behavior: "smooth" });
-  };
-
   return (
     <section>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-bold text-white tracking-wide">DiamondPlay Originals</h2>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => scroll("left")}
-            className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 transition"
-            aria-label="Previous"
-          >
-            <ChevronLeft size={18} className="text-white" />
-          </button>
-          <button
-            onClick={() => scroll("right")}
-            className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 transition"
-            aria-label="Next"
-          >
-            <ChevronRight size={18} className="text-white" />
-          </button>
-          <Link href="/casino" className="text-xs text-white font-semibold bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition">
-            View All
-          </Link>
-        </div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3 px-0.5">
+        <h2 className="text-sm font-bold text-white tracking-wide">DiamondPlay Originals</h2>
+        <Link
+          href="/casino"
+          className="text-[11px] font-bold text-white/70 bg-white/8 hover:bg-white/15 border border-white/10 px-3 py-1.5 rounded-full transition"
+        >
+          View All
+        </Link>
       </div>
-      <div
-        ref={scrollRef}
-        className="flex gap-2 md:gap-3 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-      >
+
+      {/* Scrollable row */}
+      <div className="flex gap-2.5 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-1">
         {CASINO_GAMES.map(game => (
           <Link
             key={game.href}
             href={game.href}
-            className="group block flex-shrink-0 w-[calc(25%-6px)] sm:w-[calc(20%-6px)] lg:w-[calc(14.28%-9px)]"
+            className="group block flex-shrink-0 w-[38vw] sm:w-[22vw] lg:w-[calc(14.28%-10px)] max-w-[180px]"
           >
-            <div className="relative rounded-2xl overflow-hidden bg-[#1a1433] border border-white/5 group-hover:border-purple-500/40 transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-xl shadow-black/40">
+            <div className="relative rounded-2xl overflow-hidden bg-[#1a1433] border border-white/6 group-hover:border-purple-500/40 transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-xl shadow-black/40">
+              {/* Image */}
               <div className="aspect-[3/4] w-full overflow-hidden">
                 <img
                   src={game.thumb}
                   alt={game.name}
                   className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500"
                 />
+              </div>
+
+              {/* Name overlay */}
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent pt-8 pb-2.5 px-2.5">
+                <p className="text-white text-[12px] font-bold leading-tight truncate">{game.name}</p>
+                <p className="text-white/40 text-[9px] font-semibold tracking-wide mt-0.5">DiamondPlay</p>
               </div>
             </div>
           </Link>

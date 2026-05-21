@@ -177,7 +177,7 @@ function GameVisual({
   return (
     <svg
       viewBox="0 0 320 480"
-      className="w-full max-w-[240px] sm:max-w-[280px] lg:max-w-[320px]"
+      className="w-full max-w-[280px] sm:max-w-[340px] lg:max-w-[460px]"
       style={{ height: "auto" }}
     >
       <defs>
@@ -305,11 +305,13 @@ function GameVisual({
         </motion.g>
       )}
 
-      {/* ── Pump count dots (above machine) ── */}
+      {/* ── Pump count dots — on hull body, right of portholes ── */}
       {Array.from({ length: dotCount }).map((_, i) => (
         <circle key={i}
-          cx={dotsStartX + i * dotSpacing} cy="378" r="3.5"
-          fill={pumpsCount > i ? "#22C55E" : "rgba(255,255,255,0.14)"}
+          cx={228 - ((dotCount - 1) * 11) / 2 + i * 11}
+          cy="428"
+          r="3.5"
+          fill={pumpsCount > i ? color : "rgba(255,255,255,0.14)"}
         />
       ))}
 
