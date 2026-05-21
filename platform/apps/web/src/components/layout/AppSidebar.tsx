@@ -72,7 +72,7 @@ function SidebarInner() {
       </div>
 
       {/* ── Nav ──────────────────────────────────────────────── */}
-      <nav className="flex-1 px-2 py-1 overflow-y-auto space-y-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <nav className="flex-1 px-2 py-1 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
         {/* Casino section */}
         <SectionToggle
@@ -122,7 +122,7 @@ function SidebarInner() {
             key={href}
             href={href}
             className={cn(
-              "flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[14px] font-semibold transition-all",
+              "flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[15px] font-bold transition-all",
               pathname === href
                 ? "text-white"
                 : "text-white hover:text-white",
@@ -139,7 +139,7 @@ function SidebarInner() {
 
         <Link
           href="/contact"
-          className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[14px] font-semibold text-white hover:text-white transition-all"
+          className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[15px] font-bold text-white hover:text-white transition-all"
           style={{ background: "rgba(139, 92, 246, 0.08)" }}
         >
           <div className="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center shrink-0">
