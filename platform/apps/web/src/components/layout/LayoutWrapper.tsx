@@ -39,7 +39,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
         {/* ── Left Sidebar (desktop only) ───────────────────── */}
         <aside
           className={`app-sidebar hidden md:flex flex-col h-screen sticky top-0 z-40 bg-[#191938] rounded-br-2xl overflow-hidden shrink-0 transition-all duration-300 ${
-            sidebarCollapsed ? "w-0 opacity-0 pointer-events-none" : "w-[220px] opacity-100"
+            sidebarCollapsed ? "w-[60px]" : "w-[220px]"
           }`}
         >
           <AppSidebar />
