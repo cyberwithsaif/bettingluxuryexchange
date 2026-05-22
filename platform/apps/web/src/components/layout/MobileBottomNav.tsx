@@ -18,7 +18,7 @@ export function MobileBottomNav() {
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[#191a38] border-t border-white/5 shadow-[0_-2px_8px_rgba(0,0,0,0.3)]">
       <ul className="grid grid-cols-5">
         {ITEMS.map(({ href, label, icon: Icon }) => {
-          const active = path === href;
+          const active = path === href || (href !== "/" && path.startsWith(href));
           return (
             <li key={href}>
               <Link
@@ -27,18 +27,12 @@ export function MobileBottomNav() {
               >
                 <Icon
                   size={24}
-                  fill="currentColor"
+                  fill={active ? "url(#gold-gradient)" : "#9689cc"}
                   stroke="none"
-                  className={cn(
-                    "transition-colors duration-200",
-                    active ? "text-white" : "text-white/50",
-                  )}
                 />
                 <span
-                  className={cn(
-                    "text-[10px] font-bold leading-tight transition-colors duration-200",
-                    active ? "text-white" : "text-white/50",
-                  )}
+                  className="text-[10px] font-bold leading-tight transition-colors duration-200"
+                  style={{ color: active ? "#ffcc00" : "#9689cc" }}
                 >
                   {label}
                 </span>
@@ -47,6 +41,15 @@ export function MobileBottomNav() {
           );
         })}
       </ul>
+      {/* SVG gradient definition */}
+      <svg width="0" height="0" style={{ position: "absolute" }}>
+        <defs>
+          <linearGradient id="gold-gradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffcc00" />
+            <stop offset="100%" stopColor="#ffb700" />
+          </linearGradient>
+        </defs>
+      </svg>
     </nav>
   );
 }
