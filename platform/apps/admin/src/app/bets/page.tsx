@@ -4,14 +4,14 @@ import { useState } from "react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
 
-type BetStatus = "OPEN" | "WON" | "LOST" | "VOID" | "CANCELLED";
+type BetStatus = "OPEN" | "MATCHED" | "SETTLED_WON" | "SETTLED_LOST" | "VOID" | "CANCELLED";
 
 interface Bet {
   id: string;
   side: "BACK" | "LAY";
   odds: number;
   stake: string;
-  potentialPnl: string;
+  potentialProfit: string;
   status: BetStatus;
   createdAt: string;
   user: { id: string; username: string; role: string };
@@ -20,11 +20,12 @@ interface Bet {
 }
 
 const STATUS_STYLE: Record<BetStatus, string> = {
-  OPEN:      "bg-blue-50   text-blue-700   border-blue-200",
-  WON:       "bg-emerald-50 text-emerald-700 border-emerald-200",
-  LOST:      "bg-red-50    text-red-600    border-red-200",
-  VOID:      "bg-yellow-50 text-yellow-700 border-yellow-200",
-  CANCELLED: "bg-gray-100  text-gray-500   border-gray-200",
+  OPEN:         "bg-blue-50    text-blue-700   border-blue-200",
+  MATCHED:      "bg-blue-50    text-blue-700   border-blue-200",
+  SETTLED_WON:  "bg-emerald-50 text-emerald-700 border-emerald-200",
+  SETTLED_LOST: "bg-red-50     text-red-600    border-red-200",
+  VOID:         "bg-yellow-50  text-yellow-700 border-yellow-200",
+  CANCELLED:    "bg-gray-100   text-gray-500   border-gray-200",
 };
 
 function buildKey(q: string, status: string, skip: number) {
@@ -72,8 +73,14 @@ export default function AdminBetsPage() {
           className="border border-yellow-200 bg-white rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-yellow-400 shadow-sm"
         >
           <option value="">All statuses</option>
-          {["OPEN", "WON", "LOST", "VOID", "CANCELLED"].map((s) => (
-            <option key={s} value={s}>{s}</option>
+          {[
+            { v: "OPEN",         label: "Open" },
+            { v: "SETTLED_WON",  label: "Won" },
+            { v: "SETTLED_LOST", label: "Lost" },
+            { v: "VOID",         label: "Void" },
+            { v: "CANCELLED",    label: "Cancelled" },
+          ].map(({ v, label }) => (
+            <option key={v} value={v}>{label}</option>
           ))}
         </select>
       </div>
@@ -126,8 +133,8 @@ export default function AdminBetsPage() {
                 </Td>
                 <Td className="tabular-nums text-gray-700 font-semibold">{Number(bet.odds).toFixed(2)}</Td>
                 <Td className="tabular-nums text-gray-800 font-semibold">₹{Number(bet.stake).toLocaleString("en-IN")}</Td>
-                <Td className={cn("tabular-nums font-semibold", Number(bet.potentialPnl) >= 0 ? "text-emerald-600" : "text-red-500")}>
-                  ₹{Number(bet.potentialPnl).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                <Td className={cn("tabular-nums font-semibold", Number(bet.potentialProfit) >= 0 ? "text-emerald-600" : "text-red-500")}>
+                  ₹{Number(bet.potentialProfit).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                 </Td>
                 <Td>
                   <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold border", STATUS_STYLE[bet.status as BetStatus] ?? "")}>
