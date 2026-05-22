@@ -228,7 +228,7 @@ function DiceSlider({
     <div className="w-full select-none">
 
       {/* Track wrapper — paddingTop reserves space for the floating marker above */}
-      <div className="relative" style={{ paddingTop: 70 }}>
+      <div className="relative" style={{ paddingTop: 60 }}>
 
         {/* Track — overflow:visible lets the marker float above it */}
         <div
@@ -318,7 +318,7 @@ function DiceSlider({
       </div>
 
       {/* Scale labels — below the track */}
-      <div className="flex justify-between mt-5 px-0.5 text-sm font-bold select-none"
+      <div className="flex justify-between mt-3 md:mt-5 px-0.5 text-xs md:text-sm font-bold select-none"
         style={{ color: "rgba(255,255,255,0.35)" }}>
         {["0", "25", "50", "75", "100"].map(n => <span key={n}>{n}</span>)}
       </div>
@@ -419,22 +419,22 @@ function StatInput({
   readOnly?: boolean; unit?: string; numeric?: boolean; onSwap?: () => void;
 }) {
   return (
-    <div className="flex-1 min-w-0">
-      <label className="block text-sm font-semibold mb-2" style={{ color: "rgba(255,255,255,0.7)" }}>{label}</label>
-      <div className="flex items-center rounded-xl px-4 h-14"
+    <div className="min-w-0">
+      <label className="block text-[10px] md:text-xs font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>{label}</label>
+      <div className="flex items-center rounded-lg md:rounded-xl px-2 md:px-4 h-10 md:h-12 lg:h-14"
         style={{ background: "#1e1b3a", border: "1px solid rgba(255,255,255,0.07)" }}>
         <input
           type={numeric ? "number" : "text"}
           value={value}
           onChange={e => onChange?.(e.target.value)}
           readOnly={readOnly}
-          className="flex-1 bg-transparent text-white font-bold text-base outline-none tabular-nums min-w-0"
+          className="flex-1 bg-transparent text-white font-bold text-xs md:text-sm lg:text-base outline-none tabular-nums min-w-0"
           style={{ cursor: readOnly ? "default" : "text" }}
         />
-        {unit && <span className="text-white/40 ml-2 font-bold text-sm">{unit}</span>}
+        {unit && <span className="text-white/40 ml-1 font-bold text-xs">{unit}</span>}
         {onSwap && (
-          <button onClick={onSwap} className="ml-2 text-white/40 hover:text-white transition">
-            <ArrowLeftRight size={16} />
+          <button onClick={onSwap} className="ml-1 text-white/40 hover:text-white transition">
+            <ArrowLeftRight size={13} />
           </button>
         )}
       </div>
@@ -712,7 +712,7 @@ export default function DicePage() {
     <>
       {/* Mobile back */}
       <div className="md:hidden flex items-center justify-between px-4 py-3 sticky top-0 z-10"
-        style={{ background: "#0a0918", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+        style={{ background: "#090c1c", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
         <Link href="/" className="flex items-center gap-1.5 text-white/50 hover:text-white text-sm font-semibold">
           <ArrowLeft size={15} /> Back
         </Link>
@@ -721,11 +721,11 @@ export default function DicePage() {
         </button>
       </div>
 
-      <div className="min-h-screen text-white" style={{ background: "#090c1c" }}>
-        <div className="flex flex-col lg:flex-row min-h-screen">
+      <div className="min-h-[100dvh] text-white" style={{ background: "#090c1c" }}>
+        <div className="flex flex-col lg:flex-row min-h-[100dvh]">
 
           {/* ═══ LEFT SIDEBAR — Betting Controls ═════════════════════════════ */}
-          <div className="w-full lg:w-[340px] shrink-0 flex flex-col p-4 lg:p-5 overflow-y-auto"
+          <div className="w-full lg:w-[340px] shrink-0 flex flex-col p-3 lg:p-5 overflow-y-auto order-2 lg:order-none"
             style={{ background: "#090c1c" }}>
 
             {/* ── Betting Card ── */}
@@ -917,10 +917,10 @@ export default function DicePage() {
           </div>
 
           {/* ═══ GAME AREA ═════════════════════════════════════════════════════ */}
-          <div className="flex-1 flex flex-col justify-center p-4 md:p-6 lg:p-8">
+          <div className="flex-1 flex flex-col justify-center p-3 md:p-5 lg:p-8 order-1 lg:order-none">
 
             {/* ── Game Card ── */}
-            <div className="w-full h-full flex flex-col justify-center gap-8 rounded-2xl p-6 md:p-10"
+            <div className="w-full h-full flex flex-col justify-center gap-5 md:gap-8 rounded-2xl p-4 md:p-7 lg:p-10"
               style={{ background: "#0d0f1e", border: "1px solid rgba(255,255,255,0.06)" }}>
 
             {/* ── Slider ── */}
@@ -974,7 +974,7 @@ export default function DicePage() {
 
             {/* ── Bottom inputs ── */}
             <div className="w-full max-w-3xl mx-auto">
-              <div className="flex gap-3 flex-col md:flex-row">
+              <div className="grid grid-cols-3 gap-2 md:gap-3">
                 {/* Roll Under/Over/Between/Outside label */}
                 <StatInput
                   label={modeLabel[mode]}

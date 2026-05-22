@@ -155,7 +155,7 @@ function GameVisual({
   const dotCount = Math.min(8, maxPumps || 8);
 
   return (
-    <div className="relative w-full h-full" style={{ minHeight: 400 }}>
+    <div className="relative w-full h-full" style={{ minHeight: 280, maxHeight: "calc(100vh - 360px)" }}>
 
       {/* Purple ambient glow */}
       <div className="absolute pointer-events-none" style={{
@@ -165,9 +165,9 @@ function GameVisual({
       }} />
 
       {/* Current multiplier — top right */}
-      <div className="absolute select-none" style={{ top: 36, right: 36, textAlign: "right", zIndex: 2 }}>
-        <p style={{ color: "#8fb0c8", fontSize: 13, marginBottom: 2 }}>Current Multiplier</p>
-        <p style={{ color: "white", fontWeight: 900, fontSize: 50, lineHeight: 1, letterSpacing: "-0.02em" }}>
+      <div className="absolute select-none" style={{ top: 16, right: 16, textAlign: "right", zIndex: 2 }}>
+        <p style={{ color: "#8fb0c8", fontSize: 11, marginBottom: 2 }}>Current Multiplier</p>
+        <p style={{ color: "white", fontWeight: 900, fontSize: "clamp(28px, 5vw, 50px)", lineHeight: 1, letterSpacing: "-0.02em" }}>
           {currentMult.toFixed(2)}x
         </p>
       </div>
@@ -800,7 +800,7 @@ export function PumpGame() {
 
           {/* ── Mobile controls ──────────────────────────────────────────── */}
           <div className="lg:hidden flex-shrink-0 px-3 pb-1">
-            <div className="rounded-2xl p-3 flex flex-col gap-2.5"
+            <div className="rounded-2xl p-3 flex flex-col gap-2"
               style={{ background: "#102433" }}>
 
               {/* Mode + Difficulty row */}
@@ -847,7 +847,7 @@ export function PumpGame() {
               )}
 
               {/* Bet amount */}
-              <div className="flex items-stretch h-14 rounded-2xl" style={inputBox}>
+              <div className="flex items-stretch h-11 rounded-2xl" style={inputBox}>
                 <div className="flex items-center pl-4 flex-1">
                   <span className="text-emerald-400 font-bold mr-1">₹</span>
                   <input type="text" inputMode="decimal" value={betAmount}
@@ -892,31 +892,31 @@ export function PumpGame() {
             {mode === "manual" ? (
               <div className="flex gap-2">
                 <button onClick={cashout} disabled={!canCash}
-                  className="flex-1 py-4 rounded-2xl font-bold text-sm transition active:scale-95 disabled:cursor-not-allowed"
+                  className="flex-1 py-3 rounded-2xl font-bold text-sm transition active:scale-95 disabled:cursor-not-allowed"
                   style={{ background: canCash ? "#1f7ae0" : "#1e3346", color: canCash ? "#fff" : "rgba(255,255,255,0.25)" }}>
                   {canCash ? `💰 ${fmtMult(currentMult)}` : "Cashout"}
                 </button>
                 {status === "ACTIVE" ? (
                   <button onClick={pumpOnce} disabled={!canPump}
-                    className="flex-1 py-4 rounded-2xl font-bold text-sm transition active:scale-95 disabled:opacity-50"
+                    className="flex-1 py-3 rounded-2xl font-bold text-sm transition active:scale-95 disabled:opacity-50"
                     style={{ background: canPump ? "#324c5a" : "#1e3346", color: "white" }}>
                     {busy === "pump" ? "Pumping…" : "🎈 Pump"}
                   </button>
                 ) : (
                   <button onClick={placeBet} disabled={!canBet}
-                    className="flex-1 py-4 rounded-2xl font-bold text-sm bg-emerald-500 active:bg-emerald-600 text-white transition active:scale-95 disabled:opacity-50">
+                    className="flex-1 py-3 rounded-2xl font-bold text-sm bg-emerald-500 active:bg-emerald-600 text-white transition active:scale-95 disabled:opacity-50">
                     {busy === "bet" ? "Placing…" : "Bet"}
                   </button>
                 )}
               </div>
             ) : !autoRunning ? (
               <button onClick={startAuto} disabled={status === "ACTIVE"}
-                className="w-full py-4 rounded-2xl font-bold text-sm bg-emerald-500 text-white transition active:scale-95 disabled:opacity-50">
+                className="w-full py-3 rounded-2xl font-bold text-sm bg-emerald-500 text-white transition active:scale-95 disabled:opacity-50">
                 Start Auto Bet
               </button>
             ) : (
               <button onClick={() => setAutoRunning(false)}
-                className="w-full py-4 rounded-2xl font-bold text-sm bg-red-500 text-white transition active:scale-95">
+                className="w-full py-3 rounded-2xl font-bold text-sm bg-red-500 text-white transition active:scale-95">
                 Stop ({autoRunCount.current}/{autoTargetRef.current})
               </button>
             )}
