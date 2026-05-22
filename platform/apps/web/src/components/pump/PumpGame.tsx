@@ -150,225 +150,228 @@ function GameVisual({
   showDeflated, pumpsCount, maxPumps,
   currentMult, status, lastWin,
 }: GameVisualProps) {
-  const balloonW = showDeflated ? 90  : Math.min(120 + (scale - 1) * 190, 220);
-  const balloonH = showDeflated ? 70  : Math.min(148 + (scale - 1) * 190, 270);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerW, setContainerW] = useState(400);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver(entries => {
+      for (const e of entries) setContainerW(e.contentRect.width);
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  // Scale factor: design baseline is 400px, scales down on narrow screens
+  const sf = Math.min(1, Math.max(0.52, containerW / 400));
+
+  // Balloon grows freely with each pump — no hard cap
+  const balloonW = showDeflated ? 78  : 84 + pumpsCount * 20;
+  const balloonH = showDeflated ? 58  : 104 + pumpsCount * 26;
   const dotCount = Math.min(8, maxPumps || 8);
+  const multFontSize = Math.round(Math.min(17 + balloonW * 0.08, 36));
 
   return (
-    <div className="relative w-full h-full" style={{ minHeight: 280, maxHeight: "calc(100vh - 360px)" }}>
+    <div ref={containerRef} className="relative w-full h-full" style={{ minHeight: 260 }}>
 
       {/* Purple ambient glow */}
       <div className="absolute pointer-events-none" style={{
-        top: -120, right: -80, width: 620, height: 620,
-        background: "radial-gradient(circle, rgba(77,0,255,0.16), transparent 68%)",
+        top: -80, right: -60, width: 500, height: 500,
+        background: "radial-gradient(circle, rgba(77,0,255,0.14), transparent 68%)",
         zIndex: 0,
       }} />
 
       {/* Current multiplier — top right */}
-      <div className="absolute select-none" style={{ top: 16, right: 16, textAlign: "right", zIndex: 2 }}>
-        <p style={{ color: "#8fb0c8", fontSize: 11, marginBottom: 2 }}>Current Multiplier</p>
-        <p style={{ color: "white", fontWeight: 900, fontSize: "clamp(28px, 5vw, 50px)", lineHeight: 1, letterSpacing: "-0.02em" }}>
+      <div className="absolute select-none" style={{ top: 12, right: 12, textAlign: "right", zIndex: 10 }}>
+        <p style={{ color: "#8fb0c8", fontSize: 10, marginBottom: 1 }}>Current Multiplier</p>
+        <p style={{ color: "white", fontWeight: 900, fontSize: "clamp(24px, 7vw, 46px)", lineHeight: 1, letterSpacing: "-0.02em" }}>
           {currentMult.toFixed(2)}x
         </p>
       </div>
 
-      {/* Balloon area — sits on the pipe nozzle cap */}
-      <div className="absolute" style={{ bottom: 260, left: "50%", transform: "translateX(-50%)", zIndex: 2 }}>
-        <AnimatePresence>
-          {!popped && status !== "CASHED" && (
-            <motion.div
-              key="balloon"
-              animate={
-                releasing
-                  ? { y: -380, opacity: 0, rotate: 12, scale: 1.18 }
-                  : pumping
-                  ? { y: [0, -8, 0] }
-                  : { y: [0, -13, 0, -13, 0] }
-              }
-              transition={
-                releasing
-                  ? { duration: 0.7, ease: [0.22, 0.61, 0.36, 1] }
-                  : pumping
-                  ? { duration: 0.22, ease: "easeInOut" }
-                  : { duration: 2.4, repeat: Infinity, ease: "easeInOut" }
-              }
-            >
-              {/* Balloon body */}
-              <div style={{
-                width: balloonW,
-                height: balloonH,
-                background: color,
-                borderRadius: "50% 50% 48% 48%",
-                position: "relative",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: `0 0 ${showDeflated ? 14 : 46}px ${color}60`,
-                transition: "width 0.18s linear, height 0.18s linear, box-shadow 0.18s",
-              }}>
-                {/* Shine */}
-                {!showDeflated && (
+      {/* ── Machine + Balloon group — scaled uniformly ── */}
+      <div style={{
+        position: "absolute",
+        bottom: 0,
+        left: "50%",
+        transform: `translateX(-50%) scale(${sf})`,
+        transformOrigin: "bottom center",
+        width: 400,
+        height: 480,
+        pointerEvents: "none",
+      }}>
+
+        {/* Balloon area */}
+        <div style={{ position: "absolute", bottom: 260, left: "50%", transform: "translateX(-50%)", zIndex: 2 }}>
+          <AnimatePresence>
+            {!popped && status !== "CASHED" && (
+              <motion.div
+                key={`balloon-${pumpsCount}`}
+                initial={pumpsCount > 0 ? { scale: 0.88 } : false}
+                animate={
+                  releasing
+                    ? { y: -400, opacity: 0, rotate: 14, scale: 1.22 }
+                    : pumping
+                    ? { y: [0, -12, 0], scale: [1, 1.07, 1] }
+                    : { y: [0, -14, 0, -14, 0] }
+                }
+                transition={
+                  releasing
+                    ? { duration: 0.7, ease: [0.22, 0.61, 0.36, 1] }
+                    : pumping
+                    ? { duration: 0.28, ease: "easeInOut" }
+                    : { duration: 2.6, repeat: Infinity, ease: "easeInOut" }
+                }
+              >
+                <div style={{
+                  width: balloonW,
+                  height: balloonH,
+                  background: color,
+                  borderRadius: "50% 50% 48% 48%",
+                  position: "relative",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: `0 0 ${showDeflated ? 12 : 54}px ${color}66`,
+                  transition: "width 0.22s ease, height 0.22s ease, box-shadow 0.22s",
+                }}>
+                  {!showDeflated && (
+                    <div style={{
+                      position: "absolute",
+                      width: "22%", height: "28%",
+                      background: "rgba(255,255,255,0.55)",
+                      borderRadius: "50%",
+                      right: "18%", top: "14%",
+                      filter: "blur(1.5px)",
+                      transform: "rotate(-26deg)",
+                    }} />
+                  )}
+                  {!showDeflated && (
+                    <span style={{
+                      color: "rgba(255,255,255,0.85)",
+                      fontWeight: 900,
+                      fontSize: multFontSize,
+                      letterSpacing: "-0.02em",
+                      transform: "rotate(8deg)",
+                      userSelect: "none",
+                      position: "relative",
+                      zIndex: 1,
+                    }}>
+                      {currentMult.toFixed(2)}x
+                    </span>
+                  )}
                   <div style={{
                     position: "absolute",
-                    width: "22%", height: "28%",
-                    background: "rgba(255,255,255,0.55)",
+                    bottom: -12, left: "50%", transform: "translateX(-50%)",
+                    width: 28, height: 15,
+                    background: color,
                     borderRadius: "50%",
-                    right: "18%", top: "14%",
-                    filter: "blur(1.5px)",
-                    transform: "rotate(-26deg)",
                   }} />
-                )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                {/* Multiplier label */}
-                {!showDeflated && (
-                  <span style={{
-                    color: "rgba(255,255,255,0.82)",
-                    fontWeight: 900,
-                    fontSize: Math.round(Math.min(20 + balloonW * 0.09, 36)),
-                    letterSpacing: "-0.02em",
-                    transform: "rotate(8deg)",
-                    userSelect: "none",
-                    position: "relative",
-                    zIndex: 1,
-                  }}>
-                    {currentMult.toFixed(2)}x
-                  </span>
-                )}
+          {popped && (
+            <motion.div
+              initial={{ scale: 0 }} animate={{ scale: 1 }}
+              style={{ fontSize: 82, textAlign: "center", width: 120, lineHeight: 1 }}
+            >💥</motion.div>
+          )}
 
-                {/* Knot */}
-                <div style={{
-                  position: "absolute",
-                  bottom: -12, left: "50%", transform: "translateX(-50%)",
-                  width: 28, height: 15,
-                  background: color,
-                  borderRadius: "50%",
-                }} />
-              </div>
+          {status === "CASHED" && lastWin && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 220, damping: 20 }}
+              style={{
+                background: "rgba(34,197,94,0.11)",
+                border: "2.5px solid #22C55E",
+                borderRadius: 20,
+                padding: "22px 44px",
+                textAlign: "center",
+                minWidth: 200,
+              }}
+            >
+              <div style={{ color: "#22C55E", fontWeight: 900, fontSize: 38 }}>{lastWin.mult.toFixed(2)}×</div>
+              <div style={{ color: "#86efac", fontWeight: 600, fontSize: 17, marginTop: 6 }}>{fmtMoney(lastWin.payout)}</div>
             </motion.div>
           )}
-        </AnimatePresence>
-
-        {/* Pop explosion */}
-        {popped && (
-          <motion.div
-            initial={{ scale: 0 }} animate={{ scale: 1 }}
-            style={{ fontSize: 82, textAlign: "center", width: 120, lineHeight: 1 }}
-          >💥</motion.div>
-        )}
-
-        {/* Cashout win box */}
-        {status === "CASHED" && lastWin && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 220, damping: 20 }}
-            style={{
-              background: "rgba(34,197,94,0.11)",
-              border: "2.5px solid #22C55E",
-              borderRadius: 20,
-              padding: "22px 44px",
-              textAlign: "center",
-              minWidth: 200,
-            }}
-          >
-            <div style={{ color: "#22C55E", fontWeight: 900, fontSize: 38 }}>
-              {lastWin.mult.toFixed(2)}×
-            </div>
-            <div style={{ color: "#86efac", fontWeight: 600, fontSize: 17, marginTop: 6 }}>
-              {fmtMoney(lastWin.payout)}
-            </div>
-          </motion.div>
-        )}
-      </div>
-
-      {/* Pipe — runs from machine top up to balloon nozzle */}
-      <div className="absolute" style={{
-        bottom: 177, left: "50%", transform: "translateX(-50%)",
-        width: 22, height: 83,
-        background: "#2c4454",
-        borderRadius: 20,
-        zIndex: 1,
-      }}>
-        {/* Nozzle cap — balloon knot sits here */}
-        <div style={{
-          position: "absolute", top: -10, left: -6,
-          width: 34, height: 22,
-          background: "#2c4454",
-          borderRadius: "50%",
-        }} />
-      </div>
-
-      {/* Pump base box */}
-      <div className="absolute" style={{
-        bottom: 82, left: "calc(50% + 28px)",
-        width: 105, height: 95,
-        background: "#223847",
-        borderRadius: 18,
-        zIndex: 2,
-      }}>
-        {/* Animated piston handle */}
-        <motion.div
-          animate={{ y: pumping ? [0, 18, 0] : 0 }}
-          transition={{ duration: 0.22, ease: "easeInOut" }}
-          style={{ position: "absolute", top: -30, left: "50%", transform: "translateX(-50%)" }}
-        >
-          {/* T-grip */}
-          <div style={{ width: 30, height: 10, background: "#3d5a75", borderRadius: 6, marginLeft: -4 }} />
-          {/* Rod */}
-          <div style={{ width: 22, height: 26, background: "#2d4659", borderRadius: "0 0 6px 6px", margin: "0 auto" }} />
-        </motion.div>
-
-        {/* Pump dot progress */}
-        <div className="flex gap-1.5 absolute" style={{ bottom: 12, left: "50%", transform: "translateX(-50%)" }}>
-          {Array.from({ length: dotCount }).map((_, i) => (
-            <div key={i} style={{
-              width: 8, height: 8, borderRadius: "50%",
-              background: pumpsCount > i ? color : "rgba(255,255,255,0.14)",
-              transition: "background 0.15s",
-            }} />
-          ))}
         </div>
-      </div>
 
-      {/* Machine body */}
-      <div className="absolute" style={{
-        bottom: 82,
-        left: "calc(50% - 148px)",
-        width: 132, height: 95,
-        background: "#233a49",
-        borderRadius: 28,
-        zIndex: 2,
-      }}>
-        {/* Machine arm connecting to pipe */}
+        {/* Pipe */}
         <div style={{
           position: "absolute",
-          right: -60, bottom: 0,
-          width: 60, height: 36,
-          background: "#233a49",
-          borderRadius: "0 0 0 0",
-        }} />
-        {/* Status lights */}
-        <div className="flex gap-3 absolute" style={{ left: 22, top: 36 }}>
-          {[false, false, true, false].map((lit, i) => (
-            <div key={i} style={{
-              width: 13, height: 13, borderRadius: "50%",
-              background: lit ? "#ff005d" : "#09141e",
-              boxShadow: lit ? "0 0 9px #ff005d" : "none",
-              transition: "background 0.3s",
-            }} />
-          ))}
+          bottom: 177, left: "50%", transform: "translateX(-50%)",
+          width: 22, height: 83,
+          background: "#2c4454", borderRadius: 20, zIndex: 1,
+        }}>
+          <div style={{
+            position: "absolute", top: -10, left: -6,
+            width: 34, height: 22,
+            background: "#2c4454", borderRadius: "50%",
+          }} />
         </div>
-      </div>
 
-      {/* Ground platform */}
-      <div className="absolute" style={{
-        bottom: 44, left: "50%", transform: "translateX(-50%)",
-        width: "72%", maxWidth: 540, height: 24,
-        background: "#223847",
-        borderRadius: 40,
-        zIndex: 1,
-      }} />
+        {/* Pump base box */}
+        <div style={{
+          position: "absolute",
+          bottom: 82, left: "calc(50% + 28px)",
+          width: 105, height: 95,
+          background: "#223847", borderRadius: 18, zIndex: 2,
+        }}>
+          <motion.div
+            animate={{ y: pumping ? [0, 18, 0] : 0 }}
+            transition={{ duration: 0.22, ease: "easeInOut" }}
+            style={{ position: "absolute", top: -30, left: "50%", transform: "translateX(-50%)" }}
+          >
+            <div style={{ width: 30, height: 10, background: "#3d5a75", borderRadius: 6, marginLeft: -4 }} />
+            <div style={{ width: 22, height: 26, background: "#2d4659", borderRadius: "0 0 6px 6px", margin: "0 auto" }} />
+          </motion.div>
+          <div style={{ display: "flex", gap: 6, position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)" }}>
+            {Array.from({ length: dotCount }).map((_, i) => (
+              <div key={i} style={{
+                width: 8, height: 8, borderRadius: "50%",
+                background: pumpsCount > i ? color : "rgba(255,255,255,0.14)",
+                transition: "background 0.15s",
+              }} />
+            ))}
+          </div>
+        </div>
 
+        {/* Machine body */}
+        <div style={{
+          position: "absolute",
+          bottom: 82, left: "calc(50% - 148px)",
+          width: 132, height: 95,
+          background: "#233a49", borderRadius: 28, zIndex: 2,
+        }}>
+          <div style={{
+            position: "absolute",
+            right: -60, bottom: 0,
+            width: 60, height: 36,
+            background: "#233a49",
+          }} />
+          <div style={{ display: "flex", gap: 12, position: "absolute", left: 22, top: 36 }}>
+            {[false, false, true, false].map((lit, i) => (
+              <div key={i} style={{
+                width: 13, height: 13, borderRadius: "50%",
+                background: lit ? "#ff005d" : "#09141e",
+                boxShadow: lit ? "0 0 9px #ff005d" : "none",
+              }} />
+            ))}
+          </div>
+        </div>
+
+        {/* Ground platform */}
+        <div style={{
+          position: "absolute",
+          bottom: 44, left: "50%", transform: "translateX(-50%)",
+          width: 320, height: 24,
+          background: "#223847", borderRadius: 40, zIndex: 1,
+        }} />
+
+      </div>{/* end machine group */}
     </div>
   );
 }
@@ -536,7 +539,7 @@ export function PumpGame() {
   // ── Derived ───────────────────────────────────────────────────────────────
   const currentMult  = session?.currentMult ?? 1.00;
   const balloonScale = useMemo(
-    () => session ? Math.min(1 + session.pumpsCount * 0.12, 1.65) : 1,
+    () => session ? 1 + session.pumpsCount * 0.12 : 1,
     [session],
   );
   const balloonColor = DIFFICULTIES.find(d => d.value === difficulty)?.color ?? "#22C55E";
