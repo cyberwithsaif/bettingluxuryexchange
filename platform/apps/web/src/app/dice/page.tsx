@@ -711,7 +711,7 @@ export default function DicePage() {
   return (
     <>
       {/* Mobile back */}
-      <div className="md:hidden flex items-center justify-between px-4 py-3 sticky top-0 z-10"
+      <div className="lg:hidden flex items-center justify-between px-4 py-3 sticky top-0 z-10"
         style={{ background: "#090c1c", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
         <Link href="/" className="flex items-center gap-1.5 text-white/50 hover:text-white text-sm font-semibold">
           <ArrowLeft size={15} /> Back
@@ -724,15 +724,14 @@ export default function DicePage() {
       <div className="min-h-[100dvh] text-white" style={{ background: "#090c1c" }}>
         <div className="flex flex-col lg:flex-row min-h-[100dvh]">
 
-          {/* ═══ LEFT SIDEBAR — Betting Controls ═════════════════════════════ */}
-          <div className="w-full lg:w-[340px] shrink-0 flex flex-col p-3 lg:p-5 overflow-y-auto order-2 lg:order-none"
+          {/* ═══ LEFT SIDEBAR — Desktop only ═════════════════════════════════ */}
+          <div className="hidden lg:flex w-[340px] shrink-0 flex-col p-5 overflow-y-auto"
             style={{ background: "#090c1c" }}>
 
-            {/* ── Betting Card ── */}
             <div className="rounded-2xl flex flex-col gap-0 overflow-hidden"
               style={{ background: "#0d0f1e", border: "1px solid rgba(255,255,255,0.07)" }}>
 
-              {/* Manual / Auto tabs — underline style */}
+              {/* Manual / Auto tabs */}
               <div className="flex items-center" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
                 {(["manual", "auto"] as const).map(tab => (
                   <button key={tab} onClick={() => setBetTab(tab)}
@@ -747,7 +746,6 @@ export default function DicePage() {
                 ))}
               </div>
 
-              {/* Form fields */}
               <div className="p-4 flex flex-col gap-4">
 
                 {/* Bet Amount */}
@@ -758,10 +756,8 @@ export default function DicePage() {
                     <div className="flex items-center pl-3.5 flex-1 gap-1.5">
                       <span className="text-emerald-400 font-bold text-sm">₹</span>
                       <input
-                        type="text"
-                        inputMode="decimal"
-                        value={betAmount === 0 ? "" : betAmount}
-                        placeholder="0.00"
+                        type="text" inputMode="decimal"
+                        value={betAmount === 0 ? "" : betAmount} placeholder="0.00"
                         onChange={e => setBetAmount(Math.max(0, parseFloat(e.target.value.replace(/[^\d.]/g, "")) || 0))}
                         disabled={isRolling || autoRunning}
                         className="flex-1 bg-transparent text-white font-bold text-sm outline-none tabular-nums disabled:opacity-60 placeholder-white/20"
@@ -789,231 +785,420 @@ export default function DicePage() {
                   </div>
                 </div>
 
-              {betTab === "manual" ? (
-                <>
-                  {/* Roll Dice Button */}
-                  <motion.button
-                    onClick={() => placeBet()}
-                    disabled={!isLoggedIn || isRolling || autoRunning}
-                    whileTap={{ scale: 0.97 }}
-                    className="w-full h-12 rounded-xl font-black text-base tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{
-                      background: isRolling ? "rgba(245,197,24,0.35)" : "linear-gradient(135deg, #f5c518 0%, #f0a500 100%)",
-                      boxShadow: isRolling ? "none" : "0 0 24px rgba(245,197,24,0.25), 0 4px 12px rgba(0,0,0,0.3)",
-                      color: "#1a0800",
-                    }}
-                  >
-                    {isRolling ? "Rolling..." : !isLoggedIn ? "Login to Play" : "Roll Dice"}
-                  </motion.button>
-
-                  {/* Error display */}
-                  {betError && <div className="text-red-400 text-xs text-center font-semibold">{betError}</div>}
-
-                  {/* Provably Fair link */}
-                  <button onClick={() => setShowPF(true)}
-                    className="flex items-center justify-center gap-1.5 text-xs font-semibold py-1"
-                    style={{ color: "rgba(167,139,250,0.6)" }}>
-                    <Shield size={11} /> Provably Fair
-                  </button>
-                </>
-              ) : (
-                // ── Auto Bet UI ──
-                <div className="space-y-4">
-                  {/* Rounds */}
-                  <div className="flex items-end gap-3">
-                    <div className="flex-1">
-                      <label className="text-xs text-white/40 block mb-1.5">Number of Bets</label>
-                      <div className="flex items-center rounded-lg px-3 h-10 bg-[#132737] border border-white/5">
-                        <input type="number" value={autoRounds} min={1}
-                          onChange={e => setAutoRounds(Math.max(1, parseInt(e.target.value) || 1))}
-                          disabled={autoInfinite || autoRunning}
-                          className="flex-1 bg-transparent text-white font-bold text-sm outline-none tabular-nums" />
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-center gap-1 pb-1">
-                      <span className="text-xs text-white/40">∞</span>
-                      <button onClick={() => setAutoInfinite(a => !a)} disabled={autoRunning}
-                        className="w-11 h-6 rounded-full transition-colors relative"
-                        style={{ background: autoInfinite ? "#7c3aed" : "rgba(255,255,255,0.1)" }}>
-                        <span className="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all"
-                          style={{ left: autoInfinite ? "calc(100% - 20px)" : 4 }} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* On Win / On Loss */}
-                  {(["win", "loss"] as const).map(type => {
-                    const action = type === "win" ? autoOnWinAction : autoOnLossAction;
-                    const setAction = type === "win" ? setAutoOnWinAction : setAutoOnLossAction;
-                    const pct = type === "win" ? autoOnWinPct : autoOnLossPct;
-                    const setPct = type === "win" ? setAutoOnWinPct : setAutoOnLossPct;
-                    const color = type === "win" ? "#22c55e" : "#ef4444";
-                    return (
-                      <div key={type}>
-                        <label className="text-xs text-white/40 block mb-1.5 capitalize">On {type}</label>
-                        <div className="grid grid-cols-3 gap-1.5">
-                          {(["none", "reset", "increase"] as const).map(a => (
-                            <button key={a} onClick={() => setAction(a)} disabled={autoRunning}
-                              className="py-2 rounded-lg text-xs font-bold capitalize transition"
-                              style={{
-                                background: action === a ? `${color}22` : "rgba(255,255,255,0.05)",
-                                color: action === a ? color : "rgba(255,255,255,0.4)",
-                                border: action === a ? `1px solid ${color}44` : "1px solid transparent",
-                              }}>
-                              {a}
-                            </button>
-                          ))}
+                {betTab === "manual" ? (
+                  <>
+                    <motion.button
+                      onClick={() => placeBet()}
+                      disabled={!isLoggedIn || isRolling || autoRunning}
+                      whileTap={{ scale: 0.97 }}
+                      className="w-full h-12 rounded-xl font-black text-base tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        background: isRolling ? "rgba(245,197,24,0.35)" : "linear-gradient(135deg, #f5c518 0%, #f0a500 100%)",
+                        boxShadow: isRolling ? "none" : "0 0 24px rgba(245,197,24,0.25), 0 4px 12px rgba(0,0,0,0.3)",
+                        color: "#1a0800",
+                      }}
+                    >
+                      {isRolling ? "Rolling..." : !isLoggedIn ? "Login to Play" : "Roll Dice"}
+                    </motion.button>
+                    {betError && <div className="text-red-400 text-xs text-center font-semibold">{betError}</div>}
+                    <button onClick={() => setShowPF(true)}
+                      className="flex items-center justify-center gap-1.5 text-xs font-semibold py-1"
+                      style={{ color: "rgba(167,139,250,0.6)" }}>
+                      <Shield size={11} /> Provably Fair
+                    </button>
+                  </>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-end gap-3">
+                      <div className="flex-1">
+                        <label className="text-xs text-white/40 block mb-1.5">Number of Bets</label>
+                        <div className="flex items-center rounded-lg px-3 h-10 bg-[#132737] border border-white/5">
+                          <input type="number" value={autoRounds} min={1}
+                            onChange={e => setAutoRounds(Math.max(1, parseInt(e.target.value) || 1))}
+                            disabled={autoInfinite || autoRunning}
+                            className="flex-1 bg-transparent text-white font-bold text-sm outline-none tabular-nums" />
                         </div>
-                        {action === "increase" && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <input type="number" value={pct} min={0}
-                              onChange={e => setPct(parseFloat(e.target.value) || 0)}
-                              className="w-20 px-3 py-1.5 rounded-lg text-xs font-mono text-white outline-none"
-                              style={{ background: "#1e1b3a", border: "1px solid rgba(255,255,255,0.08)" }} />
-                            <span className="text-xs text-white/40">% increase</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-1 pb-1">
+                        <span className="text-xs text-white/40">∞</span>
+                        <button onClick={() => setAutoInfinite(a => !a)} disabled={autoRunning}
+                          className="w-11 h-6 rounded-full transition-colors relative"
+                          style={{ background: autoInfinite ? "#7c3aed" : "rgba(255,255,255,0.1)" }}>
+                          <span className="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all"
+                            style={{ left: autoInfinite ? "calc(100% - 20px)" : 4 }} />
+                        </button>
+                      </div>
+                    </div>
+                    {(["win", "loss"] as const).map(type => {
+                      const action = type === "win" ? autoOnWinAction : autoOnLossAction;
+                      const setAction = type === "win" ? setAutoOnWinAction : setAutoOnLossAction;
+                      const pct = type === "win" ? autoOnWinPct : autoOnLossPct;
+                      const setPct = type === "win" ? setAutoOnWinPct : setAutoOnLossPct;
+                      const color = type === "win" ? "#22c55e" : "#ef4444";
+                      return (
+                        <div key={type}>
+                          <label className="text-xs text-white/40 block mb-1.5 capitalize">On {type}</label>
+                          <div className="grid grid-cols-3 gap-1.5">
+                            {(["none", "reset", "increase"] as const).map(a => (
+                              <button key={a} onClick={() => setAction(a)} disabled={autoRunning}
+                                className="py-2 rounded-lg text-xs font-bold capitalize transition"
+                                style={{
+                                  background: action === a ? `${color}22` : "rgba(255,255,255,0.05)",
+                                  color: action === a ? color : "rgba(255,255,255,0.4)",
+                                  border: action === a ? `1px solid ${color}44` : "1px solid transparent",
+                                }}>
+                                {a}
+                              </button>
+                            ))}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
-
-                  {/* Stop conditions */}
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { label: "Stop on Profit ₹", val: autoStopOnWin, set: setAutoStopOnWin },
-                      { label: "Stop on Loss ₹", val: autoStopOnLoss, set: setAutoStopOnLoss },
-                    ].map(f => (
-                      <div key={f.label}>
-                        <label className="text-xs text-white/40 block mb-1.5">{f.label}</label>
-                        <input type="number" value={f.val} min={0}
-                          onChange={e => f.set(parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-2.5 rounded-lg text-sm text-white font-bold outline-none"
-                          style={{ background: "#1e1b3a", border: "1px solid rgba(255,255,255,0.07)" }} />
-                      </div>
-                    ))}
+                          {action === "increase" && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <input type="number" value={pct} min={0}
+                                onChange={e => setPct(parseFloat(e.target.value) || 0)}
+                                className="w-20 px-3 py-1.5 rounded-lg text-xs font-mono text-white outline-none"
+                                style={{ background: "#1e1b3a", border: "1px solid rgba(255,255,255,0.08)" }} />
+                              <span className="text-xs text-white/40">% increase</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { label: "Stop on Profit ₹", val: autoStopOnWin, set: setAutoStopOnWin },
+                        { label: "Stop on Loss ₹", val: autoStopOnLoss, set: setAutoStopOnLoss },
+                      ].map(f => (
+                        <div key={f.label}>
+                          <label className="text-xs text-white/40 block mb-1.5">{f.label}</label>
+                          <input type="number" value={f.val} min={0}
+                            onChange={e => f.set(parseFloat(e.target.value) || 0)}
+                            className="w-full px-3 py-2.5 rounded-lg text-sm text-white font-bold outline-none"
+                            style={{ background: "#1e1b3a", border: "1px solid rgba(255,255,255,0.07)" }} />
+                        </div>
+                      ))}
+                    </div>
+                    <motion.button
+                      onClick={autoRunning ? stopAuto : startAuto}
+                      disabled={!isLoggedIn}
+                      whileTap={{ scale: 0.97 }}
+                      className="w-full h-14 rounded-xl font-black text-lg transition-all disabled:opacity-50"
+                      style={{
+                        background: autoRunning ? "linear-gradient(135deg, #ef4444, #dc2626)" : "linear-gradient(135deg, #f5c518, #f0a500)",
+                        color: autoRunning ? "white" : "#1a0a00",
+                        boxShadow: autoRunning ? "0 4px 20px rgba(239,68,68,0.3)" : "0 4px 20px rgba(245,197,24,0.35)",
+                      }}
+                    >
+                      {!isLoggedIn ? "Login to Play" : autoRunning ? "⏹ Stop Auto" : "▶ Start Auto"}
+                    </motion.button>
                   </div>
+                )}
 
-                  {/* Start / Stop */}
-                  <motion.button
-                    onClick={autoRunning ? stopAuto : startAuto}
-                    disabled={!isLoggedIn}
-                    whileTap={{ scale: 0.97 }}
-                    className="w-full h-14 rounded-xl font-black text-lg transition-all disabled:opacity-50"
-                    style={{
-                      background: autoRunning
-                        ? "linear-gradient(135deg, #ef4444, #dc2626)"
-                        : "linear-gradient(135deg, #f5c518, #f0a500)",
-                      color: autoRunning ? "white" : "#1a0a00",
-                      boxShadow: autoRunning ? "0 4px 20px rgba(239,68,68,0.3)" : "0 4px 20px rgba(245,197,24,0.35)",
-                    }}
-                  >
-                    {!isLoggedIn ? "Login to Play" : autoRunning ? "⏹ Stop Auto" : "▶ Start Auto"}
-                  </motion.button>
-                </div>
-              )}
-
-              </div>{/* end form fields */}
-            </div>{/* end betting card */}
+              </div>
+            </div>
           </div>
 
           {/* ═══ GAME AREA ═════════════════════════════════════════════════════ */}
-          <div className="flex-1 flex flex-col justify-center p-3 md:p-5 lg:p-8 order-1 lg:order-none">
+          <div className="flex-1 flex flex-col p-3 md:p-4 lg:p-8 lg:justify-center">
 
             {/* ── Game Card ── */}
-            <div className="w-full h-full flex flex-col justify-center gap-5 md:gap-8 rounded-2xl p-4 md:p-7 lg:p-10"
+            <div className="w-full flex flex-col rounded-2xl overflow-hidden"
               style={{ background: "#0d0f1e", border: "1px solid rgba(255,255,255,0.06)" }}>
 
-            {/* ── Slider ── */}
-            <div className="w-full max-w-3xl mx-auto">
-              <DiceSlider
-                mode={mode} target={target} minTarget={minTarget} maxTarget={maxTarget}
-                onTargetChange={setTarget} onMinChange={setMinTarget} onMaxChange={setMaxTarget}
-                disabled={isRolling || autoRunning}
-                lastRoll={lastResult?.roll ?? null}
-                isRolling={isRolling}
-                lastWon={lastResult?.won ?? null}
-              />
-            </div>
+              {/* Mobile: Manual/Auto tabs at top of card */}
+              <div className="lg:hidden flex" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                {(["manual", "auto"] as const).map(tab => (
+                  <button key={tab} onClick={() => setBetTab(tab)}
+                    className={`flex-1 py-3 text-sm font-bold capitalize transition-all relative ${
+                      betTab === tab ? "text-white" : "text-white/35 hover:text-white/60"
+                    }`}>
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    {betTab === tab && (
+                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-0.5 rounded-full bg-[#7c3aed]" />
+                    )}
+                  </button>
+                ))}
+              </div>
 
-            {/* ── Mode selector + Recent rolls ── */}
-            <div className="w-full max-w-3xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-bold mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>
-                  Game Mode — {modeLabel[mode]}
-                </p>
-                <div className="flex gap-2">
-                  {MODE_ICONS.map(({ mode: m, dots }) => (
-                    <button key={m} onClick={() => setMode(m)} disabled={isRolling || autoRunning}
-                      title={modeLabel[m]}>
-                      <DiceIcon dots={dots} active={mode === m} />
-                    </button>
-                  ))}
+              {/* Inner content */}
+              <div className="flex flex-col gap-4 lg:gap-8 p-4 md:p-6 lg:p-10">
+
+                {/* ── Slider ── */}
+                <div className="w-full max-w-3xl mx-auto">
+                  <DiceSlider
+                    mode={mode} target={target} minTarget={minTarget} maxTarget={maxTarget}
+                    onTargetChange={setTarget} onMinChange={setMinTarget} onMaxChange={setMaxTarget}
+                    disabled={isRolling || autoRunning}
+                    lastRoll={lastResult?.roll ?? null}
+                    isRolling={isRolling}
+                    lastWon={lastResult?.won ?? null}
+                  />
                 </div>
-              </div>
 
-              {/* Recent rolls */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <AnimatePresence>
-                  {recentRolls.map((r, i) => (
-                    <motion.span
-                      key={i}
-                      initial={{ opacity: 0, scale: 0.7 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="text-sm font-black tabular-nums"
-                      style={{ color: r.won ? "#22c55e" : "#ef4444" }}
-                    >
-                      {r.roll.toFixed(2)}
-                    </motion.span>
-                  ))}
-                </AnimatePresence>
-                {recentRolls.length === 0 && (
-                  <span className="text-xs text-white/20">No rolls yet</span>
-                )}
-              </div>
-            </div>
+                {/* Recent rolls — mobile position (right after slider) */}
+                <div className="lg:hidden flex items-center gap-2 flex-wrap -mt-1">
+                  <AnimatePresence>
+                    {recentRolls.map((r, i) => (
+                      <motion.span key={i} initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }}
+                        className="text-sm font-black tabular-nums"
+                        style={{ color: r.won ? "#22c55e" : "#ef4444" }}>
+                        {r.roll.toFixed(2)}
+                      </motion.span>
+                    ))}
+                  </AnimatePresence>
+                  {recentRolls.length === 0 && <span className="text-xs text-white/20">No rolls yet</span>}
+                </div>
 
-            {/* ── Bottom inputs ── */}
-            <div className="w-full max-w-3xl mx-auto">
-              <div className="grid grid-cols-3 gap-2 md:gap-3">
-                {/* Roll Under/Over/Between/Outside label */}
-                <StatInput
-                  label={modeLabel[mode]}
-                  value={targetDisplay}
-                  readOnly
-                  onSwap={(mode === "ROLL_UNDER" || mode === "ROLL_OVER") ? swapTarget : undefined}
-                />
+                {/* ── Stat inputs ── */}
+                <div className="w-full max-w-3xl mx-auto">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
+                    <div className="col-span-2 lg:col-span-1">
+                      <StatInput
+                        label={modeLabel[mode]} value={targetDisplay} readOnly
+                        onSwap={(mode === "ROLL_UNDER" || mode === "ROLL_OVER") ? swapTarget : undefined}
+                      />
+                    </div>
+                    <div>
+                      <StatInput
+                        label="Win Chance" value={winChance.toFixed(2)}
+                        onChange={v => {
+                          const wc = parseFloat(v);
+                          if (isNaN(wc) || wc < 0.01 || wc > 98.99) return;
+                          if (mode === "ROLL_UNDER") setTarget(wc);
+                          else if (mode === "ROLL_OVER") setTarget(100 - wc);
+                        }}
+                        readOnly={mode === "ROLL_BETWEEN" || mode === "ROLL_OUTSIDE"}
+                        unit="%" numeric
+                      />
+                    </div>
+                    <div>
+                      <StatInput
+                        label="Multiplier" value={multiplier.toFixed(4)}
+                        onChange={v => {
+                          const m = parseFloat(v);
+                          if (isNaN(m) || m <= 1) return;
+                          const wc = Math.max(0.01, Math.min(98.99, 99 / m));
+                          if (mode === "ROLL_UNDER") setTarget(wc);
+                          else if (mode === "ROLL_OVER") setTarget(100 - wc);
+                        }}
+                        readOnly={mode === "ROLL_BETWEEN" || mode === "ROLL_OUTSIDE"}
+                        unit="×" numeric
+                      />
+                    </div>
+                  </div>
+                </div>
 
-                <StatInput
-                  label="Win Chance"
-                  value={winChance.toFixed(2)}
-                  onChange={v => {
-                    const wc = parseFloat(v);
-                    if (isNaN(wc) || wc < 0.01 || wc > 98.99) return;
-                    if (mode === "ROLL_UNDER") setTarget(wc);
-                    else if (mode === "ROLL_OVER") setTarget(100 - wc);
-                  }}
-                  readOnly={mode === "ROLL_BETWEEN" || mode === "ROLL_OUTSIDE"}
-                  unit="%" numeric
-                />
+                {/* ── Mobile-only bet controls ── */}
+                <div className="lg:hidden flex flex-col gap-3 w-full max-w-3xl mx-auto">
+                  {betTab === "manual" ? (
+                    <>
+                      {/* Roll Dice */}
+                      <motion.button
+                        onClick={() => placeBet()}
+                        disabled={!isLoggedIn || isRolling || autoRunning}
+                        whileTap={{ scale: 0.97 }}
+                        className="w-full h-12 rounded-xl font-black text-base tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{
+                          background: isRolling ? "rgba(245,197,24,0.35)" : "linear-gradient(135deg, #f5c518 0%, #f0a500 100%)",
+                          boxShadow: isRolling ? "none" : "0 0 24px rgba(245,197,24,0.25), 0 4px 12px rgba(0,0,0,0.3)",
+                          color: "#1a0800",
+                        }}
+                      >
+                        {isRolling ? "Rolling..." : !isLoggedIn ? "Login to Play" : "Roll Dice"}
+                      </motion.button>
 
-                <StatInput
-                  label="Multiplier"
-                  value={multiplier.toFixed(4)}
-                  onChange={v => {
-                    const m = parseFloat(v);
-                    if (isNaN(m) || m <= 1) return;
-                    const wc = Math.max(0.01, Math.min(98.99, 99 / m));
-                    if (mode === "ROLL_UNDER") setTarget(wc);
-                    else if (mode === "ROLL_OVER") setTarget(100 - wc);
-                  }}
-                  readOnly={mode === "ROLL_BETWEEN" || mode === "ROLL_OUTSIDE"}
-                  unit="×" numeric
-                />
-              </div>
-            </div>
+                      {/* Bet Amount */}
+                      <div>
+                        <label className="text-[11px] text-white/40 font-semibold uppercase tracking-wider block mb-2">Bet Amount</label>
+                        <div className="flex items-stretch h-11 rounded-xl overflow-hidden"
+                          style={{ background: "#181a2e", border: "1px solid rgba(255,255,255,0.08)" }}>
+                          <div className="flex items-center pl-3.5 flex-1 gap-1.5">
+                            <span className="text-emerald-400 font-bold text-sm">₹</span>
+                            <input type="text" inputMode="decimal"
+                              value={betAmount === 0 ? "" : betAmount} placeholder="0.00"
+                              onChange={e => setBetAmount(Math.max(0, parseFloat(e.target.value.replace(/[^\d.]/g, "")) || 0))}
+                              disabled={isRolling || autoRunning}
+                              className="flex-1 bg-transparent text-white font-bold text-sm outline-none tabular-nums disabled:opacity-60 placeholder-white/20" />
+                          </div>
+                          <div className="flex items-center" style={{ borderLeft: "1px solid rgba(255,255,255,0.07)" }}>
+                            <button onClick={() => setBetAmount(p => Math.max(0, Math.round(p / 2 * 100) / 100))}
+                              disabled={isRolling || autoRunning}
+                              className="px-3 h-full text-xs font-bold text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 transition">½</button>
+                            <button onClick={() => setBetAmount(p => Math.round(p * 2 * 100) / 100)}
+                              disabled={isRolling || autoRunning}
+                              className="px-3 h-full text-xs font-bold text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 transition"
+                              style={{ borderLeft: "1px solid rgba(255,255,255,0.07)" }}>2×</button>
+                          </div>
+                        </div>
+                      </div>
 
+                      {/* Payout on Win */}
+                      <div>
+                        <label className="text-[11px] text-white/40 font-semibold uppercase tracking-wider block mb-2">Payout on Win</label>
+                        <div className="flex items-center h-11 rounded-xl px-3.5 gap-1.5"
+                          style={{ background: "#181a2e", border: "1px solid rgba(255,255,255,0.08)" }}>
+                          <span className="text-emerald-400 font-bold text-sm">₹</span>
+                          <span className="text-white font-bold tabular-nums text-sm">{fmtNum(payout)}</span>
+                        </div>
+                      </div>
+
+                      {betError && <div className="text-red-400 text-xs text-center font-semibold">{betError}</div>}
+                    </>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* Bet Amount for auto */}
+                      <div>
+                        <label className="text-[11px] text-white/40 font-semibold uppercase tracking-wider block mb-2">Bet Amount</label>
+                        <div className="flex items-stretch h-11 rounded-xl overflow-hidden"
+                          style={{ background: "#181a2e", border: "1px solid rgba(255,255,255,0.08)" }}>
+                          <div className="flex items-center pl-3.5 flex-1 gap-1.5">
+                            <span className="text-emerald-400 font-bold text-sm">₹</span>
+                            <input type="text" inputMode="decimal"
+                              value={betAmount === 0 ? "" : betAmount} placeholder="0.00"
+                              onChange={e => setBetAmount(Math.max(0, parseFloat(e.target.value.replace(/[^\d.]/g, "")) || 0))}
+                              disabled={autoRunning}
+                              className="flex-1 bg-transparent text-white font-bold text-sm outline-none tabular-nums disabled:opacity-60 placeholder-white/20" />
+                          </div>
+                          <div className="flex items-center" style={{ borderLeft: "1px solid rgba(255,255,255,0.07)" }}>
+                            <button onClick={() => setBetAmount(p => Math.max(0, Math.round(p / 2 * 100) / 100))} disabled={autoRunning}
+                              className="px-3 h-full text-xs font-bold text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 transition">½</button>
+                            <button onClick={() => setBetAmount(p => Math.round(p * 2 * 100) / 100)} disabled={autoRunning}
+                              className="px-3 h-full text-xs font-bold text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 transition"
+                              style={{ borderLeft: "1px solid rgba(255,255,255,0.07)" }}>2×</button>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Number of bets */}
+                      <div className="flex items-end gap-3">
+                        <div className="flex-1">
+                          <label className="text-xs text-white/40 block mb-1.5">Number of Bets</label>
+                          <div className="flex items-center rounded-lg px-3 h-10 bg-[#132737] border border-white/5">
+                            <input type="number" value={autoRounds} min={1}
+                              onChange={e => setAutoRounds(Math.max(1, parseInt(e.target.value) || 1))}
+                              disabled={autoInfinite || autoRunning}
+                              className="flex-1 bg-transparent text-white font-bold text-sm outline-none tabular-nums" />
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center gap-1 pb-1">
+                          <span className="text-xs text-white/40">∞</span>
+                          <button onClick={() => setAutoInfinite(a => !a)} disabled={autoRunning}
+                            className="w-11 h-6 rounded-full transition-colors relative"
+                            style={{ background: autoInfinite ? "#7c3aed" : "rgba(255,255,255,0.1)" }}>
+                            <span className="absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all"
+                              style={{ left: autoInfinite ? "calc(100% - 20px)" : 4 }} />
+                          </button>
+                        </div>
+                      </div>
+                      {(["win", "loss"] as const).map(type => {
+                        const action = type === "win" ? autoOnWinAction : autoOnLossAction;
+                        const setAction = type === "win" ? setAutoOnWinAction : setAutoOnLossAction;
+                        const pct = type === "win" ? autoOnWinPct : autoOnLossPct;
+                        const setPct = type === "win" ? setAutoOnWinPct : setAutoOnLossPct;
+                        const color = type === "win" ? "#22c55e" : "#ef4444";
+                        return (
+                          <div key={type}>
+                            <label className="text-xs text-white/40 block mb-1.5 capitalize">On {type}</label>
+                            <div className="grid grid-cols-3 gap-1.5">
+                              {(["none", "reset", "increase"] as const).map(a => (
+                                <button key={a} onClick={() => setAction(a)} disabled={autoRunning}
+                                  className="py-2 rounded-lg text-xs font-bold capitalize transition"
+                                  style={{
+                                    background: action === a ? `${color}22` : "rgba(255,255,255,0.05)",
+                                    color: action === a ? color : "rgba(255,255,255,0.4)",
+                                    border: action === a ? `1px solid ${color}44` : "1px solid transparent",
+                                  }}>
+                                  {a}
+                                </button>
+                              ))}
+                            </div>
+                            {action === "increase" && (
+                              <div className="flex items-center gap-2 mt-2">
+                                <input type="number" value={pct} min={0}
+                                  onChange={e => setPct(parseFloat(e.target.value) || 0)}
+                                  className="w-20 px-3 py-1.5 rounded-lg text-xs font-mono text-white outline-none"
+                                  style={{ background: "#1e1b3a", border: "1px solid rgba(255,255,255,0.08)" }} />
+                                <span className="text-xs text-white/40">% increase</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { label: "Stop on Profit ₹", val: autoStopOnWin, set: setAutoStopOnWin },
+                          { label: "Stop on Loss ₹", val: autoStopOnLoss, set: setAutoStopOnLoss },
+                        ].map(f => (
+                          <div key={f.label}>
+                            <label className="text-xs text-white/40 block mb-1.5">{f.label}</label>
+                            <input type="number" value={f.val} min={0}
+                              onChange={e => f.set(parseFloat(e.target.value) || 0)}
+                              className="w-full px-3 py-2.5 rounded-lg text-sm text-white font-bold outline-none"
+                              style={{ background: "#1e1b3a", border: "1px solid rgba(255,255,255,0.07)" }} />
+                          </div>
+                        ))}
+                      </div>
+                      <motion.button
+                        onClick={autoRunning ? stopAuto : startAuto}
+                        disabled={!isLoggedIn}
+                        whileTap={{ scale: 0.97 }}
+                        className="w-full h-12 rounded-xl font-black text-base transition-all disabled:opacity-50"
+                        style={{
+                          background: autoRunning ? "linear-gradient(135deg, #ef4444, #dc2626)" : "linear-gradient(135deg, #f5c518, #f0a500)",
+                          color: autoRunning ? "white" : "#1a0a00",
+                          boxShadow: autoRunning ? "0 4px 20px rgba(239,68,68,0.3)" : "0 4px 20px rgba(245,197,24,0.35)",
+                        }}
+                      >
+                        {!isLoggedIn ? "Login to Play" : autoRunning ? "⏹ Stop Auto" : "▶ Start Auto"}
+                      </motion.button>
+                    </div>
+                  )}
+
+                  {/* Game Mode — bottom of mobile card */}
+                  <div className="pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                    <p className="text-xs font-bold mb-2.5 mt-2" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      Game Mode — {modeLabel[mode]}
+                    </p>
+                    <div className="flex gap-2">
+                      {MODE_ICONS.map(({ mode: m, dots }) => (
+                        <button key={m} onClick={() => setMode(m)} disabled={isRolling || autoRunning} title={modeLabel[m]}>
+                          <DiceIcon dots={dots} active={mode === m} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Desktop: Mode selector + Recent rolls ── */}
+                <div className="hidden lg:flex w-full max-w-3xl mx-auto flex-row items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-bold mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      Game Mode — {modeLabel[mode]}
+                    </p>
+                    <div className="flex gap-2">
+                      {MODE_ICONS.map(({ mode: m, dots }) => (
+                        <button key={m} onClick={() => setMode(m)} disabled={isRolling || autoRunning} title={modeLabel[m]}>
+                          <DiceIcon dots={dots} active={mode === m} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <AnimatePresence>
+                      {recentRolls.map((r, i) => (
+                        <motion.span key={i} initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }}
+                          className="text-sm font-black tabular-nums"
+                          style={{ color: r.won ? "#22c55e" : "#ef4444" }}>
+                          {r.roll.toFixed(2)}
+                        </motion.span>
+                      ))}
+                    </AnimatePresence>
+                    {recentRolls.length === 0 && <span className="text-xs text-white/20">No rolls yet</span>}
+                  </div>
+                </div>
+
+              </div>{/* end inner content */}
             </div>{/* end game card */}
           </div>
+
         </div>
       </div>
 
