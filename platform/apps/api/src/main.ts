@@ -2,7 +2,7 @@ import { NestFactory } from "@nestjs/core";
 import { ValidationPipe, Logger } from "@nestjs/common";
 import { AppModule } from "./app.module";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
-import { IoAdapter } from "@nestjs/platform-socket.io";
+import { RedisIoAdapter } from "./common/socket/redis-io.adapter";
 import { json, urlencoded, static as expressStatic } from "express";
 import { join } from "path";
 import { mkdirSync } from "fs";
@@ -37,12 +37,18 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());
-  app.useWebSocketAdapter(new IoAdapter(app));
+
+  // Redis-backed Socket.io adapter so room broadcasts work across cluster workers.
+  const ioAdapter = new RedisIoAdapter(app);
+  await ioAdapter.connectToRedis();
+  app.useWebSocketAdapter(ioAdapter);
+
   app.setGlobalPrefix("api");
 
   const port = Number(process.env.API_PORT ?? 4000);
   await app.listen(port, "0.0.0.0");
-  logger.log(`API listening on http://0.0.0.0:${port}/api`);
+  const instance = process.env.NODE_APP_INSTANCE ?? "0";
+  logger.log(`API listening on http://0.0.0.0:${port}/api (worker ${instance})`);
 }
 
 bootstrap();

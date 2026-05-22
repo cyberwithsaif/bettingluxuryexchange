@@ -40,6 +40,7 @@
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.1",
     "socket.io": "4.7.5",
+    "@socket.io/redis-adapter": "8.3.0",
     "speakeasy": "2.0.0"
   },
   "devDependencies": {

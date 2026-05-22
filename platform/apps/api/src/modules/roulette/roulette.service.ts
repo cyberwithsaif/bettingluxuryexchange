@@ -1,9 +1,18 @@
-import { Injectable, Logger, BadRequestException, OnModuleInit } from "@nestjs/common";
+import { Injectable, Logger, BadRequestException, OnModuleInit, OnModuleDestroy } from "@nestjs/common";
 import { PrismaService } from "../../common/prisma/prisma.service";
+import { RedisService } from "../../common/redis/redis.service";
 import { WalletService } from "../wallet/wallet.service";
 import { RouletteGateway } from "./roulette.gateway";
 import { Prisma, LedgerKind, RouletteRoundStatus } from "@prisma/client";
 import * as crypto from "crypto";
+
+// Distributed lock so only ONE cluster worker runs the game loop.
+// TTL is long enough to absorb GC pauses but short enough that a dead
+// worker doesn't strand the loop for long.
+const LOOP_LOCK_KEY = "lock:roulette:loop";
+const LOOP_LOCK_TTL_SECS = 30;
+const LOOP_LOCK_REFRESH_MS = 10_000;
+const LOOP_RETRY_MS = 5_000;
 
 const RED_NUMBERS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 const BETTING_MS  = 15000;  // 15 seconds to place bets
@@ -51,19 +60,66 @@ function calculatePayout(betType: BetType, betValue: string | null, amount: numb
 }
 
 @Injectable()
-export class RouletteService implements OnModuleInit {
+export class RouletteService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RouletteService.name);
   private currentRoundId: string | null = null;
   private phaseEndsAt = 0;
+  private readonly lockValue = `${process.env.NODE_APP_INSTANCE ?? "0"}:${process.pid}`;
+  private lockRefreshTimer: NodeJS.Timeout | null = null;
+  private hasLock = false;
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
     private readonly wallet: WalletService,
     private readonly gateway: RouletteGateway,
   ) {}
 
   async onModuleInit() {
-    setTimeout(() => this.startLoop(), 2000);
+    // Stagger so multiple workers don't slam Redis at the same instant.
+    setTimeout(() => this.tryAcquireLoop(), 2000 + Math.floor(Math.random() * 1000));
+  }
+
+  async onModuleDestroy() {
+    if (this.lockRefreshTimer) clearInterval(this.lockRefreshTimer);
+    if (this.hasLock) {
+      // Release lock only if we still own it (compare-and-delete via Lua).
+      await this.redis.client.eval(
+        `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end`,
+        1, LOOP_LOCK_KEY, this.lockValue,
+      ).catch(() => {});
+    }
+  }
+
+  private async tryAcquireLoop() {
+    try {
+      const acquired = await this.redis.client.set(LOOP_LOCK_KEY, this.lockValue, "EX", LOOP_LOCK_TTL_SECS, "NX");
+      if (acquired !== "OK") {
+        // Another worker is running the loop. Check back later in case it dies.
+        setTimeout(() => this.tryAcquireLoop(), LOOP_RETRY_MS);
+        return;
+      }
+      this.hasLock = true;
+      this.logger.log(`Acquired roulette loop lock (worker ${this.lockValue})`);
+      // Keep refreshing so the TTL doesn't expire while we're alive.
+      this.lockRefreshTimer = setInterval(async () => {
+        // CAS refresh: only extend if we still own the lock.
+        const ok = await this.redis.client.eval(
+          `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("expire", KEYS[1], ARGV[2]) else return 0 end`,
+          1, LOOP_LOCK_KEY, this.lockValue, LOOP_LOCK_TTL_SECS.toString(),
+        ).catch(() => 0);
+        if (ok !== 1) {
+          this.logger.warn("Lost roulette loop lock — backing off");
+          this.hasLock = false;
+          if (this.lockRefreshTimer) { clearInterval(this.lockRefreshTimer); this.lockRefreshTimer = null; }
+          setTimeout(() => this.tryAcquireLoop(), LOOP_RETRY_MS);
+        }
+      }, LOOP_LOCK_REFRESH_MS);
+      await this.startLoop();
+    } catch (e) {
+      this.logger.error(`tryAcquireLoop error: ${(e as Error).message}`);
+      setTimeout(() => this.tryAcquireLoop(), LOOP_RETRY_MS);
+    }
   }
 
   async startLoop() {
@@ -71,7 +127,7 @@ export class RouletteService implements OnModuleInit {
       await this.startNewRound();
     } catch (e) {
       this.logger.error(`Roulette loop error: ${(e as Error).message}`);
-      setTimeout(() => this.startLoop(), 5000);
+      setTimeout(() => this.startLoop(), LOOP_RETRY_MS);
     }
   }
 

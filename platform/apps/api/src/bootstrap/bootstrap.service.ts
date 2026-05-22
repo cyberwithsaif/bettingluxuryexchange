@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import * as bcrypt from "bcryptjs";
-import { UserRole } from "@prisma/client";
+import { Prisma, UserRole } from "@prisma/client";
 import { PrismaService } from "../common/prisma/prisma.service";
 
 /**
@@ -9,6 +9,10 @@ import { PrismaService } from "../common/prisma/prisma.service";
  * environment variables so the admin panel is reachable out-of-the-box.
  * Also ensures the sports catalogue exists (in case `pnpm db:seed` was
  * skipped).
+ *
+ * Cluster-safe: User.username is unique, so concurrent creates from
+ * sibling workers collapse to one row via P2002. Sport upserts are
+ * already idempotent.
  */
 @Injectable()
 export class BootstrapService implements OnModuleInit {
@@ -22,16 +26,25 @@ export class BootstrapService implements OnModuleInit {
     const username = process.env.BOOTSTRAP_SUPERADMIN_USERNAME ?? "superadmin";
     const password = process.env.BOOTSTRAP_SUPERADMIN_PASSWORD ?? "ChangeMe!Now2026";
     const passwordHash = await bcrypt.hash(password, 10);
-    await this.prisma.user.create({
-      data: {
-        username,
-        passwordHash,
-        role: UserRole.SUPER_ADMIN,
-        wallet: { create: {} },
-        limits: { create: {} },
-      },
-    });
-    this.logger.warn(`Bootstrapped SUPER_ADMIN "${username}" — change the password immediately.`);
+    try {
+      await this.prisma.user.create({
+        data: {
+          username,
+          passwordHash,
+          role: UserRole.SUPER_ADMIN,
+          wallet: { create: {} },
+          limits: { create: {} },
+        },
+      });
+      this.logger.warn(`Bootstrapped SUPER_ADMIN "${username}" — change the password immediately.`);
+    } catch (e) {
+      // Another cluster worker won the race; that's the desired outcome.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+        this.logger.log(`SUPER_ADMIN created by sibling worker — skipping.`);
+      } else {
+        throw e;
+      }
+    }
 
     const seedSports = [
       ["cricket", "Cricket", 1],
