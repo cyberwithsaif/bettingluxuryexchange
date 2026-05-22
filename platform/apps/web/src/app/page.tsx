@@ -11,7 +11,7 @@ export default async function HomePage() {
         {/* Casino Banner */}
         <div className="group relative rounded-3xl overflow-visible border border-white/10 hover:border-white/20 transition-all duration-300 min-h-[130px] md:min-h-[175px] hover:shadow-2xl hover:scale-[1.02] cursor-pointer">
           {/* Background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-900 rounded-3xl" />
+          <div className="absolute inset-0 rounded-3xl" style={{ background: "linear-gradient(135deg, #7c3aed 0%, #9333ea 50%, #f21f5f 100%)" }} />
 
           {/* Background image - left positioned with slight overflow */}
           <div className="absolute -left-4 top-0 w-2/3 h-full">
