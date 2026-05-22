@@ -18,7 +18,8 @@
       "Bash(scp -i \"E:/illweb/diamond exc/id_rsa\" \"d:/DEVELOPMENTS/casino betting website exch/platform/images/casino.png\" root@51.222.84.91:/var/www/exch/platform/apps/web/public/images/casino.png)",
       "Bash(scp -i \"E:/illweb/diamond exc/id_rsa\" \"d:/DEVELOPMENTS/casino betting website exch/platform/images/float.png\" root@51.222.84.91:/var/www/exch/platform/apps/web/public/images/float.png)",
       "Bash(^r\")",
-      "Bash(scp -i \"E:/illweb/diamond exc/id_rsa\" \"d:/DEVELOPMENTS/casino betting website exch/platform/images/rou.png\" root@51.222.84.91:/var/www/exch/platform/apps/web/public/images/rou.png)"
+      "Bash(scp -i \"E:/illweb/diamond exc/id_rsa\" \"d:/DEVELOPMENTS/casino betting website exch/platform/images/rou.png\" root@51.222.84.91:/var/www/exch/platform/apps/web/public/images/rou.png)",
+      "Bash(scp -i \"E:/illweb/diamond exc/id_rsa\" \"d:/DEVELOPMENTS/casino betting website exch/platform/images/neoncard.png\" root@51.222.84.91:/var/www/exch/platform/apps/web/public/images/neoncard.png)"
     ],
     "additionalDirectories": [
       "d:\\DEVELOPMENTS\\casino betting website exch\\platform\\images"
