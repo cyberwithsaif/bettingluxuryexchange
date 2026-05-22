@@ -8,7 +8,7 @@ import {
   Gamepad2, Trophy, ChevronDown, Headphones,
   Ticket, Target, Monitor, Glasses, Gift, Shield,
   TrendingUp, Award, Activity, Megaphone, Share2, Gift as GiftBox,
-  Crown, Heart, Globe, MessageCircle, Diamond,
+  Crown, Heart, Globe, MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -56,7 +56,6 @@ function SidebarInner() {
     (u: string) => fetch(u).then(r => r.json()),
     { refreshInterval: 300_000 },
   );
-  const { data: wallet } = useSWR("/wallet/summary");
   const siteName = settings?.siteName ?? "DiamondPlay22";
 
   return (
@@ -161,24 +160,10 @@ function SidebarInner() {
         })()}
       </nav>
 
-      {/* ── Wallet Card ──────────────────────────────────────── */}
-      <div className="px-4 py-3 shrink-0">
-        <Link href="/account/deposit" className="flex items-center gap-2.5 rounded-2xl px-4 py-3 transition-all hover:scale-105 active:scale-95 border-2"
-          style={{ background: "#090c1c", borderColor: "rgba(255, 215, 0, 0.3)" }}>
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: "rgba(255, 215, 0, 0.15)" }}>
-            <Diamond size={18} className="text-yellow-300" fill="currentColor" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[11px] text-white/50 uppercase tracking-wider leading-none">Balance</div>
-            <div className="text-[16px] font-black text-white tabular-nums">
-              ₹{wallet?.available ? Number(wallet.available).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
-            </div>
-          </div>
-          <div className="rounded-full px-3 py-1.5 font-bold text-[13px] shrink-0 transition-all hover:brightness-110"
-            style={{ background: "linear-gradient(135deg, #ffd700, #ffed4e)", color: "#1a0a00" }}>
-            Deposit
-          </div>
-        </Link>
+      {/* ── Total Bets ───────────────────────────────────────── */}
+      <div className="px-4 py-2 shrink-0" style={{ background: "rgba(139, 92, 246, 0.06)" }}>
+        <div className="text-[9px] uppercase tracking-wider text-white/30 mb-0.5">Total Bets Placed</div>
+        <div className="text-sm font-bold text-white/50 tabular-nums tracking-tight">14,012,645,500</div>
       </div>
     </div>
   );

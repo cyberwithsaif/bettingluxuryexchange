@@ -144,27 +144,24 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
               </Link>
             </div>
 
-            {/* Desktop balance pill */}
+            {/* Desktop balance card */}
             <div
-              className="hidden sm:flex items-center gap-1.5 rounded-full px-4 py-2 cursor-default group transition-all hover:scale-105"
+              className="hidden sm:flex items-center gap-2.5 rounded-2xl px-4 py-2.5 cursor-default group transition-all hover:scale-105 border-2"
               style={{
-                background: "linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(168, 85, 247, 0.1))",
-                boxShadow: "0 8px 24px rgba(139, 92, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
-                border: "1px solid rgba(139, 92, 246, 0.3)",
+                background: "#1a1a2e",
+                borderColor: "rgba(139, 92, 246, 0.4)",
               }}
             >
-              <span className="text-base leading-none text-yellow-300">₹</span>
-              <div className="flex flex-col items-end leading-tight">
-                <span className="text-[13px] font-bold text-white tabular-nums">
+              <div className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ background: "rgba(139, 92, 246, 0.2)" }}>
+                <span className="text-sm leading-none text-yellow-300">₹</span>
+              </div>
+              <div className="flex flex-col items-start leading-tight">
+                <span className="text-[10px] text-white/50 uppercase tracking-wider">Balance</span>
+                <span className="text-[16px] font-black text-white tabular-nums">
                   {fmtMoney(wallet?.available)}
                 </span>
-                {(wallet?.exposure ?? 0) > 0 && (
-                  <span className="text-[9px] text-red-400 tabular-nums">
-                    -{fmtMoney(wallet?.exposure)}
-                  </span>
-                )}
               </div>
-              <ChevronDown size={12} className="text-white/40 group-hover:text-white/60 transition-colors" />
+              <ChevronDown size={14} className="text-white/40 group-hover:text-white/60 transition-colors ml-auto" />
             </div>
 
             {/* Desktop deposit button — yellow like Roobet */}
