@@ -135,9 +135,9 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
                 href="/account/deposit"
                 className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-all active:scale-95 hover:brightness-110"
                 style={{
-                  background: "linear-gradient(160deg, #ffd580 0%, #ffb347 50%, #ff9f43 100%)",
-                  boxShadow: "0 4px 14px rgba(255,195,0,0.45), inset 0 1px 0 rgba(255,255,255,0.55), inset 0 -3px 6px rgba(0,0,0,0.25)",
-                  border: "1px solid rgba(255,200,0,0.5)",
+                  background: "linear-gradient(180deg, #ffb347 0%, #ff9f43 50%, #ff8c00 100%)",
+                  boxShadow: "0 6px 16px rgba(255, 140, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -3px 6px rgba(0,0,0,0.2)",
+                  border: "2px solid #d97500",
                 }}
               >
                 <Plus size={18} className="text-white" strokeWidth={3} />
@@ -166,12 +166,12 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
 
               <Link
                 href="/account/deposit"
-                className="flex items-center gap-1.5 rounded-xl font-bold text-[14px] px-4 py-1.5 transition-all hover:brightness-125 active:scale-95 shrink-0 shadow-md"
+                className="flex items-center gap-1.5 rounded-xl font-bold text-[14px] px-4 py-1.5 transition-all hover:brightness-110 active:scale-95 shrink-0"
                 style={{
-                  background: "linear-gradient(135deg,#ffd700,#ffed4e)",
-                  color: "#1a0a00",
-                  boxShadow: "0 4px 12px rgba(255, 215, 0, 0.3)",
-                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  background: "linear-gradient(180deg, #ffb347 0%, #ff9f43 50%, #ff8c00 100%)",
+                  color: "white",
+                  boxShadow: "0 6px 16px rgba(255, 140, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -3px 8px rgba(0, 0, 0, 0.2)",
+                  border: "2px solid #d97500",
                 }}
               >
                 <ArrowDownToLine size={14} />
