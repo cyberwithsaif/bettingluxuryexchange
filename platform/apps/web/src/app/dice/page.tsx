@@ -745,9 +745,9 @@ export default function DicePage() {
                     />
                   </div>
                   <button onClick={() => setBetAmount(p => Math.max(0, Math.round(p / 2 * 100) / 100))} disabled={isRolling || autoRunning}
-                    className="px-3 text-xs font-bold text-white/60 hover:text-white border-l border-white/5 disabled:opacity-40 transition">½</button>
+                    className="px-2.5 text-xs font-bold text-white/60 hover:text-white border-l border-white/5 disabled:opacity-40 transition">½</button>
                   <button onClick={() => setBetAmount(p => Math.round(p * 2 * 100) / 100)} disabled={isRolling || autoRunning}
-                    className="px-3 text-xs font-bold text-white/60 hover:text-white border-l border-white/5 disabled:opacity-40 rounded-r-xl transition">2×</button>
+                    className="px-2.5 text-xs font-bold text-white/60 hover:text-white border-l border-white/5 disabled:opacity-40 rounded-r-xl transition">2×</button>
                 </div>
               </div>
 
@@ -779,12 +779,6 @@ export default function DicePage() {
 
                   {/* Error display */}
                   {betError && <div className="text-red-400 text-xs text-center font-semibold">{betError}</div>}
-
-                  {/* Demo mode note */}
-                  <div className="rounded-xl px-3 py-2 text-center text-xs font-semibold"
-                    style={{ background: "rgba(124,58,237,0.15)", color: "rgba(167,139,250,0.8)" }}>
-                    Demo mode for bets &lt; ₹0.01
-                  </div>
 
                   {/* Provably Fair link */}
                   <button onClick={() => setShowPF(true)}
@@ -908,7 +902,7 @@ export default function DicePage() {
             </div>
 
             {/* ── Mode selector + Recent rolls ── */}
-            <div className="w-full max-w-3xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="w-full max-w-3xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mt-8">
               <div>
                 <p className="text-sm font-bold mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>
                   Game Mode — {modeLabel[mode]}
@@ -945,7 +939,7 @@ export default function DicePage() {
             </div>
 
             {/* ── Bottom inputs ── */}
-            <div className="w-full max-w-3xl mx-auto">
+            <div className="w-full max-w-3xl mx-auto mt-8">
               <div className="flex gap-3 flex-col md:flex-row">
                 {/* Roll Under/Over/Between/Outside label */}
                 <StatInput
