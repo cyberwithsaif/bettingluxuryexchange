@@ -168,19 +168,46 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
 
               <Link
                 href="/account/deposit"
-                className="flex items-center gap-0.5 font-semibold text-[11px] px-2.5 py-0.5 transition-all hover:brightness-110 active:scale-95 shrink-0"
+                className="flex items-center justify-center gap-1 font-black text-sm px-6 py-2.5 transition-all hover:scale-105 active:scale-95 shrink-0 relative overflow-hidden"
                 style={{
-                  background: "linear-gradient(135deg, #ffcc00 0%, #ffcc00 50%, #ffb700 100%)",
+                  background: "linear-gradient(135deg, #ffd400 0%, #ffc400 45%, #f5b300 45%, #ffbf00 100%)",
                   color: "white",
-                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.3)",
-                  boxShadow: "0 3px 8px rgba(255, 150, 0, 0.3), inset 0 0.5px 0 rgba(255, 255, 255, 0.3)",
+                  textShadow: "0 3px 0 #c56b00, 0 0 10px rgba(255,255,255,0.3)",
+                  boxShadow: "inset 0 -8px 0 #c97700, 0 8px 20px rgba(0,0,0,0.35)",
                   border: "none",
-                  borderRadius: "8px 8px 4px 1px",
-                  clipPath: "polygon(0 0, 100% 0, 96% 100%, 0 100%)",
+                  borderRadius: "20px",
                 }}
               >
-                <ArrowDownToLine size={10} />
-                Deposit
+                {/* Shine effect */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "8px",
+                    left: "20px",
+                    width: "40px",
+                    height: "10px",
+                    background: "rgba(255,255,255,0.95)",
+                    borderRadius: "20px",
+                    zIndex: 0,
+                  }}
+                />
+                {/* Glossy effect */}
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: "35%",
+                    width: "70px",
+                    height: "100%",
+                    background: "rgba(255,255,255,0.08)",
+                    transform: "skewX(-30deg)",
+                    zIndex: 0,
+                  }}
+                />
+                <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                  <ArrowDownToLine size={16} strokeWidth={2.5} />
+                  <span>Deposit</span>
+                </div>
               </Link>
             </div>
           </div>
