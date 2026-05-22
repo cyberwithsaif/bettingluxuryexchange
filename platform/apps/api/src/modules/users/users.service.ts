@@ -54,9 +54,15 @@ export class UsersService {
   }
 
   async listDownline(actorId: string, opts: { q?: string; role?: UserRole } = {}) {
+    const actor = await this.prisma.user.findUnique({ where: { id: actorId } });
+    if (!actor) throw new ForbiddenException();
+
+    // SUPER_ADMIN/ADMIN can see all users; others see only their downline
+    const isGlobalAdmin = actor.role === "SUPER_ADMIN" || actor.role === "ADMIN";
+
     return this.prisma.user.findMany({
       where: {
-        parentId: actorId,
+        ...(isGlobalAdmin ? {} : { parentId: actorId }),
         ...(opts.q ? { username: { contains: opts.q, mode: "insensitive" } } : {}),
         ...(opts.role ? { role: opts.role } : {}),
       },
