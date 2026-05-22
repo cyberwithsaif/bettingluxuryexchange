@@ -13,7 +13,6 @@ import {
 import { cn } from "@/lib/cn";
 
 interface Sport { id: string; key: string; name: string; }
-interface Settings { siteName?: string; }
 
 const SPORT_EMOJI: Record<string, string> = {
   cricket: "🏏", football: "⚽", tennis: "🎾", basketball: "🏀",
@@ -50,27 +49,12 @@ function SidebarInner() {
   const [casinoOpen,   setCasinoOpen]   = useState(false);
   const [exchangeOpen, setExchangeOpen] = useState(false);
 
-  const { data: sports   } = useSWR<Sport[]>("/markets/sports");
-  const { data: settings } = useSWR<Settings>(
-    "/api/platform/settings",
-    (u: string) => fetch(u).then(r => r.json()),
-    { refreshInterval: 300_000 },
-  );
-  const siteName = settings?.siteName ?? "DiamondPlay22";
+  const { data: sports } = useSWR<Sport[]>("/markets/sports");
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* ── Logo ─────────────────────────────────────────────── */}
-      <div className="px-4 pt-3 pb-2 shrink-0">
-        <Link href="/" className="flex flex-col leading-none group">
-          <span className="font-display italic text-[21px] font-black tracking-tight text-white uppercase group-hover:text-red-300 transition-colors">
-            {siteName}
-          </span>
-          <span className="text-[8px] uppercase tracking-[0.25em] font-semibold text-white/30 mt-0.5">
-            — Bet & Win —
-          </span>
-        </Link>
-      </div>
+      {/* ── Logo area (height matches TopBar) ─────────────────── */}
+      <div className="shrink-0 h-[74px]" />
 
       {/* ── Nav ──────────────────────────────────────────────── */}
       <nav className="flex-1 px-2 py-3 mt-4 overflow-y-auto space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
