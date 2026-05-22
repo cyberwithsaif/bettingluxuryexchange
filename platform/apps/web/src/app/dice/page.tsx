@@ -452,14 +452,15 @@ export default function DicePage() {
   const [target, setTarget]       = useState(49.5);
   const [minTarget, setMinTarget] = useState(25);
   const [maxTarget, setMaxTarget] = useState(75);
-  const [betAmount, setBetAmount] = useState(0);
+  const [betAmount, setBetAmount] = useState(10);
 
   // Result
   const [lastResult, setLastResult] = useState<BetResult | null>(null);
   const [isRolling, setIsRolling]   = useState(false);
   const [recentRolls, setRecentRolls] = useState<{ roll: number; won: boolean }[]>([]);
   const [betError, setBetError]         = useState<string | null>(null);
-  const [amountAlert, setAmountAlert]   = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number>(Infinity);
+  const [amountAlert, setAmountAlert]   = useState<{ title: string; sub: string } | null>(null);
   const amountAlertTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Provably fair
@@ -538,6 +539,12 @@ export default function DicePage() {
     setIsRolling(false);
   }, []);
 
+  const showAlert = useCallback((title: string, sub: string) => {
+    setAmountAlert({ title, sub });
+    if (amountAlertTimer.current) clearTimeout(amountAlertTimer.current);
+    amountAlertTimer.current = setTimeout(() => setAmountAlert(null), 3000);
+  }, []);
+
   // Socket setup
   useEffect(() => {
     const s = socket.current;
@@ -545,7 +552,10 @@ export default function DicePage() {
 
     const onBetResponse = (data: { ok: boolean; result: BetResult }) => {
       resetRolling();
-      if (!data.ok) { setBetError("Bet failed. Try again."); return; }
+      if (!data.ok) {
+        showAlert("Bet Failed", "Could not place your bet. Please try again.");
+        return;
+      }
       setBetError(null);
       const r = data.result;
       setLastResult(r);
@@ -554,22 +564,42 @@ export default function DicePage() {
       playSound(r.won ? "win" : "loss");
     };
 
-    // Reset on any error or auth rejection
-    const onError    = (e?: { message?: string }) => { resetRolling(); setAutoRunning(false); autoRef.current = false; if (e?.message) setBetError(e.message); };
-    const onException = (e?: { message?: string }) => { resetRolling(); setAutoRunning(false); autoRef.current = false; setBetError(e?.message ?? "Unauthorized — please log in again."); };
+    const onWalletBalance = (data: { available: number }) => {
+      setWalletBalance(data.available);
+    };
+
+    const onError = (e?: { message?: string }) => {
+      resetRolling();
+      setAutoRunning(false);
+      autoRef.current = false;
+      const msg = e?.message ?? "";
+      if (msg.toLowerCase().includes("insufficient")) {
+        showAlert("Insufficient Balance", "Your balance is too low for this bet");
+      } else if (msg) {
+        setBetError(msg);
+      }
+    };
+    const onException = (e?: { message?: string }) => {
+      resetRolling();
+      setAutoRunning(false);
+      autoRef.current = false;
+      setBetError(e?.message ?? "Unauthorized — please log in again.");
+    };
 
     s.on("dice:betResponse", onBetResponse);
     s.on("dice:error", onError);
-    s.on("exception", onException);      // WsJwtGuard auth failure arrives here
+    s.on("wallet:balance", onWalletBalance);
+    s.on("exception", onException);
     s.on("connect_error", onError);
 
     return () => {
       s.off("dice:betResponse", onBetResponse);
       s.off("dice:error", onError);
+      s.off("wallet:balance", onWalletBalance);
       s.off("exception", onException);
       s.off("connect_error", onError);
     };
-  }, [playSound, resetRolling]);
+  }, [playSound, resetRolling, showAlert]);
 
   // Fetch seeds
   useEffect(() => {
@@ -588,12 +618,6 @@ export default function DicePage() {
       case "ROLL_OUTSIDE": return roll < minTarget || roll > maxTarget;
     }
   }, [mode, target, minTarget, maxTarget]);
-
-  const showAmountAlert = useCallback(() => {
-    setAmountAlert(true);
-    if (amountAlertTimer.current) clearTimeout(amountAlertTimer.current);
-    amountAlertTimer.current = setTimeout(() => setAmountAlert(false), 3000);
-  }, []);
 
   // Place bet
   const placeBet = useCallback((amount?: number) => {
@@ -627,9 +651,13 @@ export default function DicePage() {
       return;
     }
 
-    // ── Insufficient amount guard ─────────────────────────────────────────────
+    // ── Amount / balance guard ────────────────────────────────────────────────
     if (betAmt <= 0) {
-      showAmountAlert();
+      showAlert("Enter Bet Amount", "Please enter a bet amount to roll");
+      return;
+    }
+    if (walletBalance !== Infinity && betAmt > walletBalance) {
+      showAlert("Insufficient Balance", `Available: ₹${walletBalance.toFixed(2)}`);
       return;
     }
 
@@ -649,7 +677,7 @@ export default function DicePage() {
     }, 8000);
 
     s.emit("dice:bet", { betAmount: betAmt, mode, target, minTarget, maxTarget, clientSeed, nonce });
-  }, [isRolling, betAmount, user, playSound, isWinLocal, mode, target, minTarget, maxTarget, clientSeed, nonce, showAmountAlert]);
+  }, [isRolling, betAmount, user, playSound, isWinLocal, mode, target, minTarget, maxTarget, clientSeed, nonce, showAlert, walletBalance]);
 
   // Auto bet engine
   const runAutoStep = useCallback(async (currentBet: number, roundsLeft: number) => {
@@ -786,6 +814,21 @@ export default function DicePage() {
                         className="px-3 h-full text-xs font-bold text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 transition"
                         style={{ borderLeft: "1px solid rgba(255,255,255,0.07)" }}>2×</button>
                     </div>
+                  </div>
+                  {/* Quick amount chips */}
+                  <div className="flex gap-1.5">
+                    {[10, 50, 100, 500, 1000].map(amt => (
+                      <button key={amt} onClick={() => setBetAmount(amt)}
+                        disabled={isRolling || autoRunning}
+                        className="flex-1 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-30"
+                        style={{
+                          background: betAmount === amt ? "rgba(245,197,24,0.15)" : "rgba(255,255,255,0.05)",
+                          border: betAmount === amt ? "1px solid rgba(245,197,24,0.35)" : "1px solid rgba(255,255,255,0.07)",
+                          color: betAmount === amt ? "#f5c518" : "rgba(255,255,255,0.45)",
+                        }}>
+                        {amt >= 1000 ? "1K" : amt}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -1043,6 +1086,21 @@ export default function DicePage() {
                               style={{ borderLeft: "1px solid rgba(255,255,255,0.07)" }}>2×</button>
                           </div>
                         </div>
+                        {/* Quick amount chips */}
+                        <div className="flex gap-1.5 mt-2">
+                          {[10, 50, 100, 500, 1000].map(amt => (
+                            <button key={amt} onClick={() => setBetAmount(amt)}
+                              disabled={isRolling || autoRunning}
+                              className="flex-1 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-30"
+                              style={{
+                                background: betAmount === amt ? "rgba(245,197,24,0.15)" : "rgba(255,255,255,0.05)",
+                                border: betAmount === amt ? "1px solid rgba(245,197,24,0.35)" : "1px solid rgba(255,255,255,0.07)",
+                                color: betAmount === amt ? "#f5c518" : "rgba(255,255,255,0.45)",
+                              }}>
+                              {amt >= 1000 ? "1K" : amt}
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
                       {/* Payout on Win */}
@@ -1079,6 +1137,19 @@ export default function DicePage() {
                               className="px-3 h-full text-xs font-bold text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 transition"
                               style={{ borderLeft: "1px solid rgba(255,255,255,0.07)" }}>2×</button>
                           </div>
+                        </div>
+                        <div className="flex gap-1.5 mt-2">
+                          {[10, 50, 100, 500, 1000].map(amt => (
+                            <button key={amt} onClick={() => setBetAmount(amt)} disabled={autoRunning}
+                              className="flex-1 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-30"
+                              style={{
+                                background: betAmount === amt ? "rgba(245,197,24,0.15)" : "rgba(255,255,255,0.05)",
+                                border: betAmount === amt ? "1px solid rgba(245,197,24,0.35)" : "1px solid rgba(255,255,255,0.07)",
+                                color: betAmount === amt ? "#f5c518" : "rgba(255,255,255,0.45)",
+                              }}>
+                              {amt >= 1000 ? "1K" : amt}
+                            </button>
+                          ))}
                         </div>
                       </div>
                       {/* Number of bets */}
@@ -1231,11 +1302,12 @@ export default function DicePage() {
       <AnimatePresence>
         {amountAlert && (
           <motion.div
+            key={amountAlert.title}
             initial={{ opacity: 0, y: -16, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -16, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 400, damping: 28 }}
-            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl pointer-events-none"
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl pointer-events-none whitespace-nowrap"
             style={{
               background: "linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)",
               border: "1px solid rgba(239,68,68,0.4)",
@@ -1244,11 +1316,15 @@ export default function DicePage() {
           >
             <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
               style={{ background: "rgba(239,68,68,0.3)" }}>
-              <span style={{ fontSize: 15 }}>⚠️</span>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 1L15 14H1L8 1Z" fill="#ef4444" opacity="0.3" stroke="#ef4444" strokeWidth="1.5" strokeLinejoin="round"/>
+                <path d="M8 6V9" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                <circle cx="8" cy="11.5" r="0.75" fill="white"/>
+              </svg>
             </div>
             <div>
-              <p className="text-white font-black text-sm leading-none mb-0.5">Insufficient Amount</p>
-              <p className="text-red-300 text-xs font-medium">Please enter a bet amount to roll</p>
+              <p className="text-white font-black text-sm leading-none mb-0.5">{amountAlert.title}</p>
+              <p className="text-red-300 text-xs font-medium">{amountAlert.sub}</p>
             </div>
           </motion.div>
         )}
