@@ -887,7 +887,11 @@ export default function DicePage() {
           </div>
 
           {/* ═══ GAME AREA ═════════════════════════════════════════════════════ */}
-          <div className="flex-1 flex flex-col justify-center p-5 md:p-8 lg:p-12 gap-6">
+          <div className="flex-1 flex flex-col justify-center p-4 md:p-6 lg:p-8">
+
+            {/* ── Game Card ── */}
+            <div className="w-full h-full flex flex-col justify-center gap-8 rounded-2xl p-6 md:p-10"
+              style={{ background: "#0d0f1e", border: "1px solid rgba(255,255,255,0.06)" }}>
 
             {/* ── Slider ── */}
             <div className="w-full max-w-3xl mx-auto">
@@ -902,7 +906,7 @@ export default function DicePage() {
             </div>
 
             {/* ── Mode selector + Recent rolls ── */}
-            <div className="w-full max-w-3xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mt-8">
+            <div className="w-full max-w-3xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-bold mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>
                   Game Mode — {modeLabel[mode]}
@@ -939,7 +943,7 @@ export default function DicePage() {
             </div>
 
             {/* ── Bottom inputs ── */}
-            <div className="w-full max-w-3xl mx-auto mt-8">
+            <div className="w-full max-w-3xl mx-auto">
               <div className="flex gap-3 flex-col md:flex-row">
                 {/* Roll Under/Over/Between/Outside label */}
                 <StatInput
@@ -978,6 +982,7 @@ export default function DicePage() {
               </div>
             </div>
 
+            </div>{/* end game card */}
           </div>
         </div>
       </div>
