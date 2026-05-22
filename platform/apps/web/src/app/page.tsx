@@ -37,6 +37,18 @@ export default async function HomePage() {
             />
           </div>
 
+          {/* Neon card - center positioned */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Image
+              src="/images/neoncard.png"
+              alt="Neon Card"
+              width={120}
+              height={150}
+              priority
+              style={{ objectFit: "contain" }}
+            />
+          </div>
+
           {/* Overlay gradient - removed for solid color */}
 
           {/* Content */}
