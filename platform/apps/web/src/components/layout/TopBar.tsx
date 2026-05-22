@@ -172,25 +172,11 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
                 style={{
                   background: "linear-gradient(135deg, #ffd400 0%, #ffc400 45%, #f5b300 45%, #ffbf00 100%)",
                   color: "white",
-                  textShadow: "0 3px 0 #c56b00, 0 0 10px rgba(255,255,255,0.3)",
-                  boxShadow: "inset 0 -8px 0 #c97700, 0 8px 20px rgba(0,0,0,0.35)",
-                  border: "none",
+                  border: "3px solid #c46818",
                   borderRadius: "20px",
+                  boxShadow: "inset 0 -8px 0 #c97700",
                 }}
               >
-                {/* Shine effect */}
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "8px",
-                    left: "20px",
-                    width: "40px",
-                    height: "10px",
-                    background: "rgba(255,255,255,0.95)",
-                    borderRadius: "20px",
-                    zIndex: 0,
-                  }}
-                />
                 {/* Glossy effect */}
                 <div
                   style={{
