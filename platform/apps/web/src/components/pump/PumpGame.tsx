@@ -10,8 +10,8 @@ import { api, fetcher } from "@/lib/api";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-type Mode     = "manual" | "auto";
-type Status   = "IDLE" | "ACTIVE" | "CASHED" | "POPPED";
+type Mode       = "manual" | "auto";
+type Status     = "IDLE" | "ACTIVE" | "CASHED" | "POPPED";
 type Difficulty = "EASY" | "MEDIUM" | "HARD" | "EXPERT" | "INSANE";
 
 interface ActiveSession {
@@ -36,7 +36,9 @@ const DIFFICULTIES: { value: Difficulty; label: string; color: string }[] = [
 const BET_SUGGESTIONS = [10, 50, 100, 500, 1000, 5000];
 
 function fmtMult(m: number)  { return `${m.toFixed(2)}×`; }
-function fmtMoney(n: number) { return `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
+function fmtMoney(n: number) {
+  return `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 function fmtShort(n: number) {
   if (n >= 1_00_000) return `₹${(n / 1_00_000).toFixed(1)}L`;
   if (n >= 1_000)    return `₹${(n / 1_000).toFixed(1)}K`;
@@ -127,22 +129,15 @@ function useSoundEngine() {
   return { playBet, playPump, playCashout, playPop };
 }
 
-// ── GameVisual: combined balloon + pump machine in a single SVG ───────────────
-//
-//  SVG viewBox: 0 0 320 480
-//  Nozzle tip (where balloon connects): y = 350
-//  Pump machine body:                   y = 380–470
-//  Piston housing:                      y = 358–383
-//  Piston rod top (T-handle):           y = 336–352
-//  Balloon grows upward from nozzle:    cy = 350 – radius
+// ── CSS Balloon + Machine visual ──────────────────────────────────────────────
 
 interface GameVisualProps {
   color: string;
-  scale: number;          // 1.0 → 1.6+
+  scale: number;
   pumping: boolean;
   popped: boolean;
   releasing: boolean;
-  showDeflated: boolean;  // IDLE or pumpsCount===0 but ACTIVE
+  showDeflated: boolean;
   pumpsCount: number;
   maxPumps: number;
   currentMult: number;
@@ -155,195 +150,235 @@ function GameVisual({
   showDeflated, pumpsCount, maxPumps,
   currentMult, status, lastWin,
 }: GameVisualProps) {
-
-  const NOZZLE_Y = 260;
-
-  // Balloon dimensions - loose/droopy appearance
-  // Instead of fully inflated, make it look like a loose bag
-  const inflatedR  = Math.min(20 + (scale - 1) * 170, 132);
-  const balloonRx  = showDeflated ? 38 : Math.min(inflatedR * 1.1, 145);  // wider horizontally
-  const balloonRy  = showDeflated ? 32 : Math.min(inflatedR * 0.85, 110); // shorter vertically (droopy)
-  const balloonCy  = NOZZLE_Y - balloonRy - 2; // bottom of balloon sits on nozzle
-  const knotCy     = balloonCy + balloonRy + 6;
-  const neckTop    = knotCy + 10;
-  const neckHeight = Math.max(2, NOZZLE_Y - neckTop - 2);
-
-  // For dots centering
+  const balloonW = showDeflated ? 90  : Math.min(120 + (scale - 1) * 190, 220);
+  const balloonH = showDeflated ? 70  : Math.min(148 + (scale - 1) * 190, 270);
   const dotCount = Math.min(8, maxPumps || 8);
-  const dotSpacing = 14;
-  const dotsStartX = 160 - ((dotCount - 1) * dotSpacing) / 2;
 
   return (
-    <svg
-      viewBox="0 0 320 480"
-      className="w-full max-w-[280px] sm:max-w-[340px] lg:max-w-[460px]"
-      style={{ height: "auto" }}
-    >
-      <defs>
-        <filter id="balloonGlow" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="8" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-        <filter id="greenGlow" x="-25%" y="-25%" width="150%" height="150%">
-          <feGaussianBlur stdDeviation="5" result="blur" />
-          <feColorMatrix type="matrix"
-            values="0 0 0 0 0.133  0 0 0 0 0.773  0 0 0 0 0.369  0 0 0 0.55 0"
-            in="blur" result="glow" />
-          <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-      </defs>
+    <div className="relative w-full h-full" style={{ minHeight: 400 }}>
 
-      {/* ── Balloon group (flies up on release) ── */}
-      {!popped && status !== "CASHED" && (
-        <motion.g
-          animate={releasing
-            ? { y: -420, opacity: 0, rotate: 12, scale: 1.22 }
-            : { y: 0,    opacity: 1, rotate: 0,  scale: 1    }}
-          style={{ transformOrigin: "160px 350px" }}
-          transition={releasing
-            ? { duration: 0.72, ease: [0.22, 0.61, 0.36, 1] }
-            : { type: "spring", stiffness: 115, damping: 13 }}
-        >
-          {/* Main balloon body */}
-          <motion.ellipse
-            cx="160"
-            animate={{ cy: balloonCy, rx: balloonRx, ry: balloonRy }}
-            fill={color}
-            filter="url(#balloonGlow)"
-            transition={{ type: "spring", stiffness: 115, damping: 13 }}
-          />
+      {/* Purple ambient glow */}
+      <div className="absolute pointer-events-none" style={{
+        top: -120, right: -80, width: 620, height: 620,
+        background: "radial-gradient(circle, rgba(77,0,255,0.16), transparent 68%)",
+        zIndex: 0,
+      }} />
 
-          {/* Upper-right shine (hidden when deflated) */}
-          {!showDeflated && (
-            <motion.ellipse
-              animate={{
-                cx: 160 + inflatedR * 0.3,
-                cy: balloonCy - inflatedR * 0.22,
-                rx: inflatedR * 0.21,
-                ry: inflatedR * 0.29,
-              }}
-              fill="white"
-              opacity={0.38}
-              style={{
-                transform: "rotate(-26deg)",
-                transformOrigin: `${160 + inflatedR * 0.3}px ${balloonCy - inflatedR * 0.22}px`,
-              }}
-              transition={{ type: "spring", stiffness: 115, damping: 13 }}
-            />
-          )}
+      {/* Current multiplier — top right */}
+      <div className="absolute select-none" style={{ top: 36, right: 36, textAlign: "right", zIndex: 2 }}>
+        <p style={{ color: "#8fb0c8", fontSize: 13, marginBottom: 2 }}>Current Multiplier</p>
+        <p style={{ color: "white", fontWeight: 900, fontSize: 50, lineHeight: 1, letterSpacing: "-0.02em" }}>
+          {currentMult.toFixed(2)}x
+        </p>
+      </div>
 
-          {/* Deflated balloon shine */}
-          {showDeflated && (
-            <ellipse cx="180" cy={balloonCy - 10} rx="15" ry="10"
-              fill="white" opacity="0.28" transform={`rotate(-22 180 ${balloonCy - 10})`} />
-          )}
-
-          {/* Knot */}
-          <motion.ellipse
-            cx="160"
-            animate={{ cy: knotCy, rx: 10, ry: 7 }}
-            fill={color}
-            transition={{ type: "spring", stiffness: 115, damping: 13 }}
-          />
-
-          {/* Neck connecting to nozzle */}
-          <motion.rect
-            x="156" width="8" rx="3" fill="#4a5568"
-            animate={{ y: neckTop, height: neckHeight }}
-            transition={{ type: "spring", stiffness: 115, damping: 13 }}
-          />
-
-          {/* Multiplier text — centered on balloon */}
-          {!showDeflated && (
-            <text
-              x="160"
-              y={balloonCy}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill="white"
-              fontWeight="900"
-              fontSize={Math.round(Math.min(28 + inflatedR * 0.12, 40))}
-              style={{ userSelect: "none", fontFamily: "inherit" }}
+      {/* Balloon area — horizontally centered */}
+      <div className="absolute" style={{ bottom: 175, left: "50%", transform: "translateX(-50%)", zIndex: 2 }}>
+        <AnimatePresence>
+          {!popped && status !== "CASHED" && (
+            <motion.div
+              key="balloon"
+              animate={
+                releasing
+                  ? { y: -380, opacity: 0, rotate: 12, scale: 1.18 }
+                  : pumping
+                  ? { y: [0, -8, 0] }
+                  : { y: [0, -13, 0, -13, 0] }
+              }
+              transition={
+                releasing
+                  ? { duration: 0.7, ease: [0.22, 0.61, 0.36, 1] }
+                  : pumping
+                  ? { duration: 0.22, ease: "easeInOut" }
+                  : { duration: 2.4, repeat: Infinity, ease: "easeInOut" }
+              }
             >
-              {currentMult.toFixed(2)}x
-            </text>
+              {/* Balloon body */}
+              <div style={{
+                width: balloonW,
+                height: balloonH,
+                background: color,
+                borderRadius: "50% 50% 48% 48%",
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: `0 0 ${showDeflated ? 14 : 46}px ${color}60`,
+                transition: "width 0.18s linear, height 0.18s linear, box-shadow 0.18s",
+              }}>
+                {/* Shine */}
+                {!showDeflated && (
+                  <div style={{
+                    position: "absolute",
+                    width: "22%", height: "28%",
+                    background: "rgba(255,255,255,0.55)",
+                    borderRadius: "50%",
+                    right: "18%", top: "14%",
+                    filter: "blur(1.5px)",
+                    transform: "rotate(-26deg)",
+                  }} />
+                )}
+
+                {/* Multiplier label */}
+                {!showDeflated && (
+                  <span style={{
+                    color: "rgba(255,255,255,0.82)",
+                    fontWeight: 900,
+                    fontSize: Math.round(Math.min(20 + balloonW * 0.09, 36)),
+                    letterSpacing: "-0.02em",
+                    transform: "rotate(8deg)",
+                    userSelect: "none",
+                    position: "relative",
+                    zIndex: 1,
+                  }}>
+                    {currentMult.toFixed(2)}x
+                  </span>
+                )}
+
+                {/* Knot */}
+                <div style={{
+                  position: "absolute",
+                  bottom: -12, left: "50%", transform: "translateX(-50%)",
+                  width: 28, height: 15,
+                  background: color,
+                  borderRadius: "50%",
+                }} />
+              </div>
+            </motion.div>
           )}
-        </motion.g>
-      )}
+        </AnimatePresence>
 
-      {/* ── Pop explosion ── */}
-      {popped && (
-        <motion.text
-          x="160" y="280" textAnchor="middle" fontSize="80"
-          initial={{ scale: 0 }} animate={{ scale: 1 }}
-          style={{ transformOrigin: "160px 280px" }}
+        {/* Pop explosion */}
+        {popped && (
+          <motion.div
+            initial={{ scale: 0 }} animate={{ scale: 1 }}
+            style={{ fontSize: 82, textAlign: "center", width: 120, lineHeight: 1 }}
+          >💥</motion.div>
+        )}
+
+        {/* Cashout win box */}
+        {status === "CASHED" && lastWin && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 220, damping: 20 }}
+            style={{
+              background: "rgba(34,197,94,0.11)",
+              border: "2.5px solid #22C55E",
+              borderRadius: 20,
+              padding: "22px 44px",
+              textAlign: "center",
+              minWidth: 200,
+            }}
+          >
+            <div style={{ color: "#22C55E", fontWeight: 900, fontSize: 38 }}>
+              {lastWin.mult.toFixed(2)}×
+            </div>
+            <div style={{ color: "#86efac", fontWeight: 600, fontSize: 17, marginTop: 6 }}>
+              {fmtMoney(lastWin.payout)}
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Neck / pipe connecting balloon to pump */}
+      <div className="absolute" style={{
+        bottom: 148, left: "50%", transform: "translateX(-50%)",
+        width: 22, height: 30,
+        background: "#2c4454",
+        borderRadius: "0 0 8px 8px",
+        zIndex: 2,
+      }} />
+
+      {/* Pipe vertical */}
+      <div className="absolute" style={{
+        bottom: 172, left: "50%", transform: "translateX(-50%)",
+        width: 22, height: 70,
+        background: "#2c4454",
+        borderRadius: 20,
+        zIndex: 1,
+      }}>
+        {/* Pipe cap */}
+        <div style={{
+          position: "absolute", top: -10, left: -6,
+          width: 34, height: 20,
+          background: "#2c4454",
+          borderRadius: "50%",
+        }} />
+      </div>
+
+      {/* Pump base box */}
+      <div className="absolute" style={{
+        bottom: 82, left: "calc(50% + 28px)",
+        width: 105, height: 95,
+        background: "#223847",
+        borderRadius: 18,
+        zIndex: 2,
+      }}>
+        {/* Animated piston handle */}
+        <motion.div
+          animate={{ y: pumping ? [0, 18, 0] : 0 }}
+          transition={{ duration: 0.22, ease: "easeInOut" }}
+          style={{ position: "absolute", top: -30, left: "50%", transform: "translateX(-50%)" }}
         >
-          💥
-        </motion.text>
-      )}
+          {/* T-grip */}
+          <div style={{ width: 30, height: 10, background: "#3d5a75", borderRadius: 6, marginLeft: -4 }} />
+          {/* Rod */}
+          <div style={{ width: 22, height: 26, background: "#2d4659", borderRadius: "0 0 6px 6px", margin: "0 auto" }} />
+        </motion.div>
 
-      {/* ── Cashout result box ── */}
-      {status === "CASHED" && lastWin && (
-        <motion.g
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          style={{ transformOrigin: "160px 250px" }}
-          transition={{ type: "spring", stiffness: 200, damping: 20 }}
-        >
-          <rect x="55" y="185" width="210" height="130" rx="20"
-            fill="rgba(34,197,94,0.11)" stroke="#22C55E" strokeWidth="2.5"
-            filter="url(#greenGlow)" />
-          <text x="160" y="232" textAnchor="middle" fill="#22C55E"
-            fontWeight="900" fontSize="36" style={{ fontFamily: "inherit" }}>
-            {lastWin.mult.toFixed(2)}×
-          </text>
-          <text x="160" y="278" textAnchor="middle" fill="#86efac"
-            fontSize="17" fontWeight="600" style={{ fontFamily: "inherit" }}>
-            {fmtMoney(lastWin.payout)}
-          </text>
-        </motion.g>
-      )}
+        {/* Pump dot progress */}
+        <div className="flex gap-1.5 absolute" style={{ bottom: 12, left: "50%", transform: "translateX(-50%)" }}>
+          {Array.from({ length: dotCount }).map((_, i) => (
+            <div key={i} style={{
+              width: 8, height: 8, borderRadius: "50%",
+              background: pumpsCount > i ? color : "rgba(255,255,255,0.14)",
+              transition: "background 0.15s",
+            }} />
+          ))}
+        </div>
+      </div>
 
-      {/* ── Pump machine (centered) ── */}
+      {/* Machine body */}
+      <div className="absolute" style={{
+        bottom: 82,
+        left: "calc(50% - 148px)",
+        width: 132, height: 95,
+        background: "#233a49",
+        borderRadius: 28,
+        zIndex: 2,
+      }}>
+        {/* Machine arm connecting to pipe */}
+        <div style={{
+          position: "absolute",
+          right: -60, bottom: 0,
+          width: 60, height: 36,
+          background: "#233a49",
+          borderRadius: "0 0 0 0",
+        }} />
+        {/* Status lights */}
+        <div className="flex gap-3 absolute" style={{ left: 22, top: 36 }}>
+          {[false, false, true, false].map((lit, i) => (
+            <div key={i} style={{
+              width: 13, height: 13, borderRadius: "50%",
+              background: lit ? "#ff005d" : "#09141e",
+              boxShadow: lit ? "0 0 9px #ff005d" : "none",
+              transition: "background 0.3s",
+            }} />
+          ))}
+        </div>
+      </div>
 
-      {/* Nozzle pipe outer (from balloon to pump) */}
-      <rect x="245" y="265" width="20" height="100" rx="10" fill="none" stroke="#3d5a75" strokeWidth="3" />
+      {/* Ground platform */}
+      <div className="absolute" style={{
+        bottom: 44, left: "50%", transform: "translateX(-50%)",
+        width: "72%", maxWidth: 540, height: 24,
+        background: "#223847",
+        borderRadius: 40,
+        zIndex: 1,
+      }} />
 
-      {/* Nozzle pipe inner (visible fluid path) */}
-      <rect x="251" y="270" width="8" height="90" rx="4" fill="#4a7a99" opacity="0.8" />
-
-      {/* Pump base platform */}
-      <rect x="180" y="365" width="140" height="70" rx="12" fill="#1a2d3d" />
-      <rect x="185" y="368" width="130" height="8" rx="4" fill="rgba(255,255,255,0.04)" />
-
-      {/* Pump body (cylinder - larger) */}
-      <rect x="195" y="380" width="110" height="50" rx="8" fill="#253d51" stroke="#3d5a75" strokeWidth="2" />
-      <rect x="200" y="385" width="100" height="9" rx="3" fill="rgba(255,255,255,0.1)" />
-
-      {/* Pump inlet (connection point) */}
-      <circle cx="250" cy="380" r="9" fill="#2d4659" stroke="#4a7a99" strokeWidth="2" />
-
-      {/* Pump handle (piston rod - animates on pump) */}
-      <motion.g
-        animate={{ y: pumping ? [0, 18, 0] : 0 }}
-        transition={{ duration: 0.22, ease: "easeInOut" }}
-      >
-        <rect x="243" y="365" width="14" height="32" rx="5" fill="#2d4659" stroke="#3d5a75" strokeWidth="1" />
-        <rect x="238" y="357" width="24" height="12" rx="4" fill="#3d5a75" />
-        <circle cx="250" cy="363" r="4" fill="#4a6a88" />
-      </motion.g>
-
-      {/* Pump count dots — on base platform */}
-      {Array.from({ length: dotCount }).map((_, i) => (
-        <circle key={i}
-          cx={200 + i * 12}
-          cy="405"
-          r="4"
-          fill={pumpsCount > i ? color : "rgba(255,255,255,0.14)"}
-        />
-      ))}
-
-    </svg>
+    </div>
   );
 }
 
@@ -534,15 +569,24 @@ export function PumpGame() {
   const canBet  = status === "IDLE"   && busy === "none";
   const showDeflated = status === "IDLE" || (status === "ACTIVE" && session?.pumpsCount === 0);
 
+  // Sidebar button shared styles
+  const inputBox = {
+    background: "#132737",
+    border: "1px solid rgba(255,255,255,0.06)",
+    borderRadius: 14,
+  } as const;
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="h-[100dvh] w-full flex flex-col bg-[#0f212e] overflow-hidden">
+    <div className="h-[100dvh] w-full flex flex-col overflow-hidden"
+      style={{ background: "linear-gradient(135deg, #07111d, #0b1c2a)", fontFamily: "Inter, sans-serif" }}>
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-[#0a1922] flex-shrink-0">
-        <Link href="/" className="flex items-center gap-1.5 text-white/60 hover:text-white">
+      <div className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+        style={{ background: "#081420", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+        <Link href="/" className="flex items-center gap-1.5 text-white/60 hover:text-white transition">
           <ArrowLeft size={16} />
-          <span className="hidden sm:inline text-xs">Back</span>
+          <span className="hidden sm:inline text-xs font-semibold">Back</span>
         </Link>
         <div className="lg:hidden flex items-center gap-1.5">
           <Wallet size={12} className="text-white/40" />
@@ -552,7 +596,7 @@ export function PumpGame() {
         </div>
         <div className="flex items-center gap-2 text-white/40">
           <Shield size={12} />
-          <span className="text-[10px] uppercase tracking-wider">Pump</span>
+          <span className="text-[10px] uppercase tracking-wider font-semibold">Pump</span>
           {session?.serverSeedHash && (
             <span className="text-white/20 text-[9px] hidden sm:inline">{session.serverSeedHash.slice(0, 8)}…</span>
           )}
@@ -564,7 +608,7 @@ export function PumpGame() {
         {toast && (
           <motion.div
             initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-            className="absolute top-14 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg text-sm font-semibold shadow-2xl whitespace-nowrap"
+            className="absolute top-14 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl text-sm font-bold shadow-2xl whitespace-nowrap"
             style={{
               background: toast.ok ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
               border: `1px solid ${toast.ok ? "rgba(34,197,94,0.4)" : "rgba(239,68,68,0.4)"}`,
@@ -578,129 +622,148 @@ export function PumpGame() {
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
 
         {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
-        <div className="hidden lg:flex w-[340px] flex-shrink-0 flex-col p-5 bg-[#0f212e] border-r border-white/5 overflow-y-auto">
-          <div className="rounded-2xl bg-[#1a2c38] p-4 flex flex-col gap-4">
+        <div className="hidden lg:flex w-[360px] flex-shrink-0 flex-col p-6 overflow-y-auto"
+          style={{ background: "#102433", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
 
-            <div className="flex items-center justify-between rounded-lg bg-[#0f212e] px-3 py-2.5 border border-white/5">
-              <div className="flex items-center gap-2 text-white/60">
-                <Wallet size={14} />
-                <span className="text-xs font-semibold uppercase tracking-wider">Balance</span>
-              </div>
-              <span className="text-sm font-bold text-emerald-400 tabular-nums">
-                {user ? fmtMoney(balance) : "—"}
+          {/* Balance strip */}
+          <div className="flex items-center justify-between rounded-xl px-4 py-3 mb-5"
+            style={{ background: "#0c1824", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="flex items-center gap-2 text-white/60">
+              <Wallet size={14} />
+              <span className="text-xs font-semibold uppercase tracking-wider">Balance</span>
+            </div>
+            <span className="text-sm font-bold text-emerald-400 tabular-nums">
+              {user ? fmtMoney(balance) : "—"}
+            </span>
+          </div>
+
+          {/* Mode tabs */}
+          <div className="flex rounded-full p-1 mb-5" style={{ background: "#0c1824" }}>
+            {(["manual", "auto"] as Mode[]).map(m => (
+              <button key={m} onClick={() => setMode(m)}
+                className="flex-1 py-3 rounded-full text-sm font-bold capitalize transition"
+                style={{
+                  background: mode === m ? "#1e3346" : "transparent",
+                  color: mode === m ? "white" : "rgba(141,167,191,1)",
+                }}>{m}</button>
+            ))}
+          </div>
+
+          {/* Bet amount */}
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-semibold" style={{ color: "#dce8f4" }}>Bet Amount</label>
+              <span className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>
+                Min {fmtMoney(minBet)} · Max {fmtMoney(maxBet)}
               </span>
             </div>
-
-            <div className="flex items-center bg-[#0f212e] rounded-full p-1">
-              {(["manual", "auto"] as Mode[]).map(m => (
-                <button key={m} onClick={() => setMode(m)}
-                  className={`flex-1 py-2 rounded-full text-sm font-semibold capitalize transition ${mode === m ? "bg-[#2f4553] text-white" : "text-white/50 hover:text-white"}`}
-                >{m}</button>
+            <div className="flex items-stretch h-14 rounded-2xl" style={inputBox}>
+              <div className="flex items-center pl-4 flex-1">
+                <span className="text-emerald-400 font-bold mr-1">₹</span>
+                <input type="text" inputMode="decimal" value={betAmount}
+                  onChange={e => setBetAmount(e.target.value.replace(/[^\d.]/g, ""))}
+                  disabled={status === "ACTIVE"}
+                  className="bg-transparent outline-none text-white font-semibold flex-1 min-w-0 disabled:opacity-60" />
+              </div>
+              <button onClick={() => setBetAmount(v => String(Math.max(minBet, Math.floor((parseFloat(v)||0)/2))))}
+                disabled={status === "ACTIVE"}
+                className="px-4 text-sm font-bold transition disabled:opacity-40"
+                style={{ color: "#b6d2ea", background: "#203748", borderLeft: "1px solid rgba(255,255,255,0.06)" }}>½</button>
+              <button onClick={() => setBetAmount(v => String(Math.min(maxBet, Math.floor((parseFloat(v)||0)*2))))}
+                disabled={status === "ACTIVE"}
+                className="px-4 text-sm font-bold rounded-r-2xl transition disabled:opacity-40"
+                style={{ color: "#b6d2ea", background: "#203748", borderLeft: "1px solid rgba(255,255,255,0.06)" }}>2×</button>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5 mt-2">
+              {BET_SUGGESTIONS.map(v => (
+                <button key={v} onClick={() => setBetAmount(String(v))} disabled={status === "ACTIVE"}
+                  className="py-2 rounded-xl text-xs font-bold transition disabled:opacity-40"
+                  style={{ background: "#0c1824", border: "1px solid rgba(255,255,255,0.06)", color: "#8da7bf" }}>
+                  ₹{v >= 1000 ? `${v/1000}K` : v}
+                </button>
               ))}
             </div>
+          </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs text-white/60 font-semibold">Bet Amount</label>
-                <span className="text-xs text-white/35">Min {fmtMoney(minBet)} · Max {fmtMoney(maxBet)}</span>
+          {/* Difficulty */}
+          <div className="mb-5">
+            <label className="text-sm font-semibold block mb-2" style={{ color: "#dce8f4" }}>Difficulty</label>
+            <div className="flex gap-1.5">
+              {DIFFICULTIES.map(d => (
+                <button key={d.value} onClick={() => setDifficulty(d.value)} disabled={status === "ACTIVE"}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold transition disabled:opacity-40"
+                  style={{
+                    background:  difficulty === d.value ? `${d.color}22` : "#0c1824",
+                    border:      `1px solid ${difficulty === d.value ? d.color : "rgba(255,255,255,0.07)"}`,
+                    color:       difficulty === d.value ? d.color : "rgba(255,255,255,0.5)",
+                  }}>{d.label}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Auto extras */}
+          {mode === "auto" && (
+            <div className="grid grid-cols-2 gap-2 mb-5">
+              <div>
+                <label className="text-xs font-semibold block mb-1.5" style={{ color: "#8da7bf" }}>No. of Bets</label>
+                <input type="number" min={1} value={autoBets} onChange={e => setAutoBets(e.target.value)}
+                  disabled={autoRunning}
+                  className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none disabled:opacity-60"
+                  style={{ background: "#0c1824", border: "1px solid rgba(255,255,255,0.06)" }} />
               </div>
-              <div className="flex items-stretch gap-1 bg-[#0f212e] rounded-lg border border-white/5">
-                <div className="flex items-center pl-3 flex-1">
-                  <span className="text-emerald-400 font-bold text-sm mr-1">₹</span>
-                  <input type="text" inputMode="decimal" value={betAmount}
-                    onChange={e => setBetAmount(e.target.value.replace(/[^\d.]/g, ""))}
-                    disabled={status === "ACTIVE"}
-                    className="bg-transparent outline-none text-white text-sm font-semibold flex-1 min-w-0 py-2.5 disabled:opacity-60" />
-                </div>
-                <button onClick={() => setBetAmount(v => String(Math.max(minBet, Math.floor((parseFloat(v)||0)/2))))}
-                  disabled={status === "ACTIVE"}
-                  className="px-3 text-xs font-bold text-white/70 hover:text-white border-l border-white/5 disabled:opacity-40">½</button>
-                <button onClick={() => setBetAmount(v => String(Math.min(maxBet, Math.floor((parseFloat(v)||0)*2))))}
-                  disabled={status === "ACTIVE"}
-                  className="px-3 text-xs font-bold text-white/70 hover:text-white border-l border-white/5 disabled:opacity-40">2×</button>
-              </div>
-              <div className="grid grid-cols-3 gap-1.5 mt-2">
-                {BET_SUGGESTIONS.map(v => (
-                  <button key={v} onClick={() => setBetAmount(String(v))} disabled={status === "ACTIVE"}
-                    className="py-1.5 rounded-md text-[11px] font-bold transition bg-[#0f212e] border border-white/5 hover:border-emerald-500/40 hover:text-emerald-400 text-white/70 disabled:opacity-40">
-                    ₹{v >= 1000 ? `${v/1000}K` : v}
-                  </button>
-                ))}
+              <div>
+                <label className="text-xs font-semibold block mb-1.5" style={{ color: "#8da7bf" }}>Cash After Pumps</label>
+                <input type="number" min={1} value={autoCashAt} onChange={e => setAutoCashAt(e.target.value)}
+                  disabled={autoRunning}
+                  className="w-full rounded-xl px-3 py-2.5 text-sm text-white outline-none disabled:opacity-60"
+                  style={{ background: "#0c1824", border: "1px solid rgba(255,255,255,0.06)" }} />
               </div>
             </div>
+          )}
 
-            <div>
-              <label className="text-xs text-white/60 font-semibold block mb-1.5">Difficulty</label>
-              <div className="flex gap-1.5">
-                {DIFFICULTIES.map(d => (
-                  <button key={d.value} onClick={() => setDifficulty(d.value)} disabled={status === "ACTIVE"}
-                    className="flex-1 py-2 rounded-lg text-[11px] font-bold transition border disabled:opacity-40"
-                    style={{
-                      background:  difficulty === d.value ? `${d.color}22` : "#0f212e",
-                      borderColor: difficulty === d.value ? d.color : "rgba(255,255,255,0.07)",
-                      color:       difficulty === d.value ? d.color : "rgba(255,255,255,0.5)",
-                    }}>{d.label}</button>
-                ))}
-              </div>
-            </div>
-
-            {mode === "auto" && (
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[11px] text-white/60 font-semibold block mb-1">No. of Bets</label>
-                  <input type="number" min={1} value={autoBets} onChange={e => setAutoBets(e.target.value)}
-                    disabled={autoRunning}
-                    className="w-full bg-[#0f212e] border border-white/5 rounded-lg px-3 py-2 text-sm text-white outline-none disabled:opacity-60" />
-                </div>
-                <div>
-                  <label className="text-[11px] text-white/60 font-semibold block mb-1">Cash After Pumps</label>
-                  <input type="number" min={1} value={autoCashAt} onChange={e => setAutoCashAt(e.target.value)}
-                    disabled={autoRunning}
-                    className="w-full bg-[#0f212e] border border-white/5 rounded-lg px-3 py-2 text-sm text-white outline-none disabled:opacity-60" />
-                </div>
-              </div>
-            )}
-
-            {mode === "manual" ? (
-              <>
-                <button onClick={cashout} disabled={!canCash}
-                  className="w-full py-3 rounded-lg font-bold text-sm transition disabled:cursor-not-allowed"
-                  style={{ background: canCash ? "#1d75ff" : "#2f4553", color: canCash ? "#fff" : "rgba(255,255,255,0.35)" }}>
-                  {canCash ? `Cashout ${fmtMult(currentMult)}` : "Cashout"}
+          {/* Action buttons */}
+          {mode === "manual" ? (
+            <>
+              <button onClick={cashout} disabled={!canCash}
+                className="w-full h-14 rounded-2xl font-bold text-lg mb-3 transition hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
+                style={{ background: canCash ? "#1f7ae0" : "#1e3346", color: "white" }}>
+                {canCash ? `Cashout  ${fmtMult(currentMult)}` : "Cashout"}
+              </button>
+              {status === "ACTIVE" ? (
+                <button onClick={pumpOnce} disabled={!canPump}
+                  className="w-full h-14 rounded-2xl font-bold text-lg transition hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
+                  style={{ background: canPump ? "#324c5a" : "#1e3346", color: "white" }}>
+                  {busy === "pump" ? "Pumping…" : "🎈  Pump"}
                 </button>
-                {status === "ACTIVE" ? (
-                  <button onClick={pumpOnce} disabled={!canPump}
-                    className="w-full py-3 rounded-lg font-bold text-sm bg-emerald-500 hover:bg-emerald-400 text-white disabled:opacity-50">
-                    {busy === "pump" ? "Pumping…" : "Pump"}
-                  </button>
-                ) : (
-                  <button onClick={placeBet} disabled={!canBet}
-                    className="w-full py-3 rounded-lg font-bold text-sm bg-emerald-500 hover:bg-emerald-400 text-white disabled:opacity-50">
-                    {(busy as string) === "bet" ? "Placing…" : "Bet"}
-                  </button>
-                )}
-              </>
-            ) : !autoRunning ? (
-              <button onClick={startAuto} disabled={status === "ACTIVE"}
-                className="w-full py-3 rounded-lg font-bold text-sm bg-emerald-500 hover:bg-emerald-400 text-white disabled:opacity-50">
-                Start Auto Bet
-              </button>
-            ) : (
-              <button onClick={() => setAutoRunning(false)}
-                className="w-full py-3 rounded-lg font-bold text-sm bg-red-500 hover:bg-red-400 text-white">
-                Stop ({autoRunCount.current}/{autoTargetRef.current})
-              </button>
-            )}
+              ) : (
+                <button onClick={placeBet} disabled={!canBet}
+                  className="w-full h-14 rounded-2xl font-bold text-lg bg-emerald-500 hover:bg-emerald-400 text-white transition hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0">
+                  {busy === "bet" ? "Placing…" : "Bet"}
+                </button>
+              )}
+            </>
+          ) : !autoRunning ? (
+            <button onClick={startAuto} disabled={status === "ACTIVE"}
+              className="w-full h-14 rounded-2xl font-bold text-lg bg-emerald-500 hover:bg-emerald-400 text-white transition disabled:opacity-50">
+              Start Auto Bet
+            </button>
+          ) : (
+            <button onClick={() => setAutoRunning(false)}
+              className="w-full h-14 rounded-2xl font-bold text-lg bg-red-500 hover:bg-red-400 text-white transition">
+              Stop ({autoRunCount.current}/{autoTargetRef.current})
+            </button>
+          )}
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs text-white/60 font-semibold">Profit ({fmtMult(currentMult)})</label>
-                <span className="text-xs text-white/40">{fmtMoney(profit)}</span>
-              </div>
-              <div className="flex items-center px-3 bg-[#0f212e] rounded-lg border border-white/5 py-2.5">
-                <span className="text-emerald-400 font-bold text-sm mr-1">₹</span>
-                <span className="flex-1 text-white text-sm font-semibold tabular-nums">{profit.toFixed(2)}</span>
-              </div>
+          {/* Profit */}
+          <div className="mt-5">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-semibold" style={{ color: "#dce8f4" }}>
+                Total Profit <span style={{ color: "#8da7bf" }}>({fmtMult(currentMult)})</span>
+              </label>
+            </div>
+            <div className="flex items-center h-14 rounded-2xl px-4" style={inputBox}>
+              <span className="text-emerald-400 font-bold mr-1">₹</span>
+              <span className="flex-1 text-white font-bold tabular-nums">{profit.toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -708,10 +771,10 @@ export function PumpGame() {
         {/* ── Game area ──────────────────────────────────────────────────── */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
 
-          {/* Balloon + pump stage */}
+          {/* Balloon stage */}
           <div
-            className="flex-1 flex items-center justify-center min-h-0 py-2 transition-all duration-300"
-            style={betFlash ? { boxShadow: "inset 0 0 60px 10px rgba(34,197,94,0.14)" } : undefined}
+            className="flex-1 min-h-0 relative transition-all duration-300"
+            style={betFlash ? { boxShadow: "inset 0 0 60px 12px rgba(34,197,94,0.12)" } : undefined}
           >
             <GameVisual
               color={balloonColor}
@@ -729,16 +792,16 @@ export function PumpGame() {
           </div>
 
           {/* Multiplier chips */}
-          <div className="px-3 pb-1 pt-0.5 flex-shrink-0">
+          <div className="px-3 pb-1 pt-1 flex-shrink-0">
             <div className="flex gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden">
               {!tableLoaded && <div className="text-xs text-white/40 px-2 py-2.5">Loading…</div>}
               {tableLoaded && chipMults.map((c, i) => (
                 <div key={i}
-                  className="flex-shrink-0 px-3 py-2 rounded-lg text-xs font-bold tabular-nums transition-all"
+                  className="flex-shrink-0 px-3 py-2 rounded-xl text-xs font-bold tabular-nums transition-all"
                   style={{
-                    background: c.isCurrent ? "#22C55E" : "#2f4553",
-                    color:      c.isCurrent ? "#fff"    : "rgba(255,255,255,0.75)",
-                    minWidth: 56, textAlign: "center",
+                    background: c.isCurrent ? balloonColor : "#1e3346",
+                    color:      c.isCurrent ? "#fff" : "rgba(255,255,255,0.65)",
+                    minWidth: 58, textAlign: "center",
                   }}>{c.mult.toFixed(2)}×</div>
               ))}
             </div>
@@ -746,114 +809,123 @@ export function PumpGame() {
 
           {/* ── Mobile controls ──────────────────────────────────────────── */}
           <div className="lg:hidden flex-shrink-0 px-3 pb-1">
-            <div className="bg-[#1a2c38] rounded-2xl p-3 flex flex-col gap-2.5">
+            <div className="rounded-2xl p-3 flex flex-col gap-2.5"
+              style={{ background: "#102433" }}>
 
               {/* Mode + Difficulty row */}
               <div className="flex items-center gap-2">
-                <div className="flex items-center bg-[#0f212e] rounded-full p-0.5 flex-shrink-0">
+                <div className="flex items-center rounded-full p-0.5 flex-shrink-0"
+                  style={{ background: "#0c1824" }}>
                   {(["manual", "auto"] as Mode[]).map(m => (
                     <button key={m} onClick={() => setMode(m)}
-                      className={`px-3 py-1.5 rounded-full text-[11px] font-bold capitalize transition ${mode === m ? "bg-[#2f4553] text-white" : "text-white/40"}`}
+                      className="px-3 py-1.5 rounded-full text-[11px] font-bold capitalize transition"
+                      style={{ background: mode === m ? "#1e3346" : "transparent", color: mode === m ? "white" : "#8da7bf" }}
                     >{m}</button>
                   ))}
                 </div>
                 <div className="flex gap-1 flex-1 overflow-x-auto [&::-webkit-scrollbar]:hidden">
                   {DIFFICULTIES.map(d => (
                     <button key={d.value} onClick={() => setDifficulty(d.value)} disabled={status === "ACTIVE"}
-                      className="flex-shrink-0 px-2 py-1.5 rounded-lg text-[10px] font-bold transition border disabled:opacity-40"
+                      className="flex-shrink-0 px-2 py-1.5 rounded-lg text-[10px] font-bold transition disabled:opacity-40"
                       style={{
-                        background:  difficulty === d.value ? `${d.color}22` : "#0f212e",
-                        borderColor: difficulty === d.value ? d.color : "rgba(255,255,255,0.07)",
+                        background:  difficulty === d.value ? `${d.color}22` : "#0c1824",
+                        border:      `1px solid ${difficulty === d.value ? d.color : "rgba(255,255,255,0.07)"}`,
                         color:       difficulty === d.value ? d.color : "rgba(255,255,255,0.4)",
                       }}>{d.label}</button>
                   ))}
                 </div>
               </div>
 
-              {/* Auto extras */}
               {mode === "auto" && (
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <label className="text-[10px] text-white/50 font-semibold block mb-0.5">Bets</label>
+                    <label className="text-[10px] font-semibold block mb-0.5" style={{ color: "#8da7bf" }}>Bets</label>
                     <input type="number" min={1} value={autoBets} onChange={e => setAutoBets(e.target.value)}
                       disabled={autoRunning}
-                      className="w-full bg-[#0f212e] border border-white/5 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none disabled:opacity-60" />
+                      className="w-full rounded-lg px-2.5 py-1.5 text-xs text-white outline-none disabled:opacity-60"
+                      style={{ background: "#0c1824", border: "1px solid rgba(255,255,255,0.06)" }} />
                   </div>
                   <div className="flex-1">
-                    <label className="text-[10px] text-white/50 font-semibold block mb-0.5">Cash at pump #</label>
+                    <label className="text-[10px] font-semibold block mb-0.5" style={{ color: "#8da7bf" }}>Cash at pump #</label>
                     <input type="number" min={1} value={autoCashAt} onChange={e => setAutoCashAt(e.target.value)}
                       disabled={autoRunning}
-                      className="w-full bg-[#0f212e] border border-white/5 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none disabled:opacity-60" />
+                      className="w-full rounded-lg px-2.5 py-1.5 text-xs text-white outline-none disabled:opacity-60"
+                      style={{ background: "#0c1824", border: "1px solid rgba(255,255,255,0.06)" }} />
                   </div>
                 </div>
               )}
 
               {/* Bet amount */}
-              <div className="flex items-stretch gap-1 bg-[#0f212e] rounded-xl border border-white/5">
-                <div className="flex items-center pl-3 flex-1">
-                  <span className="text-emerald-400 font-bold text-sm mr-1">₹</span>
+              <div className="flex items-stretch h-14 rounded-2xl" style={inputBox}>
+                <div className="flex items-center pl-4 flex-1">
+                  <span className="text-emerald-400 font-bold mr-1">₹</span>
                   <input type="text" inputMode="decimal" value={betAmount}
                     onChange={e => setBetAmount(e.target.value.replace(/[^\d.]/g, ""))}
                     disabled={status === "ACTIVE"}
-                    className="bg-transparent outline-none text-white text-sm font-semibold flex-1 min-w-0 py-2.5 disabled:opacity-60" />
+                    className="bg-transparent outline-none text-white font-semibold flex-1 min-w-0 disabled:opacity-60" />
                 </div>
                 <button onClick={() => setBetAmount(v => String(Math.max(minBet, Math.floor((parseFloat(v)||0)/2))))}
                   disabled={status === "ACTIVE"}
-                  className="px-3 text-xs font-bold text-white/60 hover:text-white border-l border-white/5 disabled:opacity-40">½</button>
+                  className="px-3 text-xs font-bold transition disabled:opacity-40"
+                  style={{ color: "#b6d2ea", background: "#203748", borderLeft: "1px solid rgba(255,255,255,0.06)" }}>½</button>
                 <button onClick={() => setBetAmount(v => String(Math.min(maxBet, Math.floor((parseFloat(v)||0)*2))))}
                   disabled={status === "ACTIVE"}
-                  className="px-3 text-xs font-bold text-white/60 hover:text-white border-l border-white/5 disabled:opacity-40">2×</button>
+                  className="px-3 text-xs font-bold rounded-r-2xl transition disabled:opacity-40"
+                  style={{ color: "#b6d2ea", background: "#203748", borderLeft: "1px solid rgba(255,255,255,0.06)" }}>2×</button>
               </div>
 
               {/* Quick bets */}
               <div className="grid grid-cols-6 gap-1">
                 {BET_SUGGESTIONS.map(v => (
                   <button key={v} onClick={() => setBetAmount(String(v))} disabled={status === "ACTIVE"}
-                    className="py-1.5 rounded-lg text-[10px] font-bold transition bg-[#0f212e] border border-white/5 hover:border-emerald-500/40 hover:text-emerald-400 text-white/60 disabled:opacity-40">
+                    className="py-1.5 rounded-lg text-[10px] font-bold transition disabled:opacity-40"
+                    style={{ background: "#0c1824", border: "1px solid rgba(255,255,255,0.07)", color: "#8da7bf" }}>
                     {v >= 1000 ? `${v/1000}K` : v}
                   </button>
                 ))}
               </div>
 
-              {/* Profit strip when active */}
               {status === "ACTIVE" && (
-                <div className="flex items-center justify-between px-3 py-1.5 bg-[#0f212e] rounded-lg border border-white/5">
-                  <span className="text-[11px] text-white/50 font-semibold">Profit {fmtMult(currentMult)}</span>
-                  <span className="text-[11px] font-bold text-emerald-400 tabular-nums">{fmtMoney(profit)}</span>
+                <div className="flex items-center justify-between px-3 py-2 rounded-xl"
+                  style={{ background: "#0c1824", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <span className="text-xs font-semibold" style={{ color: "#8da7bf" }}>Profit {fmtMult(currentMult)}</span>
+                  <span className="text-xs font-bold text-emerald-400 tabular-nums">{fmtMoney(profit)}</span>
                 </div>
               )}
             </div>
           </div>
 
           {/* ── Mobile sticky action buttons ─────────────────────────────── */}
-          <div className="lg:hidden flex-shrink-0 px-3 py-2.5 bg-[#0f212e] border-t border-white/5">
+          <div className="lg:hidden flex-shrink-0 px-3 py-3"
+            style={{ background: "#081420", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
             {mode === "manual" ? (
               <div className="flex gap-2">
                 <button onClick={cashout} disabled={!canCash}
-                  className="flex-1 py-3.5 rounded-xl font-bold text-sm transition active:scale-95 disabled:cursor-not-allowed"
-                  style={{ background: canCash ? "#1d75ff" : "#1e3040", color: canCash ? "#fff" : "rgba(255,255,255,0.25)" }}>
+                  className="flex-1 py-4 rounded-2xl font-bold text-sm transition active:scale-95 disabled:cursor-not-allowed"
+                  style={{ background: canCash ? "#1f7ae0" : "#1e3346", color: canCash ? "#fff" : "rgba(255,255,255,0.25)" }}>
                   {canCash ? `💰 ${fmtMult(currentMult)}` : "Cashout"}
                 </button>
                 {status === "ACTIVE" ? (
                   <button onClick={pumpOnce} disabled={!canPump}
-                    className="flex-1 py-3.5 rounded-xl font-bold text-sm bg-emerald-500 active:bg-emerald-600 text-white disabled:opacity-50 active:scale-95 transition">
+                    className="flex-1 py-4 rounded-2xl font-bold text-sm transition active:scale-95 disabled:opacity-50"
+                    style={{ background: canPump ? "#324c5a" : "#1e3346", color: "white" }}>
                     {busy === "pump" ? "Pumping…" : "🎈 Pump"}
                   </button>
                 ) : (
                   <button onClick={placeBet} disabled={!canBet}
-                    className="flex-1 py-3.5 rounded-xl font-bold text-sm bg-emerald-500 active:bg-emerald-600 text-white disabled:opacity-50 active:scale-95 transition">
-                    {(busy as string) === "bet" ? "Placing…" : "Bet"}
+                    className="flex-1 py-4 rounded-2xl font-bold text-sm bg-emerald-500 active:bg-emerald-600 text-white transition active:scale-95 disabled:opacity-50">
+                    {busy === "bet" ? "Placing…" : "Bet"}
                   </button>
                 )}
               </div>
             ) : !autoRunning ? (
               <button onClick={startAuto} disabled={status === "ACTIVE"}
-                className="w-full py-3.5 rounded-xl font-bold text-sm bg-emerald-500 text-white disabled:opacity-50 active:scale-95 transition">
+                className="w-full py-4 rounded-2xl font-bold text-sm bg-emerald-500 text-white transition active:scale-95 disabled:opacity-50">
                 Start Auto Bet
               </button>
             ) : (
               <button onClick={() => setAutoRunning(false)}
-                className="w-full py-3.5 rounded-xl font-bold text-sm bg-red-500 text-white active:scale-95 transition">
+                className="w-full py-4 rounded-2xl font-bold text-sm bg-red-500 text-white transition active:scale-95">
                 Stop ({autoRunCount.current}/{autoTargetRef.current})
               </button>
             )}
