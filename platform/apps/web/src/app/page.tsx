@@ -14,7 +14,7 @@ export default async function HomePage() {
           <div className="absolute inset-0 rounded-3xl" style={{ background: "#f21f5f" }} />
 
           {/* Background image - left positioned with slight overflow */}
-          <div className="absolute -left-12 top-0 w-full h-full">
+          <div className="absolute -left-8 top-0 w-full h-full">
             <Image
               src="/images/casino.png"
               alt="Casino"
