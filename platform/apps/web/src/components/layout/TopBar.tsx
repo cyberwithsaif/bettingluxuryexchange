@@ -133,11 +133,13 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
               </div>
               <Link
                 href="/account/deposit"
-                className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-all active:scale-95 hover:brightness-110"
+                className="flex items-center justify-center w-10 h-10 shrink-0 transition-all active:scale-95 hover:brightness-110"
                 style={{
-                  background: "linear-gradient(180deg, #ffb347 0%, #ff9f43 50%, #ff8c00 100%)",
-                  boxShadow: "0 6px 16px rgba(255, 140, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -3px 6px rgba(0,0,0,0.2)",
-                  border: "2px solid #d97500",
+                  background: "linear-gradient(135deg, #ffcc00 0%, #ffcc00 50%, #ffb700 100%)",
+                  boxShadow: "0 6px 16px rgba(255, 150, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -2px 6px rgba(0,0,0,0.15)",
+                  border: "none",
+                  borderRadius: "10px 10px 6px 1px",
+                  clipPath: "polygon(0 0, 100% 0, 95% 100%, 0 100%)",
                 }}
               >
                 <Plus size={18} className="text-white" strokeWidth={3} />
@@ -166,12 +168,15 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
 
               <Link
                 href="/account/deposit"
-                className="flex items-center gap-1.5 rounded-xl font-bold text-[14px] px-4 py-1.5 transition-all hover:brightness-110 active:scale-95 shrink-0"
+                className="flex items-center gap-1.5 font-bold text-[14px] px-5 py-2 transition-all hover:brightness-110 active:scale-95 shrink-0"
                 style={{
-                  background: "linear-gradient(180deg, #ffb347 0%, #ff9f43 50%, #ff8c00 100%)",
+                  background: "linear-gradient(135deg, #ffcc00 0%, #ffcc00 50%, #ffb700 100%)",
                   color: "white",
-                  boxShadow: "0 6px 16px rgba(255, 140, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -3px 8px rgba(0, 0, 0, 0.2)",
-                  border: "2px solid #d97500",
+                  textShadow: "0 2px 4px rgba(0, 0, 0, 0.3)",
+                  boxShadow: "0 6px 16px rgba(255, 150, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -2px 6px rgba(0, 0, 0, 0.15)",
+                  border: "none",
+                  borderRadius: "14px 14px 8px 2px",
+                  clipPath: "polygon(0 0, 100% 0, 95% 100%, 0 100%)",
                 }}
               >
                 <ArrowDownToLine size={14} />
