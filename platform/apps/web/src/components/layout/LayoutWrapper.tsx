@@ -19,7 +19,6 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     pathname === "/roulette" ||
     pathname === "/plinko" ||
     pathname === "/crash" ||
-    pathname === "/dice" ||
     pathname === "/towers" ||
     pathname === "/coinflip" ||
     pathname === "/pump";
