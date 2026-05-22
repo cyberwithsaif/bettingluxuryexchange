@@ -14,7 +14,7 @@ export default async function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-900 rounded-3xl" />
 
           {/* Background image - left positioned with slight overflow */}
-          <div className="absolute -left-8 top-0 w-2/3 h-full">
+          <div className="absolute -left-4 top-0 w-2/3 h-full">
             <Image
               src="/images/casino.png"
               alt="Casino"
