@@ -148,26 +148,28 @@ export class AdminService {
       }) : [],
     ]);
 
-    for (const r of mines as Awaited<ReturnType<typeof this.prisma.minesSession.findMany>>) {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    for (const r of mines as any[]) {
       const bet = Number(r.betAmount); const pay = Number(r.payout);
       all.push({ id: r.id, game: "mines", user: r.user, betAmount: bet, payout: pay, profit: pay - bet, status: r.status === "CASHED_OUT" ? "WON" : "LOST", extra: `${r.minesCount} mines`, createdAt: r.createdAt });
     }
-    for (const r of plinko as Awaited<ReturnType<typeof this.prisma.plinkoBet.findMany>>) {
+    for (const r of plinko as any[]) {
       const bet = Number(r.betAmount); const pay = Number(r.payout); const profit = Number(r.profit);
       all.push({ id: r.id, game: "plinko", user: r.user, betAmount: bet, payout: pay, profit, status: profit >= 0 ? "WON" : "LOST", extra: `${r.rows}r ${r.riskLevel}`, createdAt: r.createdAt });
     }
-    for (const r of pump as Awaited<ReturnType<typeof this.prisma.pumpBet.findMany>>) {
+    for (const r of pump as any[]) {
       const bet = Number(r.betAmount); const pay = Number(r.payout);
       all.push({ id: r.id, game: "pump", user: r.user, betAmount: bet, payout: pay, profit: pay - bet, status: r.status === "CASHED" ? "WON" : "LOST", extra: `${r.pumpsCount} pumps`, createdAt: r.createdAt });
     }
-    for (const r of dice as Awaited<ReturnType<typeof this.prisma.diceBet.findMany>>) {
+    for (const r of dice as any[]) {
       const bet = Number(r.betAmount); const pay = Number(r.payout); const profit = Number(r.profit);
       all.push({ id: r.id, game: "dice", user: r.user, betAmount: bet, payout: pay, profit, status: r.won ? "WON" : "LOST", extra: `roll ${Number(r.roll).toFixed(2)}`, createdAt: r.createdAt });
     }
-    for (const r of roulette as Awaited<ReturnType<typeof this.prisma.rouletteBet.findMany>>) {
+    for (const r of roulette as any[]) {
       const bet = Number(r.amount); const pay = Number(r.payout);
       all.push({ id: r.id, game: "roulette", user: r.user, betAmount: bet, payout: pay, profit: pay - bet, status: r.isWin ? "WON" : "LOST", extra: r.betType, createdAt: r.createdAt });
     }
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     all.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     return all.slice(skip, skip + limit);
