@@ -168,14 +168,16 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
 
               <Link
                 href="/account/deposit"
-                className="flex items-center justify-center gap-1 font-black text-xs px-5 py-1.5 transition-all hover:scale-105 active:scale-95 shrink-0 relative overflow-hidden"
+                className="flex items-center justify-center gap-1 font-black text-sm px-5 py-2 transition-all hover:scale-105 active:scale-95 shrink-0 relative overflow-hidden"
                 style={{
                   background: "linear-gradient(135deg, #ffd400 0%, #ffc400 45%, #f5b300 45%, #ffbf00 100%)",
                   color: "white",
                   border: "2px solid #c46818",
                   borderRadius: "14px",
                   boxShadow: "inset 0 -5px 0 #c97700",
-                  WebkitTextStroke: "1.2px #c46818",
+                  WebkitTextStroke: "0.7px #c46818",
+                  fontWeight: "900",
+                  letterSpacing: "-0.5px",
                 }}
               >
                 {/* Glossy effect */}
