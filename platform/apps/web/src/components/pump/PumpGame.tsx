@@ -172,8 +172,8 @@ function GameVisual({
         </p>
       </div>
 
-      {/* Balloon area — horizontally centered */}
-      <div className="absolute" style={{ bottom: 175, left: "50%", transform: "translateX(-50%)", zIndex: 2 }}>
+      {/* Balloon area — sits on the pipe nozzle cap */}
+      <div className="absolute" style={{ bottom: 260, left: "50%", transform: "translateX(-50%)", zIndex: 2 }}>
         <AnimatePresence>
           {!popped && status !== "CASHED" && (
             <motion.div
@@ -281,27 +281,18 @@ function GameVisual({
         )}
       </div>
 
-      {/* Neck / pipe connecting balloon to pump */}
+      {/* Pipe — runs from machine top up to balloon nozzle */}
       <div className="absolute" style={{
-        bottom: 148, left: "50%", transform: "translateX(-50%)",
-        width: 22, height: 30,
-        background: "#2c4454",
-        borderRadius: "0 0 8px 8px",
-        zIndex: 2,
-      }} />
-
-      {/* Pipe vertical */}
-      <div className="absolute" style={{
-        bottom: 172, left: "50%", transform: "translateX(-50%)",
-        width: 22, height: 70,
+        bottom: 177, left: "50%", transform: "translateX(-50%)",
+        width: 22, height: 83,
         background: "#2c4454",
         borderRadius: 20,
         zIndex: 1,
       }}>
-        {/* Pipe cap */}
+        {/* Nozzle cap — balloon knot sits here */}
         <div style={{
           position: "absolute", top: -10, left: -6,
-          width: 34, height: 20,
+          width: 34, height: 22,
           background: "#2c4454",
           borderRadius: "50%",
         }} />
