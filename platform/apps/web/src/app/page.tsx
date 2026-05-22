@@ -25,8 +25,7 @@ export default async function HomePage() {
             />
           </div>
 
-          {/* Overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-l from-black/60 via-black/40 to-transparent pointer-events-none" />
+          {/* Overlay gradient - removed for solid color */}
 
           {/* Content */}
           <div className="relative z-10 h-full p-4 md:p-6 flex flex-col justify-between hidden"></div>
