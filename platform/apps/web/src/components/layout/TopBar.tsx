@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useContext } from "react";
 import {
@@ -78,6 +79,9 @@ export function TopBar() {
 
             {/* Mobile balance + deposit */}
             <div className="flex md:hidden items-center gap-2 flex-1 justify-center">
+              <Link href="/" className="shrink-0">
+                <Image src="/logo.png" alt="Logo" width={38} height={38} className="rounded-full" />
+              </Link>
               <div
                 className="flex items-center gap-2 rounded-xl px-3 py-1.5 cursor-default"
                 style={{
@@ -110,9 +114,14 @@ export function TopBar() {
               </Link>
             </div>
 
+            {/* Desktop logo */}
+            <Link href="/" className="hidden md:flex shrink-0">
+              <Image src="/logo.png" alt="Logo" width={48} height={48} className="rounded-full" />
+            </Link>
+
             {/* Desktop balance + deposit card — unified */}
             <div
-              className="hidden md:flex items-center gap-2 rounded-2xl px-3 py-2 border-2 ml-6"
+              className="hidden md:flex items-center gap-2 rounded-2xl px-3 py-2 border-2"
               style={{
                 background: "#1a1a2e",
                 borderColor: "rgba(139, 92, 246, 0.4)",
@@ -165,7 +174,10 @@ export function TopBar() {
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-2 justify-center flex-1">
+          <div className="flex items-center gap-3 justify-center flex-1">
+            <Link href="/" className="shrink-0">
+              <Image src="/logo.png" alt="Logo" width={42} height={42} className="rounded-full" />
+            </Link>
             <Link
               href="/auth/login"
               className="rounded-lg border border-white/20 px-4 py-2 text-[13px] font-bold text-white hover:bg-white/10 transition"

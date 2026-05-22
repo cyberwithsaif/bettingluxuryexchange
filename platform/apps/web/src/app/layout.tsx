@@ -33,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: `${siteName} — ${tagline}`,
     description: "Live cricket, football, tennis exchange + casino, crash, virtual & lottery games.",
     manifest: "/manifest.webmanifest",
-    icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
+    icons: { icon: "/logo.png", shortcut: "/logo.png", apple: "/logo.png" },
   };
 }
 
