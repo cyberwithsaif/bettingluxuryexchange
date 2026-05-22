@@ -13,20 +13,20 @@ export default async function HomePage() {
           {/* Background gradient */}
           <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-900 rounded-3xl" />
 
-          {/* Background image - right positioned with slight overflow */}
-          <div className="absolute -right-8 top-0 w-2/3 h-full">
+          {/* Background image - left positioned with slight overflow */}
+          <div className="absolute -left-8 top-0 w-2/3 h-full">
             <Image
-              src="/images/bannerlogo.png"
+              src="/images/casino.png"
               alt="Casino"
               fill
-              className="object-contain object-right"
+              className="object-contain object-left"
 
               priority
             />
           </div>
 
           {/* Overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-l from-black/60 via-black/40 to-transparent pointer-events-none" />
 
           {/* Content */}
           <div className="relative z-10 h-full p-4 md:p-6 flex flex-col justify-between hidden"></div>
