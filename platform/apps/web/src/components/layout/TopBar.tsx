@@ -40,7 +40,20 @@ export function TopBar() {
       <div className="flex items-center h-[74px] px-4 justify-between gap-4">
 
         {/* ── Left section ──────────────────────────────────── */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Open menu"
+            className="md:hidden w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition shrink-0"
+          >
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+              <rect width="16" height="2" rx="1" fill="currentColor" />
+              <rect y="5" width="12" height="2" rx="1" fill="currentColor" />
+              <rect y="10" width="8" height="2" rx="1" fill="currentColor" />
+            </svg>
+          </button>
+
           {/* Desktop sidebar expand button (when collapsed) */}
           {sidebarContext?.collapsed && (
             <button
@@ -59,18 +72,10 @@ export function TopBar() {
             </button>
           )}
 
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setDrawerOpen(true)}
-            aria-label="Open menu"
-            className="md:hidden w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition shrink-0"
-          >
-            <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-              <rect width="16" height="2" rx="1" fill="currentColor" />
-              <rect y="5" width="12" height="2" rx="1" fill="currentColor" />
-              <rect y="10" width="8" height="2" rx="1" fill="currentColor" />
-            </svg>
-          </button>
+          {/* Logo — left side, all viewports */}
+          <Link href="/" className="shrink-0">
+            <Image src="/logo.png" alt="Logo" width={54} height={54} className="rounded-full md:w-[62px] md:h-[62px]" />
+          </Link>
         </div>
 
         {/* ── Center section ────────────────────────────── */}
@@ -79,9 +84,6 @@ export function TopBar() {
 
             {/* Mobile balance + deposit */}
             <div className="flex md:hidden items-center gap-2 flex-1 justify-center">
-              <Link href="/" className="shrink-0">
-                <Image src="/logo.png" alt="Logo" width={38} height={38} className="rounded-full" />
-              </Link>
               <div
                 className="flex items-center gap-2 rounded-xl px-3 py-1.5 cursor-default"
                 style={{
@@ -113,11 +115,6 @@ export function TopBar() {
                 <Plus size={18} className="text-white" strokeWidth={3} />
               </Link>
             </div>
-
-            {/* Desktop logo */}
-            <Link href="/" className="hidden md:flex shrink-0">
-              <Image src="/logo.png" alt="Logo" width={48} height={48} className="rounded-full" />
-            </Link>
 
             {/* Desktop balance + deposit card — unified */}
             <div
@@ -175,9 +172,6 @@ export function TopBar() {
           </div>
         ) : (
           <div className="flex items-center gap-3 justify-center flex-1">
-            <Link href="/" className="shrink-0">
-              <Image src="/logo.png" alt="Logo" width={42} height={42} className="rounded-full" />
-            </Link>
             <Link
               href="/auth/login"
               className="rounded-lg border border-white/20 px-4 py-2 text-[13px] font-bold text-white hover:bg-white/10 transition"
