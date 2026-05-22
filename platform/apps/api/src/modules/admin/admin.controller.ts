@@ -210,6 +210,21 @@ export class AdminController {
     });
   }
 
+  @Get("casino-bets")
+  allCasinoBets(
+    @Query("username") username?: string,
+    @Query("game") game?: string,
+    @Query("limit") limit?: string,
+    @Query("skip") skip?: string,
+  ) {
+    return this.admin.listAllCasinoBets({
+      username,
+      game,
+      limit: limit ? Number(limit) : undefined,
+      skip: skip ? Number(skip) : undefined,
+    });
+  }
+
   // -- Platform reports --
 
   @Get("reports")

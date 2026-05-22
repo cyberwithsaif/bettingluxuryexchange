@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpToLine,
   Settings, Key, ListChecks, ShieldAlert, LogOut, Trophy,
-  Ticket, BarChart3, Bell, Menu, X, CreditCard, Megaphone,
+  Ticket, BarChart3, Bell, Menu, X, CreditCard, Megaphone, Gamepad2,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -15,6 +15,7 @@ const NAV = [
   { href: "/",                         label: "Dashboard",       Icon: LayoutDashboard },
   { href: "/users",                    label: "Users",           Icon: Users },
   { href: "/bets",                     label: "All Bets",        Icon: Ticket },
+  { href: "/casino-bets",             label: "Casino Bets",     Icon: Gamepad2 },
   { href: "/deposits",                 label: "Deposits",        Icon: ArrowDownToLine },
   { href: "/withdrawals",              label: "Withdrawals",     Icon: ArrowUpToLine },
   { href: "/markets",                  label: "Markets",         Icon: Trophy },

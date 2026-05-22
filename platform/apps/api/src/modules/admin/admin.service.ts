@@ -100,6 +100,79 @@ export class AdminService {
     });
   }
 
+  /** All casino bets across all game types — paginated, filterable. */
+  async listAllCasinoBets(opts: { username?: string; game?: string; limit?: number; skip?: number } = {}) {
+    const limit = Math.min(opts.limit ?? 50, 200);
+    const skip = opts.skip ?? 0;
+    const FETCH_LIMIT = 1000;
+
+    const userFilter = opts.username
+      ? { user: { username: { contains: opts.username, mode: "insensitive" as const } } }
+      : {};
+
+    type CasinoBet = {
+      id: string; game: string;
+      user: { id: string; username: string };
+      betAmount: number; payout: number; profit: number;
+      status: string; extra: string; createdAt: Date;
+    };
+
+    const all: CasinoBet[] = [];
+    const g = opts.game;
+
+    const [mines, plinko, pump, dice, roulette] = await Promise.all([
+      (!g || g === "mines") ? this.prisma.minesSession.findMany({
+        where: { ...userFilter, status: { not: "IN_PROGRESS" } },
+        orderBy: { createdAt: "desc" }, take: FETCH_LIMIT,
+        include: { user: { select: { id: true, username: true } } },
+      }) : [],
+      (!g || g === "plinko") ? this.prisma.plinkoBet.findMany({
+        where: userFilter,
+        orderBy: { createdAt: "desc" }, take: FETCH_LIMIT,
+        include: { user: { select: { id: true, username: true } } },
+      }) : [],
+      (!g || g === "pump") ? this.prisma.pumpBet.findMany({
+        where: { ...userFilter, status: { not: "ACTIVE" } },
+        orderBy: { createdAt: "desc" }, take: FETCH_LIMIT,
+        include: { user: { select: { id: true, username: true } } },
+      }) : [],
+      (!g || g === "dice") ? this.prisma.diceBet.findMany({
+        where: userFilter,
+        orderBy: { createdAt: "desc" }, take: FETCH_LIMIT,
+        include: { user: { select: { id: true, username: true } } },
+      }) : [],
+      (!g || g === "roulette") ? this.prisma.rouletteBet.findMany({
+        where: { ...userFilter, settledAt: { not: null } },
+        orderBy: { createdAt: "desc" }, take: FETCH_LIMIT,
+        include: { user: { select: { id: true, username: true } } },
+      }) : [],
+    ]);
+
+    for (const r of mines as Awaited<ReturnType<typeof this.prisma.minesSession.findMany>>) {
+      const bet = Number(r.betAmount); const pay = Number(r.payout);
+      all.push({ id: r.id, game: "mines", user: r.user, betAmount: bet, payout: pay, profit: pay - bet, status: r.status === "CASHED_OUT" ? "WON" : "LOST", extra: `${r.minesCount} mines`, createdAt: r.createdAt });
+    }
+    for (const r of plinko as Awaited<ReturnType<typeof this.prisma.plinkoBet.findMany>>) {
+      const bet = Number(r.betAmount); const pay = Number(r.payout); const profit = Number(r.profit);
+      all.push({ id: r.id, game: "plinko", user: r.user, betAmount: bet, payout: pay, profit, status: profit >= 0 ? "WON" : "LOST", extra: `${r.rows}r ${r.riskLevel}`, createdAt: r.createdAt });
+    }
+    for (const r of pump as Awaited<ReturnType<typeof this.prisma.pumpBet.findMany>>) {
+      const bet = Number(r.betAmount); const pay = Number(r.payout);
+      all.push({ id: r.id, game: "pump", user: r.user, betAmount: bet, payout: pay, profit: pay - bet, status: r.status === "CASHED" ? "WON" : "LOST", extra: `${r.pumpsCount} pumps`, createdAt: r.createdAt });
+    }
+    for (const r of dice as Awaited<ReturnType<typeof this.prisma.diceBet.findMany>>) {
+      const bet = Number(r.betAmount); const pay = Number(r.payout); const profit = Number(r.profit);
+      all.push({ id: r.id, game: "dice", user: r.user, betAmount: bet, payout: pay, profit, status: r.won ? "WON" : "LOST", extra: `roll ${Number(r.roll).toFixed(2)}`, createdAt: r.createdAt });
+    }
+    for (const r of roulette as Awaited<ReturnType<typeof this.prisma.rouletteBet.findMany>>) {
+      const bet = Number(r.amount); const pay = Number(r.payout);
+      all.push({ id: r.id, game: "roulette", user: r.user, betAmount: bet, payout: pay, profit: pay - bet, status: r.isWin ? "WON" : "LOST", extra: r.betType, createdAt: r.createdAt });
+    }
+
+    all.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return all.slice(skip, skip + limit);
+  }
+
   /** Platform-level P/L report: volume + aggregate net over a period. */
   async getReports(opts: { days?: number } = {}) {
     const days = Math.min(opts.days ?? 30, 365);
