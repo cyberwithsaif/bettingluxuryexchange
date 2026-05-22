@@ -710,108 +710,88 @@ export default function DicePage() {
       <div className="min-h-screen text-white" style={{ background: "#0a0918" }}>
         <div className="flex flex-col lg:flex-row min-h-screen">
 
-          {/* ═══ LEFT PANEL — Betting Controls ════════════════════════════════ */}
-          <div className="w-full lg:w-[420px] shrink-0 flex flex-col"
-            style={{ background: "#13112a", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
+          {/* ═══ LEFT SIDEBAR — Betting Controls ═════════════════════════════ */}
+          <div className="w-full lg:w-[360px] shrink-0 flex flex-col p-5 lg:p-6 overflow-y-auto"
+            style={{ background: "#102433", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
 
-            {/* Manual / Auto tabs */}
-            <div className="flex" style={{ borderBottom: "2px solid rgba(255,255,255,0.05)" }}>
-              {(["manual", "auto"] as const).map(tab => (
-                <button key={tab} onClick={() => setBetTab(tab)}
-                  className="flex-1 py-4 font-bold text-base capitalize tracking-wide transition-all"
-                  style={{
-                    color: betTab === tab ? "white" : "rgba(255,255,255,0.35)",
-                    borderBottom: betTab === tab ? "2px solid #7c3aed" : "2px solid transparent",
-                    marginBottom: -2,
-                  }}>
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </div>
+            <div className="rounded-2xl bg-[#1a2c38] p-4 flex flex-col gap-4">
 
-            <div className="p-5 flex flex-col gap-5 flex-1">
+              {/* Manual / Auto tabs — pill style */}
+              <div className="flex items-center bg-[#0c1824] rounded-full p-1">
+                {(["manual", "auto"] as const).map(tab => (
+                  <button key={tab} onClick={() => setBetTab(tab)}
+                    className={`flex-1 py-2.5 rounded-full text-sm font-bold capitalize transition ${
+                      betTab === tab ? "bg-[#1e3346] text-white" : "text-white/50 hover:text-white"
+                    }`}>
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
+                ))}
+              </div>
 
-              {/* ── Bet Amount ── */}
+              {/* Bet Amount */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-bold mb-3" style={{ color: "rgba(255,255,255,0.7)" }}>
-                  Bet Amount
-                </label>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 flex items-center rounded-xl px-4 h-14"
-                    style={{ background: "#1e1b3a", border: "1px solid rgba(255,255,255,0.07)" }}>
-                    <span className="text-white/50 mr-2 text-base">₹</span>
+                <label className="text-xs text-white/60 font-semibold block mb-2">Bet Amount</label>
+                <div className="flex items-stretch h-12 gap-1 bg-[#132737] rounded-xl border border-white/5">
+                  <div className="flex items-center pl-3 flex-1">
+                    <span className="text-emerald-400 font-bold text-sm mr-1">₹</span>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
                       value={betAmount === 0 ? "" : betAmount}
                       placeholder="0"
-                      onChange={e => setBetAmount(Math.max(0, parseFloat(e.target.value) || 0))}
+                      onChange={e => setBetAmount(Math.max(0, parseFloat(e.target.value.replace(/[^\d.]/g, "")) || 0))}
                       disabled={isRolling || autoRunning}
-                      className="flex-1 bg-transparent text-white font-bold text-base outline-none tabular-nums"
+                      className="flex-1 bg-transparent text-white font-bold outline-none tabular-nums disabled:opacity-60"
                     />
                   </div>
-                  {/* Quick multiplier buttons */}
-                  {[{ label: "1/2", fn: () => setBetAmount(p => Math.max(0, Math.round(p / 2 * 100) / 100)) },
-                    { label: "2X",  fn: () => setBetAmount(p => Math.round(p * 2 * 100) / 100) },
-                    { label: "Max", fn: () => setBetAmount(1_000_000) }
-                  ].map(b => (
-                    <button key={b.label} onClick={b.fn} disabled={isRolling || autoRunning}
-                      className="h-14 px-4 rounded-xl font-bold text-sm transition hover:brightness-110 disabled:opacity-40"
-                      style={{ background: "#2d2b50", color: "rgba(255,255,255,0.7)" }}>
-                      {b.label}
-                    </button>
-                  ))}
+                  <button onClick={() => setBetAmount(p => Math.max(0, Math.round(p / 2 * 100) / 100))} disabled={isRolling || autoRunning}
+                    className="px-3 text-xs font-bold text-white/60 hover:text-white border-l border-white/5 disabled:opacity-40 transition">½</button>
+                  <button onClick={() => setBetAmount(p => Math.round(p * 2 * 100) / 100)} disabled={isRolling || autoRunning}
+                    className="px-3 text-xs font-bold text-white/60 hover:text-white border-l border-white/5 disabled:opacity-40 rounded-r-xl transition">2×</button>
                 </div>
               </div>
 
-              {/* ── Payout on Win ── */}
+              {/* Payout on Win */}
               <div>
-                <label className="text-sm font-bold mb-3 block" style={{ color: "rgba(255,255,255,0.7)" }}>
-                  Payout on Win
-                </label>
-                <div className="flex items-center rounded-xl px-4 h-14"
-                  style={{ background: "#1e1b3a", border: "1px solid rgba(255,255,255,0.07)" }}>
-                  <span className="text-white/50 mr-2 text-base">₹</span>
-                  <span className="text-white font-bold text-base tabular-nums">
-                    {fmtNum(payout)}
-                  </span>
+                <label className="text-xs text-white/60 font-semibold block mb-2">Payout on Win</label>
+                <div className="flex items-center h-12 rounded-xl px-4 bg-[#132737] border border-white/5">
+                  <span className="text-emerald-400 font-bold text-sm mr-1">₹</span>
+                  <span className="text-white font-bold tabular-nums">{fmtNum(payout)}</span>
                 </div>
               </div>
 
               {betTab === "manual" ? (
                 <>
-                  {/* ── Roll Dice Button ── */}
+                  {/* Roll Dice Button */}
                   <motion.button
                     onClick={() => placeBet()}
                     disabled={!isLoggedIn || isRolling || autoRunning}
                     whileTap={{ scale: 0.97 }}
-                    className="w-full h-14 rounded-xl font-black text-lg tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+                    className="w-full h-12 rounded-xl font-bold text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
-                      background: isRolling
-                        ? "rgba(245,197,24,0.4)"
-                        : "linear-gradient(135deg, #f5c518 0%, #f0a500 100%)",
-                      boxShadow: isRolling ? "none" : "0 4px 20px rgba(245,197,24,0.35)",
+                      background: isRolling ? "rgba(245,197,24,0.4)" : "linear-gradient(135deg, #f5c518 0%, #f0a500 100%)",
+                      boxShadow: isRolling ? "none" : "0 4px 12px rgba(245,197,24,0.3)",
                       color: "#1a0a00",
                     }}
                   >
-                    {isRolling ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.5, repeat: Infinity, ease: "linear" }}
-                          className="inline-block text-xl">⚄</motion.span>
-                        Rolling...
-                      </span>
-                    ) : !isLoggedIn ? "Login to Play" : "Roll Dice"}
+                    {isRolling ? "Rolling..." : !isLoggedIn ? "Login to Play" : "Roll Dice"}
                   </motion.button>
 
                   {/* Error display */}
-                  {betError && (
-                    <div className="text-red-400 text-xs text-center font-semibold mt-1">{betError}</div>
-                  )}
+                  {betError && <div className="text-red-400 text-xs text-center font-semibold">{betError}</div>}
 
                   {/* Demo mode note */}
-                  <div className="rounded-xl px-4 py-3 text-center text-sm font-semibold"
-                    style={{ background: "rgba(124,58,237,0.15)", color: "rgba(167,139,250,0.85)" }}>
-                    Betting less than ₹0.01 will enter demo mode
+                  <div className="rounded-xl px-3 py-2 text-center text-xs font-semibold"
+                    style={{ background: "rgba(124,58,237,0.15)", color: "rgba(167,139,250,0.8)" }}>
+                    Demo mode for bets &lt; ₹0.01
                   </div>
+
+                  {/* Provably Fair link */}
+                  <button onClick={() => setShowPF(true)}
+                    className="flex items-center justify-center gap-1.5 text-xs font-semibold mx-auto"
+                    style={{ color: "rgba(167,139,250,0.7)" }}>
+                    <Shield size={12} /> Provably Fair
+                  </button>
                 </>
               ) : (
                 // ── Auto Bet UI ──
@@ -820,12 +800,11 @@ export default function DicePage() {
                   <div className="flex items-end gap-3">
                     <div className="flex-1">
                       <label className="text-xs text-white/40 block mb-1.5">Number of Bets</label>
-                      <div className="flex items-center rounded-xl px-4 h-12"
-                        style={{ background: "#1e1b3a", border: "1px solid rgba(255,255,255,0.07)" }}>
+                      <div className="flex items-center rounded-lg px-3 h-10 bg-[#132737] border border-white/5">
                         <input type="number" value={autoRounds} min={1}
                           onChange={e => setAutoRounds(Math.max(1, parseInt(e.target.value) || 1))}
                           disabled={autoInfinite || autoRunning}
-                          className="flex-1 bg-transparent text-white font-bold outline-none tabular-nums" />
+                          className="flex-1 bg-transparent text-white font-bold text-sm outline-none tabular-nums" />
                       </div>
                     </div>
                     <div className="flex flex-col items-center gap-1 pb-1">
@@ -910,17 +889,11 @@ export default function DicePage() {
                 </div>
               )}
 
-              {/* Provably fair link */}
-              <button onClick={() => setShowPF(true)}
-                className="flex items-center gap-2 text-sm font-semibold mx-auto"
-                style={{ color: "rgba(167,139,250,0.7)" }}>
-                <Shield size={14} /> Provably Fair
-              </button>
             </div>
           </div>
 
-          {/* ═══ RIGHT PANEL — Game Area ═══════════════════════════════════════ */}
-          <div className="flex-1 flex flex-col justify-center p-6 md:p-10 lg:p-14 gap-8">
+          {/* ═══ GAME AREA ═════════════════════════════════════════════════════ */}
+          <div className="flex-1 flex flex-col justify-center p-5 md:p-8 lg:p-12 gap-6">
 
             {/* ── Slider ── */}
             <div className="w-full max-w-3xl mx-auto">
