@@ -175,6 +175,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
                   border: "2px solid #c46818",
                   borderRadius: "14px",
                   boxShadow: "inset 0 -5px 0 #c97700",
+                  WebkitTextStroke: "1.2px #c46818",
                 }}
               >
                 {/* Glossy effect */}
