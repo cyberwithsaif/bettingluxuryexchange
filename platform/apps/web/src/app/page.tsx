@@ -14,19 +14,20 @@ export default async function HomePage() {
           <div className="absolute inset-0 rounded-3xl" style={{ background: "#f21f5f" }} />
 
           {/* Neon card - center positioned with overflow, behind other images */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none -inset-12 top-6">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none -inset-6 md:-inset-12 top-4 md:top-6">
             <Image
               src="/images/neoncard.png"
               alt="Neon Card"
-              width={320}
-              height={214}
+              width={200}
+              height={134}
               priority
+              className="md:w-[320px] md:h-[214px] w-[200px] h-[134px]"
               style={{ objectFit: "contain" }}
             />
           </div>
 
           {/* Background image - left positioned with slight overflow */}
-          <div className="absolute -left-4 top-0 w-full h-full z-10">
+          <div className="absolute -left-2 md:-left-4 top-0 w-full h-full z-10">
             <Image
               src="/images/casino.png"
               alt="Casino"
@@ -38,7 +39,7 @@ export default async function HomePage() {
           </div>
 
           {/* Float image - right positioned with slight overflow */}
-          <div className="absolute -right-8 top-0 w-full h-full z-10">
+          <div className="absolute -right-4 md:-right-8 top-0 w-full h-full z-10">
             <Image
               src="/images/float.png"
               alt="Floating Chips"
