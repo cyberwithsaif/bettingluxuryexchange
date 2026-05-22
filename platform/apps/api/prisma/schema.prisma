@@ -170,6 +170,7 @@ model LedgerEntry {
 
   @@index([userId, createdAt])
   @@index([refType, refId])
+  @@index([kind, createdAt])
 }
 
 enum TransactionKind {

@@ -1,10 +1,17 @@
 import { Injectable, BadRequestException } from "@nestjs/common";
 import { BetStatus, LedgerKind, Prisma } from "@prisma/client";
 import { PrismaService } from "../../common/prisma/prisma.service";
+import { RedisService } from "../../common/redis/redis.service";
+
+const PLATFORM_SETTINGS_CACHE_KEY = "cache:platform:settings";
+const PLATFORM_SETTINGS_CACHE_TTL = 300; // 5 minutes
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
 
   async dashboard() {
     const [users, openBets, activeMarkets, pendingDeposits, pendingWithdrawals, totals] =
@@ -262,6 +269,13 @@ export class AdminService {
   // Stored as a single row in the SystemConfig table (key = 'platform').
 
   async getPlatformSettings() {
+    // Read from Redis cache first — settings change infrequently but are read on every page load.
+    // Cache hit = ~0.2ms vs ~3-5ms for a PG roundtrip. Multiplied across all SSR + client requests this is huge.
+    const cached = await this.redis.client.get(PLATFORM_SETTINGS_CACHE_KEY).catch(() => null);
+    if (cached) {
+      try { return JSON.parse(cached); } catch { /* fall through */ }
+    }
+
     const row = await this.prisma.systemConfig.findUnique({ where: { key: "platform" } });
     const defaults = {
       minStake: 100, maxStake: 100000, maxMarketExposure: 1000000,
@@ -269,8 +283,10 @@ export class AdminService {
       maintenanceMode: false, registrationEnabled: true,
       depositEnabled: true, withdrawalEnabled: true,
     };
-    if (!row) return defaults;
-    return { ...defaults, ...(row.value as object) };
+    const merged = row ? { ...defaults, ...(row.value as object) } : defaults;
+    // Best-effort cache write; ignore errors so Redis outages don't break the API.
+    this.redis.client.set(PLATFORM_SETTINGS_CACHE_KEY, JSON.stringify(merged), "EX", PLATFORM_SETTINGS_CACHE_TTL).catch(() => {});
+    return merged;
   }
 
   async savePlatformSettings(dto: Record<string, unknown>) {
@@ -288,6 +304,8 @@ export class AdminService {
             "updatedAt" = NOW()
     `;
 
+    // Invalidate cache so the next read picks up fresh values.
+    await this.redis.client.del(PLATFORM_SETTINGS_CACHE_KEY).catch(() => {});
     return this.getPlatformSettings();
   }
 
