@@ -74,46 +74,62 @@ const MODE_ICONS: { mode: DiceMode; dots: [number, number][] }[] = [
   { mode: "ROLL_OUTSIDE", dots: [[6, 6], [16, 6], [11, 11], [6, 16], [16, 16]] },
 ];
 
-// ─── Hex Result Marker ────────────────────────────────────────────────────────
+// ─── Result Marker (speech-bubble chip on the track) ─────────────────────────
 function HexMarker({ roll, won }: { roll: number; won: boolean }) {
-  const color = won ? "#22c55e" : "#ef4444";
+  // clamp so chip doesn't overflow the slider edges
+  const left = Math.max(4, Math.min(96, roll));
   return (
     <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      initial={{ opacity: 0, y: -10, scale: 0.8 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      transition={{ type: "spring", stiffness: 360, damping: 28 }}
       style={{
         position: "absolute",
-        left: `${roll}%`,
-        bottom: "calc(100% + 6px)",
+        left: `${left}%`,
+        bottom: "calc(100% + 12px)",
         transform: "translateX(-50%)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         pointerEvents: "none",
         zIndex: 30,
+        filter: "drop-shadow(0 6px 20px rgba(59,130,246,0.55))",
       }}
     >
-      {/* Hex body */}
+      {/* Gradient-border wrapper (padding trick) */}
       <div style={{
-        background: "rgba(20,18,40,0.95)",
-        border: `2px solid ${color}`,
-        borderRadius: 8,
-        padding: "4px 10px",
-        minWidth: 60,
-        textAlign: "center",
-        boxShadow: `0 0 16px ${color}55`,
+        background: "linear-gradient(135deg, #1d4ed8 0%, #60a5fa 55%, #ffffff 100%)",
+        borderRadius: 12,
+        padding: "2px",
+        minWidth: 72,
       }}>
-        <span style={{ color, fontWeight: 900, fontSize: 15, fontFamily: "monospace" }}>
-          {roll.toFixed(2)}
-        </span>
+        <div style={{
+          background: "linear-gradient(135deg, #080e26 0%, #0c1a42 100%)",
+          borderRadius: 10,
+          padding: "6px 14px",
+          textAlign: "center",
+        }}>
+          <span style={{
+            background: "linear-gradient(90deg, #93c5fd 0%, #ffffff 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            fontWeight: 900,
+            fontSize: 16,
+            letterSpacing: "0.04em",
+            fontFamily: "'SF Mono', 'Fira Code', monospace",
+          }}>
+            {roll.toFixed(2)}
+          </span>
+        </div>
       </div>
-      {/* Arrow pointer */}
+      {/* Arrow pointing down to track */}
       <div style={{
         width: 0, height: 0,
-        borderLeft: "6px solid transparent",
-        borderRight: "6px solid transparent",
-        borderTop: `7px solid ${color}`,
+        borderLeft: "8px solid transparent",
+        borderRight: "8px solid transparent",
+        borderTop: "9px solid #60a5fa",
+        marginTop: -1,
       }} />
     </motion.div>
   );
@@ -183,36 +199,11 @@ function DiceSlider({
 
   return (
     <div className="w-full select-none">
-      {/* Scale labels */}
-      <div className="flex justify-between mb-3 text-sm font-bold" style={{ color: "rgba(255,255,255,0.55)" }}>
-        {["0", "25", "50", "75", "100"].map(n => <span key={n}>{n}</span>)}
-      </div>
 
-      {/* Track wrapper — overflow-visible for marker */}
-      <div className="relative" style={{ paddingTop: 52, overflow: "visible" }}>
+      {/* Track wrapper — paddingTop reserves space for the floating marker above */}
+      <div className="relative" style={{ paddingTop: 70 }}>
 
-        {/* Hex result marker */}
-        <AnimatePresence>
-          {lastRoll !== null && !isRolling && (
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 52, overflow: "visible" }}>
-              <HexMarker key={lastRoll} roll={lastRoll} won={!!lastWon} />
-            </div>
-          )}
-          {isRolling && (
-            <motion.div key="rolling"
-              animate={{ left: ["10%", "80%", "30%", "60%", "20%"] }}
-              transition={{ duration: 0.6, repeat: Infinity, ease: "linear" }}
-              style={{ position: "absolute", top: 0, left: "50%", bottom: "calc(100% + 6px - 52px)", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 30, pointerEvents: "none" }}
-            >
-              <div style={{ background: "rgba(20,18,40,0.9)", border: "2px solid #7c3aed", borderRadius: 8, padding: "4px 10px" }}>
-                <span style={{ color: "#a78bfa", fontWeight: 900, fontSize: 15, fontFamily: "monospace" }}>...</span>
-              </div>
-              <div style={{ width: 0, height: 0, borderLeft: "6px solid transparent", borderRight: "6px solid transparent", borderTop: "7px solid #7c3aed" }} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Track */}
+        {/* Track — overflow:visible lets the marker float above it */}
         <div
           ref={trackRef}
           className="relative rounded-full"
@@ -254,7 +245,6 @@ function DiceSlider({
                 justifyContent: "center",
               }}
             >
-              {/* Grip lines */}
               <div style={{ display: "flex", gap: 2 }}>
                 {[0,1,2].map(j => (
                   <div key={j} style={{ width: 2, height: 10, borderRadius: 1, background: "rgba(255,255,255,0.25)" }} />
@@ -262,7 +252,61 @@ function DiceSlider({
               </div>
             </div>
           ))}
+
+          {/* Result / rolling marker — lives inside the track so bottom:calc(100%+…) works */}
+          <AnimatePresence>
+            {lastRoll !== null && !isRolling && (
+              <HexMarker key={lastRoll} roll={lastRoll} won={!!lastWon} />
+            )}
+            {isRolling && (
+              <motion.div
+                key="rolling"
+                animate={{ left: ["8%", "82%", "28%", "68%", "18%", "54%", "38%"] }}
+                transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+                style={{
+                  position: "absolute",
+                  bottom: "calc(100% + 12px)",
+                  transform: "translateX(-50%)",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  zIndex: 30,
+                  pointerEvents: "none",
+                  filter: "drop-shadow(0 4px 14px rgba(124,58,237,0.55))",
+                }}
+              >
+                <div style={{
+                  background: "linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #a78bfa 100%)",
+                  borderRadius: 12,
+                  padding: "2px",
+                  minWidth: 72,
+                }}>
+                  <div style={{
+                    background: "linear-gradient(135deg, #080618 0%, #110935 100%)",
+                    borderRadius: 10,
+                    padding: "6px 14px",
+                    textAlign: "center",
+                  }}>
+                    <span style={{ color: "#a78bfa", fontWeight: 900, fontSize: 16, fontFamily: "monospace", letterSpacing: "0.06em" }}>···</span>
+                  </div>
+                </div>
+                <div style={{
+                  width: 0, height: 0,
+                  borderLeft: "8px solid transparent",
+                  borderRight: "8px solid transparent",
+                  borderTop: "9px solid #7c3aed",
+                  marginTop: -1,
+                }} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
+      </div>
+
+      {/* Scale labels — below the track */}
+      <div className="flex justify-between mt-5 px-0.5 text-sm font-bold select-none"
+        style={{ color: "rgba(255,255,255,0.35)" }}>
+        {["0", "25", "50", "75", "100"].map(n => <span key={n}>{n}</span>)}
       </div>
     </div>
   );
