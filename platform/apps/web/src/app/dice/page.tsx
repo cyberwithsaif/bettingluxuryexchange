@@ -355,19 +355,18 @@ function ProvablyFairModal({
 
 // ─── Input Field (bottom stats) ───────────────────────────────────────────────
 function StatInput({
-  label, value, onChange, readOnly, unit, prefix, onSwap,
+  label, value, onChange, readOnly, unit, numeric, onSwap,
 }: {
   label: string; value: string; onChange?: (v: string) => void;
-  readOnly?: boolean; unit?: string; prefix?: string; onSwap?: () => void;
+  readOnly?: boolean; unit?: string; numeric?: boolean; onSwap?: () => void;
 }) {
   return (
     <div className="flex-1 min-w-0">
       <label className="block text-sm font-semibold mb-2" style={{ color: "rgba(255,255,255,0.7)" }}>{label}</label>
       <div className="flex items-center rounded-xl px-4 h-14"
         style={{ background: "#1e1b3a", border: "1px solid rgba(255,255,255,0.07)" }}>
-        {prefix && <span className="text-white/50 mr-2 text-sm">{prefix}</span>}
         <input
-          type="number"
+          type={numeric ? "number" : "text"}
           value={value}
           onChange={e => onChange?.(e.target.value)}
           readOnly={readOnly}
@@ -401,6 +400,7 @@ export default function DicePage() {
   const [lastResult, setLastResult] = useState<BetResult | null>(null);
   const [isRolling, setIsRolling]   = useState(false);
   const [recentRolls, setRecentRolls] = useState<{ roll: number; won: boolean }[]>([]);
+  const [betError, setBetError]       = useState<string | null>(null);
 
   // Provably fair
   const [clientSeed, setClientSeed]         = useState(() => randomClientSeed());
@@ -485,7 +485,8 @@ export default function DicePage() {
 
     const onBetResponse = (data: { ok: boolean; result: BetResult }) => {
       resetRolling();
-      if (!data.ok) return;
+      if (!data.ok) { setBetError("Bet failed. Try again."); return; }
+      setBetError(null);
       const r = data.result;
       setLastResult(r);
       setNonce(n => n + 1);
@@ -494,8 +495,8 @@ export default function DicePage() {
     };
 
     // Reset on any error or auth rejection
-    const onError    = () => { resetRolling(); setAutoRunning(false); autoRef.current = false; };
-    const onException = () => { resetRolling(); setAutoRunning(false); autoRef.current = false; };
+    const onError    = (e?: { message?: string }) => { resetRolling(); setAutoRunning(false); autoRef.current = false; if (e?.message) setBetError(e.message); };
+    const onException = (e?: { message?: string }) => { resetRolling(); setAutoRunning(false); autoRef.current = false; setBetError(e?.message ?? "Unauthorized — please log in again."); };
 
     s.on("dice:betResponse", onBetResponse);
     s.on("dice:error", onError);
@@ -518,26 +519,65 @@ export default function DicePage() {
       .catch(() => {});
   }, []);
 
+  // Win condition (client-side, for demo mode)
+  const isWinLocal = useCallback((roll: number) => {
+    switch (mode) {
+      case "ROLL_UNDER":   return roll < target;
+      case "ROLL_OVER":    return roll > target;
+      case "ROLL_BETWEEN": return roll >= minTarget && roll <= maxTarget;
+      case "ROLL_OUTSIDE": return roll < minTarget || roll > maxTarget;
+    }
+  }, [mode, target, minTarget, maxTarget]);
+
   // Place bet
   const placeBet = useCallback((amount?: number) => {
-    if (!user) return;
-    const s = socket.current;
-    if (!s || isRolling) return;
-    if (!s.connected) { return; }          // socket not ready
-
+    if (isRolling) return;
     const betAmt = amount ?? betAmount;
+    setBetError(null);
+
+    // ── Demo mode (bet = 0 or not logged in) ──────────────────────────────────
+    if (!user || betAmt < 0.01) {
+      setIsRolling(true);
+      playSound("roll");
+      setTimeout(() => {
+        const roll = Math.floor(Math.random() * 10000) / 100;  // 0.00–99.99
+        const won  = isWinLocal(roll);
+        const wc   = calcWinChance(mode, target, minTarget, maxTarget);
+        const mult = calcMultiplier(wc);
+        const demoResult: BetResult = {
+          id: `demo-${Date.now()}`, roll, won,
+          payout: 0, profit: 0,
+          multiplier: mult, winChance: wc,
+          mode, target, minTarget, maxTarget, betAmount: 0,
+          serverSeed: "demo", serverSeedHash: "demo",
+          clientSeed: "demo", nonce: 0,
+          createdAt: new Date().toISOString(),
+        };
+        setLastResult(demoResult);
+        setIsRolling(false);
+        setRecentRolls(prev => [...prev.slice(-5), { roll, won }]);
+        playSound(won ? "win" : "loss");
+      }, 600);
+      return;
+    }
+
+    // ── Real bet via socket ────────────────────────────────────────────────────
+    const s = socket.current;
+    if (!s) return;
+
     setIsRolling(true);
     playSound("roll");
 
-    // Safety timeout: if no response in 8s, auto-reset (covers auth failures, network issues)
+    // Safety timeout — resets if no response arrives within 8s
     if (rollTimeoutRef.current) clearTimeout(rollTimeoutRef.current);
     rollTimeoutRef.current = setTimeout(() => {
       setIsRolling(false);
       rollTimeoutRef.current = null;
+      setBetError("No response from server. Please try again.");
     }, 8000);
 
     s.emit("dice:bet", { betAmount: betAmt, mode, target, minTarget, maxTarget, clientSeed, nonce });
-  }, [user, betAmount, mode, target, minTarget, maxTarget, clientSeed, nonce, isRolling, playSound]);
+  }, [isRolling, betAmount, user, playSound, isWinLocal, mode, target, minTarget, maxTarget, clientSeed, nonce]);
 
   // Auto bet engine
   const runAutoStep = useCallback(async (currentBet: number, roundsLeft: number) => {
@@ -717,6 +757,11 @@ export default function DicePage() {
                       </span>
                     ) : !isLoggedIn ? "Login to Play" : "Roll Dice"}
                   </motion.button>
+
+                  {/* Error display */}
+                  {betError && (
+                    <div className="text-red-400 text-xs text-center font-semibold mt-1">{betError}</div>
+                  )}
 
                   {/* Demo mode note */}
                   <div className="rounded-xl px-4 py-3 text-center text-sm font-semibold"
@@ -903,7 +948,7 @@ export default function DicePage() {
                     else if (mode === "ROLL_OVER") setTarget(100 - wc);
                   }}
                   readOnly={mode === "ROLL_BETWEEN" || mode === "ROLL_OUTSIDE"}
-                  unit="%"
+                  unit="%" numeric
                 />
 
                 <StatInput
@@ -917,7 +962,7 @@ export default function DicePage() {
                     else if (mode === "ROLL_OVER") setTarget(100 - wc);
                   }}
                   readOnly={mode === "ROLL_BETWEEN" || mode === "ROLL_OUTSIDE"}
-                  unit="×"
+                  unit="×" numeric
                 />
               </div>
             </div>
