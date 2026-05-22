@@ -707,12 +707,12 @@ export default function DicePage() {
         </button>
       </div>
 
-      <div className="min-h-screen text-white" style={{ background: "#0a0918" }}>
+      <div className="min-h-screen text-white" style={{ background: "#090c1c" }}>
         <div className="flex flex-col lg:flex-row min-h-screen">
 
           {/* ═══ LEFT SIDEBAR — Betting Controls ═════════════════════════════ */}
           <div className="w-full lg:w-[360px] shrink-0 flex flex-col p-5 lg:p-6 overflow-y-auto"
-            style={{ background: "#102433", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
+            style={{ background: "#191938", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
 
             <div className="rounded-2xl bg-[#1a2c38] p-4 flex flex-col gap-4">
 
