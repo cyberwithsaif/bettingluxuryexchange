@@ -144,40 +144,40 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
               </Link>
             </div>
 
-            {/* Desktop balance card */}
+            {/* Desktop balance + deposit card — unified */}
             <div
-              className="hidden sm:flex items-center gap-2.5 rounded-2xl px-4 py-2.5 cursor-default group transition-all hover:scale-105 border-2"
+              className="hidden md:flex items-center gap-3 rounded-2xl px-4 py-2.5 border-2"
               style={{
                 background: "#1a1a2e",
                 borderColor: "rgba(139, 92, 246, 0.4)",
               }}
             >
-              <div className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ background: "rgba(139, 92, 246, 0.2)" }}>
-                <span className="text-sm leading-none text-yellow-300">₹</span>
+              <div className="flex items-center gap-2.5">
+                <div className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ background: "rgba(139, 92, 246, 0.2)" }}>
+                  <span className="text-sm leading-none text-yellow-300">₹</span>
+                </div>
+                <div className="flex flex-col items-start leading-tight">
+                  <span className="text-[10px] text-white/50 uppercase tracking-wider">Balance</span>
+                  <span className="text-[16px] font-black text-white tabular-nums">
+                    {fmtMoney(wallet?.available)}
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-col items-start leading-tight">
-                <span className="text-[10px] text-white/50 uppercase tracking-wider">Balance</span>
-                <span className="text-[16px] font-black text-white tabular-nums">
-                  {fmtMoney(wallet?.available)}
-                </span>
-              </div>
-              <ChevronDown size={14} className="text-white/40 group-hover:text-white/60 transition-colors ml-auto" />
-            </div>
 
-            {/* Desktop deposit button — yellow like Roobet */}
-            <Link
-              href="/account/deposit"
-              className="hidden md:flex items-center gap-2 rounded-xl font-bold text-[14px] px-6 py-2.5 transition-all hover:brightness-125 active:scale-95 shrink-0 hover:scale-105 shadow-lg"
-              style={{
-                background: "linear-gradient(135deg,#ffd700,#ffed4e)",
-                color: "#1a0a00",
-                boxShadow: "0 8px 24px rgba(255, 215, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -2px 8px rgba(0, 0, 0, 0.15)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-              }}
-            >
-              <ArrowDownToLine size={14} />
-              <span className="hidden sm:inline">Deposit</span>
-            </Link>
+              <Link
+                href="/account/deposit"
+                className="flex items-center gap-1.5 rounded-xl font-bold text-[14px] px-4 py-1.5 transition-all hover:brightness-125 active:scale-95 shrink-0 shadow-md"
+                style={{
+                  background: "linear-gradient(135deg,#ffd700,#ffed4e)",
+                  color: "#1a0a00",
+                  boxShadow: "0 4px 12px rgba(255, 215, 0, 0.3)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                }}
+              >
+                <ArrowDownToLine size={14} />
+                Deposit
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="flex items-center gap-2 justify-center flex-1">
