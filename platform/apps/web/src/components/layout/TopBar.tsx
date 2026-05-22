@@ -110,7 +110,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
 
         {/* ── Center section ────────────────────────────── */}
         {user ? (
-          <div className="flex items-center gap-2 md:gap-3 justify-center flex-1">
+          <div className="flex items-center gap-2 md:gap-3 justify-center flex-1 md:flex-initial">
 
             {/* Mobile balance + deposit */}
             <div className="flex md:hidden items-center gap-2 flex-1 justify-center">
