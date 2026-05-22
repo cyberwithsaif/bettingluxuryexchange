@@ -1,14 +1,13 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Suspense, useState, createContext } from "react";
+import { Suspense, useState } from "react";
+import { SidebarContext } from "@/lib/contexts/sidebar";
 import { TopBar } from "./TopBar";
 import { Footer } from "./Footer";
 import { NavigationProgress } from "../NavigationProgress";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { AppSidebar } from "./AppSidebar";
-
-export const SidebarContext = createContext<{ collapsed: boolean; setCollapsed: (v: boolean) => void } | null>(null);
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -48,7 +47,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
 
         {/* ── Main column ──────────────────────────────────── */}
         <div className="flex-1 flex flex-col min-w-0">
-          <TopBar onToggleSidebar={() => setSidebarCollapsed(c => !c)} />
+          <TopBar />
           <main className="flex-1 pb-16 md:pb-0 overflow-x-hidden">{children}</main>
           <div className="hidden md:block">
             <Footer />

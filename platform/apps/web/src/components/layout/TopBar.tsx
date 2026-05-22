@@ -2,60 +2,26 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  ArrowDownToLine, ArrowUpToLine, User2, LogOut, Bell,
-  ChevronDown, Search, Zap, MessageCircle, PanelLeftClose, PanelLeftOpen,
+  ArrowDownToLine, ArrowUpToLine, LogOut, Bell,
+  ChevronDown, Search, Zap,
   Wallet, Plus,
 } from "lucide-react";
 import useSWR from "swr";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
-import { cn } from "@/lib/cn";
 import { MobileSidebar } from "../mobile/MobileSidebar";
 
-interface PublicSettings { siteName?: string; siteTagline?: string; }
-
-function useLiveClock() {
-  const [now, setNow] = useState("");
-  useEffect(() => {
-    const tick = () => {
-      const d = new Date();
-      setNow(
-        d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
-        " " +
-        d.toLocaleTimeString("en-US", { hour12: true }) +
-        " (+05:30)",
-      );
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-  return now;
-}
 
 function fmtMoney(n: number | undefined) {
   if (n == null) return "—";
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(n);
 }
 
-export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
-  const clock = useLiveClock();
+export function TopBar() {
   const { user, clear } = useAuthStore();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const { data: wallet, mutate } = useSWR(user ? "/wallet/summary" : null);
-  const pFetch = (url: string) => fetch(url).then(r => r.json());
-  const { data: announcements } = useSWR<{ id: string; text: string }[]>(
-    "/api/announcements/active", pFetch, { refreshInterval: 60_000 },
-  );
-  const { data: platformSettings } = useSWR<PublicSettings>(
-    "/api/platform/settings", pFetch, { refreshInterval: 300_000 },
-  );
-
-  const marqueeText =
-    announcements?.length
-      ? announcements.map(a => `📢 ${a.text}`).join("  •  ")
-      : "🎉 Welcome to " + (platformSettings?.siteName ?? "DiamondPlay22") + " — Bet Now & Win Big!";
 
   useEffect(() => {
     if (!user) return;
@@ -63,11 +29,6 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
     s.on("wallet:update", () => mutate());
     return () => { s.off("wallet:update"); };
   }, [user, mutate]);
-
-  // Toggle sidebar visibility
-  function toggleSidebar() {
-    onToggleSidebar?.();
-  }
 
   return (
     <header className="sticky top-0 z-50 bg-[#191938] text-white shadow-sm rounded-br-2xl">
@@ -94,21 +55,6 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
         {/* ── Center section ────────────────────────────── */}
         {user ? (
           <div className="flex items-center gap-2 md:gap-3 justify-center flex-1">
-            {/* Desktop sidebar toggle — left of center */}
-            <button
-              onClick={toggleSidebar}
-              className="hidden md:flex w-12 h-12 rounded-xl items-center justify-center transition-all group shrink-0"
-              style={{
-                background: "linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(168, 85, 247, 0.2))",
-                boxShadow: "0 8px 20px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 8px rgba(0, 0, 0, 0.3)",
-                border: "1px solid rgba(139, 92, 246, 0.3)",
-              }}
-              title="Toggle sidebar"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="group-hover:text-violet-100 transition-colors" style={{ color: "rgb(196, 181, 253)" }}>
-                <path d="M8 5L3 10M3 10L8 15M3 10H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
 
             {/* Mobile balance + deposit */}
             <div className="flex md:hidden items-center gap-2 flex-1 justify-center">

@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useState, Suspense, useContext } from "react";
 import React from "react";
 import useSWR from "swr";
+import { SidebarContext } from "@/lib/contexts/sidebar";
 import {
   Gamepad2, Trophy, ChevronDown, Headphones,
   Ticket, Target, Monitor, Glasses, Gift, Shield,
@@ -50,11 +51,27 @@ function SidebarInner() {
   const [exchangeOpen, setExchangeOpen] = useState(false);
 
   const { data: sports } = useSWR<Sport[]>("/markets/sports");
+  const sidebarContext = useContext(SidebarContext);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* ── Logo area (height matches TopBar) ─────────────────── */}
-      <div className="shrink-0 h-[74px]" />
+      {/* ── Arrow toggle (top of sidebar) ─────────────────────────── */}
+      <div className="shrink-0 h-[74px] flex items-center justify-center px-4">
+        <button
+          onClick={() => sidebarContext?.setCollapsed(true)}
+          className="flex items-center justify-center w-12 h-12 rounded-xl transition-all group"
+          style={{
+            background: "linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(168, 85, 247, 0.2))",
+            boxShadow: "0 8px 20px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 8px rgba(0, 0, 0, 0.3)",
+            border: "1px solid rgba(139, 92, 246, 0.3)",
+          }}
+          title="Collapse sidebar"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="group-hover:text-violet-100 transition-colors" style={{ color: "rgb(196, 181, 253)" }}>
+            <path d="M12 5L17 10M17 10L12 15M17 10H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
 
       {/* ── Nav ──────────────────────────────────────────────── */}
       <nav className="flex-1 px-2 py-3 mt-4 overflow-y-auto space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

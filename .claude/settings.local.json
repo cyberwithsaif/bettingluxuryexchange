@@ -21,7 +21,13 @@
       "Bash(scp -i \"E:/illweb/diamond exc/id_rsa\" \"d:/DEVELOPMENTS/casino betting website exch/platform/images/rou.png\" root@51.222.84.91:/var/www/exch/platform/apps/web/public/images/rou.png)",
       "Bash(scp -i \"E:/illweb/diamond exc/id_rsa\" \"d:/DEVELOPMENTS/casino betting website exch/platform/images/neoncard.png\" root@51.222.84.91:/var/www/exch/platform/apps/web/public/images/neoncard.png)",
       "Bash(scp -i \"E:/illweb/diamond exc/id_rsa\" \"d:/DEVELOPMENTS/casino betting website exch/platform/images/bgping.png\" root@51.222.84.91:/var/www/exch/platform/apps/web/public/images/bgping.png)",
-      "Bash(ssh root@51.222.84.91 \"cd /var/www/exch && git pull origin main 2>&1 && echo '=== PULL OK ==='\")"
+      "Bash(ssh root@51.222.84.91 \"cd /var/www/exch && git pull origin main 2>&1 && echo '=== PULL OK ==='\")",
+      "Bash(timeout 40)",
+      "PowerShell(Stop-Process -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process npm -ErrorAction SilentlyContinue)",
+      "PowerShell(\"Processes killed\")",
+      "Bash(timeout 50)",
+      "PowerShell(ssh root@51.222.84.91 \"cd /home/exch && git pull\")"
     ],
     "additionalDirectories": [
       "d:\\DEVELOPMENTS\\casino betting website exch\\platform\\images"
