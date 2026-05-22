@@ -422,6 +422,7 @@ export default function DicePage() {
   const autoRef        = useRef(false);
   const baseBetRef     = useRef(0);
   const sessionPnlRef  = useRef(0);
+  const rollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // SWR history
   const { data: histData } = useSWR<BetResult[]>(
@@ -471,22 +472,43 @@ export default function DicePage() {
     } catch { /* ignore */ }
   }, []);
 
+  // Central rolling reset — clears timeout and stops rolling state
+  const resetRolling = useCallback(() => {
+    if (rollTimeoutRef.current) { clearTimeout(rollTimeoutRef.current); rollTimeoutRef.current = null; }
+    setIsRolling(false);
+  }, []);
+
   // Socket setup
   useEffect(() => {
     const s = socket.current;
     if (!s) return;
-    s.on("dice:betResponse", (data: { ok: boolean; result: BetResult }) => {
-      if (!data.ok) { setIsRolling(false); return; }
+
+    const onBetResponse = (data: { ok: boolean; result: BetResult }) => {
+      resetRolling();
+      if (!data.ok) return;
       const r = data.result;
       setLastResult(r);
-      setIsRolling(false);
       setNonce(n => n + 1);
       setRecentRolls(prev => [...prev.slice(-5), { roll: r.roll, won: r.won }]);
       playSound(r.won ? "win" : "loss");
-    });
-    s.on("dice:error", () => { setIsRolling(false); setAutoRunning(false); autoRef.current = false; });
-    return () => { s.off("dice:betResponse"); s.off("dice:error"); };
-  }, [playSound]);
+    };
+
+    // Reset on any error or auth rejection
+    const onError    = () => { resetRolling(); setAutoRunning(false); autoRef.current = false; };
+    const onException = () => { resetRolling(); setAutoRunning(false); autoRef.current = false; };
+
+    s.on("dice:betResponse", onBetResponse);
+    s.on("dice:error", onError);
+    s.on("exception", onException);      // WsJwtGuard auth failure arrives here
+    s.on("connect_error", onError);
+
+    return () => {
+      s.off("dice:betResponse", onBetResponse);
+      s.off("dice:error", onError);
+      s.off("exception", onException);
+      s.off("connect_error", onError);
+    };
+  }, [playSound, resetRolling]);
 
   // Fetch seeds
   useEffect(() => {
@@ -501,9 +523,19 @@ export default function DicePage() {
     if (!user) return;
     const s = socket.current;
     if (!s || isRolling) return;
+    if (!s.connected) { return; }          // socket not ready
+
     const betAmt = amount ?? betAmount;
     setIsRolling(true);
     playSound("roll");
+
+    // Safety timeout: if no response in 8s, auto-reset (covers auth failures, network issues)
+    if (rollTimeoutRef.current) clearTimeout(rollTimeoutRef.current);
+    rollTimeoutRef.current = setTimeout(() => {
+      setIsRolling(false);
+      rollTimeoutRef.current = null;
+    }, 8000);
+
     s.emit("dice:bet", { betAmount: betAmt, mode, target, minTarget, maxTarget, clientSeed, nonce });
   }, [user, betAmount, mode, target, minTarget, maxTarget, clientSeed, nonce, isRolling, playSound]);
 
