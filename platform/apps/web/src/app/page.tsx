@@ -14,7 +14,7 @@ export default async function HomePage() {
           <div className="absolute inset-0 rounded-3xl" style={{ background: "#f21f5f" }} />
 
           {/* Background image - left positioned with slight overflow */}
-          <div className="absolute -left-8 top-0 w-4/5 h-full">
+          <div className="absolute -left-4 top-0 w-4/5 h-full">
             <Image
               src="/images/casino.png"
               alt="Casino"
@@ -26,7 +26,7 @@ export default async function HomePage() {
           </div>
 
           {/* Float image - right positioned with slight overflow */}
-          <div className="absolute -right-8 top-0 w-1/2 h-full">
+          <div className="absolute -right-0 top-0 w-3/5 h-full">
             <Image
               src="/images/float.png"
               alt="Floating Chips"
