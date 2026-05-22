@@ -110,7 +110,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
 
         {/* ── Center section ────────────────────────────── */}
         {user ? (
-          <div className="flex items-center gap-2 md:gap-3 justify-center flex-1 md:flex-initial">
+          <div className="flex items-center gap-2 md:gap-3 justify-center flex-1">
 
             {/* Mobile balance + deposit */}
             <div className="flex md:hidden items-center gap-2 flex-1 justify-center">
@@ -145,31 +145,10 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
                 <Plus size={18} className="text-white" strokeWidth={3} />
               </Link>
             </div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 justify-center flex-1">
-            <Link
-              href="/auth/login"
-              className="rounded-lg border border-white/20 px-4 py-2 text-[13px] font-bold text-white hover:bg-white/10 transition"
-            >
-              Login
-            </Link>
-            <Link
-              href="/auth/register"
-              className="rounded-lg font-bold text-[13px] px-4 py-2 transition hover:brightness-110"
-              style={{ background: "linear-gradient(135deg,#d4a017,#f0c030)", color: "#1a0a00" }}
-            >
-              Sign up
-            </Link>
-          </div>
-        )}
 
-        {/* ── Right section (balance + icons) ────────────────────────────── */}
-        {user && (
-          <div className="flex items-center gap-2 shrink-0">
             {/* Desktop balance + deposit card — unified */}
             <div
-              className="hidden md:flex items-center gap-2 rounded-2xl px-3 py-2 border-2 -mr-2"
+              className="hidden md:flex items-center gap-2 rounded-2xl px-3 py-2 border-2"
               style={{
                 background: "#1a1a2e",
                 borderColor: "rgba(139, 92, 246, 0.4)",
@@ -220,7 +199,28 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
                 </div>
               </Link>
             </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 justify-center flex-1">
+            <Link
+              href="/auth/login"
+              className="rounded-lg border border-white/20 px-4 py-2 text-[13px] font-bold text-white hover:bg-white/10 transition"
+            >
+              Login
+            </Link>
+            <Link
+              href="/auth/register"
+              className="rounded-lg font-bold text-[13px] px-4 py-2 transition hover:brightness-110"
+              style={{ background: "linear-gradient(135deg,#d4a017,#f0c030)", color: "#1a0a00" }}
+            >
+              Sign up
+            </Link>
+          </div>
+        )}
 
+        {/* ── Right section (icons) ────────────────────────────── */}
+        {user && (
+          <div className="flex items-center gap-2 shrink-0">
             {/* Withdraw — outline on desktop */}
             <Link
               href="/account/withdraw"
