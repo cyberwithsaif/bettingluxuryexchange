@@ -37,13 +37,13 @@ export default async function HomePage() {
             />
           </div>
 
-          {/* Neon card - center positioned */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          {/* Neon card - center positioned with overflow */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none -inset-12">
             <Image
               src="/images/neoncard.png"
               alt="Neon Card"
-              width={240}
-              height={160}
+              width={320}
+              height={214}
               priority
               style={{ objectFit: "contain" }}
             />
