@@ -29,21 +29,7 @@ export default async function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent pointer-events-none" />
 
           {/* Content */}
-          <div className="relative z-10 h-full p-4 md:p-6 flex flex-col justify-between">
-            <div>
-              <p className="text-purple-300 text-[10px] md:text-[11px] font-bold uppercase tracking-widest mb-2 opacity-80">
-                DiamondPlay
-              </p>
-              <h3 className="text-white font-black text-2xl md:text-3xl mb-1">Casino</h3>
-              <p className="text-white/80 text-sm md:text-base font-medium">Thousands of Games</p>
-            </div>
-
-            <div>
-              <button className="px-4 md:px-5 py-2 md:py-2.5 bg-purple-500/40 text-white font-bold rounded-full hover:bg-purple-500/60 transition-all active:scale-95 border border-purple-400/50 backdrop-blur-sm text-sm md:text-base">
-                Play Now →
-              </button>
-            </div>
-          </div>
+          <div className="relative z-10 h-full p-4 md:p-6 flex flex-col justify-between hidden"></div>
         </div>
 
         {/* Sports Banner */}
@@ -55,21 +41,7 @@ export default async function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/30 to-transparent pointer-events-none" />
 
           {/* Content */}
-          <div className="relative z-10 h-full p-4 md:p-6 flex flex-col justify-between">
-            <div>
-              <p className="text-amber-300 text-[10px] md:text-[11px] font-bold uppercase tracking-widest mb-2 opacity-80">
-                DiamondPlay
-              </p>
-              <h3 className="text-white font-black text-2xl md:text-3xl mb-1">Sports Betting</h3>
-              <p className="text-white/80 text-sm md:text-base font-medium">Support Your Team</p>
-            </div>
-
-            <div>
-              <button className="px-4 md:px-5 py-2 md:py-2.5 bg-amber-500/40 text-white font-bold rounded-full hover:bg-amber-500/60 transition-all active:scale-95 border border-amber-400/50 backdrop-blur-sm text-sm md:text-base">
-                Play Now →
-              </button>
-            </div>
-          </div>
+          <div className="relative z-10 h-full p-4 md:p-6 flex flex-col justify-between hidden"></div>
 
         </div>
       </div>

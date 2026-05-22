@@ -73,7 +73,7 @@ function SidebarInner() {
       </div>
 
       {/* ── Nav ──────────────────────────────────────────────── */}
-      <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <nav className="flex-1 px-2 py-3 mt-4 overflow-y-auto space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
         {/* Casino section */}
         <SectionToggle
