@@ -196,7 +196,9 @@ function SectionToggle({ label, open, onToggle, iconBg, icon }: {
         )}
         {label}
       </div>
-      <ChevronDown size={16} strokeWidth={2.5} className={cn("text-white transition-transform", open && "rotate-180")} />
+      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-transform", open && "rotate-180")} style={{ background: "#605499" }}>
+        <ChevronDown size={16} strokeWidth={2.5} className="text-white" />
+      </div>
     </button>
   );
 }
