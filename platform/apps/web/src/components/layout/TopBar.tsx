@@ -148,7 +148,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
 
             {/* Desktop balance + deposit card — unified */}
             <div
-              className="hidden md:flex items-center gap-2 rounded-2xl px-3 py-2 border-2"
+              className="hidden md:flex items-center gap-2 rounded-2xl px-3 py-2 border-2 ml-6"
               style={{
                 background: "#1a1a2e",
                 borderColor: "rgba(139, 92, 246, 0.4)",
