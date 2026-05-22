@@ -19,6 +19,8 @@ interface PlatformSettings {
 
 const SETTINGS_KEY = "/admin/platform-settings";
 
+const inputCls = "w-full bg-white border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition";
+
 export default function SettingsPage() {
   const { data, isLoading } = useSWR<PlatformSettings>(SETTINGS_KEY);
   const [busy, setBusy] = useState(false);
@@ -26,7 +28,6 @@ export default function SettingsPage() {
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [form, setForm] = useState<PlatformSettings | null>(null);
 
-  // Populate form once data arrives
   const current = form ?? data;
 
   async function save() {
@@ -59,18 +60,23 @@ export default function SettingsPage() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <h1 className="font-display text-4xl">Settings</h1>
-        <div className="h-40 animate-pulse bg-panel/60 rounded-xl" />
+        <h1 className="text-2xl font-black text-gray-900">Settings</h1>
+        <div className="h-40 animate-pulse bg-gray-100 rounded-xl" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <h1 className="font-display text-4xl flex items-center gap-3"><Settings2 size={32} /> Platform Settings</h1>
+      <div>
+        <h1 className="text-2xl font-black text-gray-900 flex items-center gap-3"><Settings2 size={24} /> Platform Settings</h1>
+        <p className="text-sm text-gray-400 mt-0.5">Configure betting limits, features, and platform behaviour</p>
+      </div>
 
       {msg && (
-        <div className={`text-sm px-4 py-2.5 rounded-lg border ${msg.ok ? "bg-ok/10 border-ok/30 text-ok" : "bg-bad/10 border-bad/30 text-bad"}`}>
+        <div className={`text-sm px-4 py-2.5 rounded-lg border font-medium ${
+          msg.ok ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-600"
+        }`}>
           {msg.text}
         </div>
       )}
@@ -79,19 +85,19 @@ export default function SettingsPage() {
       <Section title="Betting Limits" Icon={Shield}>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Min Stake (₹)">
-            <input type="number" min={1} className="input" value={current?.minStake ?? 100}
+            <input type="number" min={1} className={inputCls} value={current?.minStake ?? 100}
               onChange={(e) => set("minStake", Number(e.target.value))} />
           </Field>
           <Field label="Max Stake (₹)">
-            <input type="number" min={100} className="input" value={current?.maxStake ?? 100000}
+            <input type="number" min={100} className={inputCls} value={current?.maxStake ?? 100000}
               onChange={(e) => set("maxStake", Number(e.target.value))} />
           </Field>
           <Field label="Max Market Exposure (₹)">
-            <input type="number" min={1000} className="input" value={current?.maxMarketExposure ?? 1000000}
+            <input type="number" min={1000} className={inputCls} value={current?.maxMarketExposure ?? 1000000}
               onChange={(e) => set("maxMarketExposure", Number(e.target.value))} />
           </Field>
           <Field label="Default Partnership (basis pts, 100=1%)">
-            <input type="number" min={0} max={10000} className="input" value={current?.defaultPartnershipBps ?? 0}
+            <input type="number" min={0} max={10000} className={inputCls} value={current?.defaultPartnershipBps ?? 0}
               onChange={(e) => set("defaultPartnershipBps", Number(e.target.value))} />
           </Field>
         </div>
@@ -101,14 +107,14 @@ export default function SettingsPage() {
       <Section title="Feature Toggles" Icon={Settings2}>
         <div className="grid grid-cols-2 gap-4">
           {([
-            ["maintenanceMode",      "🔴 Maintenance Mode (disables site)"],
-            ["registrationEnabled",  "✅ New User Registration"],
-            ["depositEnabled",       "✅ Deposits"],
-            ["withdrawalEnabled",    "✅ Withdrawals"],
+            ["maintenanceMode",     "🔴 Maintenance Mode (disables site)"],
+            ["registrationEnabled", "✅ New User Registration"],
+            ["depositEnabled",      "✅ Deposits"],
+            ["withdrawalEnabled",   "✅ Withdrawals"],
           ] as [keyof PlatformSettings, string][]).map(([key, label]) => (
-            <label key={key} className="flex items-center justify-between rounded-lg border border-line bg-panel/40 px-4 py-3 cursor-pointer hover:border-accent transition">
-              <span className="text-sm">{label}</span>
-              <input type="checkbox" className="w-4 h-4 accent-orange-500"
+            <label key={key} className="flex items-center justify-between rounded-lg border border-yellow-100 bg-yellow-50/50 px-4 py-3 cursor-pointer hover:border-yellow-300 hover:bg-yellow-50 transition">
+              <span className="text-sm text-gray-700">{label}</span>
+              <input type="checkbox" className="w-4 h-4 accent-yellow-500"
                 checked={!!(current?.[key])}
                 onChange={(e) => set(key, e.target.checked)} />
             </label>
@@ -118,43 +124,49 @@ export default function SettingsPage() {
 
       {/* Navigation Bar */}
       <Link href="/settings/nav">
-        <section className="rounded-xl border border-line bg-panel/60 p-5 hover:border-accent/60 transition cursor-pointer group">
+        <section className="rounded-xl border border-yellow-100 bg-white p-5 hover:border-yellow-300 hover:shadow-sm transition cursor-pointer group shadow-sm">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-xl flex items-center gap-2">
-              <Navigation size={18} className="text-accentSoft" /> Navigation Bar
+            <h2 className="text-base font-black text-gray-800 flex items-center gap-2">
+              <Navigation size={18} className="text-yellow-500" /> Navigation Bar
             </h2>
-            <ChevronRight size={18} className="text-white/40 group-hover:text-accent transition" />
+            <ChevronRight size={18} className="text-gray-400 group-hover:text-yellow-500 transition" />
           </div>
-          <p className="text-sm text-white/50 mt-1">Add, edit, delete, reorder and toggle visibility of top navigation tabs.</p>
+          <p className="text-sm text-gray-500 mt-1">Add, edit, delete, reorder and toggle visibility of top navigation tabs.</p>
         </section>
       </Link>
 
       {/* Payment Methods */}
       <Link href="/settings/payment-methods">
-        <section className="rounded-xl border border-line bg-panel/60 p-5 hover:border-accent/60 transition cursor-pointer group">
+        <section className="rounded-xl border border-yellow-100 bg-white p-5 hover:border-yellow-300 hover:shadow-sm transition cursor-pointer group shadow-sm">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-xl flex items-center gap-2">
-              <CreditCard size={18} className="text-accentSoft" /> Payment Methods
+            <h2 className="text-base font-black text-gray-800 flex items-center gap-2">
+              <CreditCard size={18} className="text-yellow-500" /> Payment Methods
             </h2>
-            <ChevronRight size={18} className="text-white/40 group-hover:text-accent transition" />
+            <ChevronRight size={18} className="text-gray-400 group-hover:text-yellow-500 transition" />
           </div>
-          <p className="text-sm text-white/50 mt-1">Configure UPI, Bank Transfer, and Crypto deposit methods shown to users.</p>
+          <p className="text-sm text-gray-500 mt-1">Configure UPI, Bank Transfer, and Crypto deposit methods shown to users.</p>
         </section>
       </Link>
 
       {/* Save button */}
-      <button onClick={save} disabled={busy || !form}
-        className="rounded-md bg-accent-grad px-6 py-2.5 font-bold text-ink shadow-glow disabled:opacity-40 hover:brightness-110 transition">
+      <button
+        onClick={save}
+        disabled={busy || !form}
+        className="rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-2.5 font-bold text-slate-900 shadow-sm disabled:opacity-40 hover:brightness-110 transition"
+      >
         {busy ? "Saving…" : "Save Settings"}
       </button>
 
       {/* Cricket Sync */}
       <Section title="Data Sync" Icon={Database}>
-        <p className="text-sm text-white/60 mb-3">
-          Sync live cricket series from the Cricket API (requires an API key set under <span className="text-accentSoft">API Keys → Cricket API</span>).
+        <p className="text-sm text-gray-500 mb-3">
+          Sync live cricket series from the Cricket API (requires an API key set under <span className="text-yellow-600 font-semibold">API Keys → Cricket API</span>).
         </p>
-        <button onClick={syncCricket} disabled={syncBusy}
-          className="inline-flex items-center gap-2 rounded-md bg-accent-grad px-4 py-2 font-bold text-ink shadow-glow disabled:opacity-50">
+        <button
+          onClick={syncCricket}
+          disabled={syncBusy}
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-2 font-bold text-slate-900 shadow-sm disabled:opacity-50 hover:brightness-110 transition"
+        >
           <RefreshCw size={16} className={syncBusy ? "animate-spin" : ""} />
           {syncBusy ? "Syncing…" : "Sync Cricket Series"}
         </button>
@@ -162,26 +174,21 @@ export default function SettingsPage() {
 
       {/* Platform info */}
       <Section title="Platform Info" Icon={Database}>
-        <ul className="text-sm text-white/70 space-y-1">
-          <li>Currency: <span className="text-white font-semibold">{current?.currency ?? "INR"}</span></li>
-          <li>Exchange type: <span className="text-white font-semibold">P2P Betting Exchange</span></li>
-          <li>Settlement: <span className="text-white font-semibold">Queue-based (BullMQ)</span></li>
+        <ul className="text-sm text-gray-600 space-y-2">
+          <li>Currency: <span className="text-gray-900 font-semibold">{current?.currency ?? "INR"}</span></li>
+          <li>Exchange type: <span className="text-gray-900 font-semibold">P2P Betting Exchange</span></li>
+          <li>Settlement: <span className="text-gray-900 font-semibold">Queue-based (BullMQ)</span></li>
         </ul>
       </Section>
-
-      <style jsx>{`
-        :global(.input){width:100%;background:#0d0e15;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:9px 11px;font-size:14px;color:#e6e7eb}
-        :global(.input:focus){outline:none;border-color:#ff7a18}
-      `}</style>
     </div>
   );
 }
 
 function Section({ title, Icon, children }: { title: string; Icon: React.ElementType; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-line bg-panel/60 p-5">
-      <h2 className="font-display text-xl flex items-center gap-2 mb-4">
-        <Icon size={18} className="text-accentSoft" /> {title}
+    <section className="rounded-xl border border-yellow-100 bg-white p-5 shadow-sm">
+      <h2 className="text-base font-black text-gray-800 flex items-center gap-2 mb-4">
+        <Icon size={18} className="text-yellow-500" /> {title}
       </h2>
       {children}
     </section>
@@ -189,5 +196,10 @@ function Section({ title, Icon, children }: { title: string; Icon: React.Element
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="block"><span className="text-xs uppercase tracking-wider text-white/60">{label}</span><div className="mt-1">{children}</div></label>;
+  return (
+    <label className="block">
+      <span className="text-xs font-bold uppercase tracking-wider text-gray-500">{label}</span>
+      <div className="mt-1">{children}</div>
+    </label>
+  );
 }

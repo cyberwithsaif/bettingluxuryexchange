@@ -2,10 +2,7 @@
 import { useState, useEffect } from "react";
 import useSWR, { mutate } from "swr";
 import { api } from "@/lib/api";
-import {
-  Save, CheckCircle2, Plus, Trash2,
-  GripVertical, Layout, Megaphone,
-} from "lucide-react";
+import { Save, CheckCircle2, Plus, Trash2, GripVertical, Layout, Megaphone } from "lucide-react";
 
 interface CategoryBanner {
   id: string;
@@ -23,9 +20,7 @@ interface SiteSettings {
 }
 
 const SETTINGS_KEY = "/admin/platform-settings";
-
 const DEFAULTS: SiteSettings = { siteName: "DiamondPlay22", siteTagline: "Bet & Win" };
-
 const EMPTY_CAT: Omit<CategoryBanner, "id" | "sortOrder"> = {
   title: "", subtitle: "", href: "/casino", emoji: "🎰",
   gradient: "linear-gradient(135deg,#3d0810 0%,#6b0e1a 40%,#1a0408 100%)",
@@ -39,7 +34,7 @@ const GRADIENT_PRESETS = [
   { label: "Gold",        value: "linear-gradient(135deg,#3d2d00 0%,#6b4e0a 40%,#1a1200 100%)" },
 ];
 
-const inputCls = "w-full bg-panel/60 border border-line rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent";
+const inputCls = "w-full bg-white border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100 transition";
 
 function CardForm({ value, onChange, onSubmit, label, saving }: {
   value: Omit<CategoryBanner, "id" | "sortOrder">;
@@ -52,49 +47,44 @@ function CardForm({ value, onChange, onSubmit, label, saving }: {
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-white/50 mb-1">Title <span className="text-red-400">*</span></label>
-          <input value={value.title} onChange={e => onChange({ ...value, title: e.target.value })}
-            placeholder="Casino" className={inputCls} />
+          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Title <span className="text-red-400">*</span></label>
+          <input value={value.title} onChange={e => onChange({ ...value, title: e.target.value })} placeholder="Casino" className={inputCls} />
         </div>
         <div>
-          <label className="block text-xs text-white/50 mb-1">Subtitle</label>
-          <input value={value.subtitle} onChange={e => onChange({ ...value, subtitle: e.target.value })}
-            placeholder="Thousands of Games" className={inputCls} />
+          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Subtitle</label>
+          <input value={value.subtitle} onChange={e => onChange({ ...value, subtitle: e.target.value })} placeholder="Thousands of Games" className={inputCls} />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-white/50 mb-1">Link</label>
-          <input value={value.href} onChange={e => onChange({ ...value, href: e.target.value })}
-            placeholder="/casino" className={inputCls} />
+          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Link</label>
+          <input value={value.href} onChange={e => onChange({ ...value, href: e.target.value })} placeholder="/casino" className={inputCls} />
         </div>
         <div>
-          <label className="block text-xs text-white/50 mb-1">Emoji</label>
-          <input value={value.emoji} onChange={e => onChange({ ...value, emoji: e.target.value })}
-            placeholder="🎰" className={inputCls} />
+          <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Emoji</label>
+          <input value={value.emoji} onChange={e => onChange({ ...value, emoji: e.target.value })} placeholder="🎰" className={inputCls} />
         </div>
       </div>
       <div>
-        <label className="block text-xs text-white/50 mb-2">Background Gradient</label>
+        <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Background Gradient</label>
         <div className="flex gap-2 flex-wrap mb-2">
           {GRADIENT_PRESETS.map(p => (
             <button key={p.label} type="button" onClick={() => onChange({ ...value, gradient: p.value })}
               className="px-2.5 py-1 rounded text-[11px] font-semibold transition"
               style={{
                 background: p.value,
-                border: value.gradient === p.value ? "2px solid #a78bfa" : "1px solid rgba(255,255,255,0.15)",
+                border: value.gradient === p.value ? "2px solid #f59e0b" : "1px solid rgba(0,0,0,0.1)",
                 color: "white",
               }}>
               {p.label}
             </button>
           ))}
         </div>
-        <input value={value.gradient} onChange={e => onChange({ ...value, gradient: e.target.value })}
-          placeholder="linear-gradient(135deg,...)" className={inputCls} />
-        <div className="mt-2 h-10 rounded-lg border border-white/10 transition-all" style={{ background: value.gradient }} />
+        <input value={value.gradient} onChange={e => onChange({ ...value, gradient: e.target.value })} placeholder="linear-gradient(135deg,...)" className={inputCls} />
+        <div className="mt-2 h-10 rounded-lg border border-gray-200 transition-all" style={{ background: value.gradient }} />
       </div>
       <button type="button" onClick={onSubmit} disabled={saving}
-        className="flex items-center gap-2 bg-accent-grad px-4 py-2 rounded-lg font-semibold text-ink text-sm shadow-glow hover:brightness-110 disabled:opacity-50 transition">
+        className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-2 rounded-lg font-bold text-slate-900 text-sm shadow-sm hover:brightness-110 disabled:opacity-50 transition">
         <Save size={14} />
         {saving ? "Saving…" : label}
       </button>
@@ -109,12 +99,12 @@ export default function BannerSettingsPage() {
   const [siteBusy, setSiteBusy] = useState(false);
   const [siteMsg, setSiteMsg]   = useState<{ text: string; ok: boolean } | null>(null);
 
-  const [banners, setBanners]       = useState<CategoryBanner[]>([]);
-  const [saving, setSaving]         = useState(false);
-  const [editingId, setEditingId]   = useState<string | null>(null);
-  const [editForm, setEditForm]     = useState<Omit<CategoryBanner, "id" | "sortOrder">>(EMPTY_CAT);
-  const [newForm, setNewForm]       = useState<Omit<CategoryBanner, "id" | "sortOrder">>(EMPTY_CAT);
-  const [catMsg, setCatMsg]         = useState<{ text: string; ok: boolean } | null>(null);
+  const [banners, setBanners]     = useState<CategoryBanner[]>([]);
+  const [saving, setSaving]       = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm]   = useState<Omit<CategoryBanner, "id" | "sortOrder">>(EMPTY_CAT);
+  const [newForm, setNewForm]     = useState<Omit<CategoryBanner, "id" | "sortOrder">>(EMPTY_CAT);
+  const [catMsg, setCatMsg]       = useState<{ text: string; ok: boolean } | null>(null);
 
   useEffect(() => {
     if (!data) return;
@@ -172,61 +162,66 @@ export default function BannerSettingsPage() {
   return (
     <div className="space-y-6 max-w-3xl animate-fade-in">
       <div>
-        <h1 className="font-display text-3xl flex items-center gap-2">
-          <Megaphone size={28} className="text-accent" />
+        <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+          <Megaphone size={24} className="text-yellow-500" />
           Banner Settings
         </h1>
-        <p className="text-sm text-white/60 mt-1">Manage homepage category cards and site identity.</p>
+        <p className="text-sm text-gray-400 mt-0.5">Manage homepage category cards and site identity.</p>
       </div>
 
-      {/* ── Category Cards ─────────────────────────────────────────────────── */}
-      <section className="glass rounded-lg p-5 space-y-4">
+      {/* Category Cards */}
+      <section className="rounded-xl border border-yellow-100 bg-white p-5 space-y-4 shadow-sm">
         <div>
-          <h2 className="font-bold text-sm uppercase tracking-wider text-white/70 flex items-center gap-2">
-            <Layout size={16} className="text-accent" />
+          <h2 className="font-black text-gray-800 text-sm uppercase tracking-wider flex items-center gap-2">
+            <Layout size={16} className="text-yellow-500" />
             Category Cards (Homepage)
           </h2>
-          <p className="text-xs text-white/40 mt-1">
+          <p className="text-xs text-gray-400 mt-1">
             The large Casino & Sports Betting cards shown at the top of the homepage.
-            Size: <span className="text-white/60 font-semibold">~680 × 140 px</span> each.
+            Size: <span className="text-gray-600 font-semibold">~680 × 140 px</span> each.
           </p>
         </div>
 
-        {/* Existing cards list */}
         <div className="space-y-2">
           {banners.length === 0 && (
-            <div className="text-xs text-white/30 py-6 text-center border border-dashed border-white/10 rounded-lg">
+            <div className="text-xs text-gray-400 py-6 text-center border border-dashed border-gray-200 rounded-lg">
               No cards saved — defaults (Casino & Sports Betting) are showing on homepage.
             </div>
           )}
           {banners.map((cat, i) => (
-            <div key={cat.id} className="border border-line rounded-xl overflow-hidden">
-              <div className="flex items-center gap-3 p-3 bg-panel/40">
-                <GripVertical size={16} className="text-white/30 shrink-0" />
-                <div className="w-20 h-9 rounded-lg overflow-hidden shrink-0 border border-white/10"
-                  style={{ background: cat.gradient }} />
+            <div key={cat.id} className="border border-yellow-100 rounded-xl overflow-hidden">
+              <div className="flex items-center gap-3 p-3 bg-gray-50">
+                <GripVertical size={16} className="text-gray-300 shrink-0" />
+                <div className="w-20 h-9 rounded-lg overflow-hidden shrink-0 border border-gray-200" style={{ background: cat.gradient }} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold">{cat.emoji} {cat.title}</p>
-                  <p className="text-xs text-white/40 truncate">{cat.subtitle} · <span className="text-white/30">{cat.href}</span></p>
+                  <p className="text-sm font-semibold text-gray-800">{cat.emoji} {cat.title}</p>
+                  <p className="text-xs text-gray-400 truncate">{cat.subtitle} · <span className="text-gray-300">{cat.href}</span></p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button disabled={i === 0} onClick={() => move(i, -1)}
-                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 disabled:opacity-30 text-white/60 text-xs">↑</button>
+                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30 text-gray-500 text-xs">↑</button>
                   <button disabled={i === banners.length - 1} onClick={() => move(i, 1)}
-                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 disabled:opacity-30 text-white/60 text-xs">↓</button>
-                  <button onClick={() => { if (editingId === cat.id) { setEditingId(null); } else { setEditingId(cat.id); setEditForm({ title: cat.title, subtitle: cat.subtitle, href: cat.href, emoji: cat.emoji, gradient: cat.gradient }); }}}
+                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30 text-gray-500 text-xs">↓</button>
+                  <button
+                    onClick={() => {
+                      if (editingId === cat.id) { setEditingId(null); }
+                      else { setEditingId(cat.id); setEditForm({ title: cat.title, subtitle: cat.subtitle, href: cat.href, emoji: cat.emoji, gradient: cat.gradient }); }
+                    }}
                     className="px-2.5 h-7 flex items-center justify-center rounded text-xs font-semibold transition"
-                    style={{ color: editingId === cat.id ? "#f87171" : "#a78bfa", background: editingId === cat.id ? "rgba(248,113,113,0.1)" : "rgba(167,139,250,0.1)" }}>
+                    style={{
+                      color: editingId === cat.id ? "#ef4444" : "#7c3aed",
+                      background: editingId === cat.id ? "rgba(239,68,68,0.08)" : "rgba(124,58,237,0.08)",
+                    }}
+                  >
                     {editingId === cat.id ? "Cancel" : "Edit"}
                   </button>
-                  <button onClick={() => remove(cat.id)}
-                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-500/20 text-red-400 transition">
+                  <button onClick={() => remove(cat.id)} className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition">
                     <Trash2 size={14} />
                   </button>
                 </div>
               </div>
               {editingId === cat.id && (
-                <div className="p-4 bg-panel/20 border-t border-line">
+                <div className="p-4 bg-white border-t border-yellow-100">
                   <CardForm value={editForm} onChange={setEditForm} onSubmit={saveEdit} label="Save Changes" saving={saving} />
                 </div>
               )}
@@ -234,45 +229,47 @@ export default function BannerSettingsPage() {
           ))}
         </div>
 
-        {/* Add new card */}
-        <div className="border border-line/60 rounded-xl p-4 space-y-3 bg-panel/20">
-          <p className="text-xs font-semibold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
+        <div className="border border-yellow-100 rounded-xl p-4 space-y-3 bg-gray-50">
+          <p className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
             <Plus size={13} /> Add New Card
           </p>
           <CardForm value={newForm} onChange={setNewForm} onSubmit={addCard} label="Add Card" saving={saving} />
         </div>
 
         {catMsg && (
-          <p className={`text-sm flex items-center gap-1.5 ${catMsg.ok ? "text-ok" : "text-bad"}`}>
+          <p className={`text-sm flex items-center gap-1.5 font-medium ${catMsg.ok ? "text-emerald-600" : "text-red-500"}`}>
             {catMsg.ok && <CheckCircle2 size={14} />} {catMsg.text}
           </p>
         )}
       </section>
 
-      {/* ── Site Identity ──────────────────────────────────────────────────── */}
-      <section className="glass rounded-lg p-5 space-y-4">
-        <h2 className="font-bold text-sm uppercase tracking-wider text-white/70">Site Identity</h2>
-        <p className="text-xs text-white/40">Used in the sidebar logo and browser tab title.</p>
+      {/* Site Identity */}
+      <section className="rounded-xl border border-yellow-100 bg-white p-5 space-y-4 shadow-sm">
+        <div>
+          <h2 className="font-black text-gray-800 text-sm uppercase tracking-wider">Site Identity</h2>
+          <p className="text-xs text-gray-400 mt-0.5">Used in the sidebar logo and browser tab title.</p>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-1">Site Name</label>
-            <input value={siteForm.siteName} onChange={e => setSiteForm(p => ({ ...p, siteName: e.target.value }))}
-              placeholder="DiamondPlay22" className={inputCls} />
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Site Name</label>
+            <input value={siteForm.siteName} onChange={e => setSiteForm(p => ({ ...p, siteName: e.target.value }))} placeholder="DiamondPlay22" className={inputCls} />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-1">Site Tagline</label>
-            <input value={siteForm.siteTagline} onChange={e => setSiteForm(p => ({ ...p, siteTagline: e.target.value }))}
-              placeholder="Bet & Win" className={inputCls} />
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Site Tagline</label>
+            <input value={siteForm.siteTagline} onChange={e => setSiteForm(p => ({ ...p, siteTagline: e.target.value }))} placeholder="Bet & Win" className={inputCls} />
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <button onClick={saveSite} disabled={siteBusy}
-            className="flex items-center gap-2 bg-accent-grad px-5 py-2 rounded-lg font-semibold text-ink text-sm shadow-glow hover:brightness-110 disabled:opacity-50 transition">
+          <button
+            onClick={saveSite}
+            disabled={siteBusy}
+            className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-amber-500 px-5 py-2 rounded-lg font-bold text-slate-900 text-sm shadow-sm hover:brightness-110 disabled:opacity-50 transition"
+          >
             <Save size={15} />
             {siteBusy ? "Saving…" : "Save"}
           </button>
           {siteMsg && (
-            <p className={`text-sm flex items-center gap-1 ${siteMsg.ok ? "text-ok" : "text-bad"}`}>
+            <p className={`text-sm flex items-center gap-1 font-medium ${siteMsg.ok ? "text-emerald-600" : "text-red-500"}`}>
               {siteMsg.ok && <CheckCircle2 size={14} />} {siteMsg.text}
             </p>
           )}

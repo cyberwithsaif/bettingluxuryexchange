@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Eye, EyeOff, Shield, Lock } from "lucide-react";
+import { Eye, EyeOff, Lock } from "lucide-react";
 import { api } from "@/lib/api";
 
 export default function AdminLogin() {
@@ -8,12 +8,10 @@ export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [needOtp, setNeedOtp] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [disabled, setDisabled] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (disabled) return;
     setBusy(true); setErr(null);
     try {
       const { data } = await api.post("/auth/login", form);
@@ -33,124 +31,134 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "linear-gradient(135deg, #100810 0%, #1a0f2e 100%)" }}>
-      <div className="w-full max-w-md">
-        {/* Logo & Header */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-6 relative" style={{ background: "linear-gradient(135deg, #d4423f 0%, #a01628 100%)", boxShadow: "0 8px 32px rgba(212, 66, 63, 0.3)" }}>
-            <Shield size={40} className="text-white" />
-          </div>
-          <h1 className="text-5xl font-black text-white mb-2 tracking-tight">Admin Panel</h1>
-          <p className="text-white/50 text-sm">Secure access for authorized personnel only</p>
+    <div className="min-h-screen flex bg-gray-50">
+      {/* Left panel — branding */}
+      <div className="hidden lg:flex flex-col justify-between w-1/2 p-12"
+        style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%)" }}>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center font-black text-slate-900 text-lg">D</div>
+          <span className="text-white font-black text-lg tracking-tight">DiamondPlay22</span>
         </div>
+        <div>
+          <h2 className="text-5xl font-black text-white leading-tight mb-4">
+            Admin<br />
+            <span className="text-yellow-400">Control</span><br />
+            Panel
+          </h2>
+          <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
+            Real-time platform management. Monitor bets, manage users, and control markets from one place.
+          </p>
+          <div className="mt-8 grid grid-cols-2 gap-4">
+            {[
+              { label: "Users", icon: "👥" },
+              { label: "Live Markets", icon: "📊" },
+              { label: "Transactions", icon: "💳" },
+              { label: "Risk Monitor", icon: "⚡" },
+            ].map(({ label, icon }) => (
+              <div key={label} className="flex items-center gap-2 p-3 rounded-xl" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <span className="text-xl">{icon}</span>
+                <span className="text-slate-300 text-sm font-semibold">{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="text-slate-500 text-xs">DiamondPlay22 Admin v1.0 • Secure Access Only</p>
+      </div>
 
-        <form onSubmit={submit} className="space-y-5">
-          {/* Username */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-white/60 mb-2">Username</label>
-            <input
-              required
-              autoComplete="username"
-              placeholder="admin"
-              value={form.username}
-              onChange={(e) => setForm({ ...form, username: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border transition-all text-white placeholder-white/30"
-              style={{ background: "rgba(26, 20, 51, 0.8)", borderColor: "rgba(167, 139, 250, 0.2)", borderWidth: "1px" }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(167, 139, 250, 0.5)"; e.currentTarget.style.background = "rgba(26, 20, 51, 1)"; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(167, 139, 250, 0.2)"; e.currentTarget.style.background = "rgba(26, 20, 51, 0.8)"; }}
-            />
+      {/* Right panel — form */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white">
+        <div className="w-full max-w-sm">
+          {/* Mobile logo */}
+          <div className="flex items-center gap-3 mb-8 lg:hidden">
+            <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center font-black text-slate-900 text-lg">D</div>
+            <span className="font-black text-xl text-gray-900">DiamondPlay22</span>
           </div>
 
-          {/* Password */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-white/60 mb-2">Password</label>
-            <div className="relative">
+          <div className="mb-8">
+            <h1 className="text-3xl font-black text-gray-900 mb-1">Sign in</h1>
+            <p className="text-gray-400 text-sm">Authorized personnel only</p>
+          </div>
+
+          <form onSubmit={submit} className="space-y-5">
+            {/* Username */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Username</label>
               <input
                 required
-                autoComplete="current-password"
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border transition-all text-white placeholder-white/30 pr-12"
-                style={{ background: "rgba(26, 20, 51, 0.8)", borderColor: "rgba(167, 139, 250, 0.2)", borderWidth: "1px" }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(167, 139, 250, 0.5)"; e.currentTarget.style.background = "rgba(26, 20, 51, 1)"; }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(167, 139, 250, 0.2)"; e.currentTarget.style.background = "rgba(26, 20, 51, 0.8)"; }}
+                autoComplete="username"
+                placeholder="admin"
+                value={form.username}
+                onChange={(e) => setForm({ ...form, username: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl border border-yellow-200 bg-white text-gray-800 placeholder-gray-300 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition-all"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
             </div>
-          </div>
 
-          {/* 2FA */}
-          {needOtp && (
+            {/* Password */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-white/60 mb-2">2FA Code</label>
-              <input
-                inputMode="numeric"
-                placeholder="123 456"
-                value={form.otp}
-                onChange={(e) => setForm({ ...form, otp: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border transition-all text-white placeholder-white/30"
-                style={{ background: "rgba(26, 20, 51, 0.8)", borderColor: "rgba(167, 139, 250, 0.2)", borderWidth: "1px" }}
-              />
-            </div>
-          )}
-
-          {/* Lock/Unlock Toggle */}
-          <div className="flex items-center justify-between pt-2">
-            <label className="flex items-center gap-3 cursor-pointer select-none">
-              <div
-                onClick={() => setDisabled(!disabled)}
-                className="relative w-10 h-6 rounded-full transition-all"
-                style={{ background: disabled ? "rgba(212, 66, 63, 0.6)" : "rgba(167, 139, 250, 0.2)" }}
-              >
-                <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-md transition-transform ${disabled ? "left-5" : "left-1"}`} />
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Password</label>
+              <div className="relative">
+                <input
+                  required
+                  autoComplete="current-password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className="w-full px-4 py-3 pr-12 rounded-xl border border-yellow-200 bg-white text-gray-800 placeholder-gray-300 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
-              <span className="text-xs font-semibold text-white/60">
-                {disabled ? "🔒 Locked" : "🔓 Unlocked"}
-              </span>
-            </label>
-          </div>
-
-          {/* Error Message */}
-          {err && (
-            <div className="p-3 rounded-lg text-xs font-medium text-white flex items-center gap-2" style={{ background: "rgba(212, 66, 63, 0.15)", border: "1px solid rgba(212, 66, 63, 0.3)" }}>
-              <span>⚠</span> {err}
             </div>
-          )}
 
-          {/* Sign In Button */}
-          <button
-            disabled={busy || disabled}
-            className="w-full py-3 rounded-xl font-bold text-white transition-all duration-300 flex items-center justify-center gap-2 text-sm uppercase tracking-wider"
-            style={{
-              background: disabled
-                ? "rgba(100, 100, 100, 0.4)"
-                : busy
-                  ? "linear-gradient(135deg, #7740ed 0%, #a78bfa 100%)"
-                  : "linear-gradient(135deg, #d4423f 0%, #a01628 100%)",
-              boxShadow: disabled
-                ? "none"
-                : "0 8px 24px rgba(212, 66, 63, 0.3)",
-              opacity: disabled ? 0.5 : 1,
-            }}
-          >
-            <Lock size={16} />
-            {busy ? "Signing in…" : disabled ? "Locked" : "Enter Admin Panel"}
-          </button>
-        </form>
+            {/* 2FA */}
+            {needOtp && (
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">2FA Code</label>
+                <input
+                  inputMode="numeric"
+                  placeholder="123 456"
+                  value={form.otp}
+                  onChange={(e) => setForm({ ...form, otp: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-yellow-200 bg-white text-gray-800 placeholder-gray-300 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition-all"
+                />
+              </div>
+            )}
 
-        {/* Footer */}
-        <p className="text-center text-xs text-white/25 mt-8 tracking-wide">
-          DiamondPlay22 Admin • v1.0
-        </p>
+            {/* Error */}
+            {err && (
+              <div className="p-3 rounded-xl text-sm font-medium text-red-700 bg-red-50 border border-red-200 flex items-center gap-2">
+                <span>⚠</span> {err}
+              </div>
+            )}
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={busy}
+              className="w-full py-3.5 rounded-xl font-bold text-slate-900 transition-all duration-200 flex items-center justify-center gap-2 text-sm tracking-wide disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{
+                background: busy
+                  ? "linear-gradient(135deg, #fcd34d, #fbbf24)"
+                  : "linear-gradient(135deg, #ffcc00 0%, #f59e0b 100%)",
+                boxShadow: "0 4px 16px rgba(245,158,11,0.4)",
+              }}
+            >
+              <Lock size={16} />
+              {busy ? "Signing in…" : "Enter Admin Panel"}
+            </button>
+          </form>
+
+          <p className="text-center text-xs text-gray-300 mt-8">
+            Secure connection • diamondplay22.site
+          </p>
+        </div>
       </div>
     </div>
   );

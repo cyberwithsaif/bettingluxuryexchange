@@ -27,6 +27,8 @@ const DEFAULT_ITEMS: NavItem[] = [
   { href: "/sportsbook", label: "SPORTS BOOK", emoji: "🎯", enabled: true },
 ];
 
+const inputCls = "bg-white border border-yellow-200 rounded px-2 py-1 text-sm text-gray-800 outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100 transition";
+
 export default function NavSettingsPage() {
   const { data, isLoading } = useSWR<PlatformSettings>(SETTINGS_KEY);
   const [items, setItems] = useState<NavItem[] | null>(null);
@@ -79,29 +81,33 @@ export default function NavSettingsPage() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <h1 className="font-display text-4xl">Nav Bar</h1>
-        <div className="h-40 animate-pulse bg-panel/60 rounded-xl" />
+        <h1 className="text-2xl font-black text-gray-900">Nav Bar</h1>
+        <div className="h-40 animate-pulse bg-gray-100 rounded-xl" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <h1 className="font-display text-4xl flex items-center gap-3">
-        <Navigation size={32} /> Navigation Bar
-      </h1>
-      <p className="text-sm text-white/50">
-        Manage the top navigation tabs shown to all users. Drag to reorder, toggle visibility, or edit labels and links.
-      </p>
+      <div>
+        <h1 className="text-2xl font-black text-gray-900 flex items-center gap-3">
+          <Navigation size={24} /> Navigation Bar
+        </h1>
+        <p className="text-sm text-gray-400 mt-0.5">
+          Manage the top navigation tabs shown to all users. Drag to reorder, toggle visibility, or edit labels and links.
+        </p>
+      </div>
 
       {msg && (
-        <div className={`text-sm px-4 py-2.5 rounded-lg border ${msg.ok ? "bg-ok/10 border-ok/30 text-ok" : "bg-bad/10 border-bad/30 text-bad"}`}>
+        <div className={`text-sm px-4 py-2.5 rounded-lg border font-medium ${
+          msg.ok ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-600"
+        }`}>
           {msg.text}
         </div>
       )}
 
       {/* Items list */}
-      <section className="rounded-xl border border-line bg-panel/60 p-5 space-y-2">
+      <section className="rounded-xl border border-yellow-100 bg-white p-5 space-y-2 shadow-sm">
         {current.map((item, idx) => (
           <div
             key={idx}
@@ -110,88 +116,80 @@ export default function NavSettingsPage() {
             onDragOver={(e) => onDragOver(e, idx)}
             onDragEnd={onDragEnd}
             className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 transition ${
-              dragIdx === idx ? "border-accent bg-accent/5" : "border-line bg-black/20 hover:border-white/20"
+              dragIdx === idx ? "border-yellow-400 bg-yellow-50" : "border-gray-100 bg-white hover:border-yellow-200"
             }`}
           >
-            <GripVertical size={16} className="text-white/30 cursor-grab shrink-0" />
+            <GripVertical size={16} className="text-gray-300 cursor-grab shrink-0" />
 
-            {/* Emoji */}
             <input
               type="text"
               value={item.emoji}
               onChange={(e) => update(idx, { emoji: e.target.value })}
-              className="w-10 bg-transparent text-center text-lg outline-none border border-line rounded px-1"
+              className={`w-10 text-center text-lg ${inputCls}`}
             />
 
-            {/* Label */}
             <input
               type="text"
               value={item.label}
               onChange={(e) => update(idx, { label: e.target.value })}
-              className="flex-1 bg-transparent border border-line rounded px-2 py-1 text-sm font-bold uppercase outline-none focus:border-accent"
+              className={`flex-1 font-bold uppercase ${inputCls}`}
             />
 
-            {/* Href */}
             <input
               type="text"
               value={item.href}
               onChange={(e) => update(idx, { href: e.target.value })}
-              className="w-36 bg-transparent border border-line rounded px-2 py-1 text-sm text-white/60 outline-none focus:border-accent"
+              className={`w-36 text-gray-500 ${inputCls}`}
             />
 
-            {/* Toggle visibility */}
             <button
               onClick={() => update(idx, { enabled: !item.enabled })}
-              className={`shrink-0 transition ${item.enabled ? "text-ok" : "text-white/30"}`}
+              className={`shrink-0 transition ${item.enabled ? "text-emerald-500" : "text-gray-300"}`}
               title={item.enabled ? "Visible — click to hide" : "Hidden — click to show"}
             >
               {item.enabled ? <Eye size={16} /> : <EyeOff size={16} />}
             </button>
 
-            {/* Delete */}
-            <button
-              onClick={() => remove(idx)}
-              className="shrink-0 text-white/30 hover:text-bad transition"
-            >
+            <button onClick={() => remove(idx)} className="shrink-0 text-gray-300 hover:text-red-500 transition">
               <Trash2 size={16} />
             </button>
           </div>
         ))}
 
         {current.length === 0 && (
-          <p className="text-sm text-white/40 text-center py-4">No nav items. Add one below.</p>
+          <p className="text-sm text-gray-400 text-center py-4">No nav items. Add one below.</p>
         )}
       </section>
 
       {/* Add new item */}
-      <section className="rounded-xl border border-line bg-panel/60 p-5">
-        <h2 className="font-display text-lg mb-3 flex items-center gap-2"><Plus size={16} /> Add Item</h2>
+      <section className="rounded-xl border border-yellow-100 bg-white p-5 shadow-sm">
+        <h2 className="text-base font-black text-gray-800 mb-3 flex items-center gap-2"><Plus size={16} /> Add Item</h2>
         <div className="flex items-center gap-3">
           <input
             type="text"
             placeholder="🎮"
             value={newItem.emoji}
             onChange={(e) => setNewItem(p => ({ ...p, emoji: e.target.value }))}
-            className="w-12 text-center bg-black/40 border border-line rounded px-1 py-1.5 text-sm outline-none focus:border-accent"
+            className={`w-12 text-center ${inputCls}`}
           />
           <input
             type="text"
             placeholder="LABEL"
             value={newItem.label}
             onChange={(e) => setNewItem(p => ({ ...p, label: e.target.value.toUpperCase() }))}
-            className="flex-1 bg-black/40 border border-line rounded px-2 py-1.5 text-sm font-bold outline-none focus:border-accent"
+            className={`flex-1 font-bold ${inputCls}`}
           />
           <input
             type="text"
             placeholder="/path"
             value={newItem.href}
             onChange={(e) => setNewItem(p => ({ ...p, href: e.target.value }))}
-            className="w-36 bg-black/40 border border-line rounded px-2 py-1.5 text-sm text-white/60 outline-none focus:border-accent"
+            className={`w-36 text-gray-500 ${inputCls}`}
           />
           <button
             onClick={addItem}
             disabled={!newItem.href || !newItem.label}
-            className="shrink-0 flex items-center gap-1.5 rounded-md bg-accent-grad px-4 py-1.5 font-bold text-ink text-sm disabled:opacity-40"
+            className="shrink-0 flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-1.5 font-bold text-slate-900 text-sm disabled:opacity-40 hover:brightness-110 transition"
           >
             <Plus size={14} /> Add
           </button>
@@ -201,7 +199,7 @@ export default function NavSettingsPage() {
       <button
         onClick={save}
         disabled={busy}
-        className="flex items-center gap-2 rounded-md bg-accent-grad px-6 py-2.5 font-bold text-ink shadow-glow disabled:opacity-40 hover:brightness-110 transition"
+        className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-2.5 font-bold text-slate-900 shadow-sm disabled:opacity-40 hover:brightness-110 transition"
       >
         <Save size={16} />
         {busy ? "Saving…" : "Save Navigation"}

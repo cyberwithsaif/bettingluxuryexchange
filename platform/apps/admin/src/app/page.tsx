@@ -1,6 +1,6 @@
 "use client";
 import { useLiveData } from "@/lib/hooks";
-import { TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertCircle, Users, Target, BarChart2, ArrowDownToLine, ArrowUpToLine, ShieldAlert } from "lucide-react";
 
 interface DashboardData {
   users: number;
@@ -19,109 +19,99 @@ interface DashboardData {
   pl7d: Array<{ date: string; pl: number }>;
 }
 
+function fmt(n: number | undefined) {
+  return n == null ? "—" : new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n);
+}
+
 export default function AdminDashboard() {
-  const { data, isLoading } = useLiveData<DashboardData>("/admin/dashboard", 4000);
+  const { data, isLoading } = useLiveData<DashboardData>("/admin/dashboard", 15000);
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="font-display text-4xl tracking-wide">Dashboard</h1>
-        <p className="text-white/60 text-sm mt-1">Real-time platform overview</p>
+        <h1 className="text-2xl font-black text-gray-900">Dashboard</h1>
+        <p className="text-gray-400 text-sm mt-0.5">Real-time platform overview</p>
       </div>
 
+      {/* KPI Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <KPI label="Total Users" value={data?.users} icon="👥" loading={isLoading} />
-        <KPI label="Open Bets" value={data?.openBets} icon="🎯" loading={isLoading} />
-        <KPI label="Live Markets" value={data?.activeMarkets} icon="📊" loading={isLoading} />
-        <KPI
-          label="Pending Deposits"
-          value={data?.pendingDeposits}
-          icon="⬇️"
-          tone={(data?.pendingDeposits ?? 0) > 0 ? "warn" : undefined}
-          loading={isLoading}
-        />
-        <KPI
-          label="Pending Withdrawals"
-          value={data?.pendingWithdrawals}
-          icon="⬆️"
-          tone={(data?.pendingWithdrawals ?? 0) > 0 ? "warn" : undefined}
-          loading={isLoading}
-        />
-        <KPI label="Platform Exposure" value={fmt(data?.totalExposure)} icon="⚠️" tone="bad" loading={isLoading} />
+        <KPI label="Total Users"          value={data?.users}              Icon={Users}           loading={isLoading} />
+        <KPI label="Open Bets"            value={data?.openBets}           Icon={Target}          loading={isLoading} />
+        <KPI label="Live Markets"         value={data?.activeMarkets}      Icon={BarChart2}       loading={isLoading} />
+        <KPI label="Pending Deposits"     value={data?.pendingDeposits}    Icon={ArrowDownToLine} loading={isLoading} tone={(data?.pendingDeposits ?? 0) > 0 ? "warn" : undefined} />
+        <KPI label="Pending Withdrawals"  value={data?.pendingWithdrawals} Icon={ArrowUpToLine}   loading={isLoading} tone={(data?.pendingWithdrawals ?? 0) > 0 ? "warn" : undefined} />
+        <KPI label="Platform Exposure"    value={`₹${fmt(data?.totalExposure)}`} Icon={ShieldAlert} loading={isLoading} tone="bad" />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-5">
         {/* 7-day P/L Chart */}
-        <section className="glass rounded-lg p-6 animate-slide-in-up" style={{ animationDelay: "100ms" }}>
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-xl border border-yellow-100 p-6 shadow-sm animate-slide-in-up" style={{ animationDelay: "100ms" }}>
+          <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="font-display text-xl">7-Day P/L</h2>
-              <p className="text-xs text-white/50">Operator revenue</p>
+              <h2 className="text-lg font-black text-gray-900">7-Day P/L</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Operator revenue</p>
             </div>
             <div className="text-right">
-              <p className="font-display text-2xl text-ok">{fmt(data?.totalPL7d)}</p>
-              <p className="text-xs text-white/50">Net</p>
+              <p className="text-2xl font-black text-emerald-600">{data?.pl7d ? `₹${fmt(data.pl7d.reduce((s, d) => s + d.pl, 0))}` : "—"}</p>
+              <p className="text-xs text-gray-400">Net</p>
             </div>
           </div>
-          <div className="space-y-2">
+          <div className="h-40 flex items-end gap-1.5">
             {isLoading ? (
-              <div className="h-40 bg-panel/50 rounded animate-pulse" />
+              <div className="w-full h-full bg-gray-100 rounded-lg animate-pulse" />
+            ) : (data?.pl7d ?? []).length === 0 ? (
+              <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm">No data yet</div>
             ) : (
-              <div className="grid grid-cols-7 gap-2 h-40 items-end">
-                {(data?.pl7d ?? []).map((d: any) => {
-                  const max = Math.max(1, ...(data?.pl7d ?? []).map((x: any) => Math.abs(x.pl)));
-                  const h = Math.max(8, Math.abs(d.pl) / max * 100);
-                  return (
-                    <div key={d.date} className="flex flex-col items-center gap-2 group">
-                      <div
-                        style={{ height: `${h}%` }}
-                        className={`w-full rounded-t transition-all duration-300 group-hover:brightness-125 cursor-pointer ${
-                          d.pl >= 0 ? "bg-ok" : "bg-bad"
-                        }`}
-                        title={`${d.date}: ${Math.round(d.pl).toLocaleString("en-IN")}`}
-                      />
-                      <span className="text-[10px] text-white/40 group-hover:text-white/70 transition-colors">
-                        {d.date.slice(5)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+              (data?.pl7d ?? []).map((d: any) => {
+                const max = Math.max(1, ...(data?.pl7d ?? []).map((x: any) => Math.abs(x.pl)));
+                const h = Math.max(8, Math.abs(d.pl) / max * 100);
+                return (
+                  <div key={d.date} className="flex-1 flex flex-col items-center gap-1.5 group">
+                    <div
+                      style={{ height: `${h}%` }}
+                      className={`w-full rounded-t-md transition-all duration-300 group-hover:brightness-110 cursor-pointer ${
+                        d.pl >= 0 ? "bg-emerald-400" : "bg-red-400"
+                      }`}
+                      title={`${d.date}: ₹${Math.round(d.pl).toLocaleString("en-IN")}`}
+                    />
+                    <span className="text-[10px] text-gray-400 group-hover:text-gray-600 transition-colors">
+                      {d.date.slice(5)}
+                    </span>
+                  </div>
+                );
+              })
             )}
           </div>
-        </section>
+        </div>
 
         {/* Key Metrics */}
-        <section className="glass rounded-lg p-6 animate-slide-in-up space-y-3" style={{ animationDelay: "200ms" }}>
-          <h2 className="font-display text-xl">Key Metrics</h2>
-
+        <div className="bg-white rounded-xl border border-yellow-100 p-6 shadow-sm animate-slide-in-up space-y-4" style={{ animationDelay: "200ms" }}>
+          <h2 className="text-lg font-black text-gray-900">Key Metrics</h2>
           <div className="space-y-2">
             {isLoading ? (
-              Array(4).fill(0).map((_, i) => <div key={i} className="h-12 bg-panel/50 rounded animate-pulse" />)
+              Array(4).fill(0).map((_, i) => <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />)
             ) : (
               <>
-                <MetricRow label="Total Revenue" value={fmt(data?.totalRevenue)} trend={data?.revenueTrend} />
-                <MetricRow label="Commission Earned" value={fmt(data?.commission)} trend={data?.commissionTrend} />
-                <MetricRow label="Active Users 24h" value={String(data?.activeUsers24h ?? "—")} />
-                <MetricRow label="Avg Bet Size" value={fmt(data?.avgBetSize)} />
+                <MetricRow label="Total Revenue"     value={`₹${fmt(data?.totalRevenue)}`}  trend={data?.revenueTrend} />
+                <MetricRow label="Commission Earned" value={`₹${fmt(data?.commission)}`}    trend={data?.commissionTrend} />
+                <MetricRow label="Active Users 24h"  value={String(data?.activeUsers24h ?? "—")} />
+                <MetricRow label="Avg Bet Size"      value={`₹${fmt(data?.avgBetSize)}`} />
               </>
             )}
           </div>
-        </section>
+        </div>
       </div>
 
       {/* Alerts */}
       {((data?.pendingDeposits ?? 0) > 0 || (data?.pendingWithdrawals ?? 0) > 0) && (
-        <div className="glass rounded-lg p-4 border border-orange-500/30 bg-orange-500/5 animate-pulse">
-          <div className="flex items-start gap-3">
-            <AlertCircle size={18} className="text-orange-400 mt-0.5 shrink-0" />
-            <div className="text-sm">
-              <p className="font-semibold text-orange-400">Pending Actions Required</p>
-              <p className="text-white/70 mt-1">
-                {data?.pendingDeposits} deposit{data?.pendingDeposits !== 1 ? "s" : ""} and{" "}
-                {data?.pendingWithdrawals} withdrawal{data?.pendingWithdrawals !== 1 ? "s" : ""} waiting for approval.
-              </p>
-            </div>
+        <div className="bg-orange-50 rounded-xl border border-orange-200 p-4 flex items-start gap-3">
+          <AlertCircle size={18} className="text-orange-500 mt-0.5 shrink-0" />
+          <div className="text-sm">
+            <p className="font-bold text-orange-700">Pending Actions Required</p>
+            <p className="text-orange-600 mt-0.5">
+              {data?.pendingDeposits} deposit{data?.pendingDeposits !== 1 ? "s" : ""} and{" "}
+              {data?.pendingWithdrawals} withdrawal{data?.pendingWithdrawals !== 1 ? "s" : ""} waiting for approval.
+            </p>
           </div>
         </div>
       )}
@@ -129,58 +119,39 @@ export default function AdminDashboard() {
   );
 }
 
-function KPI({
-  label,
-  value,
-  icon,
-  tone,
-  loading,
-}: {
-  label: string;
-  value: any;
-  icon?: string;
-  tone?: "warn" | "bad";
-  loading?: boolean;
+function KPI({ label, value, Icon, tone, loading }: {
+  label: string; value: any; Icon: any; tone?: "warn" | "bad"; loading?: boolean;
 }) {
+  const valueColor = tone === "warn" ? "text-yellow-600" : tone === "bad" ? "text-red-500" : "text-gray-900";
   return (
-    <div className="glass rounded-lg p-4 hover:border-accent/50 transition-all duration-300 animate-slide-in-up cursor-default">
+    <div className="bg-white rounded-xl border border-yellow-100 p-4 shadow-sm hover:border-yellow-300 transition-all duration-200">
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-white/50 font-semibold">{label}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold mb-2">{label}</p>
           {loading ? (
-            <div className="h-8 w-16 mt-2 bg-panel/50 rounded animate-pulse" />
+            <div className="h-7 w-16 bg-gray-100 rounded animate-pulse" />
           ) : (
-            <p
-              className={`font-display text-2xl mt-1 tabular-nums ${
-                tone === "warn" ? "text-accentSoft" : tone === "bad" ? "text-bad" : "text-white"
-              }`}
-            >
-              {value ?? "—"}
-            </p>
+            <p className={`text-xl font-black tabular-nums ${valueColor}`}>{value ?? "—"}</p>
           )}
         </div>
-        <span className="text-2xl">{icon}</span>
+        <div className={`p-2 rounded-lg shrink-0 ${
+          tone === "warn" ? "bg-yellow-50" : tone === "bad" ? "bg-red-50" : "bg-yellow-50"
+        }`}>
+          <Icon size={16} className={tone === "warn" ? "text-yellow-500" : tone === "bad" ? "text-red-400" : "text-yellow-500"} />
+        </div>
       </div>
     </div>
   );
 }
 
-function MetricRow({
-  label,
-  value,
-  trend,
-}: {
-  label: string;
-  value: string;
-  trend?: number;
-}) {
+function MetricRow({ label, value, trend }: { label: string; value: string; trend?: number }) {
   return (
-    <div className="flex items-center justify-between p-3 rounded-lg bg-panel/40 hover:bg-panel/60 transition-colors">
-      <span className="text-sm text-white/70">{label}</span>
+    <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100 hover:bg-yellow-50/50 transition-colors">
+      <span className="text-sm text-gray-600 font-medium">{label}</span>
       <div className="flex items-center gap-2">
-        <span className="font-semibold tabular-nums">{value}</span>
+        <span className="font-bold tabular-nums text-gray-800">{value}</span>
         {trend !== undefined && (
-          <div className={`text-xs flex items-center gap-1 ${trend > 0 ? "text-ok" : "text-bad"}`}>
+          <div className={`text-xs flex items-center gap-1 font-semibold ${trend > 0 ? "text-emerald-600" : "text-red-500"}`}>
             {trend > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
             {Math.abs(trend).toFixed(1)}%
           </div>
@@ -188,8 +159,4 @@ function MetricRow({
       </div>
     </div>
   );
-}
-
-function fmt(n: number | undefined) {
-  return n == null ? "—" : new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n);
 }
