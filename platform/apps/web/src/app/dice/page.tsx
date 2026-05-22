@@ -901,11 +901,11 @@ export default function DicePage() {
           <div className="flex-1 flex flex-col p-3 md:p-4 lg:p-8 lg:justify-center">
 
             {/* ── Game Card ── */}
-            <div className="w-full flex flex-col rounded-2xl overflow-hidden"
+            <div className="w-full flex flex-col rounded-2xl"
               style={{ background: "#0d0f1e", border: "1px solid rgba(255,255,255,0.06)" }}>
 
               {/* Mobile: Manual/Auto tabs at top of card */}
-              <div className="lg:hidden flex" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+              <div className="lg:hidden flex rounded-t-2xl overflow-hidden" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
                 {(["manual", "auto"] as const).map(tab => (
                   <button key={tab} onClick={() => setBetTab(tab)}
                     className={`flex-1 py-3 text-sm font-bold capitalize transition-all relative ${
