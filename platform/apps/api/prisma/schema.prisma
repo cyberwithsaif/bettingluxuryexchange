@@ -71,6 +71,7 @@ model User {
   minesSessions   MinesSession[]
   plinkoBets      PlinkoBet[]
   pumpBets        PumpBet[]
+  diceBets        DiceBet[]
 
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -713,4 +714,48 @@ model PumpBet {
 
   @@index([userId, createdAt])
   @@index([status])
+}
+
+// -------------------------------------------------------------
+// Dice — Provably fair Roll Under / Over / Between / Outside
+// -------------------------------------------------------------
+
+enum DiceMode {
+  ROLL_UNDER
+  ROLL_OVER
+  ROLL_BETWEEN
+  ROLL_OUTSIDE
+}
+
+model DiceBet {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+
+  betAmount       Decimal   @db.Decimal(20, 4)
+  mode            DiceMode
+  // Primary target for ROLL_UNDER / ROLL_OVER
+  target          Decimal   @db.Decimal(10, 2)
+  // Range targets for ROLL_BETWEEN / ROLL_OUTSIDE
+  minTarget       Decimal?  @db.Decimal(10, 2)
+  maxTarget       Decimal?  @db.Decimal(10, 2)
+
+  winChance       Decimal   @db.Decimal(10, 4)  // 0.01 – 98.99
+  multiplier      Decimal   @db.Decimal(10, 4)  // 99 / winChance
+
+  roll            Decimal   @db.Decimal(10, 2)  // 0.00 – 99.99
+  won             Boolean
+
+  payout          Decimal   @db.Decimal(20, 4)
+  profit          Decimal   @db.Decimal(20, 4)  // payout - betAmount
+
+  serverSeed      String
+  serverSeedHash  String
+  clientSeed      String
+  nonce           Int
+
+  createdAt       DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }
