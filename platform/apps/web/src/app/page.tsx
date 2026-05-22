@@ -26,7 +26,7 @@ export default async function HomePage() {
           </div>
 
           {/* Float image - right positioned with slight overflow */}
-          <div className="absolute -right-0 top-0 w-2/3 h-full">
+          <div className="absolute -right-0 top-0 w-4/5 h-full">
             <Image
               src="/images/float.png"
               alt="Floating Chips"
