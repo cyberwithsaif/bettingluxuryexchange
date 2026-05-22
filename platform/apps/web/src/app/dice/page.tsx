@@ -711,54 +711,69 @@ export default function DicePage() {
         <div className="flex flex-col lg:flex-row min-h-screen">
 
           {/* ═══ LEFT SIDEBAR — Betting Controls ═════════════════════════════ */}
-          <div className="w-full lg:w-[360px] shrink-0 flex flex-col p-5 lg:p-6 overflow-y-auto"
-            style={{ background: "#191938", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
+          <div className="w-full lg:w-[340px] shrink-0 flex flex-col p-4 lg:p-5 overflow-y-auto"
+            style={{ background: "#090c1c" }}>
 
-            <div className="rounded-2xl bg-[#1a2c38] p-4 flex flex-col gap-4">
+            {/* ── Betting Card ── */}
+            <div className="rounded-2xl flex flex-col gap-0 overflow-hidden"
+              style={{ background: "#0d0f1e", border: "1px solid rgba(255,255,255,0.07)" }}>
 
-              {/* Manual / Auto tabs — pill style */}
-              <div className="flex items-center bg-[#0c1824] rounded-full p-1">
+              {/* Manual / Auto tabs — underline style */}
+              <div className="flex items-center" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
                 {(["manual", "auto"] as const).map(tab => (
                   <button key={tab} onClick={() => setBetTab(tab)}
-                    className={`flex-1 py-2.5 rounded-full text-sm font-bold capitalize transition ${
-                      betTab === tab ? "bg-[#1e3346] text-white" : "text-white/50 hover:text-white"
+                    className={`flex-1 py-3.5 text-sm font-bold capitalize transition-all relative ${
+                      betTab === tab ? "text-white" : "text-white/35 hover:text-white/60"
                     }`}>
                     {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    {betTab === tab && (
+                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-0.5 rounded-full bg-[#7c3aed]" />
+                    )}
                   </button>
                 ))}
               </div>
 
-              {/* Bet Amount */}
-              <div>
-                <label className="text-xs text-white/60 font-semibold block mb-2">Bet Amount</label>
-                <div className="flex items-stretch h-12 gap-1 bg-[#132737] rounded-xl border border-white/5">
-                  <div className="flex items-center pl-3 flex-1">
-                    <span className="text-emerald-400 font-bold text-sm mr-1">₹</span>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      value={betAmount === 0 ? "" : betAmount}
-                      placeholder="0"
-                      onChange={e => setBetAmount(Math.max(0, parseFloat(e.target.value.replace(/[^\d.]/g, "")) || 0))}
-                      disabled={isRolling || autoRunning}
-                      className="flex-1 bg-transparent text-white font-bold outline-none tabular-nums disabled:opacity-60"
-                    />
-                  </div>
-                  <button onClick={() => setBetAmount(p => Math.max(0, Math.round(p / 2 * 100) / 100))} disabled={isRolling || autoRunning}
-                    className="px-2.5 text-xs font-bold text-white/60 hover:text-white border-l border-white/5 disabled:opacity-40 transition">½</button>
-                  <button onClick={() => setBetAmount(p => Math.round(p * 2 * 100) / 100)} disabled={isRolling || autoRunning}
-                    className="px-2.5 text-xs font-bold text-white/60 hover:text-white border-l border-white/5 disabled:opacity-40 rounded-r-xl transition">2×</button>
-                </div>
-              </div>
+              {/* Form fields */}
+              <div className="p-4 flex flex-col gap-4">
 
-              {/* Payout on Win */}
-              <div>
-                <label className="text-xs text-white/60 font-semibold block mb-2">Payout on Win</label>
-                <div className="flex items-center h-12 rounded-xl px-4 bg-[#132737] border border-white/5">
-                  <span className="text-emerald-400 font-bold text-sm mr-1">₹</span>
-                  <span className="text-white font-bold tabular-nums">{fmtNum(payout)}</span>
+                {/* Bet Amount */}
+                <div>
+                  <label className="text-[11px] text-white/40 font-semibold uppercase tracking-wider block mb-2">Bet Amount</label>
+                  <div className="flex items-stretch h-11 rounded-xl overflow-hidden"
+                    style={{ background: "#181a2e", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <div className="flex items-center pl-3.5 flex-1 gap-1.5">
+                      <span className="text-emerald-400 font-bold text-sm">₹</span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={betAmount === 0 ? "" : betAmount}
+                        placeholder="0.00"
+                        onChange={e => setBetAmount(Math.max(0, parseFloat(e.target.value.replace(/[^\d.]/g, "")) || 0))}
+                        disabled={isRolling || autoRunning}
+                        className="flex-1 bg-transparent text-white font-bold text-sm outline-none tabular-nums disabled:opacity-60 placeholder-white/20"
+                      />
+                    </div>
+                    <div className="flex items-center" style={{ borderLeft: "1px solid rgba(255,255,255,0.07)" }}>
+                      <button onClick={() => setBetAmount(p => Math.max(0, Math.round(p / 2 * 100) / 100))}
+                        disabled={isRolling || autoRunning}
+                        className="px-3 h-full text-xs font-bold text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 transition">½</button>
+                      <button onClick={() => setBetAmount(p => Math.round(p * 2 * 100) / 100)}
+                        disabled={isRolling || autoRunning}
+                        className="px-3 h-full text-xs font-bold text-white/40 hover:text-white hover:bg-white/5 disabled:opacity-30 transition"
+                        style={{ borderLeft: "1px solid rgba(255,255,255,0.07)" }}>2×</button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+
+                {/* Payout on Win */}
+                <div>
+                  <label className="text-[11px] text-white/40 font-semibold uppercase tracking-wider block mb-2">Payout on Win</label>
+                  <div className="flex items-center h-11 rounded-xl px-3.5 gap-1.5"
+                    style={{ background: "#181a2e", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <span className="text-emerald-400 font-bold text-sm">₹</span>
+                    <span className="text-white font-bold tabular-nums text-sm">{fmtNum(payout)}</span>
+                  </div>
+                </div>
 
               {betTab === "manual" ? (
                 <>
@@ -767,11 +782,11 @@ export default function DicePage() {
                     onClick={() => placeBet()}
                     disabled={!isLoggedIn || isRolling || autoRunning}
                     whileTap={{ scale: 0.97 }}
-                    className="w-full h-12 rounded-xl font-bold text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full h-12 rounded-xl font-black text-base tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
-                      background: isRolling ? "rgba(245,197,24,0.4)" : "linear-gradient(135deg, #f5c518 0%, #f0a500 100%)",
-                      boxShadow: isRolling ? "none" : "0 4px 12px rgba(245,197,24,0.3)",
-                      color: "#1a0a00",
+                      background: isRolling ? "rgba(245,197,24,0.35)" : "linear-gradient(135deg, #f5c518 0%, #f0a500 100%)",
+                      boxShadow: isRolling ? "none" : "0 0 24px rgba(245,197,24,0.25), 0 4px 12px rgba(0,0,0,0.3)",
+                      color: "#1a0800",
                     }}
                   >
                     {isRolling ? "Rolling..." : !isLoggedIn ? "Login to Play" : "Roll Dice"}
@@ -782,9 +797,9 @@ export default function DicePage() {
 
                   {/* Provably Fair link */}
                   <button onClick={() => setShowPF(true)}
-                    className="flex items-center justify-center gap-1.5 text-xs font-semibold mx-auto"
-                    style={{ color: "rgba(167,139,250,0.7)" }}>
-                    <Shield size={12} /> Provably Fair
+                    className="flex items-center justify-center gap-1.5 text-xs font-semibold py-1"
+                    style={{ color: "rgba(167,139,250,0.6)" }}>
+                    <Shield size={11} /> Provably Fair
                   </button>
                 </>
               ) : (
@@ -883,7 +898,8 @@ export default function DicePage() {
                 </div>
               )}
 
-            </div>
+              </div>{/* end form fields */}
+            </div>{/* end betting card */}
           </div>
 
           {/* ═══ GAME AREA ═════════════════════════════════════════════════════ */}
