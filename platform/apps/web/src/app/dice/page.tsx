@@ -458,7 +458,9 @@ export default function DicePage() {
   const [lastResult, setLastResult] = useState<BetResult | null>(null);
   const [isRolling, setIsRolling]   = useState(false);
   const [recentRolls, setRecentRolls] = useState<{ roll: number; won: boolean }[]>([]);
-  const [betError, setBetError]       = useState<string | null>(null);
+  const [betError, setBetError]         = useState<string | null>(null);
+  const [amountAlert, setAmountAlert]   = useState(false);
+  const amountAlertTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Provably fair
   const [clientSeed, setClientSeed]         = useState(() => randomClientSeed());
@@ -587,18 +589,24 @@ export default function DicePage() {
     }
   }, [mode, target, minTarget, maxTarget]);
 
+  const showAmountAlert = useCallback(() => {
+    setAmountAlert(true);
+    if (amountAlertTimer.current) clearTimeout(amountAlertTimer.current);
+    amountAlertTimer.current = setTimeout(() => setAmountAlert(false), 3000);
+  }, []);
+
   // Place bet
   const placeBet = useCallback((amount?: number) => {
     if (isRolling) return;
     const betAmt = amount ?? betAmount;
     setBetError(null);
 
-    // ── Demo mode (bet = 0 or not logged in) ──────────────────────────────────
-    if (!user || betAmt < 0.01) {
+    // ── Demo mode (not logged in only) ────────────────────────────────────────
+    if (!user) {
       setIsRolling(true);
       playSound("roll");
       setTimeout(() => {
-        const roll = Math.floor(Math.random() * 10000) / 100;  // 0.00–99.99
+        const roll = Math.floor(Math.random() * 10000) / 100;
         const won  = isWinLocal(roll);
         const wc   = calcWinChance(mode, target, minTarget, maxTarget);
         const mult = calcMultiplier(wc);
@@ -619,6 +627,12 @@ export default function DicePage() {
       return;
     }
 
+    // ── Insufficient amount guard ─────────────────────────────────────────────
+    if (betAmt <= 0) {
+      showAmountAlert();
+      return;
+    }
+
     // ── Real bet via socket ────────────────────────────────────────────────────
     const s = socket.current;
     if (!s) return;
@@ -635,7 +649,7 @@ export default function DicePage() {
     }, 8000);
 
     s.emit("dice:bet", { betAmount: betAmt, mode, target, minTarget, maxTarget, clientSeed, nonce });
-  }, [isRolling, betAmount, user, playSound, isWinLocal, mode, target, minTarget, maxTarget, clientSeed, nonce]);
+  }, [isRolling, betAmount, user, playSound, isWinLocal, mode, target, minTarget, maxTarget, clientSeed, nonce, showAmountAlert]);
 
   // Auto bet engine
   const runAutoStep = useCallback(async (currentBet: number, roundsLeft: number) => {
@@ -1210,6 +1224,33 @@ export default function DicePage() {
             lastResult={lastResult}
             onClientSeedChange={setClientSeed} onRotateSeeds={rotateSeeds} onClose={() => setShowPF(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Insufficient Amount Alert */}
+      <AnimatePresence>
+        {amountAlert && (
+          <motion.div
+            initial={{ opacity: 0, y: -16, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -16, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 28 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl pointer-events-none"
+            style={{
+              background: "linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)",
+              border: "1px solid rgba(239,68,68,0.4)",
+              boxShadow: "0 8px 32px rgba(239,68,68,0.35), 0 2px 8px rgba(0,0,0,0.4)",
+            }}
+          >
+            <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+              style={{ background: "rgba(239,68,68,0.3)" }}>
+              <span style={{ fontSize: 15 }}>⚠️</span>
+            </div>
+            <div>
+              <p className="text-white font-black text-sm leading-none mb-0.5">Insufficient Amount</p>
+              <p className="text-red-300 text-xs font-medium">Please enter a bet amount to roll</p>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>
