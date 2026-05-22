@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Clock, Volume2, VolumeX, RotateCcw, X, Repeat, ArrowLeft, AlertTriangle } from "lucide-react";
@@ -434,6 +435,27 @@ export default function RoulettePage() {
                     status={status}
                   />
                 </div>
+
+                {/* Spinning roulette wheel overlay */}
+                <motion.div
+                  className="absolute inset-0 flex items-center justify-center"
+                  animate={{ rotate: status === "SPINNING" ? 360 : 0 }}
+                  transition={{
+                    duration: 5,
+                    repeat: status === "SPINNING" ? Infinity : 0,
+                    repeatType: "loop",
+                    ease: "linear"
+                  }}
+                >
+                  <Image
+                    src="/images/rou.png"
+                    alt="Roulette Wheel"
+                    width={200}
+                    height={200}
+                    priority
+                    style={{ pointerEvents: "none" }}
+                  />
+                </motion.div>
               </div>
 
               {/* Below-wheel area: win amount for 3s, otherwise winning number badge */}
