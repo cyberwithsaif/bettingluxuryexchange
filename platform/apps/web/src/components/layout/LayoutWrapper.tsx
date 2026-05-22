@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { SidebarContext } from "@/lib/contexts/sidebar";
 import { TopBar } from "./TopBar";
 import { Footer } from "./Footer";
@@ -12,6 +12,17 @@ import { AppSidebar } from "./AppSidebar";
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Restore persisted state after hydration
+  useEffect(() => {
+    const stored = localStorage.getItem("sidebar-collapsed");
+    if (stored !== null) setSidebarCollapsed(stored === "true");
+  }, []);
+
+  const setCollapsed = useCallback((v: boolean) => {
+    setSidebarCollapsed(v);
+    localStorage.setItem("sidebar-collapsed", String(v));
+  }, []);
 
   const isFullScreen =
     pathname === "/mines" ||
@@ -32,7 +43,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <SidebarContext.Provider value={{ collapsed: sidebarCollapsed, setCollapsed: setSidebarCollapsed }}>
+    <SidebarContext.Provider value={{ collapsed: sidebarCollapsed, setCollapsed }}>
       <div className="min-h-screen flex bg-[#090c1c]">
         <Suspense fallback={null}><NavigationProgress /></Suspense>
 
