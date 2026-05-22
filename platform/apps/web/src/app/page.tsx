@@ -10,8 +10,8 @@ export default async function HomePage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Casino Banner */}
         <div className="group relative rounded-3xl overflow-visible border border-white/10 hover:border-white/20 transition-all duration-300 min-h-[130px] md:min-h-[175px] hover:shadow-2xl hover:scale-[1.02] cursor-pointer">
-          {/* Background color */}
-          <div className="absolute inset-0 rounded-3xl" style={{ background: "#f21f5f" }} />
+          {/* Background image */}
+          <div className="absolute inset-0 rounded-3xl" style={{ backgroundImage: "url('/images/bgping.png')", backgroundSize: "cover", backgroundPosition: "center" }} />
 
           {/* Neon card - center positioned with overflow, behind other images */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none -inset-6 md:-inset-12 top-4 md:top-6">
