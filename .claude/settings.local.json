@@ -15,7 +15,8 @@
       "PowerShell(Get-Item \"d:\\\\DEVELOPMENTS\\\\casino betting website exch\\\\platform\\\\apps\\\\web\\\\public\\\\images\\\\bannerlogo.png\" | Select-Object Name, @{Name='Size\\(KB\\)';Expression={[math]::Round\\($_.Length/1KB, 2\\)}}, LastWriteTime)",
       "PowerShell(Copy-Item -Path \"d:\\\\DEVELOPMENTS\\\\casino betting website exch\\\\platform\\\\images\\\\cash.png\" -Destination \"d:\\\\DEVELOPMENTS\\\\casino betting website exch\\\\platform\\\\apps\\\\web\\\\public\\\\images\\\\bannerlogo.png\" -Force)",
       "Bash(scp -i \"E:/illweb/diamond exc/id_rsa\" \"d:/DEVELOPMENTS/casino betting website exch/platform/images/casino.png\" root@51.222.84.91:/var/www/exch/platform/public/images/casino.png)",
-      "Bash(scp -i \"E:/illweb/diamond exc/id_rsa\" \"d:/DEVELOPMENTS/casino betting website exch/platform/images/casino.png\" root@51.222.84.91:/var/www/exch/platform/apps/web/public/images/casino.png)"
+      "Bash(scp -i \"E:/illweb/diamond exc/id_rsa\" \"d:/DEVELOPMENTS/casino betting website exch/platform/images/casino.png\" root@51.222.84.91:/var/www/exch/platform/apps/web/public/images/casino.png)",
+      "Bash(scp -i \"E:/illweb/diamond exc/id_rsa\" \"d:/DEVELOPMENTS/casino betting website exch/platform/images/float.png\" root@51.222.84.91:/var/www/exch/platform/apps/web/public/images/float.png)"
     ],
     "additionalDirectories": [
       "d:\\DEVELOPMENTS\\casino betting website exch\\platform\\images"

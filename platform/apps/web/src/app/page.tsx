@@ -25,6 +25,18 @@ export default async function HomePage() {
             />
           </div>
 
+          {/* Float image - right positioned with slight overflow */}
+          <div className="absolute -right-4 top-0 w-1/3 h-full">
+            <Image
+              src="/images/float.png"
+              alt="Floating Chips"
+              fill
+              className="object-contain object-right"
+
+              priority
+            />
+          </div>
+
           {/* Overlay gradient - removed for solid color */}
 
           {/* Content */}
