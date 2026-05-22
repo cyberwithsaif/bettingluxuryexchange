@@ -73,7 +73,7 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
     <header className="sticky top-0 z-50 bg-[#191938] text-white shadow-sm rounded-br-2xl">
       <MobileSidebar open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
-      <div className="flex items-center h-[77px] px-4 justify-between gap-4">
+      <div className="flex items-center h-[74px] px-4 justify-between gap-4">
 
         {/* ── Left section (toggle) ──────────────────── */}
         <div className="flex items-center gap-2 shrink-0">
@@ -148,19 +148,19 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
 
             {/* Desktop balance + deposit card — unified */}
             <div
-              className="hidden md:flex items-center gap-3 rounded-2xl px-4 py-2.5 border-2"
+              className="hidden md:flex items-center gap-2 rounded-2xl px-3 py-2 border-2"
               style={{
                 background: "#1a1a2e",
                 borderColor: "rgba(139, 92, 246, 0.4)",
               }}
             >
-              <div className="flex items-center gap-2.5">
-                <div className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ background: "rgba(139, 92, 246, 0.2)" }}>
-                  <span className="text-sm leading-none text-yellow-300">₹</span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-6 h-6 rounded-lg" style={{ background: "rgba(139, 92, 246, 0.2)" }}>
+                  <span className="text-xs leading-none text-yellow-300">₹</span>
                 </div>
                 <div className="flex flex-col items-start leading-tight">
-                  <span className="text-[10px] text-white/50 uppercase tracking-wider">Balance</span>
-                  <span className="text-[16px] font-black text-white tabular-nums">
+                  <span className="text-[9px] text-white/50 uppercase tracking-wider">Balance</span>
+                  <span className="text-[14px] font-black text-white tabular-nums">
                     {fmtMoney(wallet?.available)}
                   </span>
                 </div>
@@ -168,13 +168,13 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
 
               <Link
                 href="/account/deposit"
-                className="flex items-center justify-center gap-1 font-black text-sm px-6 py-2.5 transition-all hover:scale-105 active:scale-95 shrink-0 relative overflow-hidden"
+                className="flex items-center justify-center gap-1 font-black text-xs px-5 py-1.5 transition-all hover:scale-105 active:scale-95 shrink-0 relative overflow-hidden"
                 style={{
                   background: "linear-gradient(135deg, #ffd400 0%, #ffc400 45%, #f5b300 45%, #ffbf00 100%)",
                   color: "white",
-                  border: "3px solid #c46818",
-                  borderRadius: "20px",
-                  boxShadow: "inset 0 -8px 0 #c97700",
+                  border: "2px solid #c46818",
+                  borderRadius: "14px",
+                  boxShadow: "inset 0 -5px 0 #c97700",
                 }}
               >
                 {/* Glossy effect */}
