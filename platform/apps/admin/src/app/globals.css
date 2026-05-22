@@ -147,4 +147,8 @@ html, body {
   .skeleton {
     @apply animate-pulse bg-panel2/50 rounded-lg;
   }
+
+  .modal-input {
+    @apply w-full bg-white border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition;
+  }
 }
