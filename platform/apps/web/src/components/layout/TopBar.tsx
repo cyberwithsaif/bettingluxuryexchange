@@ -75,29 +75,13 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
 
       <div className="flex items-center h-[74px] px-4 justify-between gap-4">
 
-        {/* ── Left section (sidebar toggle desktop only) ──────────────────── */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Desktop sidebar toggle */}
-          <button
-            onClick={toggleSidebar}
-            className="hidden md:flex w-12 h-12 rounded-xl items-center justify-center transition-all group"
-            style={{
-              background: "linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(168, 85, 247, 0.2))",
-              boxShadow: "0 8px 20px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 8px rgba(0, 0, 0, 0.3)",
-              border: "1px solid rgba(139, 92, 246, 0.3)",
-            }}
-            title="Toggle sidebar"
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="group-hover:text-violet-100 transition-colors" style={{ color: "rgb(196, 181, 253)" }}>
-              <path d="M8 5L3 10M3 10L8 15M3 10H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-
+        {/* ── Left section (mobile menu only) ──────────────────── */}
+        <div className="flex items-center gap-2 shrink-0 md:hidden">
           {/* Mobile menu button */}
           <button
             onClick={() => setDrawerOpen(true)}
             aria-label="Open menu"
-            className="md:hidden w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition shrink-0"
+            className="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition shrink-0"
           >
             <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
               <rect width="16" height="2" rx="1" fill="currentColor" />
@@ -110,6 +94,21 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
         {/* ── Center section ────────────────────────────── */}
         {user ? (
           <div className="flex items-center gap-2 md:gap-3 justify-center flex-1">
+            {/* Desktop sidebar toggle — left of center */}
+            <button
+              onClick={toggleSidebar}
+              className="hidden md:flex w-12 h-12 rounded-xl items-center justify-center transition-all group shrink-0"
+              style={{
+                background: "linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(168, 85, 247, 0.2))",
+                boxShadow: "0 8px 20px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 8px rgba(0, 0, 0, 0.3)",
+                border: "1px solid rgba(139, 92, 246, 0.3)",
+              }}
+              title="Toggle sidebar"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="group-hover:text-violet-100 transition-colors" style={{ color: "rgb(196, 181, 253)" }}>
+                <path d="M8 5L3 10M3 10L8 15M3 10H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
 
             {/* Mobile balance + deposit */}
             <div className="flex md:hidden items-center gap-2 flex-1 justify-center">
