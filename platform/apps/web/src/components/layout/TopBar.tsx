@@ -54,7 +54,7 @@ export function TopBar() {
 
           {/* Logo — left side, all viewports */}
           <Link href="/" className="shrink-0">
-            <Image src="/logo.png" alt="Logo" width={54} height={54} className="rounded-full md:w-[62px] md:h-[62px]" />
+            <Image src="/logo.png" alt="Logo" width={64} height={64} className="rounded-full md:w-[72px] md:h-[72px]" />
           </Link>
         </div>
 
