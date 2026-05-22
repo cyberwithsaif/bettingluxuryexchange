@@ -439,9 +439,9 @@ export default function RoulettePage() {
                 {/* Spinning roulette wheel overlay */}
                 <motion.div
                   className="absolute inset-0 flex items-center justify-center"
-                  animate={{ rotate: status === "SPINNING" ? 360 : 0 }}
+                  animate={{ rotate: status === "SPINNING" ? 3600 : 0 }}
                   transition={{
-                    duration: 5,
+                    duration: 25,
                     repeat: status === "SPINNING" ? Infinity : 0,
                     repeatType: "loop",
                     ease: "linear"
