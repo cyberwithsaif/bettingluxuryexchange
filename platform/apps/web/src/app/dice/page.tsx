@@ -74,62 +74,88 @@ const MODE_ICONS: { mode: DiceMode; dots: [number, number][] }[] = [
   { mode: "ROLL_OUTSIDE", dots: [[6, 6], [16, 6], [11, 11], [6, 16], [16, 16]] },
 ];
 
-// ─── Result Marker (speech-bubble chip on the track) ─────────────────────────
+// ─── Result Marker (3D dice cube on the track) ───────────────────────────────
 function HexMarker({ roll, won }: { roll: number; won: boolean }) {
-  // clamp so chip doesn't overflow the slider edges
   const left = Math.max(4, Math.min(96, roll));
+  const numColor = won ? "#22c55e" : "#ef4444";
+  const glowColor = won ? "rgba(34,197,94,0.6)" : "rgba(239,68,68,0.6)";
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: -10, scale: 0.8 }}
+      initial={{ opacity: 0, y: -14, scale: 0.75 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.8 }}
-      transition={{ type: "spring", stiffness: 360, damping: 28 }}
+      exit={{ opacity: 0, scale: 0.75 }}
+      transition={{ type: "spring", stiffness: 380, damping: 26 }}
       style={{
         position: "absolute",
         left: `${left}%`,
-        bottom: "calc(100% + 12px)",
+        bottom: "calc(100% + 14px)",
         transform: "translateX(-50%)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         pointerEvents: "none",
         zIndex: 30,
-        filter: "drop-shadow(0 6px 20px rgba(59,130,246,0.55))",
       }}
     >
-      {/* Gradient-border wrapper (padding trick) */}
-      <div style={{
-        background: "linear-gradient(135deg, #1d4ed8 0%, #60a5fa 55%, #ffffff 100%)",
-        borderRadius: 12,
-        padding: "2px",
-        minWidth: 72,
-      }}>
+      {/* 3D Cube */}
+      <div style={{ position: "relative", width: 78, height: 58 }}>
+
+        {/* Top face */}
         <div style={{
-          background: "linear-gradient(135deg, #080e26 0%, #0c1a42 100%)",
-          borderRadius: 10,
-          padding: "6px 14px",
-          textAlign: "center",
+          position: "absolute",
+          left: 9, top: 0,
+          width: 62, height: 14,
+          background: "linear-gradient(90deg, #f0f0f8 0%, #d8d8e8 100%)",
+          borderRadius: "6px 6px 0 0",
+          transform: "skewX(-30deg)",
+          transformOrigin: "bottom left",
+        }} />
+
+        {/* Right side face */}
+        <div style={{
+          position: "absolute",
+          right: 0, top: 7,
+          width: 12, height: 44,
+          background: "linear-gradient(180deg, #a0a0b8 0%, #787890 100%)",
+          borderRadius: "0 4px 4px 0",
+          transform: "skewY(-30deg)",
+          transformOrigin: "top left",
+        }} />
+
+        {/* Front face */}
+        <div style={{
+          position: "absolute",
+          left: 0, top: 10,
+          width: 66, height: 46,
+          background: "linear-gradient(145deg, #ffffff 0%, #e8e8f2 60%, #d4d4e4 100%)",
+          borderRadius: 8,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: `0 6px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.9)`,
         }}>
           <span style={{
-            background: "linear-gradient(90deg, #93c5fd 0%, #ffffff 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
             fontWeight: 900,
-            fontSize: 16,
-            letterSpacing: "0.04em",
+            fontSize: 15,
+            letterSpacing: "0.03em",
+            color: numColor,
             fontFamily: "'SF Mono', 'Fira Code', monospace",
+            textShadow: `0 0 10px ${glowColor}`,
           }}>
             {roll.toFixed(2)}
           </span>
         </div>
       </div>
-      {/* Arrow pointing down to track */}
+
+      {/* Arrow */}
       <div style={{
         width: 0, height: 0,
-        borderLeft: "8px solid transparent",
-        borderRight: "8px solid transparent",
-        borderTop: "9px solid #60a5fa",
-        marginTop: -1,
+        borderLeft: "7px solid transparent",
+        borderRight: "7px solid transparent",
+        borderTop: "8px solid #d4d4e4",
+        marginTop: -2,
+        filter: `drop-shadow(0 2px 4px rgba(0,0,0,0.3))`,
       }} />
     </motion.div>
   );
