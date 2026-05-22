@@ -6,7 +6,7 @@ import React from "react";
 import useSWR from "swr";
 import { SidebarContext } from "@/lib/contexts/sidebar";
 import {
-  Gamepad2, Trophy, ChevronDown, Headphones,
+  Gamepad2, Trophy, ChevronDown, Headphones, House,
   TrendingUp, Award, Activity, Megaphone, Share2, Gift as GiftBox,
   Crown, Heart, Globe,
 } from "lucide-react";
@@ -80,6 +80,13 @@ function SidebarInner() {
         "flex-1 py-3 mt-2 overflow-y-auto space-y-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
         collapsed ? "px-1" : "px-2",
       )}>
+
+        {/* Home */}
+        {collapsed ? (
+          <NavIcon icon={<House size={20} strokeWidth={2.5} className="text-white" />} href="/" active={pathname === "/"} />
+        ) : (
+          <NavRow href="/" active={pathname === "/"} icon={<House size={20} strokeWidth={2.5} className="text-white shrink-0" />} label="Home" />
+        )}
 
         {/* Casino */}
         {collapsed ? (
