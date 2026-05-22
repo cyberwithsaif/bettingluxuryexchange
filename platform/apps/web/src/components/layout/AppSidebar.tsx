@@ -58,14 +58,14 @@ function SidebarInner() {
       {/* ── Arrow toggle (top of sidebar) ─────────────────────────── */}
       <div className="shrink-0 h-[74px] flex items-center justify-center px-4">
         <button
-          onClick={() => sidebarContext?.setCollapsed(true)}
+          onClick={() => sidebarContext?.setCollapsed(!sidebarContext.collapsed)}
           className="flex items-center justify-center w-12 h-12 rounded-xl transition-all group"
           style={{
             background: "linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(168, 85, 247, 0.2))",
             boxShadow: "0 8px 20px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 8px rgba(0, 0, 0, 0.3)",
             border: "1px solid rgba(139, 92, 246, 0.3)",
           }}
-          title="Collapse sidebar"
+          title="Toggle sidebar"
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="group-hover:text-violet-100 transition-colors" style={{ color: "rgb(196, 181, 253)" }}>
             <path d="M12 5L17 10M17 10L12 15M17 10H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
