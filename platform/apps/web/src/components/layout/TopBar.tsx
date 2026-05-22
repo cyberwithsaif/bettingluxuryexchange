@@ -168,18 +168,18 @@ export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
 
               <Link
                 href="/account/deposit"
-                className="flex items-center gap-0.5 font-bold text-[12px] px-3 py-1 transition-all hover:brightness-110 active:scale-95 shrink-0"
+                className="flex items-center gap-0.5 font-semibold text-[11px] px-2.5 py-0.5 transition-all hover:brightness-110 active:scale-95 shrink-0"
                 style={{
                   background: "linear-gradient(135deg, #ffcc00 0%, #ffcc00 50%, #ffb700 100%)",
                   color: "white",
-                  textShadow: "0 1px 3px rgba(0, 0, 0, 0.3)",
-                  boxShadow: "0 4px 10px rgba(255, 150, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -2px 3px rgba(0, 0, 0, 0.1)",
+                  textShadow: "0 1px 2px rgba(0, 0, 0, 0.3)",
+                  boxShadow: "0 3px 8px rgba(255, 150, 0, 0.3), inset 0 0.5px 0 rgba(255, 255, 255, 0.3)",
                   border: "none",
-                  borderRadius: "10px 10px 5px 2px",
-                  clipPath: "polygon(0 0, 100% 0, 95% 100%, 0 100%)",
+                  borderRadius: "8px 8px 4px 1px",
+                  clipPath: "polygon(0 0, 100% 0, 96% 100%, 0 100%)",
                 }}
               >
-                <ArrowDownToLine size={11} />
+                <ArrowDownToLine size={10} />
                 Deposit
               </Link>
             </div>
