@@ -78,7 +78,7 @@ function SidebarInner() {
 
       {/* ── Nav ───────────────────────────────────────────────────── */}
       <nav className={cn(
-        "flex-1 py-3 mt-2 overflow-y-auto space-y-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
+        "flex-1 py-3 mt-0 overflow-y-auto space-y-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
         collapsed ? "px-1" : "px-2",
       )}>
 
