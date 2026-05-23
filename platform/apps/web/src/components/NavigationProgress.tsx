@@ -19,34 +19,33 @@ function Loader({ opacity }: { opacity: number }) {
         <img
           src="/logo.png"
           alt=""
-          width={280}
-          height={280}
+          className="np-loader-logo"
           // @ts-ignore
           fetchpriority="high"
           style={{
-            position: "relative",
-            zIndex: 10,
             objectFit: "contain",
             display: "block",
             filter: "drop-shadow(0 0 16px rgba(255,100,0,0.5)) drop-shadow(0 0 40px rgba(255,200,0,0.2))",
             animation: "np-zoom 2.4s ease-in-out infinite",
-            width: "clamp(140px, 100vw, 280px)",
-            height: "auto",
           }}
         />
       </div>
 
       <style>{`
-        @keyframes np-zoom {
-          0% { transform: scale(0.6); }
-          50% { transform: scale(1.1); }
-          100% { transform: scale(0.6); }
+        .np-loader-logo {
+          width: 200px;
+          height: 200px;
         }
         @media (max-width: 640px) {
-          img {
-            width: 280px !important;
-            height: 280px !important;
+          .np-loader-logo {
+            width: 280px;
+            height: 280px;
           }
+        }
+        @keyframes np-zoom {
+          0%   { transform: scale(0.6); }
+          50%  { transform: scale(1.1); }
+          100% { transform: scale(0.6); }
         }
       `}</style>
     </div>
