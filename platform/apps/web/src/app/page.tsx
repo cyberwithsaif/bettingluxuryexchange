@@ -72,7 +72,7 @@ export default async function HomePage() {
               src="/images/sportb.png"
               alt="Sports"
               fill
-              className="object-contain object-right"
+              className="object-cover object-center"
               priority
             />
           </div>
