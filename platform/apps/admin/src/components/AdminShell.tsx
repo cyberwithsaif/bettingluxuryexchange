@@ -26,7 +26,6 @@ const NAV = [
   { href: "/api-keys",                 label: "API Keys",        Icon: Key },
   { href: "/logs",                     label: "Audit Logs",      Icon: ListChecks },
   { href: "/settings",                 label: "Settings",        Icon: Settings },
-  { href: "/settings/banners",         label: "Banner Settings", Icon: Megaphone },
 ] as const;
 
 function Spinner() {
@@ -105,7 +104,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               href === "/"
                 ? path === "/"
                 : path === href || (href !== "/settings" && path?.startsWith(href + "/"));
-            const isSubItem = href === "/settings/banners";
             return (
               <Link
                 key={href}
@@ -113,13 +111,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
-                  isSubItem && "ml-4 py-2 text-xs border-l-2 border-yellow-400/30 pl-4 rounded-l-none",
                   active
                     ? "bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-100 font-bold shadow-[0_2px_12px_rgba(255,204,0,0.35)]"
                     : "text-slate-300 hover:text-white hover:bg-gray-800/8",
                 )}
               >
-                <Icon size={isSubItem ? 13 : 16} className="shrink-0" />
+                <Icon size={16} className="shrink-0" />
                 <span>{label}</span>
               </Link>
             );
