@@ -284,16 +284,16 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
         {/* Rank badge icon — slightly smaller on mobile */}
         <RankBadge rank={rank} size={26} />
 
-        {/* Name + level bar — desktop only */}
-        <div className="hidden sm:flex flex-col gap-[2px] min-w-0" style={{ width: 80 }}>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[13px] font-semibold text-white/90 truncate leading-none">
-              {username}
-            </span>
-            <span className="text-[9px] font-bold text-amber-400 leading-none shrink-0 capitalize">
-              {rank}
-            </span>
-          </div>
+        {/* Username — mobile + desktop */}
+        <span className="text-[11px] sm:text-[13px] font-semibold text-white/90 truncate leading-none min-w-0" style={{ maxWidth: 50 }}>
+          {username}
+        </span>
+
+        {/* Rank label + bar — desktop only */}
+        <div className="hidden sm:flex flex-col gap-[2px] min-w-0" style={{ width: 65 }}>
+          <span className="text-[9px] font-bold text-amber-400 leading-none shrink-0 capitalize">
+            {rank}
+          </span>
           {/* Bar — 2px thin */}
           <div className="h-[2px] w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.12)" }}>
             <div
