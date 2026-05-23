@@ -3,7 +3,7 @@ import useSWR from "swr";
 import { useMemo, useState } from "react";
 import {
   ArrowDownLeft, ArrowUpRight, Gift, Zap, Wallet,
-  BarChart3, TrendingUp, TrendingDown, Shield, RefreshCw,
+  BarChart3, Shield, RefreshCw,
   Gamepad2, Trophy, XCircle, AlertCircle, Crown, Clock,
 } from "lucide-react";
 
@@ -204,18 +204,10 @@ export default function StatementPage() {
 
   /* Stats */
   const stats = useMemo(() => {
-    const totalIn   = ledgerItems.filter((e) => Number(e.amount) > 0).reduce((s, e) => s + Number(e.amount), 0);
-    const totalOut  = ledgerItems.filter((e) => Number(e.amount) < 0).reduce((s, e) => s + Math.abs(Number(e.amount)), 0);
-    const sportsPL  = allBets.reduce((s, b) => {
-      if (b.status === "SETTLED_WON")  return s + Number(b.potentialProfit);
-      if (b.status === "SETTLED_LOST") return s - Number(b.liability);
-      return s;
-    }, 0);
-    const casinoPL  = ledgerItems
-      .filter((e) => e.kind === "CASINO_WIN" || e.kind === "CASINO_BET")
-      .reduce((s, e) => s + Number(e.amount), 0);
-    return { totalIn, totalOut, sportsPL, casinoPL };
-  }, [ledgerItems, allBets]);
+    const totalIn  = ledgerItems.filter((e) => Number(e.amount) > 0).reduce((s, e) => s + Number(e.amount), 0);
+    const totalOut = ledgerItems.filter((e) => Number(e.amount) < 0).reduce((s, e) => s + Math.abs(Number(e.amount)), 0);
+    return { totalIn, totalOut };
+  }, [ledgerItems]);
 
   const categoryCounts: Record<string, number> = useMemo(() => ({
     all:    ledgerItems.filter((e) => getMeta(e.kind).category !== "sports").length + allBets.length,
@@ -238,21 +230,9 @@ export default function StatementPage() {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <SummaryCard label="Total In"    value={`₹${fmt(stats.totalIn)}`}   icon={<ArrowDownLeft size={15}/>}  color="#22c55e" />
-        <SummaryCard label="Total Out"   value={`₹${fmt(stats.totalOut)}`}  icon={<ArrowUpRight size={15}/>}   color="#f59e0b" />
-        <SummaryCard
-          label="Sports P/L"
-          value={`${stats.sportsPL >= 0 ? "+" : ""}₹${fmt(Math.abs(stats.sportsPL))}`}
-          icon={stats.sportsPL >= 0 ? <TrendingUp size={15}/> : <TrendingDown size={15}/>}
-          color={stats.sportsPL >= 0 ? "#22c55e" : "#f43f5e"}
-        />
-        <SummaryCard
-          label="Casino P/L"
-          value={`${stats.casinoPL >= 0 ? "+" : ""}₹${fmt(Math.abs(stats.casinoPL))}`}
-          icon={<Gamepad2 size={15}/>}
-          color={stats.casinoPL >= 0 ? "#22c55e" : "#f43f5e"}
-        />
+      <div className="grid grid-cols-2 gap-3">
+        <SummaryCard label="Total In"  value={`₹${fmt(stats.totalIn)}`}  icon={<ArrowDownLeft size={15}/>} color="#22c55e" />
+        <SummaryCard label="Total Out" value={`₹${fmt(stats.totalOut)}`} icon={<ArrowUpRight size={15}/>}  color="#f59e0b" />
       </div>
 
       {/* Category Filters */}
