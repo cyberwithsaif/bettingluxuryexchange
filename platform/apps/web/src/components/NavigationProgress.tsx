@@ -2,59 +2,20 @@
 import { useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
-const LOADER = (
-  <div style={{ position: "relative", width: 160, height: 160, display: "flex", alignItems: "center", justifyContent: "center" }}>
-    {/* Faint background ring */}
-    <svg style={{ position: "absolute", inset: 0 }} width="160" height="160" viewBox="0 0 160 160" fill="none">
-      <circle cx="80" cy="80" r="74" stroke="rgba(245,166,35,0.15)" strokeWidth="6" fill="none" />
-    </svg>
-
-    {/* Spinning segmented ring — circumference ≈ 465 */}
-    <svg
-      style={{ position: "absolute", inset: 0, animation: "nav-spin 1.2s linear infinite" }}
-      width="160" height="160" viewBox="0 0 160 160" fill="none"
-    >
-      <circle cx="80" cy="80" r="74" stroke="#f5a623" strokeWidth="6" strokeLinecap="round"
-        strokeDasharray="80 385" strokeDashoffset="0" fill="none" />
-      <circle cx="80" cy="80" r="74" stroke="#f5a623" strokeWidth="6" strokeLinecap="round"
-        strokeDasharray="40 425" strokeDashoffset="-160" fill="none" opacity="0.6" />
-      <circle cx="80" cy="80" r="74" stroke="#f5a623" strokeWidth="6" strokeLinecap="round"
-        strokeDasharray="20 445" strokeDashoffset="-280" fill="none" opacity="0.3" />
-    </svg>
-
-    {/* Logo — full size, no clipping */}
-    {/* eslint-disable-next-line @next/next/no-img-element */}
-    <img
-      src="/logo.png"
-      alt="Logo"
-      width={110}
-      height={110}
-      style={{
-        position: "relative",
-        zIndex: 10,
-        filter: "drop-shadow(0 0 14px rgba(245,166,35,0.5))",
-        objectFit: "contain",
-      }}
-    />
-
-    <style>{`
-      @keyframes nav-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    `}</style>
-  </div>
-);
-
 export function NavigationProgress() {
-  const [visible, setVisible] = useState(false);
+  const [phase, setPhase] = useState<"hidden" | "in" | "visible" | "out">("hidden");
   const pathname = usePathname();
   const search = useSearchParams();
 
   useEffect(() => {
-    setVisible(true);
-    const t = setTimeout(() => setVisible(false), 700);
-    return () => clearTimeout(t);
+    setPhase("in");
+    const t1 = setTimeout(() => setPhase("visible"), 80);
+    const t2 = setTimeout(() => setPhase("out"), 2300);
+    const t3 = setTimeout(() => setPhase("hidden"), 2600);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, [pathname, search]);
 
-  if (!visible) return null;
+  if (phase === "hidden") return null;
 
   return (
     <div style={{
@@ -62,8 +23,51 @@ export function NavigationProgress() {
       background: "#0d1224",
       display: "flex", alignItems: "center", justifyContent: "center",
       pointerEvents: "none",
+      opacity: phase === "in" ? 0 : phase === "out" ? 0 : 1,
+      transition: "opacity 280ms ease",
     }}>
-      {LOADER}
+      <div style={{ position: "relative", width: 200, height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+
+        {/* Faint background ring */}
+        <svg style={{ position: "absolute", inset: 0 }} width="200" height="200" viewBox="0 0 200 200" fill="none">
+          <circle cx="100" cy="100" r="92" stroke="rgba(245,166,35,0.12)" strokeWidth="6" fill="none" />
+        </svg>
+
+        {/* Outer slow ring */}
+        <svg style={{ position: "absolute", inset: 0, animation: "nav-spin-slow 3s linear infinite" }}
+          width="200" height="200" viewBox="0 0 200 200" fill="none">
+          <circle cx="100" cy="100" r="92" stroke="#f5a623" strokeWidth="5" strokeLinecap="round"
+            strokeDasharray="100 478" fill="none" />
+          <circle cx="100" cy="100" r="92" stroke="#f5a623" strokeWidth="5" strokeLinecap="round"
+            strokeDasharray="50 528" strokeDashoffset="-200" fill="none" opacity="0.5" />
+          <circle cx="100" cy="100" r="92" stroke="#f5a623" strokeWidth="5" strokeLinecap="round"
+            strokeDasharray="25 553" strokeDashoffset="-360" fill="none" opacity="0.25" />
+        </svg>
+
+        {/* Inner faster ring */}
+        <svg style={{ position: "absolute", inset: "14px", animation: "nav-spin-fast 1.6s linear infinite reverse" }}
+          width="172" height="172" viewBox="0 0 172 172" fill="none">
+          <circle cx="86" cy="86" r="80" stroke="rgba(245,166,35,0.25)" strokeWidth="3" strokeLinecap="round"
+            strokeDasharray="40 462" fill="none" />
+        </svg>
+
+        {/* Logo */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="Logo" width={140} height={140}
+          style={{
+            position: "relative", zIndex: 10,
+            objectFit: "contain",
+            filter: "drop-shadow(0 0 18px rgba(245,166,35,0.55)) drop-shadow(0 0 40px rgba(245,166,35,0.2))",
+            animation: "nav-pulse 2s ease-in-out infinite",
+          }}
+        />
+      </div>
+
+      <style>{`
+        @keyframes nav-spin-slow  { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
+        @keyframes nav-spin-fast  { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
+        @keyframes nav-pulse      { 0%,100% { transform: scale(1); }    50% { transform: scale(1.04); } }
+      `}</style>
     </div>
   );
 }
