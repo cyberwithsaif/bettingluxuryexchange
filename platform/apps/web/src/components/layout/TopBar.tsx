@@ -278,35 +278,36 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
     <div className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 md:gap-2 h-9 md:h-10 px-1.5 md:px-2 rounded-xl transition"
+        className="flex items-center gap-1 md:gap-2 h-9 md:h-10 px-1.5 md:px-2 rounded-xl transition"
         style={{ background: "rgba(255,255,255,0.05)" }}
       >
-        {/* Rank badge icon */}
-        <RankBadge rank={rank} size={30} />
+        {/* Rank badge icon — slightly smaller on mobile */}
+        <RankBadge rank={rank} size={26} />
 
-        {/* Name + level bar — all viewports */}
-        <div className="flex flex-col gap-[3px] min-w-0" style={{ width: 68 }}>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[13px] font-semibold text-white/90 truncate leading-none">
+        {/* Name + level bar */}
+        <div className="flex flex-col gap-[2px] min-w-0" style={{ width: 56 }}>
+          <div className="flex items-center gap-1">
+            <span className="text-[11px] md:text-[13px] font-semibold text-white/90 truncate leading-none">
               {username}
             </span>
-            <span className="text-[9px] font-bold text-amber-400 leading-none shrink-0 capitalize">
+            <span className="hidden md:inline text-[9px] font-bold text-amber-400 leading-none shrink-0 capitalize">
               {rank}
             </span>
           </div>
-          <div className="h-[3px] w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+          {/* Bar — 2px thin */}
+          <div className="h-[2px] w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.12)" }}>
             <div
               className="h-full rounded-full transition-all duration-700"
               style={{
                 width: `${progress}%`,
                 background: barColor,
-                boxShadow: progress > 0 ? "0 0 6px rgba(251,191,36,0.8)" : "none",
+                boxShadow: progress > 0 ? "0 0 4px rgba(251,191,36,0.7)" : "none",
               }}
             />
           </div>
         </div>
 
-        <ChevronDown size={12} className="text-white/30 shrink-0" />
+        <ChevronDown size={11} className="text-white/30 shrink-0" />
       </button>
 
       {open && (
