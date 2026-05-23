@@ -16,6 +16,71 @@ function fmtMoney(n: number | undefined) {
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(n);
 }
 
+/* ── Rank system ─────────────────────────────────────────────
+   Add more ranks here when icons are provided.
+   Each rank has: an SVG icon and a bar color.
+   Current rank: gold (wired to deposits later).
+────────────────────────────────────────────────────────────── */
+type Rank = "bronze" | "silver" | "gold" | "platinum" | "diamond";
+
+const RANK_BAR_COLOR: Record<Rank, string> = {
+  bronze:   "linear-gradient(90deg,#92400e,#d97706)",
+  silver:   "linear-gradient(90deg,#6b7280,#d1d5db)",
+  gold:     "linear-gradient(90deg,#b45309,#f59e0b,#fbbf24)",
+  platinum: "linear-gradient(90deg,#0369a1,#38bdf8)",
+  diamond:  "linear-gradient(90deg,#6d28d9,#a78bfa,#e879f9)",
+};
+
+function RankBadge({ rank, size = 28 }: { rank: Rank; size?: number }) {
+  if (rank === "gold") {
+    return (
+      <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Dark background circle */}
+        <circle cx="20" cy="20" r="20" fill="#1a1a2e" />
+        {/* Outer hex ring — deep orange */}
+        <polygon
+          points="20,4 34,12 34,28 20,36 6,28 6,12"
+          fill="none"
+          stroke="#c2410c"
+          strokeWidth="2.5"
+        />
+        {/* Middle hex — amber */}
+        <polygon
+          points="20,8 31,14.5 31,25.5 20,32 9,25.5 9,14.5"
+          fill="url(#goldOuter)"
+        />
+        {/* Inner hex — bright gold */}
+        <polygon
+          points="20,12 28,16.5 28,23.5 20,28 12,23.5 12,16.5"
+          fill="url(#goldInner)"
+        />
+        {/* Center shine dot */}
+        <circle cx="20" cy="20" r="3" fill="#fef3c7" fillOpacity="0.9" />
+        <defs>
+          <linearGradient id="goldOuter" x1="6" y1="8" x2="34" y2="32" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#d97706" />
+            <stop offset="50%" stopColor="#f59e0b" />
+            <stop offset="100%" stopColor="#b45309" />
+          </linearGradient>
+          <linearGradient id="goldInner" x1="12" y1="12" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#fbbf24" />
+            <stop offset="50%" stopColor="#fef08a" />
+            <stop offset="100%" stopColor="#f59e0b" />
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+  }
+  // Fallback for future ranks — plain colored hexagon placeholder
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+      <circle cx="20" cy="20" r="20" fill="#1a1a2e" />
+      <polygon points="20,6 32,13 32,27 20,34 8,27 8,13" fill="#4b5563" />
+      <polygon points="20,11 28,15.5 28,24.5 20,29 12,24.5 12,15.5" fill="#6b7280" />
+    </svg>
+  );
+}
+
 export function TopBar() {
   const { user, clear } = useAuthStore();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -202,23 +267,22 @@ function NotificationBell() {
 /* ── Profile Menu ───────────────────────────────────────────── */
 function ProfileMenu({ username, onLogout }: { username: string; onLogout: () => void }) {
   const [open, setOpen] = useState(false);
+
+  // Wire these to real deposit data later
+  const rank: Rank = "gold";
   const level = 1;
-  const progress = 0; // fill based on deposits later
+  const progress = 0;
+  const barColor = RANK_BAR_COLOR[rank];
 
   return (
     <div className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 md:gap-2 h-9 md:h-10 px-2 md:px-2.5 rounded-xl transition"
+        className="flex items-center gap-1.5 md:gap-2 h-9 md:h-10 px-1.5 md:px-2 rounded-xl transition"
         style={{ background: "rgba(255,255,255,0.05)" }}
       >
-        {/* Avatar */}
-        <div
-          className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black text-white shrink-0"
-          style={{ background: "linear-gradient(135deg,#7c3aed,#c026d3)" }}
-        >
-          {username[0]?.toUpperCase()}
-        </div>
+        {/* Rank badge icon */}
+        <RankBadge rank={rank} size={30} />
 
         {/* Name + level bar — desktop only */}
         <div className="hidden sm:flex flex-col gap-[3px] min-w-0" style={{ width: 80 }}>
@@ -226,8 +290,8 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
             <span className="text-[13px] font-semibold text-white/90 truncate leading-none">
               {username}
             </span>
-            <span className="text-[9px] font-bold text-violet-400 leading-none shrink-0">
-              Lv.{level}
+            <span className="text-[9px] font-bold text-amber-400 leading-none shrink-0 capitalize">
+              {rank}
             </span>
           </div>
           <div className="h-[3px] w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
@@ -235,8 +299,8 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
               className="h-full rounded-full transition-all duration-700"
               style={{
                 width: `${progress}%`,
-                background: "linear-gradient(90deg,#7c3aed,#c026d3)",
-                boxShadow: progress > 0 ? "0 0 6px rgba(168,85,247,0.8)" : "none",
+                background: barColor,
+                boxShadow: progress > 0 ? "0 0 6px rgba(251,191,36,0.8)" : "none",
               }}
             />
           </div>
@@ -253,27 +317,19 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
             className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 p-1.5 shadow-2xl z-50"
             style={{ background: "#1a1330" }}
           >
-            {/* Mobile: show username + level bar in dropdown */}
+            {/* Mobile: show rank badge + username + level bar in dropdown */}
             <div className="sm:hidden px-3 py-2.5 mb-1 rounded-lg" style={{ background: "rgba(255,255,255,0.04)" }}>
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-black text-white shrink-0"
-                  style={{ background: "linear-gradient(135deg,#7c3aed,#c026d3)" }}
-                >
-                  {username[0]?.toUpperCase()}
-                </div>
+              <div className="flex items-center gap-2.5">
+                <RankBadge rank={rank} size={36} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-1">
                     <span className="text-[13px] font-bold text-white truncate">{username}</span>
-                    <span className="text-[9px] font-bold text-violet-400 shrink-0">Lv.{level}</span>
+                    <span className="text-[9px] font-bold text-amber-400 shrink-0 capitalize">{rank}</span>
                   </div>
                   <div className="h-[3px] w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
                     <div
                       className="h-full rounded-full"
-                      style={{
-                        width: `${progress}%`,
-                        background: "linear-gradient(90deg,#7c3aed,#c026d3)",
-                      }}
+                      style={{ width: `${progress}%`, background: barColor }}
                     />
                   </div>
                 </div>
