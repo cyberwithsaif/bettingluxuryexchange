@@ -59,7 +59,7 @@ export default async function HomePage() {
         {/* Sports Banner */}
         <div className="group relative rounded-3xl overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-300 min-h-[130px] md:min-h-[175px] hover:shadow-2xl hover:scale-[1.02] cursor-pointer">
           <Image
-            src="/images/bannercric.png"
+            src="/images/sportb.png"
             alt="Sports Banner"
             fill
             className="object-cover object-center"
