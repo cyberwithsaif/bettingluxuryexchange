@@ -54,6 +54,8 @@ function SidebarInner() {
   const ctx = useContext(SidebarContext);
   const collapsed = ctx?.collapsed ?? false;
 
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
 
       {/* ── Nav ───────────────────────────────────────────────────── */}
       <nav className={cn(
