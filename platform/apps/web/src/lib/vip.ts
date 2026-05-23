@@ -67,8 +67,9 @@ export function getTierFromDeposits(totalDeposited: number): VipTier {
   return VIP_TIERS[getTierIndex(totalDeposited)]!;
 }
 
+/** @deprecated Use /wallet/total-deposited endpoint instead */
 export function calcTotalDeposited(ledgerItems: { kind: string; amount: string | number }[]): number {
   return ledgerItems
-    .filter((e) => e.kind === "DEPOSIT")
+    .filter((e) => e.kind === "DEPOSIT" || e.kind === "ADMIN_CREDIT")
     .reduce((s, e) => s + Math.abs(Number(e.amount)), 0);
 }

@@ -10,7 +10,7 @@ import useSWR from "swr";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
 import { MobileSidebar } from "../mobile/MobileSidebar";
-import { VipRank, calcTotalDeposited, getTierIndex, VIP_TIERS } from "@/lib/vip";
+import { VipRank, getTierIndex, VIP_TIERS } from "@/lib/vip";
 
 function fmtMoney(n: number | undefined) {
   if (n == null) return "—";
@@ -69,7 +69,7 @@ export function TopBar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { data: wallet, mutate } = useSWR(user ? "/wallet/summary" : null);
   /* Same SWR key as account/page.tsx — shared cache, no double request */
-  const { data: ledger } = useSWR(user ? "/wallet/ledger?limit=200" : null);
+  const { data: depositData } = useSWR<number>(user ? "/wallet/total-deposited" : null);
 
   useEffect(() => {
     if (!user) return;
@@ -80,13 +80,11 @@ export function TopBar() {
 
   const balance = Number(wallet?.available ?? 0);
 
-  /* Compute VIP rank from total lifetime deposits in ledger */
+  /* Compute VIP rank from lifetime deposit total (DEPOSIT + ADMIN_CREDIT) */
   const rank: Rank = useMemo(() => {
-    const items: any[] = ledger?.items ?? [];
-    const totalDeposited = calcTotalDeposited(items);
-    const idx = getTierIndex(totalDeposited);
+    const idx = getTierIndex(Number(depositData ?? 0));
     return VIP_TIERS[idx]!.rank;
-  }, [ledger]);
+  }, [depositData]);
 
   return (
     <header className="sticky top-0 z-50 text-white" style={{ background: "#191938" }}>

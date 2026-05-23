@@ -17,4 +17,9 @@ export class WalletController {
   ledger(@CurrentUser() user: AuthUser, @Query("cursor") cursor?: string, @Query("limit") limit?: string) {
     return this.wallet.ledger(user.id, { cursor, limit: limit ? Number(limit) : undefined });
   }
+
+  @Get("total-deposited")
+  totalDeposited(@CurrentUser() user: AuthUser) {
+    return this.wallet.totalDeposited(user.id);
+  }
 }

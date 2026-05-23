@@ -193,6 +193,18 @@ export class WalletService {
     const hasMore = rows.length > limit;
     return { items: rows.slice(0, limit), nextCursor: hasMore ? rows[limit - 1].id : null };
   }
+
+  /** Lifetime total of all credits (DEPOSIT + ADMIN_CREDIT) — used for VIP tier. */
+  async totalDeposited(userId: string): Promise<number> {
+    const result = await this.prisma.ledgerEntry.aggregate({
+      where: {
+        userId,
+        kind: { in: [LedgerKind.DEPOSIT, LedgerKind.ADMIN_CREDIT] },
+      },
+      _sum: { amount: true },
+    });
+    return toNum(result._sum.amount ?? 0);
+  }
 }
 
 function toNum(d: Prisma.Decimal | number): number {

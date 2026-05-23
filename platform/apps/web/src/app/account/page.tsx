@@ -9,7 +9,7 @@ import {
   ArrowDownLeft, BarChart3, Bitcoin, Phone, Mail,
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { VIP_TIERS, getTierIndex, calcTotalDeposited } from "@/lib/vip";
+import { VIP_TIERS, getTierIndex } from "@/lib/vip";
 
 /* Icon map for each tier (same order as VIP_TIERS) */
 const TIER_ICONS = [Medal, Star, Award, Crown, Gem] as const;
@@ -28,18 +28,15 @@ export default function AccountDashboard() {
   const user = useAuthStore((s) => s.user);
   const { data: wallet } = useSWR(user ? "/wallet/summary" : null);
   const { data: bets } = useSWR(user ? "/bets/mine?status=OPEN" : null);
-  const { data: ledger } = useSWR(user ? "/wallet/ledger?limit=200" : null);
+  const { data: ledger } = useSWR(user ? "/wallet/ledger?limit=20" : null);
+  const { data: depositData } = useSWR<number>(user ? "/wallet/total-deposited" : null);
   const [copied, setCopied] = useState(false);
 
   const referralCode = user ? `${user.username.toUpperCase().slice(0, 6)}${user.id?.slice(-4) ?? "0000"}` : "";
 
-  /* derive VIP data from ledger entries */
-  const { totalDeposited, recentTxns } = useMemo(() => {
-    const items: any[] = ledger?.items ?? [];
-    const totalDeposited = calcTotalDeposited(items);
-    const recentTxns = items.slice(0, 5);
-    return { totalDeposited, recentTxns };
-  }, [ledger]);
+  /* derive VIP data from dedicated endpoint + recent ledger for txn list */
+  const recentTxns: any[] = useMemo(() => (ledger?.items ?? []).slice(0, 5), [ledger]);
+  const totalDeposited = Number(depositData ?? 0);
 
   const tierIdx = getTierIndex(totalDeposited);
   const tierBase = VIP_TIERS[tierIdx]!;
