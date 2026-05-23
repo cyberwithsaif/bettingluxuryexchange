@@ -284,8 +284,8 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
         {/* Rank badge icon */}
         <RankBadge rank={rank} size={30} />
 
-        {/* Name + level bar — desktop only */}
-        <div className="hidden sm:flex flex-col gap-[3px] min-w-0" style={{ width: 80 }}>
+        {/* Name + level bar — all viewports */}
+        <div className="flex flex-col gap-[3px] min-w-0" style={{ width: 68 }}>
           <div className="flex items-center gap-1.5">
             <span className="text-[13px] font-semibold text-white/90 truncate leading-none">
               {username}
@@ -317,25 +317,6 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
             className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 p-1.5 shadow-2xl z-50"
             style={{ background: "#1a1330" }}
           >
-            {/* Mobile: show rank badge + username + level bar in dropdown */}
-            <div className="sm:hidden px-3 py-2.5 mb-1 rounded-lg" style={{ background: "rgba(255,255,255,0.04)" }}>
-              <div className="flex items-center gap-2.5">
-                <RankBadge rank={rank} size={36} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-[13px] font-bold text-white truncate">{username}</span>
-                    <span className="text-[9px] font-bold text-amber-400 shrink-0 capitalize">{rank}</span>
-                  </div>
-                  <div className="h-[3px] w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${progress}%`, background: barColor }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {([
               ["Dashboard",         "/account"],
               ["My Bets",           "/account/bets"],

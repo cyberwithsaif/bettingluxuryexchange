@@ -181,9 +181,9 @@ function NavRow({ href, active, icon, label, onClick }: {
       href={href}
       onClick={onClick}
       className="flex items-center gap-3 px-3 py-2 rounded-2xl text-[14px] font-bold text-white transition-all"
-      style={{ background: active ? "#7740ed" : "transparent" }}
-      onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#2c2852"; }}
-      onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
+      style={{ background: active ? "#7740ed" : "#2c2852" }}
+      onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#3d3763"; }}
+      onMouseLeave={e => { if (!active) e.currentTarget.style.background = "#2c2852"; }}
     >
       {icon}
       {label}
@@ -234,7 +234,7 @@ function SubLink({ href, active, emoji, children, onClick }: {
         "flex items-center gap-2.5 px-3 py-2 text-[13px] font-semibold transition-all rounded-lg",
         active ? "text-white" : "text-white/75 hover:text-white",
       )}
-      style={{ background: active ? "#2c2852" : "transparent" }}
+      style={{ background: "#2c2852" }}
     >
       <span className="text-sm leading-none">{emoji}</span>
       {children}
