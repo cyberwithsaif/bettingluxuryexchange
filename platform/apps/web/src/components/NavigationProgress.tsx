@@ -19,10 +19,13 @@ function Loader({ opacity }: { opacity: number }) {
         <img
           src="/logo.png"
           alt=""
-          className="np-loader-logo"
+          width={280}
+          height={280}
           // @ts-ignore
           fetchpriority="high"
           style={{
+            width: "min(280px, 75vw)",
+            height: "min(280px, 75vw)",
             objectFit: "contain",
             display: "block",
             filter: "drop-shadow(0 0 16px rgba(255,100,0,0.5)) drop-shadow(0 0 40px rgba(255,200,0,0.2))",
@@ -32,16 +35,6 @@ function Loader({ opacity }: { opacity: number }) {
       </div>
 
       <style>{`
-        .np-loader-logo {
-          width: 200px;
-          height: 200px;
-        }
-        @media (max-width: 640px) {
-          .np-loader-logo {
-            width: 280px;
-            height: 280px;
-          }
-        }
         @keyframes np-zoom {
           0%   { transform: scale(0.6); }
           50%  { transform: scale(1.1); }
