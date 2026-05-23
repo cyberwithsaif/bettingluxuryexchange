@@ -57,22 +57,25 @@ export default async function HomePage() {
         </div>
 
         {/* Sports Banner */}
-        <div className="group relative rounded-3xl overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-300 min-h-[130px] md:min-h-[175px] hover:shadow-2xl hover:scale-[1.02] cursor-pointer">
-          {/* Background */}
-          <Image
-            src="/images/bannercric.png"
-            alt="Sports Banner Background"
-            fill
-            className="object-cover object-center"
-            priority
-          />
-          {/* Foreground overlay image */}
-          <div className="absolute inset-0 z-10">
+        <div className="group relative rounded-3xl overflow-visible border border-white/10 hover:border-white/20 transition-all duration-300 min-h-[130px] md:min-h-[175px] hover:shadow-2xl hover:scale-[1.02] cursor-pointer">
+          {/* Background — clipped inside rounded corners */}
+          <div className="absolute inset-0 rounded-3xl overflow-hidden">
+            <Image
+              src="/images/bannercric.png"
+              alt="Sports Banner Background"
+              fill
+              className="object-cover object-center"
+              priority
+            />
+          </div>
+          {/* Foreground — overflows above the banner */}
+          <div className="absolute z-10 pointer-events-none"
+            style={{ left: 0, right: 0, top: "-30%", bottom: "-5%" }}>
             <Image
               src="/images/sportb.png"
               alt="Sports"
               fill
-              className="object-cover object-center"
+              className="object-contain object-center"
               priority
             />
           </div>
