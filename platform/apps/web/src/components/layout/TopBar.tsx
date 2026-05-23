@@ -10,7 +10,7 @@ import useSWR from "swr";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
 import { MobileSidebar } from "../mobile/MobileSidebar";
-import { VipRank, getTierIndex, VIP_TIERS } from "@/lib/vip";
+import { type VipRank, getTierIndex, VIP_TIERS } from "@/lib/vip";
 
 function fmtMoney(n: number | undefined) {
   if (n == null) return "—";
@@ -25,6 +25,7 @@ const RANK_BAR_COLOR: Record<Rank, string> = {
   gold:     "linear-gradient(90deg,#b45309,#f59e0b,#fbbf24)",
   platinum: "linear-gradient(90deg,#0369a1,#38bdf8)",
   diamond:  "linear-gradient(90deg,#6d28d9,#a78bfa,#e879f9)",
+  legend:   "linear-gradient(90deg,#9f1239,#e11d48,#fb7185)",
 };
 
 const RANK_SVG_CONFIG: Record<Rank, { outer: [string, string]; inner: [string, string]; ring: string; shine: string }> = {
@@ -33,6 +34,7 @@ const RANK_SVG_CONFIG: Record<Rank, { outer: [string, string]; inner: [string, s
   gold:     { outer: ["#d97706", "#f59e0b"], inner: ["#fbbf24", "#fef08a"], ring: "#c2410c",  shine: "#fef3c7" },
   platinum: { outer: ["#0369a1", "#0ea5e9"], inner: ["#38bdf8", "#bae6fd"], ring: "#0284c7",  shine: "#e0f2fe" },
   diamond:  { outer: ["#6d28d9", "#a78bfa"], inner: ["#c4b5fd", "#e879f9"], ring: "#7c3aed",  shine: "#fae8ff" },
+  legend:   { outer: ["#9f1239", "#e11d48"], inner: ["#fb7185", "#fda4af"], ring: "#be123c",  shine: "#fff1f2" },
 };
 
 function RankBadge({ rank, size = 28 }: { rank: Rank; size?: number }) {

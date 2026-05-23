@@ -6,13 +6,13 @@ import {
   Wallet, TrendingUp, Shield, Gift, Users, Headphones,
   ChevronRight, Copy, CheckCircle2, AlertCircle, Lock,
   Star, Crown, Gem, Medal, Award, Zap, ArrowUpRight,
-  ArrowDownLeft, BarChart3, Bitcoin, Phone, Mail,
+  ArrowDownLeft, BarChart3, Bitcoin, Phone, Mail, Flame,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { VIP_TIERS, getTierIndex } from "@/lib/vip";
 
 /* Icon map for each tier (same order as VIP_TIERS) */
-const TIER_ICONS = [Medal, Star, Award, Crown, Gem] as const;
+const TIER_ICONS = [Medal, Star, Award, Crown, Gem, Flame] as const;
 
 /* ─── Formatters ──────────────────────────────────────────── */
 function fmt(n: number | undefined, opts?: Intl.NumberFormatOptions) {

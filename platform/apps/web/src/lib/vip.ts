@@ -1,4 +1,4 @@
-export type VipRank = "bronze" | "silver" | "gold" | "platinum" | "diamond";
+export type VipRank = "bronze" | "silver" | "gold" | "platinum" | "diamond" | "legend";
 
 export const VIP_TIERS = [
   {
@@ -45,22 +45,31 @@ export const VIP_TIERS = [
     name: "Diamond" as const,
     rank: "diamond" as VipRank,
     min: 10_00_000,
-    max: Infinity,
+    max: 50_00_000,
     color: "#a78bfa",
     grad: "linear-gradient(135deg, #6d28d9, #a78bfa, #e879f9)",
     cashback: 8,
     perks: ["8% cashback", "Dedicated manager", "Custom bonuses", "Private tables", "Luxury rewards"],
+  },
+  {
+    name: "Legend" as const,
+    rank: "legend" as VipRank,
+    min: 50_00_000,
+    max: Infinity,
+    color: "#f43f5e",
+    grad: "linear-gradient(135deg, #9f1239, #e11d48, #fb7185, #fda4af)",
+    cashback: 12,
+    perks: ["12% cashback", "Elite personal manager", "Daily luxury bonus", "Exclusive tournaments", "Private VIP events", "Custom rewards"],
   },
 ] as const;
 
 export type VipTier = (typeof VIP_TIERS)[number];
 
 export function getTierIndex(totalDeposited: number): number {
-  const idx = VIP_TIERS.findIndex((t, i) => {
-    const next = VIP_TIERS[i + 1];
-    return totalDeposited >= t.min && (!next || totalDeposited < next.min);
-  });
-  return Math.max(0, idx);
+  for (let i = VIP_TIERS.length - 1; i >= 0; i--) {
+    if (totalDeposited >= VIP_TIERS[i]!.min) return i;
+  }
+  return 0;
 }
 
 export function getTierFromDeposits(totalDeposited: number): VipTier {
