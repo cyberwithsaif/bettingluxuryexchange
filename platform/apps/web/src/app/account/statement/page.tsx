@@ -1,231 +1,216 @@
 "use client";
 import useSWR from "swr";
 import { useMemo, useState } from "react";
-import { cn } from "@/lib/cn";
 import {
-  ArrowDownLeft, ArrowUpRight, Gift, Zap, AlertCircle,
-  Wallet, CreditCard, BarChart3, TrendingUp, TrendingDown,
+  ArrowDownLeft, ArrowUpRight, Gift, Zap, Wallet,
+  BarChart3, TrendingUp, TrendingDown, Shield, RefreshCw,
+  Gamepad2, Trophy, XCircle, AlertCircle, Crown,
 } from "lucide-react";
 
-const KIND_CONFIG: Record<
-  string,
-  { icon: React.ReactNode; color: string; bg: string; displayName: string }
-> = {
-  DEPOSIT: {
-    icon: <ArrowDownLeft size={14} />,
-    color: "#22c55e",
-    bg: "rgba(34,197,94,0.1)",
-    displayName: "Deposit",
-  },
-  WITHDRAWAL: {
-    icon: <ArrowUpRight size={14} />,
-    color: "#f59e0b",
-    bg: "rgba(245,158,11,0.1)",
-    displayName: "Withdrawal",
-  },
-  BET_PLACED: {
-    icon: <Zap size={14} />,
-    color: "#fbbf24",
-    bg: "rgba(251,191,36,0.1)",
-    displayName: "Bet Placed",
-  },
-  BET_SETTLED: {
-    icon: <BarChart3 size={14} />,
-    color: "#38bdf8",
-    bg: "rgba(56,189,248,0.1)",
-    displayName: "Bet Settled",
-  },
-  BONUS: {
-    icon: <Gift size={14} />,
-    color: "#a78bfa",
-    bg: "rgba(167,139,250,0.1)",
-    displayName: "Bonus",
-  },
-  ADJUSTMENT: {
-    icon: <AlertCircle size={14} />,
-    color: "#f87171",
-    bg: "rgba(248,113,113,0.1)",
-    displayName: "Adjustment",
-  },
+/* ─── All actual LedgerKind values from backend ─────────── */
+const KIND_META: Record<string, { label: string; icon: React.ReactNode; color: string; bg: string; category: string }> = {
+  DEPOSIT:            { label: "Deposit",           icon: <ArrowDownLeft size={14} />, color: "#22c55e", bg: "rgba(34,197,94,0.12)",    category: "funds" },
+  WITHDRAWAL:         { label: "Withdrawal",         icon: <ArrowUpRight size={14} />,  color: "#f59e0b", bg: "rgba(245,158,11,0.12)",   category: "funds" },
+  BET_PLACE:          { label: "Bet Placed",         icon: <Zap size={14} />,            color: "#fbbf24", bg: "rgba(251,191,36,0.12)",   category: "sports" },
+  BET_SETTLE_WIN:     { label: "Bet Win",            icon: <Trophy size={14} />,         color: "#22c55e", bg: "rgba(34,197,94,0.12)",    category: "sports" },
+  BET_SETTLE_LOSS:    { label: "Bet Loss",           icon: <XCircle size={14} />,        color: "#f43f5e", bg: "rgba(244,63,94,0.12)",    category: "sports" },
+  BET_VOID:           { label: "Bet Void",           icon: <AlertCircle size={14} />,    color: "#a78bfa", bg: "rgba(167,139,250,0.12)",  category: "sports" },
+  BET_CANCEL:         { label: "Bet Cancelled",      icon: <XCircle size={14} />,        color: "#64748b", bg: "rgba(100,116,139,0.12)",  category: "sports" },
+  CASINO_BET:         { label: "Casino Bet",         icon: <Gamepad2 size={14} />,       color: "#f87171", bg: "rgba(248,113,113,0.12)",  category: "casino" },
+  CASINO_WIN:         { label: "Casino Win",         icon: <Gamepad2 size={14} />,       color: "#22c55e", bg: "rgba(34,197,94,0.12)",    category: "casino" },
+  CASINO_REFUND:      { label: "Casino Refund",      icon: <RefreshCw size={14} />,      color: "#38bdf8", bg: "rgba(56,189,248,0.12)",   category: "casino" },
+  ROLLBACK:           { label: "Rollback",           icon: <RefreshCw size={14} />,      color: "#38bdf8", bg: "rgba(56,189,248,0.12)",   category: "casino" },
+  ADMIN_CREDIT:       { label: "Admin Credit",       icon: <Shield size={14} />,         color: "#22c55e", bg: "rgba(34,197,94,0.12)",    category: "admin" },
+  ADMIN_DEBIT:        { label: "Admin Debit",        icon: <Shield size={14} />,         color: "#f43f5e", bg: "rgba(244,63,94,0.12)",    category: "admin" },
+  BONUS_GRANT:        { label: "Bonus",              icon: <Gift size={14} />,            color: "#a78bfa", bg: "rgba(167,139,250,0.12)",  category: "bonus" },
+  BONUS_FORFEIT:      { label: "Bonus Forfeit",      icon: <Gift size={14} />,            color: "#f87171", bg: "rgba(248,113,113,0.12)",  category: "bonus" },
+  COMMISSION_PAYOUT:  { label: "Commission",         icon: <Crown size={14} />,          color: "#fbbf24", bg: "rgba(251,191,36,0.12)",   category: "other" },
 };
 
-function fmt(n: number | undefined) {
+const CATEGORIES = [
+  { key: "all",    label: "All" },
+  { key: "sports", label: "Sports Bets" },
+  { key: "casino", label: "Casino" },
+  { key: "funds",  label: "Deposits / Withdrawals" },
+  { key: "bonus",  label: "Bonuses" },
+  { key: "admin",  label: "Admin" },
+];
+
+function getMeta(kind: string) {
+  return KIND_META[kind] ?? {
+    label: kind.replace(/_/g, " "),
+    icon: <BarChart3 size={14} />,
+    color: "#94a3b8",
+    bg: "rgba(148,163,184,0.1)",
+    category: "other",
+  };
+}
+
+function fmt(n: number | undefined | null) {
   if (n == null) return "—";
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(n);
 }
 
-function getKindConfig(kind: string) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (KIND_CONFIG as any)[kind] || {
-    icon: <AlertCircle size={14} />,
-    color: "#fff",
-    bg: "rgba(255,255,255,0.05)",
-    displayName: kind,
-  };
-}
-
 function fmtDate(d: string) {
-  return new Date(d).toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
+  return new Date(d).toLocaleString("en-IN", {
+    day: "2-digit", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit", hour12: false,
   });
 }
 
 export default function StatementPage() {
-  const { data } = useSWR("/wallet/ledger?limit=200");
-  const [kindFilter, setKindFilter] = useState<string | null>(null);
+  const { data, isLoading } = useSWR("/wallet/ledger?limit=200");
+  const [category, setCategory] = useState("all");
 
-  const items = useMemo(() => {
-    if (!data?.items) return [];
-    if (!kindFilter) return data.items;
-    return data.items.filter((e: any) => e.kind === kindFilter);
-  }, [data, kindFilter]);
+  const items: any[] = useMemo(() => data?.items ?? [], [data]);
+
+  const filtered = useMemo(() => {
+    if (category === "all") return items;
+    return items.filter((e) => getMeta(e.kind).category === category);
+  }, [items, category]);
 
   const stats = useMemo(() => {
-    if (!data?.items) return { totalIn: 0, totalOut: 0, net: 0 };
-    const totalIn = data.items
-      .filter((e: any) => Number(e.amount) > 0)
-      .reduce((s: number, e: any) => s + Number(e.amount), 0);
-    const totalOut = data.items
-      .filter((e: any) => Number(e.amount) < 0)
-      .reduce((s: number, e: any) => s + Math.abs(Number(e.amount)), 0);
-    return { totalIn, totalOut, net: totalIn - totalOut };
-  }, [data]);
-
-  const uniqueKinds = useMemo((): string[] => {
-    if (!data?.items) return [];
-    return [...new Set<string>(data.items.map((e: any) => String(e.kind)))];
-  }, [data]);
+    const totalIn  = items.filter((e) => Number(e.amount) > 0).reduce((s, e) => s + Number(e.amount), 0);
+    const totalOut = items.filter((e) => Number(e.amount) < 0).reduce((s, e) => s + Math.abs(Number(e.amount)), 0);
+    const sportsPL = items
+      .filter((e) => e.kind === "BET_SETTLE_WIN" || e.kind === "BET_SETTLE_LOSS")
+      .reduce((s, e) => s + Number(e.amount), 0);
+    const casinoPL = items
+      .filter((e) => e.kind === "CASINO_WIN" || e.kind === "CASINO_BET")
+      .reduce((s, e) => s + Number(e.amount), 0);
+    return { totalIn, totalOut, net: totalIn - totalOut, sportsPL, casinoPL };
+  }, [items]);
 
   return (
     <div className="space-y-5">
       {/* Header */}
       <div>
         <h1 className="font-display text-3xl">Account Statement</h1>
-        <p className="text-sm text-white/50 mt-1">Complete transaction history and wallet movements</p>
+        <p className="text-sm text-white/50 mt-1">Complete transaction history — all debits and credits</p>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <SummaryCard label="Total In"     value={`₹${fmt(stats.totalIn)}`}  icon={<ArrowDownLeft size={15}/>} color="#22c55e" />
+        <SummaryCard label="Total Out"    value={`₹${fmt(stats.totalOut)}`} icon={<ArrowUpRight size={15}/>}  color="#f59e0b" />
         <SummaryCard
-          label="Total In"
-          value={`₹${fmt(stats.totalIn)}`}
-          icon={<ArrowDownLeft size={16} />}
-          color="#22c55e"
+          label="Sports P/L"
+          value={`${stats.sportsPL >= 0 ? "+" : ""}₹${fmt(Math.abs(stats.sportsPL))}`}
+          icon={stats.sportsPL >= 0 ? <TrendingUp size={15}/> : <TrendingDown size={15}/>}
+          color={stats.sportsPL >= 0 ? "#22c55e" : "#f43f5e"}
         />
         <SummaryCard
-          label="Total Out"
-          value={`₹${fmt(stats.totalOut)}`}
-          icon={<ArrowUpRight size={16} />}
-          color="#f59e0b"
-        />
-        <SummaryCard
-          label="Net Change"
-          value={`₹${fmt(stats.net)}`}
-          icon={stats.net >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-          color={stats.net >= 0 ? "#22c55e" : "#f43f5e"}
+          label="Casino P/L"
+          value={`${stats.casinoPL >= 0 ? "+" : ""}₹${fmt(Math.abs(stats.casinoPL))}`}
+          icon={<Gamepad2 size={15}/>}
+          color={stats.casinoPL >= 0 ? "#22c55e" : "#f43f5e"}
         />
       </div>
 
-      {/* Kind Filters */}
-      {uniqueKinds.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-          <button
-            onClick={() => setKindFilter(null)}
-            className={cn(
-              "px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wide whitespace-nowrap transition-all",
-              !kindFilter
-                ? "bg-accent-grad text-ink"
-                : "bg-white/5 border border-white/10 text-white/60 hover:text-white"
-            )}
-          >
-            All
-          </button>
-          {uniqueKinds.map((k) => {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const cfg = getKindConfig(k);
-            const isActive = kindFilter === k;
-            return (
-              <button
-                key={k}
-                onClick={() => setKindFilter(k)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wide whitespace-nowrap transition-all"
-                style={{
-                  background: isActive ? cfg.bg : "rgba(255,255,255,0.05)",
-                  color: isActive ? cfg.color : "rgba(255,255,255,0.5)",
-                  border: isActive ? `1px solid ${cfg.color}40` : "1px solid rgba(255,255,255,0.1)",
-                }}
-              >
-                {cfg.icon}
-                {cfg.displayName}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {/* Category Filters */}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        {CATEGORIES.map(({ key, label }) => {
+          const isActive = category === key;
+          const count = key === "all" ? items.length : items.filter((e) => getMeta(e.kind).category === key).length;
+          return (
+            <button
+              key={key}
+              onClick={() => setCategory(key)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all shrink-0"
+              style={{
+                background: isActive ? "rgba(255,122,24,0.15)" : "rgba(255,255,255,0.05)",
+                color: isActive ? "#ff7a18" : "rgba(255,255,255,0.5)",
+                border: isActive ? "1px solid rgba(255,122,24,0.35)" : "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              {label}
+              {count > 0 && (
+                <span className="rounded-full px-1.5 text-[9px] font-bold"
+                  style={{ background: isActive ? "rgba(255,122,24,0.25)" : "rgba(255,255,255,0.1)", color: isActive ? "#ff7a18" : "rgba(255,255,255,0.4)" }}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
-      {/* Transactions List */}
-      {items.length === 0 ? (
-        <div
-          className="rounded-2xl p-12 text-center"
-          style={{ background: "linear-gradient(135deg, #12183a, #0d1224)", border: "1px solid rgba(255,255,255,0.06)" }}
-        >
+      {/* Entries */}
+      {isLoading ? (
+        <div className="rounded-2xl p-10 text-center" style={{ background: "linear-gradient(135deg,#12183a,#0d1224)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="h-6 w-6 rounded-full border-2 border-accentSoft border-t-transparent animate-spin mx-auto" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-2xl p-12 text-center" style={{ background: "linear-gradient(135deg,#12183a,#0d1224)", border: "1px solid rgba(255,255,255,0.06)" }}>
           <Wallet size={40} className="mx-auto mb-3 text-white/20" />
-          <p className="text-white/40">No transactions yet</p>
+          <p className="text-white/40">No transactions in this category</p>
         </div>
       ) : (
-        <div className="space-y-2.5">
-          {items.map((e: any) => {
-            const amt = Number(e.amount);
-            const isPositive = amt > 0;
-            const cfg = getKindConfig(e.kind);
+        <div className="space-y-2">
+          {filtered.map((e: any) => {
+            const meta   = getMeta(e.kind);
+            const amt    = Number(e.amount);
+            const expD   = Number(e.exposureDelta);
+            const isPos  = amt > 0;
+            const isNeg  = amt < 0;
+            const isExposureOnly = amt === 0 && expD !== 0;
 
             return (
-              <div
-                key={e.id}
-                className="rounded-xl p-4 border transition-all"
+              <div key={e.id}
+                className="rounded-xl border transition-all"
                 style={{
-                  background: "linear-gradient(135deg, #12183a, #0d1224)",
-                  borderColor: isPositive ? "rgba(34,197,94,0.2)" : "rgba(244,63,94,0.2)",
-                }}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  {/* Left - Type & Date */}
-                  <div className="flex gap-3 flex-1 min-w-0">
-                    <div className="rounded-lg p-2.5 shrink-0" style={{ background: cfg.bg }}>
-                      {cfg.icon}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-semibold text-sm text-white">{cfg.displayName}</div>
-                      <div className="text-xs text-white/50 mt-1">{fmtDate(e.createdAt)}</div>
-                      {e.note && <div className="text-xs text-white/40 mt-1 truncate">{e.note}</div>}
-                    </div>
+                  background: "linear-gradient(135deg,#12183a,#0d1224)",
+                  borderColor: isPos ? "rgba(34,197,94,0.2)" : isNeg ? "rgba(244,63,94,0.2)" : "rgba(251,191,36,0.15)",
+                }}>
+                <div className="flex items-center gap-3 px-4 py-3">
+                  {/* Icon */}
+                  <div className="rounded-lg p-2.5 shrink-0" style={{ background: meta.bg }}>
+                    <span style={{ color: meta.color }}>{meta.icon}</span>
                   </div>
 
-                  {/* Right - Amounts */}
-                  <div className="text-right shrink-0">
-                    <div className={`font-display text-lg font-bold tabular-nums ${isPositive ? "text-green-400" : "text-red-400"}`}>
-                      {isPositive ? "+" : ""}₹{fmt(Math.abs(amt))}
-                    </div>
-                    <div className="text-xs text-white/40 mt-1 tabular-nums">
-                      Bal: ₹{fmt(e.balanceAfter)}
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm text-white">{meta.label}</div>
+                    <div className="text-[10px] text-white/40 mt-0.5">{fmtDate(e.createdAt)}</div>
+                    {e.note && <div className="text-[10px] text-white/30 truncate mt-0.5">{e.note}</div>}
+                  </div>
+
+                  {/* Amounts */}
+                  <div className="text-right shrink-0 ml-2">
+                    {isExposureOnly ? (
+                      /* BET_PLACE — only exposure locked, amount=0 */
+                      <div>
+                        <div className="text-xs font-bold text-yellow-400">
+                          {expD > 0 ? "−" : "+"}₹{fmt(Math.abs(expD))}
+                        </div>
+                        <div className="text-[9px] text-white/30 mt-0.5">Exposure {expD > 0 ? "locked" : "released"}</div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="font-display text-base font-bold tabular-nums"
+                          style={{ color: isPos ? "#22c55e" : isNeg ? "#f43f5e" : "#fff" }}>
+                          {isPos ? "+" : ""}₹{fmt(Math.abs(amt))}
+                        </div>
+                        {expD !== 0 && (
+                          <div className="text-[9px] text-white/30 mt-0.5">
+                            Exp {expD > 0 ? "+" : ""}₹{fmt(expD)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <div className="text-[9px] text-white/25 mt-1 tabular-nums">
+                      Bal: ₹{fmt(Number(e.balanceAfter))}
                     </div>
                   </div>
-                </div>
-
-                {/* Footer - Additional Info */}
-                <div className="mt-3 pt-3 border-t border-white/10 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-white/30">
-                  {e.exposureDelta !== 0 && <div>Exp Δ: ₹{fmt(e.exposureDelta)}</div>}
-                  {e.exposureAfter !== undefined && <div>Exp: ₹{fmt(e.exposureAfter)}</div>}
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {data?.nextCursor && (
+        <p className="text-center text-xs text-white/30 py-2">Showing last 200 entries. Older entries not shown.</p>
       )}
     </div>
   );
@@ -233,20 +218,12 @@ export default function StatementPage() {
 
 function SummaryCard({ label, value, icon, color }: { label: string; value: string; icon: React.ReactNode; color: string }) {
   return (
-    <div
-      className="rounded-xl p-4 border"
-      style={{
-        background: `${color}10`,
-        borderColor: `${color}30`,
-      }}
-    >
+    <div className="rounded-xl p-4 border" style={{ background: `${color}10`, borderColor: `${color}30` }}>
       <div className="flex items-center gap-2 mb-2">
         <span style={{ color }}>{icon}</span>
         <span className="text-[10px] text-white/40 uppercase tracking-widest">{label}</span>
       </div>
-      <div className="font-display text-2xl font-bold" style={{ color }}>
-        {value}
-      </div>
+      <div className="font-display text-xl font-bold" style={{ color }}>{value}</div>
     </div>
   );
 }
