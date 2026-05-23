@@ -58,15 +58,13 @@ export default async function HomePage() {
 
         {/* Sports Banner */}
         <div className="group relative rounded-3xl overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-300 min-h-[130px] md:min-h-[175px] hover:shadow-2xl hover:scale-[1.02] cursor-pointer">
-          {/* Background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500 via-orange-600 to-orange-800" />
-
-          {/* Overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/30 to-transparent pointer-events-none" />
-
-          {/* Content */}
-          <div className="relative z-10 h-full p-4 md:p-6 flex flex-col justify-between hidden"></div>
-
+          <Image
+            src="/images/bannercric.png"
+            alt="Sports Banner"
+            fill
+            className="object-cover object-center"
+            priority
+          />
         </div>
       </div>
 
