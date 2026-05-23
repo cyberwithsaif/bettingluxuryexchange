@@ -2,14 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: light; }
+:root { color-scheme: dark; }
 
 html, body {
-  /* Warm cream tint instead of harsh white — easier on the eyes for long
-     admin sessions while keeping a clean light feel. White cards/inputs
-     now pop against this slightly toned background. */
-  background: linear-gradient(180deg, #fef9f3 0%, #faf3e8 100%);
-  color: #1f2937; /* slate-800 — strong readable text on cream */
+  background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+  color: #f3f4f6;
   font-family: theme(fontFamily.sans);
   min-height: 100vh;
 }
@@ -22,10 +19,10 @@ html, body {
 }
 
 .glass {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(248, 248, 248, 0.90));
+  background: linear-gradient(160deg, rgba(31, 41, 55, 0.9), rgba(17, 24, 39, 0.95));
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 204, 0, 0.2);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 204, 0, 0.1);
+  border: 1px solid rgba(255, 204, 0, 0.15);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 204, 0, 0.08);
 }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -124,7 +121,7 @@ html, body {
   }
 
   .table-cell-header {
-    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 bg-yellow-50/60;
+    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 bg-gray-800/50;
   }
 
   .table-cell {
@@ -152,6 +149,6 @@ html, body {
   }
 
   .modal-input {
-    @apply w-full bg-white border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition;
+    @apply w-full bg-gray-700/50 border border-yellow-500/30 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-500/30 transition;
   }
 }
