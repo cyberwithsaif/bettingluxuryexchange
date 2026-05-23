@@ -102,7 +102,8 @@ export default function AccountDashboard() {
   }, [ledger]);
 
   const tierIdx = getTier(totalDeposited);
-  const tier = TIERS[tierIdx] ?? TIERS[0];
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const tier = TIERS[tierIdx]!;
   const nextTier = TIERS[tierIdx + 1] ?? null;
   const tierProgress = nextTier
     ? Math.min(100, Math.round(((totalDeposited - tier.min) / (nextTier.min - tier.min)) * 100))
