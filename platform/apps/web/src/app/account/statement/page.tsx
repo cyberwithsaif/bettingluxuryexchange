@@ -137,7 +137,7 @@ export default function StatementPage() {
           </button>
           {uniqueKinds.map((k) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const cfg = (KIND_CONFIG as Record<string, any>)[k] || { icon: null, color: "#fff", displayName: k };
+            const cfg = (KIND_CONFIG as any)[k] || { icon: null, color: "#fff", displayName: k };
             const isActive = kindFilter === k;
             return (
               <button
