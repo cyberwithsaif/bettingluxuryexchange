@@ -54,26 +54,6 @@ function SidebarInner() {
   const ctx = useContext(SidebarContext);
   const collapsed = ctx?.collapsed ?? false;
 
-  return (
-    <div className="flex flex-col h-full overflow-hidden">
-
-      {/* ── Arrow toggle ──────────────────────────────────────────── */}
-      <div className="shrink-0 h-[74px] flex items-center justify-center">
-        <button
-          onClick={() => ctx?.setCollapsed(!collapsed)}
-          className="flex items-center justify-center w-10 h-10 rounded-xl transition-all group"
-          style={{
-            background: "linear-gradient(135deg, rgba(139,92,246,0.4), rgba(168,85,247,0.2))",
-            boxShadow: "0 8px 20px rgba(139,92,246,0.25), inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -2px 8px rgba(0,0,0,0.3)",
-            border: "1px solid rgba(139,92,246,0.3)",
-          }}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" className="group-hover:text-violet-100 transition-all duration-300" style={{ color: "rgb(196,181,253)", transform: collapsed ? "rotate(180deg)" : "none" }}>
-            <path d="M8 5L3 10M3 10L8 15M3 10H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      </div>
 
       {/* ── Nav ───────────────────────────────────────────────────── */}
       <nav className={cn(
@@ -153,6 +133,24 @@ function SidebarInner() {
           <div className="text-sm font-bold text-white/50 tabular-nums tracking-tight">14,012,645,500</div>
         </div>
       )}
+
+      {/* ── Arrow toggle (bottom right) ──────────────────────────────────────────── */}
+      <div className="shrink-0 flex items-end justify-end p-3" style={{ height: "60px" }}>
+        <button
+          onClick={() => ctx?.setCollapsed(!collapsed)}
+          className="flex items-center justify-center w-10 h-10 rounded-xl transition-all group"
+          style={{
+            background: "linear-gradient(135deg, rgba(139,92,246,0.4), rgba(168,85,247,0.2))",
+            boxShadow: "0 8px 20px rgba(139,92,246,0.25), inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -2px 8px rgba(0,0,0,0.3)",
+            border: "1px solid rgba(139,92,246,0.3)",
+          }}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" className="group-hover:text-violet-100 transition-all duration-300" style={{ color: "rgb(196,181,253)", transform: collapsed ? "rotate(180deg)" : "none" }}>
+            <path d="M8 5L3 10M3 10L8 15M3 10H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }
