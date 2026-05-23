@@ -242,10 +242,9 @@ export default function AccountDashboard() {
                 const isActive = i === tierIdx;
                 const isPast = i < tierIdx;
                 return (
-                  <div key={t.name} className={`flex items-center gap-3 rounded-xl px-3 py-2 transition-all ${isActive ? "ring-1" : ""}`}
+                  <div key={t.name} className="flex items-center gap-3 rounded-xl px-3 py-2 transition-all"
                     style={{
                       background: isActive ? `${t.color}15` : "rgba(255,255,255,0.02)",
-                      ringColor: t.color,
                       border: isActive ? `1px solid ${t.color}40` : "1px solid transparent",
                     }}>
                     <t.Icon size={14} style={{ color: isPast || isActive ? t.color : "rgba(255,255,255,0.2)" }} />
