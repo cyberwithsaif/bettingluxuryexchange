@@ -109,7 +109,7 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
         </div>
 
         {/* ── Filter bar ── */}
-        <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
+        <div className="hidden md:flex items-center justify-between gap-3 mb-5 flex-wrap">
           {/* Publisher pills */}
           <div className="flex gap-1.5 flex-wrap">
             {["All", ...providers].map(p => (
