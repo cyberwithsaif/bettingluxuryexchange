@@ -27,7 +27,7 @@ const DEFAULT_ITEMS: NavItem[] = [
   { href: "/sportsbook", label: "SPORTS BOOK", emoji: "🎯", enabled: true },
 ];
 
-const inputCls = "bg-white border border-yellow-200 rounded px-2 py-1 text-sm text-gray-800 outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100 transition";
+const inputCls = "bg-gray-800 border border-yellow-200 rounded px-2 py-1 text-sm text-gray-200 outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100 transition";
 
 export default function NavSettingsPage() {
   const { data, isLoading } = useSWR<PlatformSettings>(SETTINGS_KEY);
@@ -81,8 +81,8 @@ export default function NavSettingsPage() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-black text-gray-900">Nav Bar</h1>
-        <div className="h-40 animate-pulse bg-gray-100 rounded-xl" />
+        <h1 className="text-2xl font-black text-gray-100">Nav Bar</h1>
+        <div className="h-40 animate-pulse bg-gray-700 rounded-xl" />
       </div>
     );
   }
@@ -90,7 +90,7 @@ export default function NavSettingsPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-black text-gray-900 flex items-center gap-3">
+        <h1 className="text-2xl font-black text-gray-100 flex items-center gap-3">
           <Navigation size={24} /> Navigation Bar
         </h1>
         <p className="text-sm text-gray-500 mt-0.5">
@@ -107,7 +107,7 @@ export default function NavSettingsPage() {
       )}
 
       {/* Items list */}
-      <section className="rounded-xl border border-yellow-100 bg-white p-5 space-y-2 shadow-sm">
+      <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 space-y-2 shadow-sm">
         {current.map((item, idx) => (
           <div
             key={idx}
@@ -116,7 +116,7 @@ export default function NavSettingsPage() {
             onDragOver={(e) => onDragOver(e, idx)}
             onDragEnd={onDragEnd}
             className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 transition ${
-              dragIdx === idx ? "border-yellow-400 bg-yellow-50" : "border-gray-100 bg-white hover:border-yellow-200"
+              dragIdx === idx ? "border-yellow-400 bg-gray-800" : "border-gray-100 bg-gray-800 hover:border-yellow-200"
             }`}
           >
             <GripVertical size={16} className="text-gray-400 cursor-grab shrink-0" />
@@ -162,8 +162,8 @@ export default function NavSettingsPage() {
       </section>
 
       {/* Add new item */}
-      <section className="rounded-xl border border-yellow-100 bg-white p-5 shadow-sm">
-        <h2 className="text-base font-black text-gray-800 mb-3 flex items-center gap-2"><Plus size={16} /> Add Item</h2>
+      <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 shadow-sm">
+        <h2 className="text-base font-black text-gray-200 mb-3 flex items-center gap-2"><Plus size={16} /> Add Item</h2>
         <div className="flex items-center gap-3">
           <input
             type="text"
@@ -189,7 +189,7 @@ export default function NavSettingsPage() {
           <button
             onClick={addItem}
             disabled={!newItem.href || !newItem.label}
-            className="shrink-0 flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-1.5 font-bold text-slate-900 text-sm disabled:opacity-40 hover:brightness-110 transition"
+            className="shrink-0 flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-1.5 font-bold text-gray-100 text-sm disabled:opacity-40 hover:brightness-110 transition"
           >
             <Plus size={14} /> Add
           </button>
@@ -199,7 +199,7 @@ export default function NavSettingsPage() {
       <button
         onClick={save}
         disabled={busy}
-        className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-2.5 font-bold text-slate-900 shadow-sm disabled:opacity-40 hover:brightness-110 transition"
+        className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-2.5 font-bold text-gray-100 shadow-sm disabled:opacity-40 hover:brightness-110 transition"
       >
         <Save size={16} />
         {busy ? "Saving…" : "Save Navigation"}

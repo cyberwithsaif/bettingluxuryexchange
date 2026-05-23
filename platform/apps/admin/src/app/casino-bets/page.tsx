@@ -20,7 +20,7 @@ const GAME_LABELS: Record<string, { label: string; emoji: string; color: string 
   plinko:   { label: "Plinko",   emoji: "🎯", color: "bg-purple-50 text-purple-700 border-purple-200" },
   pump:     { label: "Pump",     emoji: "🎈", color: "bg-pink-50   text-pink-700   border-pink-200" },
   dice:     { label: "Dice",     emoji: "🎲", color: "bg-blue-50   text-blue-700   border-blue-200" },
-  roulette: { label: "Roulette", emoji: "🎡", color: "bg-amber-50  text-amber-700  border-amber-200" },
+  roulette: { label: "Roulette", emoji: "🎡", color: "bg-gray-800  text-amber-700  border-yellow-800" },
 };
 
 function buildKey(q: string, game: string, skip: number) {
@@ -42,7 +42,7 @@ export default function AdminCasinoBetsPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-black text-gray-900">All Casino Bets</h1>
+      <h1 className="text-2xl font-black text-gray-100">All Casino Bets</h1>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
@@ -50,12 +50,12 @@ export default function AdminCasinoBetsPage() {
           value={q}
           onChange={(e) => { setQ(e.target.value); setSkip(0); }}
           placeholder="Search username…"
-          className="border border-yellow-200 bg-white rounded-lg px-3 py-2 text-sm w-56 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-yellow-400 shadow-sm"
+          className="border border-yellow-200 bg-gray-800 rounded-lg px-3 py-2 text-sm w-56 text-gray-200 placeholder-gray-400 focus:outline-none focus:border-yellow-400 shadow-sm"
         />
         <select
           value={game}
           onChange={(e) => { setGame(e.target.value); setSkip(0); }}
-          className="border border-yellow-200 bg-white rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-yellow-400 shadow-sm"
+          className="border border-yellow-200 bg-gray-800 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-yellow-400 shadow-sm"
         >
           <option value="">All games</option>
           {Object.entries(GAME_LABELS).map(([v, { label, emoji }]) => (
@@ -65,10 +65,10 @@ export default function AdminCasinoBetsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-yellow-100 bg-white overflow-x-auto shadow-sm">
+      <div className="rounded-xl border border-yellow-100 bg-gray-800 overflow-x-auto shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-yellow-50/80 border-b border-yellow-100">
+            <tr className="bg-gray-800/80 border-b border-yellow-100">
               <Th>ID</Th>
               <Th>Game</Th>
               <Th>User</Th>
@@ -97,16 +97,16 @@ export default function AdminCasinoBetsPage() {
             {(bets ?? []).map((bet) => {
               const g = GAME_LABELS[bet.game];
               return (
-                <tr key={bet.id} className="border-t border-gray-100 hover:bg-yellow-50/30 transition">
+                <tr key={bet.id} className="border-t border-gray-100 hover:bg-gray-800/30 transition">
                   <Td className="font-mono text-xs text-gray-500">{bet.id.slice(0, 8)}</Td>
                   <Td>
                     <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold border", g?.color ?? "")}>
                       {g?.emoji} {g?.label ?? bet.game}
                     </span>
                   </Td>
-                  <Td className="font-semibold text-gray-800">{bet.user.username}</Td>
-                  <Td className="tabular-nums text-gray-700 font-semibold">₹{Number(bet.betAmount).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</Td>
-                  <Td className="tabular-nums text-gray-700">₹{Number(bet.payout).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</Td>
+                  <Td className="font-semibold text-gray-200">{bet.user.username}</Td>
+                  <Td className="tabular-nums text-gray-300 font-semibold">₹{Number(bet.betAmount).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</Td>
+                  <Td className="tabular-nums text-gray-300">₹{Number(bet.payout).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</Td>
                   <Td className={cn("tabular-nums font-semibold", bet.profit >= 0 ? "text-emerald-600" : "text-red-500")}>
                     {bet.profit >= 0 ? "+" : ""}₹{Number(bet.profit).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                   </Td>
@@ -136,13 +136,13 @@ export default function AdminCasinoBetsPage() {
         <button
           disabled={skip === 0}
           onClick={() => setSkip(Math.max(0, skip - 50))}
-          className="px-4 py-2 rounded-lg border border-yellow-200 text-sm text-gray-600 font-medium disabled:opacity-40 hover:border-yellow-400 hover:bg-yellow-50 transition"
+          className="px-4 py-2 rounded-lg border border-yellow-200 text-sm text-gray-400 font-medium disabled:opacity-40 hover:border-yellow-400 hover:bg-gray-800 transition"
         >← Prev</button>
         <span className="text-sm text-gray-500">Showing {skip + 1}–{skip + (bets?.length ?? 0)}</span>
         <button
           disabled={(bets?.length ?? 0) < 50}
           onClick={() => setSkip(skip + 50)}
-          className="px-4 py-2 rounded-lg border border-yellow-200 text-sm text-gray-600 font-medium disabled:opacity-40 hover:border-yellow-400 hover:bg-yellow-50 transition"
+          className="px-4 py-2 rounded-lg border border-yellow-200 text-sm text-gray-400 font-medium disabled:opacity-40 hover:border-yellow-400 hover:bg-gray-800 transition"
         >Next →</button>
       </div>
     </div>

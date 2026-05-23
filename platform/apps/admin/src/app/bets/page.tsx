@@ -24,8 +24,8 @@ const STATUS_STYLE: Record<BetStatus, string> = {
   MATCHED:      "bg-blue-50    text-blue-700   border-blue-200",
   SETTLED_WON:  "bg-emerald-50 text-emerald-700 border-emerald-200",
   SETTLED_LOST: "bg-red-50     text-red-600    border-red-200",
-  VOID:         "bg-yellow-50  text-yellow-700 border-yellow-200",
-  CANCELLED:    "bg-gray-100   text-gray-500   border-gray-200",
+  VOID:         "bg-gray-800  text-yellow-700 border-yellow-200",
+  CANCELLED:    "bg-gray-700   text-gray-500   border-gray-700",
 };
 
 function buildKey(q: string, status: string, skip: number) {
@@ -57,7 +57,7 @@ export default function AdminBetsPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-black text-gray-900">All Bets</h1>
+      <h1 className="text-2xl font-black text-gray-100">All Bets</h1>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
@@ -65,12 +65,12 @@ export default function AdminBetsPage() {
           value={q}
           onChange={(e) => { setQ(e.target.value); setSkip(0); }}
           placeholder="Search username…"
-          className="border border-yellow-200 bg-white rounded-lg px-3 py-2 text-sm w-56 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-yellow-400 shadow-sm"
+          className="border border-yellow-200 bg-gray-800 rounded-lg px-3 py-2 text-sm w-56 text-gray-200 placeholder-gray-400 focus:outline-none focus:border-yellow-400 shadow-sm"
         />
         <select
           value={status}
           onChange={(e) => { setStatus(e.target.value); setSkip(0); }}
-          className="border border-yellow-200 bg-white rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-yellow-400 shadow-sm"
+          className="border border-yellow-200 bg-gray-800 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-yellow-400 shadow-sm"
         >
           <option value="">All statuses</option>
           {[
@@ -86,10 +86,10 @@ export default function AdminBetsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-yellow-100 bg-white overflow-x-auto shadow-sm">
+      <div className="rounded-xl border border-yellow-100 bg-gray-800 overflow-x-auto shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-yellow-50/80 border-b border-yellow-100">
+            <tr className="bg-gray-800/80 border-b border-yellow-100">
               <Th>Bet ID</Th>
               <Th>User</Th>
               <Th>Market</Th>
@@ -118,11 +118,11 @@ export default function AdminBetsPage() {
               </tr>
             )}
             {(bets ?? []).map((bet) => (
-              <tr key={bet.id} className="border-t border-gray-100 hover:bg-yellow-50/30 transition">
+              <tr key={bet.id} className="border-t border-gray-100 hover:bg-gray-800/30 transition">
                 <Td className="font-mono text-xs text-gray-500">{bet.id.slice(0, 8)}</Td>
-                <Td className="font-semibold text-gray-800">{bet.user.username}</Td>
-                <Td className="text-xs text-gray-600 max-w-[140px] truncate">{bet.market.name}</Td>
-                <Td className="text-gray-600">{bet.runner.name}</Td>
+                <Td className="font-semibold text-gray-200">{bet.user.username}</Td>
+                <Td className="text-xs text-gray-400 max-w-[140px] truncate">{bet.market.name}</Td>
+                <Td className="text-gray-400">{bet.runner.name}</Td>
                 <Td>
                   <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-black border",
                     bet.side === "BACK"
@@ -131,8 +131,8 @@ export default function AdminBetsPage() {
                     {bet.side}
                   </span>
                 </Td>
-                <Td className="tabular-nums text-gray-700 font-semibold">{Number(bet.odds).toFixed(2)}</Td>
-                <Td className="tabular-nums text-gray-800 font-semibold">₹{Number(bet.stake).toLocaleString("en-IN")}</Td>
+                <Td className="tabular-nums text-gray-300 font-semibold">{Number(bet.odds).toFixed(2)}</Td>
+                <Td className="tabular-nums text-gray-200 font-semibold">₹{Number(bet.stake).toLocaleString("en-IN")}</Td>
                 <Td className={cn("tabular-nums font-semibold", Number(bet.potentialProfit) >= 0 ? "text-emerald-600" : "text-red-500")}>
                   ₹{Number(bet.potentialProfit).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                 </Td>
@@ -148,7 +148,7 @@ export default function AdminBetsPage() {
                   {bet.status === "OPEN" && (
                     <div className="flex gap-1">
                       <button onClick={() => handleAction(bet.id, "void")}
-                        className="text-xs px-2 py-1 rounded-lg border border-yellow-200 text-yellow-700 bg-yellow-50 hover:bg-yellow-100 font-medium transition">
+                        className="text-xs px-2 py-1 rounded-lg border border-yellow-200 text-yellow-700 bg-gray-800 hover:bg-yellow-100 font-medium transition">
                         Void
                       </button>
                       <button onClick={() => handleAction(bet.id, "cancel")}
@@ -169,13 +169,13 @@ export default function AdminBetsPage() {
         <button
           disabled={skip === 0}
           onClick={() => setSkip(Math.max(0, skip - 50))}
-          className="px-4 py-2 rounded-lg border border-yellow-200 text-sm text-gray-600 font-medium disabled:opacity-40 hover:border-yellow-400 hover:bg-yellow-50 transition"
+          className="px-4 py-2 rounded-lg border border-yellow-200 text-sm text-gray-400 font-medium disabled:opacity-40 hover:border-yellow-400 hover:bg-gray-800 transition"
         >← Prev</button>
         <span className="text-sm text-gray-500">Showing {skip + 1}–{skip + (bets?.length ?? 0)}</span>
         <button
           disabled={(bets?.length ?? 0) < 50}
           onClick={() => setSkip(skip + 50)}
-          className="px-4 py-2 rounded-lg border border-yellow-200 text-sm text-gray-600 font-medium disabled:opacity-40 hover:border-yellow-400 hover:bg-yellow-50 transition"
+          className="px-4 py-2 rounded-lg border border-yellow-200 text-sm text-gray-400 font-medium disabled:opacity-40 hover:border-yellow-400 hover:bg-gray-800 transition"
         >Next →</button>
       </div>
     </div>

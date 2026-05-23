@@ -35,7 +35,7 @@ export default function AdminReportsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-black text-gray-900">Platform Reports</h1>
+          <h1 className="text-2xl font-black text-gray-100">Platform Reports</h1>
           <p className="text-sm text-gray-500 mt-0.5">Bet volume and operator P/L over time</p>
         </div>
         <div className="flex gap-1.5">
@@ -45,8 +45,8 @@ export default function AdminReportsPage() {
               onClick={() => setDays(d)}
               className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition ${
                 days === d
-                  ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 border-transparent shadow-sm"
-                  : "border-yellow-200 text-gray-600 hover:border-yellow-400 hover:bg-yellow-50"
+                  ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-gray-100 border-transparent shadow-sm"
+                  : "border-yellow-200 text-gray-400 hover:border-yellow-400 hover:bg-gray-800"
               }`}
             >
               {label}
@@ -69,10 +69,10 @@ export default function AdminReportsPage() {
       </div>
 
       {/* Volume chart */}
-      <div className="rounded-xl bg-white border border-yellow-100 p-5 shadow-sm">
-        <h2 className="text-lg font-black text-gray-900 mb-1">Daily Bet Volume</h2>
+      <div className="rounded-xl bg-gray-800 border border-yellow-100 p-5 shadow-sm">
+        <h2 className="text-lg font-black text-gray-100 mb-1">Daily Bet Volume</h2>
         <p className="text-xs text-gray-500 mb-4">Last {days} day{days > 1 ? "s" : ""}</p>
-        {isLoading && <div className="h-32 animate-pulse bg-gray-100 rounded-lg" />}
+        {isLoading && <div className="h-32 animate-pulse bg-gray-700 rounded-lg" />}
         {!isLoading && data && (
           <div className="flex items-end gap-1 h-36 overflow-x-auto">
             {data.series.length === 0 && (
@@ -84,11 +84,11 @@ export default function AdminReportsPage() {
                 <div key={s.date} className="flex flex-col items-center gap-1 shrink-0 flex-1 min-w-[24px] group">
                   <div
                     style={{ height: `${h}%` }}
-                    className="w-full rounded-t bg-yellow-400 hover:bg-yellow-500 transition cursor-pointer"
+                    className="w-full rounded-t bg-yellow-400 hover:bg-gray-8000 transition cursor-pointer"
                     title={`${s.date}: ₹${fmt(s.volume)}`}
                   />
                   {data.series.length <= 14 && (
-                    <span className="text-[9px] text-gray-500 group-hover:text-gray-600 transition-colors">{s.date.slice(5)}</span>
+                    <span className="text-[9px] text-gray-500 group-hover:text-gray-400 transition-colors">{s.date.slice(5)}</span>
                   )}
                 </div>
               );
@@ -98,10 +98,10 @@ export default function AdminReportsPage() {
       </div>
 
       {/* P/L Chart */}
-      <div className="rounded-xl bg-white border border-yellow-100 p-5 shadow-sm">
-        <h2 className="text-lg font-black text-gray-900 mb-1">Daily Operator P/L</h2>
+      <div className="rounded-xl bg-gray-800 border border-yellow-100 p-5 shadow-sm">
+        <h2 className="text-lg font-black text-gray-100 mb-1">Daily Operator P/L</h2>
         <p className="text-xs text-gray-500 mb-4">Positive = operator profit</p>
-        {isLoading && <div className="h-32 animate-pulse bg-gray-100 rounded-lg" />}
+        {isLoading && <div className="h-32 animate-pulse bg-gray-700 rounded-lg" />}
         {!isLoading && data && (
           <div className="flex items-end gap-1 h-36 overflow-x-auto">
             {data.series.length === 0 && (
@@ -117,7 +117,7 @@ export default function AdminReportsPage() {
                     title={`${s.date}: ₹${fmt(s.pl)}`}
                   />
                   {data.series.length <= 14 && (
-                    <span className="text-[9px] text-gray-500 group-hover:text-gray-600 transition-colors">{s.date.slice(5)}</span>
+                    <span className="text-[9px] text-gray-500 group-hover:text-gray-400 transition-colors">{s.date.slice(5)}</span>
                   )}
                 </div>
               );
@@ -128,9 +128,9 @@ export default function AdminReportsPage() {
 
       {/* Tabular breakdown */}
       {data && data.series.length > 0 && (
-        <div className="rounded-xl border border-yellow-100 bg-white overflow-x-auto shadow-sm">
+        <div className="rounded-xl border border-yellow-100 bg-gray-800 overflow-x-auto shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-yellow-50/80 border-b border-yellow-100">
+            <thead className="bg-gray-800/80 border-b border-yellow-100">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Date</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Volume</th>
@@ -139,9 +139,9 @@ export default function AdminReportsPage() {
             </thead>
             <tbody>
               {[...data.series].reverse().map((s) => (
-                <tr key={s.date} className="border-t border-gray-100 hover:bg-yellow-50/30 transition">
-                  <td className="px-4 py-2.5 text-gray-600">{s.date}</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-gray-700 font-semibold">₹{fmt(s.volume)}</td>
+                <tr key={s.date} className="border-t border-gray-100 hover:bg-gray-800/30 transition">
+                  <td className="px-4 py-2.5 text-gray-400">{s.date}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-gray-300 font-semibold">₹{fmt(s.volume)}</td>
                   <td className={`px-4 py-2.5 text-right tabular-nums font-bold ${s.pl >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                     {s.pl >= 0 ? "+" : ""}₹{fmt(s.pl)}
                   </td>
@@ -159,17 +159,17 @@ function KPI({ label, value, Icon, tone }: {
   label: string; value: string; Icon: React.ElementType; tone?: "ok" | "bad";
 }) {
   return (
-    <div className="rounded-xl bg-white border border-yellow-100 p-4 shadow-sm flex items-start gap-3">
+    <div className="rounded-xl bg-gray-800 border border-yellow-100 p-4 shadow-sm flex items-start gap-3">
       <div className={`mt-0.5 p-2 rounded-lg ${
         tone === "ok"  ? "bg-emerald-50 text-emerald-600" :
         tone === "bad" ? "bg-red-50 text-red-500" :
-                         "bg-yellow-50 text-yellow-600"
+                         "bg-gray-800 text-yellow-600"
       }`}>
         <Icon size={16} />
       </div>
       <div>
         <p className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">{label}</p>
-        <p className="text-2xl font-black text-gray-900 mt-0.5 tabular-nums">{value}</p>
+        <p className="text-2xl font-black text-gray-100 mt-0.5 tabular-nums">{value}</p>
       </div>
     </div>
   );

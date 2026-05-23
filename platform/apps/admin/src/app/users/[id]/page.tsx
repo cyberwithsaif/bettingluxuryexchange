@@ -54,15 +54,15 @@ const fmtShort = (d: string | null) =>
 
 const STATUS_STYLE: Record<string, string> = {
   ACTIVE:    "bg-emerald-50 text-emerald-700 border-emerald-200",
-  SUSPENDED: "bg-yellow-50  text-yellow-700  border-yellow-200",
+  SUSPENDED: "bg-gray-800  text-yellow-700  border-yellow-200",
   LOCKED:    "bg-red-50     text-red-600     border-red-200",
-  CLOSED:    "bg-gray-100   text-gray-500    border-gray-200",
+  CLOSED:    "bg-gray-700   text-gray-500    border-gray-700",
   BANNED:    "bg-red-100    text-red-700     border-red-300",
 };
 
 function StatusBadge({ status }: { status: string }) {
   return (
-    <span className={cn("text-xs px-2.5 py-0.5 rounded-full font-bold border", STATUS_STYLE[status] ?? "bg-gray-100 text-gray-500 border-gray-200")}>
+    <span className={cn("text-xs px-2.5 py-0.5 rounded-full font-bold border", STATUS_STYLE[status] ?? "bg-gray-700 text-gray-500 border-gray-700")}>
       {status}
     </span>
   );
@@ -82,11 +82,11 @@ function NA({ label }: { label?: string }) {
 
 function SectionCard({ title, icon: Icon, children, badge }: { title: string; icon: any; children: React.ReactNode; badge?: string }) {
   return (
-    <div className="bg-white rounded-xl border border-yellow-100 p-5 space-y-4 shadow-sm">
+    <div className="bg-gray-800 rounded-xl border border-yellow-100 p-5 space-y-4 shadow-sm">
       <div className="flex items-center gap-2">
         <Icon size={15} className="text-yellow-500" />
         <h3 className="font-bold text-sm uppercase tracking-wider text-gray-500">{title}</h3>
-        {badge && <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-400 border border-gray-200">{badge}</span>}
+        {badge && <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400 border border-gray-700">{badge}</span>}
       </div>
       {children}
     </div>
@@ -97,16 +97,16 @@ function DataRow({ label, value, mono }: { label: string; value: React.ReactNode
   return (
     <div className="flex items-start justify-between gap-4 py-1.5 border-b border-gray-100 last:border-0">
       <span className="text-xs text-gray-400 shrink-0">{label}</span>
-      <span className={cn("text-sm font-medium text-gray-800 text-right", mono && "font-mono tabular-nums")}>{value}</span>
+      <span className={cn("text-sm font-medium text-gray-200 text-right", mono && "font-mono tabular-nums")}>{value}</span>
     </div>
   );
 }
 
 function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
-    <div className="bg-gray-50 rounded-xl p-3.5 border border-gray-100">
+    <div className="bg-gray-800 rounded-xl p-3.5 border border-gray-100">
       <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">{label}</p>
-      <p className={cn("font-black text-lg tabular-nums", color ?? "text-gray-800")}>{value}</p>
+      <p className={cn("font-black text-lg tabular-nums", color ?? "text-gray-200")}>{value}</p>
       {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
     </div>
   );
@@ -114,7 +114,7 @@ function StatCard({ label, value, sub, color }: { label: string; value: string |
 
 function UnavailableSection({ label }: { label: string }) {
   return (
-    <div className="flex items-center gap-2 p-3 rounded-lg border border-dashed border-gray-200 text-gray-400 text-xs">
+    <div className="flex items-center gap-2 p-3 rounded-lg border border-dashed border-gray-700 text-gray-400 text-xs">
       <Info size={12} />
       {label} — not configured in this version
     </div>
@@ -150,11 +150,11 @@ export default function UserProfilePage() {
 
   if (isLoading) return (
     <div className="space-y-4">
-      <div className="h-8 w-48 bg-gray-100 rounded animate-pulse" />
-      <div className="h-40 bg-gray-100 rounded-xl animate-pulse" />
+      <div className="h-8 w-48 bg-gray-700 rounded animate-pulse" />
+      <div className="h-40 bg-gray-700 rounded-xl animate-pulse" />
       <div className="grid grid-cols-2 gap-4">
-        <div className="h-64 bg-gray-100 rounded-xl animate-pulse" />
-        <div className="h-64 bg-gray-100 rounded-xl animate-pulse" />
+        <div className="h-64 bg-gray-700 rounded-xl animate-pulse" />
+        <div className="h-64 bg-gray-700 rounded-xl animate-pulse" />
       </div>
     </div>
   );
@@ -163,7 +163,7 @@ export default function UserProfilePage() {
     <div className="text-center py-20 text-red-500">
       <AlertTriangle size={32} className="mx-auto mb-3 opacity-50" />
       <p className="font-semibold">Failed to load user profile.</p>
-      <button onClick={() => router.back()} className="mt-4 text-sm text-gray-400 hover:text-gray-700 underline">Go back</button>
+      <button onClick={() => router.back()} className="mt-4 text-sm text-gray-400 hover:text-gray-300 underline">Go back</button>
     </div>
   );
 
@@ -223,19 +223,19 @@ export default function UserProfilePage() {
   return (
     <div className="space-y-5 animate-fade-in">
       {/* Back */}
-      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-gray-400 hover:text-gray-700 text-sm transition font-medium">
+      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-gray-400 hover:text-gray-300 text-sm transition font-medium">
         <ArrowLeft size={14} /> Back to Users
       </button>
 
       {/* ── Profile Header ── */}
-      <div className="bg-white rounded-xl border border-yellow-100 p-5 shadow-sm">
+      <div className="bg-gray-800 rounded-xl border border-yellow-100 p-5 shadow-sm">
         <div className="flex flex-wrap items-start gap-4">
           <div className="w-16 h-16 rounded-2xl bg-yellow-100 border-2 border-yellow-300 flex items-center justify-center shrink-0">
             <span className="font-black text-2xl text-yellow-600">{avatarLetter}</span>
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h1 className="font-black text-2xl text-gray-900">{user.username}</h1>
+              <h1 className="font-black text-2xl text-gray-100">{user.username}</h1>
               <StatusBadge status={user.status} />
               <RoleBadge role={user.role} />
               {user.twoFactorEnabled && (
@@ -265,12 +265,12 @@ export default function UserProfilePage() {
       </div>
 
       {/* ── Tab Bar ── */}
-      <div className="flex gap-1 flex-wrap border-b border-gray-200 -mb-2">
+      <div className="flex gap-1 flex-wrap border-b border-gray-700 -mb-2">
         {TABS.map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={cn(
               "px-4 py-2 text-sm font-semibold rounded-t-lg transition border-b-2",
-              tab === t ? "text-yellow-700 border-yellow-400 bg-yellow-50" : "text-gray-400 border-transparent hover:text-gray-600"
+              tab === t ? "text-yellow-700 border-yellow-400 bg-gray-800" : "text-gray-400 border-transparent hover:text-gray-400"
             )}>{t}</button>
         ))}
       </div>
@@ -302,7 +302,7 @@ export default function UserProfilePage() {
                 </button>
               ) : (
                 <button onClick={() => handleStatusChange("SUSPENDED")} disabled={saving}
-                  className="flex items-center justify-center gap-1.5 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 text-yellow-700 text-xs font-bold py-2 rounded-lg transition disabled:opacity-50">
+                  className="flex items-center justify-center gap-1.5 bg-gray-800 hover:bg-yellow-100 border border-yellow-200 text-yellow-700 text-xs font-bold py-2 rounded-lg transition disabled:opacity-50">
                   <UserX size={12} /> Suspend
                 </button>
               )}
@@ -322,8 +322,8 @@ export default function UserProfilePage() {
               <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Recent Sessions</p>
               {recentLogins.length === 0 && <p className="text-xs text-gray-300">No session data</p>}
               {recentLogins.map((l, i) => (
-                <div key={i} className="text-xs bg-gray-50 rounded-lg p-2 border border-gray-100">
-                  <p className="font-mono text-gray-600">{l.ip ?? "—"}</p>
+                <div key={i} className="text-xs bg-gray-800 rounded-lg p-2 border border-gray-100">
+                  <p className="font-mono text-gray-400">{l.ip ?? "—"}</p>
                   <p className="text-gray-400 mt-0.5 truncate">{l.userAgent ?? "Unknown browser"}</p>
                   <p className="text-gray-300 text-[10px] mt-0.5">{fmtDate(l.createdAt)}</p>
                 </div>
@@ -367,15 +367,15 @@ export default function UserProfilePage() {
               const isCredit = adjustMode === "credit";
               return (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-gray-50 border border-gray-200">
+                  <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-gray-800 border border-gray-700">
                     <button type="button" onClick={() => setAdjustMode("credit")}
                       className={cn("flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-sm transition",
-                        isCredit ? "bg-emerald-600 text-white shadow-md" : "text-gray-400 hover:text-gray-700")}>
+                        isCredit ? "bg-emerald-600 text-white shadow-md" : "text-gray-400 hover:text-gray-300")}>
                       <Plus size={16} /> Credit (Add)
                     </button>
                     <button type="button" onClick={() => setAdjustMode("debit")}
                       className={cn("flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-sm transition",
-                        !isCredit ? "bg-red-500 text-white shadow-md" : "text-gray-400 hover:text-gray-700")}>
+                        !isCredit ? "bg-red-500 text-white shadow-md" : "text-gray-400 hover:text-gray-300")}>
                       <span className="text-lg leading-none">−</span> Debit (Remove)
                     </button>
                   </div>
@@ -388,21 +388,21 @@ export default function UserProfilePage() {
                         <input type="number" inputMode="decimal" min={0} step="0.01"
                           value={adjustAmt} onChange={(e) => { setAdjustAmt(e.target.value); setAdjustStatus(null); }}
                           placeholder="0.00"
-                          className="w-full pl-7 pr-3 py-3 bg-white border border-yellow-200 rounded-lg text-lg font-black tabular-nums text-gray-800 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition" />
+                          className="w-full pl-7 pr-3 py-3 bg-gray-800 border border-yellow-200 rounded-lg text-lg font-black tabular-nums text-gray-200 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition" />
                       </div>
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {QUICK.map(v => (
                           <button key={v} type="button" onClick={() => { setAdjustAmt(String(v)); setAdjustStatus(null); }}
-                            className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-white border border-yellow-200 text-gray-600 hover:bg-yellow-50 hover:border-yellow-400 hover:text-yellow-700 transition">
+                            className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-gray-800 border border-yellow-200 text-gray-400 hover:bg-gray-800 hover:border-yellow-400 hover:text-yellow-700 transition">
                             +{v >= 1000 ? `${v/1000}K` : v}
                           </button>
                         ))}
                       </div>
                     </div>
-                    <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 space-y-2">
+                    <div className="bg-gray-800 border border-gray-100 rounded-xl p-4 space-y-2">
                       <div className="flex justify-between">
                         <span className="text-[11px] uppercase tracking-wider text-gray-400">Current Balance</span>
-                        <span className="font-black text-sm tabular-nums text-gray-700">{fmt(wallet.balance)}</span>
+                        <span className="font-black text-sm tabular-nums text-gray-300">{fmt(wallet.balance)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-[11px] uppercase tracking-wider text-gray-400">Adjustment</span>
@@ -410,8 +410,8 @@ export default function UserProfilePage() {
                           {amt > 0 ? `${isCredit ? "+" : "−"}${fmt(amt)}` : "—"}
                         </span>
                       </div>
-                      <div className="border-t border-gray-200 pt-2 flex justify-between">
-                        <span className="text-[11px] uppercase tracking-wider text-gray-600 font-bold">New Balance</span>
+                      <div className="border-t border-gray-700 pt-2 flex justify-between">
+                        <span className="text-[11px] uppercase tracking-wider text-gray-400 font-bold">New Balance</span>
                         <span className={cn("font-black text-xl tabular-nums", projected >= 0 ? "text-emerald-600" : "text-red-500")}>
                           {fmt(projected)}
                         </span>
@@ -423,7 +423,7 @@ export default function UserProfilePage() {
                     <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Note (optional)</label>
                     <input type="text" value={adjustNote} onChange={(e) => setAdjustNote(e.target.value)} maxLength={200}
                       placeholder="Reason or reference (e.g. manual deposit, bonus, correction)"
-                      className="w-full px-3 py-2 bg-white border border-yellow-200 rounded-lg text-sm text-gray-800 focus:outline-none focus:border-yellow-400 transition" />
+                      className="w-full px-3 py-2 bg-gray-800 border border-yellow-200 rounded-lg text-sm text-gray-200 focus:outline-none focus:border-yellow-400 transition" />
                   </div>
 
                   {adjustStatus && (
@@ -461,8 +461,8 @@ export default function UserProfilePage() {
                   </thead>
                   <tbody>
                     {recentTxns.map(t => (
-                      <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
-                        <td className="py-2 px-2 font-semibold text-gray-700">{t.kind}</td>
+                      <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-800 transition">
+                        <td className="py-2 px-2 font-semibold text-gray-300">{t.kind}</td>
                         <td className="py-2 px-2 text-gray-500">{t.method}</td>
                         <td className={cn("py-2 px-2 tabular-nums text-right font-bold", t.kind === "DEPOSIT" ? "text-emerald-600" : "text-red-500")}>
                           {t.kind === "WITHDRAWAL" ? "-" : "+"}{fmt(Number(t.amount))}
@@ -471,7 +471,7 @@ export default function UserProfilePage() {
                           <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold",
                             t.status === "APPROVED" || t.status === "COMPLETED" ? "bg-emerald-50 text-emerald-700" :
                             t.status === "REJECTED" || t.status === "FAILED"   ? "bg-red-50 text-red-600" :
-                            "bg-yellow-50 text-yellow-700")}>{t.status}</span>
+                            "bg-gray-800 text-yellow-700")}>{t.status}</span>
                         </td>
                         <td className="py-2 px-2 text-gray-400">{fmtShort(t.createdAt)}</td>
                       </tr>
@@ -557,19 +557,19 @@ export default function UserProfilePage() {
                   </thead>
                   <tbody>
                     {recentBets.map(b => (
-                      <tr key={b.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
-                        <td className="py-2 px-2 max-w-[140px] truncate text-gray-600 font-medium">{b.market?.name ?? "—"}</td>
+                      <tr key={b.id} className="border-b border-gray-50 hover:bg-gray-800 transition">
+                        <td className="py-2 px-2 max-w-[140px] truncate text-gray-400 font-medium">{b.market?.name ?? "—"}</td>
                         <td className="py-2 px-2 text-gray-500">{b.runner?.name ?? "—"}</td>
                         <td className="py-2 px-2">
                           <span className={cn("font-black text-xs px-2 py-0.5 rounded",
                             b.side === "BACK" ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-600")}>{b.side}</span>
                         </td>
-                        <td className="py-2 px-2 tabular-nums text-right text-gray-700 font-semibold">{fmt(Number(b.stake))}</td>
+                        <td className="py-2 px-2 tabular-nums text-right text-gray-300 font-semibold">{fmt(Number(b.stake))}</td>
                         <td className="py-2 px-2">
                           <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold",
                             b.status === "SETTLED_WON"  ? "bg-emerald-50 text-emerald-700" :
                             b.status === "SETTLED_LOST" ? "bg-red-50 text-red-600" :
-                            "bg-yellow-50 text-yellow-700")}>{b.status}</span>
+                            "bg-gray-800 text-yellow-700")}>{b.status}</span>
                         </td>
                         <td className="py-2 px-2 text-gray-400">{fmtShort(b.createdAt)}</td>
                       </tr>
@@ -662,10 +662,10 @@ export default function UserProfilePage() {
             ) : (
               <div className="space-y-2">
                 {recentLogins.map((l, i) => (
-                  <div key={i} className="flex items-start gap-3 bg-gray-50 rounded-lg p-3 border border-gray-100">
+                  <div key={i} className="flex items-start gap-3 bg-gray-800 rounded-lg p-3 border border-gray-100">
                     <Eye size={14} className="text-gray-300 mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-mono text-gray-700">{l.ip ?? "Unknown IP"}</p>
+                      <p className="text-sm font-mono text-gray-300">{l.ip ?? "Unknown IP"}</p>
                       <p className="text-xs text-gray-400 mt-0.5 truncate">{l.userAgent ?? "Unknown device"}</p>
                     </div>
                     <p className="text-xs text-gray-400 shrink-0">{fmtDate(l.createdAt)}</p>
@@ -701,7 +701,7 @@ export default function UserProfilePage() {
                   <UserCheck size={12} /> Activate
                 </button>
                 <button onClick={() => handleStatusChange("SUSPENDED")} disabled={saving}
-                  className="flex items-center justify-center gap-1.5 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 text-yellow-700 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-50">
+                  className="flex items-center justify-center gap-1.5 bg-gray-800 hover:bg-yellow-100 border border-yellow-200 text-yellow-700 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-50">
                   <UserX size={12} /> Suspend
                 </button>
                 <button onClick={() => handleStatusChange("LOCKED")} disabled={saving}
@@ -725,13 +725,13 @@ export default function UserProfilePage() {
                   <label className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block mb-1">Amount (+ credit / − debit)</label>
                   <input type="number" value={adjustAmt} onChange={e => setAdjustAmt(e.target.value)}
                     placeholder="e.g. 500 or -200"
-                    className="w-full bg-white border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-yellow-400 transition" />
+                    className="w-full bg-gray-800 border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-yellow-400 transition" />
                 </div>
                 <div>
                   <label className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block mb-1">Note</label>
                   <input type="text" value={adjustNote} onChange={e => setAdjustNote(e.target.value)}
                     placeholder="Reason for adjustment…"
-                    className="w-full bg-white border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-yellow-400 transition" />
+                    className="w-full bg-gray-800 border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-yellow-400 transition" />
                 </div>
                 <button onClick={handleAdjust} disabled={adjusting || !adjustAmt}
                   className="btn-primary flex items-center gap-2 disabled:opacity-50">
@@ -756,7 +756,7 @@ export default function UserProfilePage() {
                   </div>
                 ) : <p className="text-sm text-gray-400">Using platform defaults.</p>}
                 <button onClick={() => setLimitForm(limits ?? { minStake: 100, maxStake: 100000, maxMarketExposure: 1000000, maxDailyLoss: 500000, betDelayMs: 0, fancyEnabled: true, casinoEnabled: true })}
-                  className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-lg border border-yellow-300 text-yellow-700 bg-yellow-50 hover:bg-yellow-100 transition">
+                  className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-lg border border-yellow-300 text-yellow-700 bg-gray-800 hover:bg-yellow-100 transition">
                   <Edit2 size={12} /> Edit Limits
                 </button>
               </div>
@@ -774,14 +774,14 @@ export default function UserProfilePage() {
                       <label className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block mb-1">{f.label}</label>
                       <input type="number" value={lf[f.key] ?? ""}
                         onChange={e => setLimitForm((p: any) => ({ ...p, [f.key]: Number(e.target.value) }))}
-                        className="w-full bg-white border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-yellow-400 transition" />
+                        className="w-full bg-gray-800 border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-yellow-400 transition" />
                     </div>
                   ))}
                   <div className="flex items-center gap-4 col-span-2 pt-1">
                     {(["fancyEnabled", "casinoEnabled"] as const).map(k => (
                       <button key={k} onClick={() => setLimitForm((p: any) => ({ ...p, [k]: !p[k] }))} className="flex items-center gap-2 text-sm">
                         {lf[k] ? <ToggleRight size={24} className="text-emerald-500" /> : <ToggleLeft size={24} className="text-gray-300" />}
-                        <span className="text-gray-600 font-medium">{k === "fancyEnabled" ? "Fancy Bets" : "Casino"}</span>
+                        <span className="text-gray-400 font-medium">{k === "fancyEnabled" ? "Fancy Bets" : "Casino"}</span>
                       </button>
                     ))}
                   </div>
@@ -805,7 +805,7 @@ export default function UserProfilePage() {
                 <input value={noteText} onChange={e => setNoteText(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddNote(); } }}
                   placeholder="Add a note about this user…"
-                  className="flex-1 bg-white border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-yellow-400 transition" />
+                  className="flex-1 bg-gray-800 border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-yellow-400 transition" />
                 <button onClick={handleAddNote} disabled={addingNote || !noteText.trim()}
                   className="btn-primary flex items-center gap-1.5 disabled:opacity-50">
                   {addingNote ? <RefreshCw size={13} className="animate-spin" /> : <Plus size={13} />} Add
@@ -814,8 +814,8 @@ export default function UserProfilePage() {
               {adminNotes.length === 0
                 ? <p className="text-sm text-gray-400 text-center py-3">No notes yet.</p>
                 : adminNotes.map(n => (
-                  <div key={n.id} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                    <p className="text-sm text-gray-700">{n.metadata?.note ?? "—"}</p>
+                  <div key={n.id} className="bg-gray-800 rounded-lg p-3 border border-gray-100">
+                    <p className="text-sm text-gray-300">{n.metadata?.note ?? "—"}</p>
                     <p className="text-[10px] text-gray-400 mt-1">
                       {n.actor?.username ?? "admin"} · {fmtDate(n.createdAt)}
                     </p>

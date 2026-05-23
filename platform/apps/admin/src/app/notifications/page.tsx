@@ -23,7 +23,7 @@ const LEVEL_ICONS: Record<string, React.ElementType> = {
 
 const LEVEL_COLORS: Record<string, string> = {
   info:  "bg-blue-50 text-blue-700 border-blue-200",
-  warn:  "bg-yellow-50 text-yellow-700 border-yellow-200",
+  warn:  "bg-gray-800 text-yellow-700 border-yellow-200",
   promo: "bg-orange-50 text-orange-600 border-orange-200",
 };
 
@@ -37,12 +37,12 @@ export default function AdminNotificationsPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-black text-gray-900">Announcements</h1>
+          <h1 className="text-2xl font-black text-gray-100">Announcements</h1>
           <p className="text-sm text-gray-500 mt-0.5">Manage site-wide banners and notifications</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-2 font-bold text-slate-900 shadow-sm hover:brightness-110 transition"
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-2 font-bold text-gray-100 shadow-sm hover:brightness-110 transition"
         >
           <Plus size={16} /> New Announcement
         </button>
@@ -51,16 +51,16 @@ export default function AdminNotificationsPage() {
       {isLoading && (
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="rounded-xl border border-yellow-100 bg-white p-5 animate-pulse">
-              <div className="h-4 bg-gray-100 rounded w-1/3 mb-3" />
-              <div className="h-3 bg-gray-100 rounded w-2/3" />
+            <div key={i} className="rounded-xl border border-yellow-100 bg-gray-800 p-5 animate-pulse">
+              <div className="h-4 bg-gray-700 rounded w-1/3 mb-3" />
+              <div className="h-3 bg-gray-700 rounded w-2/3" />
             </div>
           ))}
         </div>
       )}
 
       {!isLoading && (!announcements || announcements.length === 0) && (
-        <div className="rounded-xl border border-yellow-100 bg-white p-10 text-center shadow-sm">
+        <div className="rounded-xl border border-yellow-100 bg-gray-800 p-10 text-center shadow-sm">
           <Bell size={40} className="mx-auto mb-3 text-gray-200" />
           <p className="text-gray-500 text-sm">No announcements yet. Create one above.</p>
         </div>
@@ -75,7 +75,7 @@ export default function AdminNotificationsPage() {
             <div
               key={ann.id}
               className={cn(
-                "rounded-xl border p-5 flex items-start gap-4 transition bg-white",
+                "rounded-xl border p-5 flex items-start gap-4 transition bg-gray-800",
                 ann.active ? "border-yellow-100" : "border-gray-100 opacity-60",
               )}
             >
@@ -92,7 +92,7 @@ export default function AdminNotificationsPage() {
                     "text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded border",
                     ann.active
                       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : "bg-gray-50 text-gray-500 border-gray-200",
+                      : "bg-gray-800 text-gray-500 border-gray-700",
                   )}>
                     {ann.active ? "Active" : "Inactive"}
                   </span>
@@ -100,7 +100,7 @@ export default function AdminNotificationsPage() {
                     {new Date(ann.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                   </span>
                 </div>
-                <p className="text-sm text-gray-800 leading-relaxed">{ann.text}</p>
+                <p className="text-sm text-gray-200 leading-relaxed">{ann.text}</p>
                 {(ann.startsAt || ann.endsAt) && (
                   <p className="text-[11px] text-gray-500 mt-1.5">
                     {ann.startsAt && <>From {new Date(ann.startsAt).toLocaleDateString("en-IN")}</>}
@@ -116,7 +116,7 @@ export default function AdminNotificationsPage() {
                     await api.patch(`/announcements/${ann.id}`, { active: !ann.active });
                     globalMutate(SWR_KEY);
                   }}
-                  className="p-2 rounded-md border border-gray-200 hover:border-yellow-300 transition"
+                  className="p-2 rounded-md border border-gray-700 hover:border-yellow-300 transition"
                 >
                   {ann.active
                     ? <ToggleRight size={16} className="text-emerald-600" />
@@ -129,7 +129,7 @@ export default function AdminNotificationsPage() {
                     await api.delete(`/announcements/${ann.id}`);
                     globalMutate(SWR_KEY);
                   }}
-                  className="p-2 rounded-md border border-gray-200 hover:border-red-300 hover:text-red-500 text-gray-500 transition"
+                  className="p-2 rounded-md border border-gray-700 hover:border-red-300 hover:text-red-500 text-gray-500 transition"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -175,8 +175,8 @@ function CreateAnnouncementModal({ onClose }: { onClose: (saved?: boolean) => vo
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-yellow-100 bg-white p-6 space-y-4 shadow-xl">
-        <h2 className="text-xl font-black text-gray-900">New Announcement</h2>
+      <div className="w-full max-w-lg rounded-2xl border border-yellow-100 bg-gray-800 p-6 space-y-4 shadow-xl">
+        <h2 className="text-xl font-black text-gray-100">New Announcement</h2>
 
         <Field label="Message Text">
           <textarea
@@ -218,11 +218,11 @@ function CreateAnnouncementModal({ onClose }: { onClose: (saved?: boolean) => vo
         )}
 
         <div className="flex gap-2 justify-end pt-1">
-          <button onClick={() => onClose()} className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition">Cancel</button>
+          <button onClick={() => onClose()} className="px-4 py-2 rounded-lg border border-gray-700 text-sm text-gray-400 hover:bg-gray-800 transition">Cancel</button>
           <button
             disabled={busy}
             onClick={submit}
-            className="px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 font-bold text-slate-900 shadow-sm disabled:opacity-50 text-sm hover:brightness-110 transition"
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 font-bold text-gray-100 shadow-sm disabled:opacity-50 text-sm hover:brightness-110 transition"
           >
             {busy ? "Creating…" : "Create"}
           </button>

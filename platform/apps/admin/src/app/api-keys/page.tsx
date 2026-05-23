@@ -24,7 +24,7 @@ export default function ApiKeysPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-black text-gray-900">API Keys</h1>
+          <h1 className="text-2xl font-black text-gray-100">API Keys</h1>
           <p className="text-sm text-gray-500 mt-0.5">All provider credentials. Encrypted at rest, last-4 shown.</p>
         </div>
       </div>
@@ -36,8 +36,8 @@ export default function ApiKeysPage() {
             onClick={() => setFilter(c)}
             className={`px-3 py-1.5 rounded-lg uppercase font-semibold border transition ${
               filter === c
-                ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 border-transparent"
-                : "bg-white border-yellow-200 text-gray-600 hover:border-yellow-400 hover:bg-yellow-50"
+                ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-gray-100 border-transparent"
+                : "bg-gray-800 border-yellow-200 text-gray-400 hover:border-yellow-400 hover:bg-gray-800"
             }`}
           >
             {c || "All"}
@@ -46,24 +46,24 @@ export default function ApiKeysPage() {
       </div>
 
       {Object.entries(grouped).map(([cat, items]) => (
-        <section key={cat} className="rounded-xl border border-yellow-100 bg-white shadow-sm overflow-hidden">
-          <header className="px-4 py-2.5 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-yellow-100 bg-yellow-50/80">{cat}</header>
+        <section key={cat} className="rounded-xl border border-yellow-100 bg-gray-800 shadow-sm overflow-hidden">
+          <header className="px-4 py-2.5 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-yellow-100 bg-gray-800/80">{cat}</header>
           <ul className="divide-y divide-gray-100">
             {items.map((c) => {
               const e = map.get(c.key);
               return (
-                <li key={c.key} className="px-4 py-3 grid grid-cols-12 gap-3 items-center hover:bg-yellow-50/30 transition">
+                <li key={c.key} className="px-4 py-3 grid grid-cols-12 gap-3 items-center hover:bg-gray-800/30 transition">
                   <div className="col-span-12 md:col-span-4">
-                    <div className="font-semibold text-gray-800">{c.label}</div>
+                    <div className="font-semibold text-gray-200">{c.label}</div>
                     <div className="text-xs text-gray-500 font-mono">{c.key}</div>
                   </div>
                   <div className="col-span-12 md:col-span-5 text-xs">
                     {e ? (
                       <div className="flex flex-wrap gap-2">
                         {c.fields.map((f) => (
-                          <span key={f} className="px-2 py-0.5 rounded-full bg-gray-50 border border-gray-200">
+                          <span key={f} className="px-2 py-0.5 rounded-full bg-gray-800 border border-gray-700">
                             <span className="text-gray-500">{f}:</span>
-                            <span className="font-mono text-gray-700 ml-1">{e.masked[f] ?? "–"}</span>
+                            <span className="font-mono text-gray-300 ml-1">{e.masked[f] ?? "–"}</span>
                           </span>
                         ))}
                       </div>
@@ -77,7 +77,7 @@ export default function ApiKeysPage() {
                   <div className="col-span-6 md:col-span-2 flex gap-1 justify-end">
                     <button
                       onClick={() => setEditing(c)}
-                      className="text-xs px-2 py-1 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 font-bold inline-flex items-center gap-1 hover:brightness-110 transition"
+                      className="text-xs px-2 py-1 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-gray-100 font-bold inline-flex items-center gap-1 hover:brightness-110 transition"
                     >
                       <Key size={12} />{e ? "Edit" : "Set"}
                     </button>
@@ -88,7 +88,7 @@ export default function ApiKeysPage() {
                           await api.delete(`/admin/api-keys/${c.key}`);
                           mutate("/admin/api-keys");
                         }}
-                        className="text-xs px-2 py-1 rounded-lg border border-gray-200 hover:border-red-200 hover:bg-red-50 text-red-500 inline-flex items-center gap-1 transition"
+                        className="text-xs px-2 py-1 rounded-lg border border-gray-700 hover:border-red-200 hover:bg-red-50 text-red-500 inline-flex items-center gap-1 transition"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -135,9 +135,9 @@ function EditModal({ cat, existing, onClose }: { cat: Cat; existing?: Existing; 
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-yellow-100 bg-white p-6 space-y-3 max-h-[90vh] overflow-y-auto shadow-xl">
+      <div className="w-full max-w-lg rounded-2xl border border-yellow-100 bg-gray-800 p-6 space-y-3 max-h-[90vh] overflow-y-auto shadow-xl">
         <div>
-          <h2 className="text-xl font-black text-gray-900">{cat.label}</h2>
+          <h2 className="text-xl font-black text-gray-100">{cat.label}</h2>
           <p className="text-xs text-gray-500">{cat.key} Â· {cat.category}</p>
         </div>
 
@@ -156,7 +156,7 @@ function EditModal({ cat, existing, onClose }: { cat: Cat; existing?: Existing; 
 
         <label className="flex items-center gap-2 mt-2">
           <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="w-4 h-4 accent-yellow-500" />
-          <span className="text-sm text-gray-700 font-medium">Enabled</span>
+          <span className="text-sm text-gray-300 font-medium">Enabled</span>
         </label>
 
         <label className="block">
@@ -167,11 +167,11 @@ function EditModal({ cat, existing, onClose }: { cat: Cat; existing?: Existing; 
         {err && <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1.5">{err}</div>}
 
         <div className="flex gap-2 justify-end pt-2">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-700 text-sm text-gray-400 hover:bg-gray-800 transition">Cancel</button>
           <button
             onClick={save}
             disabled={busy}
-            className="px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 font-bold shadow-sm disabled:opacity-50 hover:brightness-110 transition"
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-gray-100 font-bold shadow-sm disabled:opacity-50 hover:brightness-110 transition"
           >
             {busy ? "Saving…" : "Save"}
           </button>

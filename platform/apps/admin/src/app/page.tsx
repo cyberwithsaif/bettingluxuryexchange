@@ -29,7 +29,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-black text-gray-900">Dashboard</h1>
+        <h1 className="text-2xl font-black text-gray-100">Dashboard</h1>
         <p className="text-gray-500 text-sm mt-0.5">Real-time platform overview</p>
       </div>
 
@@ -45,10 +45,10 @@ export default function AdminDashboard() {
 
       <div className="grid lg:grid-cols-2 gap-5">
         {/* 7-day P/L Chart */}
-        <div className="bg-white rounded-xl border border-yellow-100 p-6 shadow-sm animate-slide-in-up" style={{ animationDelay: "100ms" }}>
+        <div className="bg-gray-800 rounded-xl border border-yellow-100 p-6 shadow-sm animate-slide-in-up" style={{ animationDelay: "100ms" }}>
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-lg font-black text-gray-900">7-Day P/L</h2>
+              <h2 className="text-lg font-black text-gray-100">7-Day P/L</h2>
               <p className="text-xs text-gray-500 mt-0.5">Operator revenue</p>
             </div>
             <div className="text-right">
@@ -58,7 +58,7 @@ export default function AdminDashboard() {
           </div>
           <div className="h-40 flex items-end gap-1.5">
             {isLoading ? (
-              <div className="w-full h-full bg-gray-100 rounded-lg animate-pulse" />
+              <div className="w-full h-full bg-gray-700 rounded-lg animate-pulse" />
             ) : (data?.pl7d ?? []).length === 0 ? (
               <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">No data yet</div>
             ) : (
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
                       }`}
                       title={`${d.date}: ₹${Math.round(d.pl).toLocaleString("en-IN")}`}
                     />
-                    <span className="text-[10px] text-gray-500 group-hover:text-gray-600 transition-colors">
+                    <span className="text-[10px] text-gray-500 group-hover:text-gray-400 transition-colors">
                       {d.date.slice(5)}
                     </span>
                   </div>
@@ -85,11 +85,11 @@ export default function AdminDashboard() {
         </div>
 
         {/* Key Metrics */}
-        <div className="bg-white rounded-xl border border-yellow-100 p-6 shadow-sm animate-slide-in-up space-y-4" style={{ animationDelay: "200ms" }}>
-          <h2 className="text-lg font-black text-gray-900">Key Metrics</h2>
+        <div className="bg-gray-800 rounded-xl border border-yellow-100 p-6 shadow-sm animate-slide-in-up space-y-4" style={{ animationDelay: "200ms" }}>
+          <h2 className="text-lg font-black text-gray-100">Key Metrics</h2>
           <div className="space-y-2">
             {isLoading ? (
-              Array(4).fill(0).map((_, i) => <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />)
+              Array(4).fill(0).map((_, i) => <div key={i} className="h-12 bg-gray-700 rounded-lg animate-pulse" />)
             ) : (
               <>
                 <MetricRow label="Total Revenue"     value={`₹${fmt(data?.totalRevenue)}`}  trend={data?.revenueTrend} />
@@ -122,20 +122,20 @@ export default function AdminDashboard() {
 function KPI({ label, value, Icon, tone, loading }: {
   label: string; value: any; Icon: any; tone?: "warn" | "bad"; loading?: boolean;
 }) {
-  const valueColor = tone === "warn" ? "text-yellow-600" : tone === "bad" ? "text-red-500" : "text-gray-900";
+  const valueColor = tone === "warn" ? "text-yellow-600" : tone === "bad" ? "text-red-500" : "text-gray-100";
   return (
-    <div className="bg-white rounded-xl border border-yellow-100 p-4 shadow-sm hover:border-yellow-300 transition-all duration-200">
+    <div className="bg-gray-800 rounded-xl border border-yellow-100 p-4 shadow-sm hover:border-yellow-300 transition-all duration-200">
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <p className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">{label}</p>
           {loading ? (
-            <div className="h-7 w-16 bg-gray-100 rounded animate-pulse" />
+            <div className="h-7 w-16 bg-gray-700 rounded animate-pulse" />
           ) : (
             <p className={`text-xl font-black tabular-nums ${valueColor}`}>{value ?? "–"}</p>
           )}
         </div>
         <div className={`p-2 rounded-lg shrink-0 ${
-          tone === "warn" ? "bg-yellow-50" : tone === "bad" ? "bg-red-50" : "bg-yellow-50"
+          tone === "warn" ? "bg-gray-800" : tone === "bad" ? "bg-red-50" : "bg-gray-800"
         }`}>
           <Icon size={16} className={tone === "warn" ? "text-yellow-500" : tone === "bad" ? "text-red-400" : "text-yellow-500"} />
         </div>
@@ -146,10 +146,10 @@ function KPI({ label, value, Icon, tone, loading }: {
 
 function MetricRow({ label, value, trend }: { label: string; value: string; trend?: number }) {
   return (
-    <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100 hover:bg-yellow-50/50 transition-colors">
-      <span className="text-sm text-gray-600 font-medium">{label}</span>
+    <div className="flex items-center justify-between p-3 rounded-xl bg-gray-800 border border-gray-100 hover:bg-gray-800/50 transition-colors">
+      <span className="text-sm text-gray-400 font-medium">{label}</span>
       <div className="flex items-center gap-2">
-        <span className="font-bold tabular-nums text-gray-800">{value}</span>
+        <span className="font-bold tabular-nums text-gray-200">{value}</span>
         {trend !== undefined && (
           <div className={`text-xs flex items-center gap-1 font-semibold ${trend > 0 ? "text-emerald-600" : "text-red-500"}`}>
             {trend > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}

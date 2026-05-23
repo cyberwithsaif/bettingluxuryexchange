@@ -133,7 +133,7 @@ html, body {
   }
 
   .badge-warning {
-    @apply px-2 py-1 rounded-md bg-yellow-500/15 text-yellow-400 text-xs font-semibold;
+    @apply px-2 py-1 rounded-md bg-gray-8000/15 text-yellow-400 text-xs font-semibold;
   }
 
   .badge-danger {

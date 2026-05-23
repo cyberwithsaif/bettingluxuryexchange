@@ -6,12 +6,12 @@ export default function LogsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-black text-gray-900">Audit Logs</h1>
+        <h1 className="text-2xl font-black text-gray-100">Audit Logs</h1>
         <p className="text-sm text-gray-500 mt-0.5">Admin actions and system events</p>
       </div>
-      <div className="rounded-xl border border-yellow-100 bg-white overflow-x-auto shadow-sm">
+      <div className="rounded-xl border border-yellow-100 bg-gray-800 overflow-x-auto shadow-sm">
         <table className="w-full text-sm">
-          <thead className="bg-yellow-50/80 border-b border-yellow-100">
+          <thead className="bg-gray-800/80 border-b border-yellow-100">
             <tr>
               <Th>Date</Th><Th>Actor</Th><Th>Action</Th><Th>Target</Th><Th>IP</Th><Th>Metadata</Th>
             </tr>
@@ -31,16 +31,16 @@ export default function LogsPage() {
               </tr>
             )}
             {(data as any[] ?? []).map((l: any) => (
-              <tr key={l.id} className="border-t border-gray-100 hover:bg-yellow-50/30 transition align-top">
+              <tr key={l.id} className="border-t border-gray-100 hover:bg-gray-800/30 transition align-top">
                 <Td className="whitespace-nowrap text-gray-500">{new Date(l.createdAt).toLocaleString("en-IN", { hour12: false })}</Td>
-                <Td className="font-semibold text-gray-800">
+                <Td className="font-semibold text-gray-200">
                   {l.actor?.username ?? "–"}
                   <span className="text-xs text-gray-500 ml-1">{l.actor?.role}</span>
                 </Td>
                 <Td className="text-xs">
-                  <code className="bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded font-mono">{l.action}</code>
+                  <code className="bg-gray-700 text-gray-300 px-1.5 py-0.5 rounded font-mono">{l.action}</code>
                 </Td>
-                <Td className="text-xs text-gray-600">{l.targetType}:{l.targetId?.slice(0, 8)}</Td>
+                <Td className="text-xs text-gray-400">{l.targetType}:{l.targetId?.slice(0, 8)}</Td>
                 <Td className="text-xs text-gray-500">{l.ip ?? "–"}</Td>
                 <Td className="text-xs text-gray-500 max-w-[26rem] truncate">{l.metadata ? JSON.stringify(l.metadata) : "–"}</Td>
               </tr>

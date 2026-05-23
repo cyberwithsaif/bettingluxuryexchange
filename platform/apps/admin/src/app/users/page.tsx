@@ -25,9 +25,9 @@ const ROLES = ["USER", "AGENT", "MASTER", "SUPER_MASTER", "ADMIN"];
 
 const STATUS_BG: Record<string, string> = {
   ACTIVE:    "bg-emerald-50 text-emerald-700 border-emerald-200",
-  SUSPENDED: "bg-yellow-50  text-yellow-700  border-yellow-200",
+  SUSPENDED: "bg-gray-800  text-yellow-700  border-yellow-200",
   LOCKED:    "bg-red-50     text-red-600     border-red-200",
-  CLOSED:    "bg-gray-100   text-gray-500    border-gray-200",
+  CLOSED:    "bg-gray-700   text-gray-500    border-gray-700",
   BANNED:    "bg-red-100    text-red-700     border-red-300",
 };
 
@@ -50,7 +50,7 @@ export default function UsersPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-black text-gray-900">Users</h1>
+        <h1 className="text-2xl font-black text-gray-100">Users</h1>
         <button
           onClick={() => setCreating(true)}
           className="btn-primary text-sm"
@@ -65,12 +65,12 @@ export default function UsersPage() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search username…"
-          className="border border-yellow-200 bg-white rounded-lg px-3 py-2 text-sm w-64 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-yellow-400 shadow-sm"
+          className="border border-yellow-200 bg-gray-800 rounded-lg px-3 py-2 text-sm w-64 text-gray-200 placeholder-gray-400 focus:outline-none focus:border-yellow-400 shadow-sm"
         />
         <select
           value={role}
           onChange={(e) => setRole(e.target.value)}
-          className="border border-yellow-200 bg-white rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-yellow-400 shadow-sm"
+          className="border border-yellow-200 bg-gray-800 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-yellow-400 shadow-sm"
         >
           <option value="">All roles</option>
           {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
@@ -78,10 +78,10 @@ export default function UsersPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-yellow-100 bg-white overflow-x-auto shadow-sm">
+      <div className="rounded-xl border border-yellow-100 bg-gray-800 overflow-x-auto shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-yellow-50/80 border-b border-yellow-100">
+            <tr className="bg-gray-800/80 border-b border-yellow-100">
               <Th>Username</Th>
               <Th>Role</Th>
               <Th>Status</Th>
@@ -99,28 +99,28 @@ export default function UsersPage() {
             {!isLoading && (users ?? []).map((u) => (
               <tr
                 key={u.id}
-                className="border-t border-gray-100 hover:bg-yellow-50/40 transition cursor-pointer group"
+                className="border-t border-gray-100 hover:bg-gray-800/40 transition cursor-pointer group"
                 onClick={() => router.push(`/users/${u.id}`)}
               >
-                <Td className="font-semibold text-gray-900 group-hover:text-yellow-700 transition">{u.username}</Td>
+                <Td className="font-semibold text-gray-100 group-hover:text-yellow-700 transition">{u.username}</Td>
                 <Td>
                   <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-blue-50 text-blue-700 border border-blue-200">
                     {u.role}
                   </span>
                 </Td>
                 <Td>
-                  <span className={cn("text-xs px-2 py-0.5 rounded-full font-semibold border", STATUS_BG[u.status] ?? "bg-gray-100 text-gray-500 border-gray-200")}>
+                  <span className={cn("text-xs px-2 py-0.5 rounded-full font-semibold border", STATUS_BG[u.status] ?? "bg-gray-700 text-gray-500 border-gray-700")}>
                     {u.status}
                   </span>
                 </Td>
                 <Td className="tabular-nums text-emerald-700 font-semibold">₹{Number(u.wallet?.balance ?? 0).toLocaleString("en-IN")}</Td>
                 <Td className="tabular-nums text-red-500 font-semibold">₹{Number(u.wallet?.exposure ?? 0).toLocaleString("en-IN")}</Td>
-                <Td className="text-gray-600">{(u.partnershipBps / 100).toFixed(2)}%</Td>
-                <Td className="tabular-nums text-gray-700">₹{Number(u.creditReference ?? 0).toLocaleString("en-IN")}</Td>
+                <Td className="text-gray-400">{(u.partnershipBps / 100).toFixed(2)}%</Td>
+                <Td className="tabular-nums text-gray-300">₹{Number(u.creditReference ?? 0).toLocaleString("en-IN")}</Td>
                 <Td>
                   <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     <ActionBtn title="Edit user" icon={<Edit2 size={13} />}
-                      className="hover:border-yellow-400 hover:text-yellow-600 hover:bg-yellow-50"
+                      className="hover:border-yellow-400 hover:text-yellow-600 hover:bg-gray-800"
                       onClick={() => setEditing(u)} />
                     <ActionBtn title="Wallet adjust" icon={<Wallet size={13} />}
                       className="hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50"
@@ -205,13 +205,13 @@ function EditUserModal({ user, onClose }: { user: UserRecord; onClose: (saved?: 
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-yellow-100 bg-white shadow-2xl overflow-hidden">
+      <div className="w-full max-w-lg rounded-2xl border border-yellow-100 bg-gray-800 shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
-            <h2 className="text-xl font-black text-gray-900">Edit User</h2>
+            <h2 className="text-xl font-black text-gray-100">Edit User</h2>
             <p className="text-xs text-gray-500 mt-0.5">{user.username} Â· <span className="text-yellow-600 font-semibold">{user.role}</span></p>
           </div>
-          <button onClick={() => onClose()} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition"><X size={18} /></button>
+          <button onClick={() => onClose()} className="p-2 rounded-lg hover:bg-gray-700 text-gray-500 transition"><X size={18} /></button>
         </div>
 
         <div className="flex border-b border-gray-100">
@@ -219,7 +219,7 @@ function EditUserModal({ user, onClose }: { user: UserRecord; onClose: (saved?: 
             <button key={t} onClick={() => { setTab(t); setErr(null); setOk(null); }}
               className={cn(
                 "flex-1 py-2.5 text-sm font-semibold capitalize transition border-b-2",
-                tab === t ? "border-yellow-400 text-yellow-700" : "border-transparent text-gray-500 hover:text-gray-700"
+                tab === t ? "border-yellow-400 text-yellow-700" : "border-transparent text-gray-500 hover:text-gray-300"
               )}>{t}</button>
           ))}
         </div>
@@ -277,8 +277,8 @@ function EditUserModal({ user, onClose }: { user: UserRecord; onClose: (saved?: 
               </div>
               <div className="space-y-2">
                 {([["fancyEnabled", "Enable Fancy/Session Markets"], ["casinoEnabled", "Enable Casino Games"]] as [keyof typeof limits, string][]).map(([key, label]) => (
-                  <label key={key} className="flex items-center justify-between rounded-lg border border-yellow-100 bg-yellow-50/40 px-4 py-2.5 cursor-pointer hover:border-yellow-300 transition">
-                    <span className="text-sm text-gray-700 font-medium">{label}</span>
+                  <label key={key} className="flex items-center justify-between rounded-lg border border-yellow-100 bg-gray-800/40 px-4 py-2.5 cursor-pointer hover:border-yellow-300 transition">
+                    <span className="text-sm text-gray-300 font-medium">{label}</span>
                     <input type="checkbox" className="w-4 h-4 accent-yellow-500"
                       checked={!!(limits[key])}
                       onChange={(e) => setLimits({ ...limits, [key]: e.target.checked })} />
@@ -305,10 +305,10 @@ function CreateUserModal({ onClose }: { onClose: (saved?: boolean) => void }) {
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md rounded-2xl border border-yellow-100 bg-white shadow-2xl p-6 space-y-4">
+      <div className="w-full max-w-md rounded-2xl border border-yellow-100 bg-gray-800 shadow-2xl p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-black text-gray-900">New User</h2>
-          <button onClick={() => onClose()} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"><X size={18} /></button>
+          <h2 className="text-xl font-black text-gray-100">New User</h2>
+          <button onClick={() => onClose()} className="p-2 rounded-lg hover:bg-gray-700 text-gray-500"><X size={18} /></button>
         </div>
 
         <Field label="Username"><input className="modal-input" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} /></Field>
@@ -353,7 +353,7 @@ function CreateUserModal({ onClose }: { onClose: (saved?: boolean) => void }) {
 function ActionBtn({ title, icon, className, onClick }: { title: string; icon: React.ReactNode; className?: string; onClick: () => void }) {
   return (
     <button title={title} onClick={onClick}
-      className={cn("p-1.5 rounded-lg border border-gray-200 transition text-gray-500 bg-white", className)}>
+      className={cn("p-1.5 rounded-lg border border-gray-700 transition text-gray-500 bg-gray-800", className)}>
       {icon}
     </button>
   );
@@ -372,5 +372,5 @@ function Th({ children }: { children: React.ReactNode }) {
   return <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">{children}</th>;
 }
 function Td({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-4 py-3 text-gray-700 ${className ?? ""}`}>{children}</td>;
+  return <td className={`px-4 py-3 text-gray-300 ${className ?? ""}`}>{children}</td>;
 }

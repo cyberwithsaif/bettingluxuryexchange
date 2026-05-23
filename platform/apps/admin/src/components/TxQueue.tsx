@@ -18,25 +18,25 @@ export function TxQueue({ kind, title }: { kind: "DEPOSIT" | "WITHDRAWAL"; title
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-black text-gray-900">{title}</h1>
-      <div className="rounded-xl border border-yellow-100 bg-white overflow-x-auto shadow-sm">
+      <h1 className="text-2xl font-black text-gray-100">{title}</h1>
+      <div className="rounded-xl border border-yellow-100 bg-gray-800 overflow-x-auto shadow-sm">
         <table className="w-full text-sm">
-          <thead className="bg-yellow-50/80 border-b border-yellow-100 text-[10px] uppercase tracking-wider text-gray-500">
+          <thead className="bg-gray-800/80 border-b border-yellow-100 text-[10px] uppercase tracking-wider text-gray-500">
             <tr>
               <Th>Date</Th><Th>User</Th><Th>Method</Th><Th>Amount</Th><Th>Reference</Th><Th>Status</Th><Th>Actions</Th>
             </tr>
           </thead>
           <tbody>
             {(data ?? []).map((t: any) => (
-              <tr key={t.id} className="border-t border-gray-100 hover:bg-yellow-50/30 transition">
+              <tr key={t.id} className="border-t border-gray-100 hover:bg-gray-800/30 transition">
                 <Td className="whitespace-nowrap text-gray-500">{new Date(t.createdAt).toLocaleString("en-IN", { hour12: false })}</Td>
-                <Td className="font-semibold text-gray-800">{t.user.username}</Td>
-                <Td className="text-xs text-gray-600">{t.method}</Td>
-                <Td className="tabular-nums text-gray-800 font-semibold">₹{Number(t.amount).toLocaleString("en-IN")}</Td>
+                <Td className="font-semibold text-gray-200">{t.user.username}</Td>
+                <Td className="text-xs text-gray-400">{t.method}</Td>
+                <Td className="tabular-nums text-gray-200 font-semibold">₹{Number(t.amount).toLocaleString("en-IN")}</Td>
                 <Td className="text-xs text-gray-500">{t.reference ?? "–"}</Td>
                 <Td>
                   <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${
-                    t.status === "PENDING"   ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
+                    t.status === "PENDING"   ? "bg-gray-800 text-yellow-700 border-yellow-200" :
                     t.status === "COMPLETED" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
                                                "bg-red-50 text-red-600 border-red-200"
                   }`}>{t.status}</span>

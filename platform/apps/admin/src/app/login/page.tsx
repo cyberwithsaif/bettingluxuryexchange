@@ -31,12 +31,12 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <div className="min-h-screen flex bg-gray-800">
       {/* Left panel – branding */}
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12"
         style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%)" }}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center font-black text-slate-900 text-lg">D</div>
+          <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center font-black text-gray-100 text-lg">D</div>
           <span className="text-white font-black text-lg tracking-tight">DiamondPlay22</span>
         </div>
         <div>
@@ -66,16 +66,16 @@ export default function AdminLogin() {
       </div>
 
       {/* Right panel – form */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white">
+      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-gray-800">
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center font-black text-slate-900 text-lg">D</div>
-            <span className="font-black text-xl text-gray-900">DiamondPlay22</span>
+            <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center font-black text-gray-100 text-lg">D</div>
+            <span className="font-black text-xl text-gray-100">DiamondPlay22</span>
           </div>
 
           <div className="mb-8">
-            <h1 className="text-3xl font-black text-gray-900 mb-1">Sign in</h1>
+            <h1 className="text-3xl font-black text-gray-100 mb-1">Sign in</h1>
             <p className="text-gray-500 text-sm">Authorized personnel only</p>
           </div>
 
@@ -89,7 +89,7 @@ export default function AdminLogin() {
                 placeholder="admin"
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
-                className="w-full px-4 py-3 rounded-xl border border-yellow-200 bg-white text-gray-800 placeholder-gray-300 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition-all"
+                className="w-full px-4 py-3 rounded-xl border border-yellow-200 bg-gray-800 text-gray-200 placeholder-gray-300 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition-all"
               />
             </div>
 
@@ -104,12 +104,12 @@ export default function AdminLogin() {
                   placeholder="••••••••"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className="w-full px-4 py-3 pr-12 rounded-xl border border-yellow-200 bg-white text-gray-800 placeholder-gray-300 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition-all"
+                  className="w-full px-4 py-3 pr-12 rounded-xl border border-yellow-200 bg-gray-800 text-gray-200 placeholder-gray-300 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600 transition"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-400 transition"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -126,7 +126,7 @@ export default function AdminLogin() {
                   placeholder="123 456"
                   value={form.otp}
                   onChange={(e) => setForm({ ...form, otp: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-yellow-200 bg-white text-gray-800 placeholder-gray-300 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-yellow-200 bg-gray-800 text-gray-200 placeholder-gray-300 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition-all"
                 />
               </div>
             )}
@@ -142,7 +142,7 @@ export default function AdminLogin() {
             <button
               type="submit"
               disabled={busy}
-              className="w-full py-3.5 rounded-xl font-bold text-slate-900 transition-all duration-200 flex items-center justify-center gap-2 text-sm tracking-wide disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-3.5 rounded-xl font-bold text-gray-100 transition-all duration-200 flex items-center justify-center gap-2 text-sm tracking-wide disabled:opacity-60 disabled:cursor-not-allowed"
               style={{
                 background: busy
                   ? "linear-gradient(135deg, #fcd34d, #fbbf24)"

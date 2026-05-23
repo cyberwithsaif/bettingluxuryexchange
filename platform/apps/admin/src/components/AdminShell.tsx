@@ -31,7 +31,7 @@ const NAV = [
 
 function Spinner() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
+    <div className="min-h-screen flex items-center justify-center bg-[#111827]">
       <div className="h-8 w-8 rounded-full border-2 border-yellow-400 border-t-transparent animate-spin" />
     </div>
   );
@@ -71,7 +71,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   if (!user) return <Spinner />;
 
   return (
-    <div className="h-screen overflow-hidden flex bg-[#fef9f3]">
+    <div className="h-screen overflow-hidden flex bg-[#111827]">
       <TopLoader />
 
       {/* ── Sidebar ── */}
@@ -85,7 +85,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           style={{ background: "linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%)", borderBottom: "1px solid rgba(255,204,0,0.15)" }}>
           <div className="flex items-center gap-2.5">
             <span
-              className="h-9 w-9 grid place-items-center rounded-lg font-black text-xl text-slate-900 shrink-0"
+              className="h-9 w-9 grid place-items-center rounded-lg font-black text-xl text-gray-100 shrink-0"
               style={{ background: "linear-gradient(135deg, #ffcc00 0%, #f59e0b 100%)" }}
             >D</span>
             <div>
@@ -93,7 +93,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <div className="text-[9px] uppercase tracking-[0.18em] text-yellow-400/70">Admin Panel</div>
             </div>
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="md:hidden p-1 hover:bg-white/10 rounded text-white/60">
+          <button onClick={() => setSidebarOpen(false)} className="md:hidden p-1 hover:bg-gray-800/10 rounded text-white/60">
             <X size={18} />
           </button>
         </div>
@@ -115,8 +115,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
                   isSubItem && "ml-4 py-2 text-xs border-l-2 border-yellow-400/30 pl-4 rounded-l-none",
                   active
-                    ? "bg-gradient-to-r from-yellow-400 to-yellow-500 text-slate-900 font-bold shadow-[0_2px_12px_rgba(255,204,0,0.35)]"
-                    : "text-slate-300 hover:text-white hover:bg-white/8",
+                    ? "bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-100 font-bold shadow-[0_2px_12px_rgba(255,204,0,0.35)]"
+                    : "text-slate-300 hover:text-white hover:bg-gray-800/8",
                 )}
               >
                 <Icon size={isSubItem ? 13 : 16} className="shrink-0" />
@@ -151,18 +151,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       )}
 
       {/* ── Main Content ── */}
-      <main className="flex-1 md:ml-64 h-screen overflow-y-auto bg-[#fef9f3]">
-        {/* Top bar — slightly translucent cream so it blends but separates */}
-        <div className="sticky top-0 z-20 h-14 bg-[#fef9f3]/95 backdrop-blur-sm border-b border-amber-200/50 flex items-center px-4 md:px-6 gap-3 shadow-sm">
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600">
+      <main className="flex-1 md:ml-64 h-screen overflow-y-auto bg-[#111827]">
+        {/* Top bar */}
+        <div className="sticky top-0 z-20 h-14 bg-[#111827]/95 backdrop-blur-sm border-b border-gray-700/60 flex items-center px-4 md:px-6 gap-3">
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-2 hover:bg-gray-700 rounded-lg transition-colors text-gray-400">
             <Menu size={18} />
           </button>
           <div className="flex-1" />
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-yellow-400 flex items-center justify-center text-slate-900 font-black text-xs">
+            <div className="w-7 h-7 rounded-full bg-yellow-400 flex items-center justify-center text-gray-100 font-black text-xs">
               {user.username[0]?.toUpperCase()}
             </div>
-            <div className="text-sm font-medium text-gray-600">{user.username}</div>
+            <div className="text-sm font-medium text-gray-300">{user.username}</div>
           </div>
         </div>
 

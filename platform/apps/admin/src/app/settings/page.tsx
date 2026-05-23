@@ -19,7 +19,7 @@ interface PlatformSettings {
 
 const SETTINGS_KEY = "/admin/platform-settings";
 
-const inputCls = "w-full bg-white border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition";
+const inputCls = "w-full bg-gray-800 border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition";
 
 export default function SettingsPage() {
   const { data, isLoading } = useSWR<PlatformSettings>(SETTINGS_KEY);
@@ -60,8 +60,8 @@ export default function SettingsPage() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-black text-gray-900">Settings</h1>
-        <div className="h-40 animate-pulse bg-gray-100 rounded-xl" />
+        <h1 className="text-2xl font-black text-gray-100">Settings</h1>
+        <div className="h-40 animate-pulse bg-gray-700 rounded-xl" />
       </div>
     );
   }
@@ -69,7 +69,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-black text-gray-900 flex items-center gap-3"><Settings2 size={24} /> Platform Settings</h1>
+        <h1 className="text-2xl font-black text-gray-100 flex items-center gap-3"><Settings2 size={24} /> Platform Settings</h1>
         <p className="text-sm text-gray-500 mt-0.5">Configure betting limits, features, and platform behaviour</p>
       </div>
 
@@ -112,8 +112,8 @@ export default function SettingsPage() {
             ["depositEnabled",      "âœ… Deposits"],
             ["withdrawalEnabled",   "âœ… Withdrawals"],
           ] as [keyof PlatformSettings, string][]).map(([key, label]) => (
-            <label key={key} className="flex items-center justify-between rounded-lg border border-yellow-100 bg-yellow-50/50 px-4 py-3 cursor-pointer hover:border-yellow-300 hover:bg-yellow-50 transition">
-              <span className="text-sm text-gray-700">{label}</span>
+            <label key={key} className="flex items-center justify-between rounded-lg border border-yellow-100 bg-gray-800/50 px-4 py-3 cursor-pointer hover:border-yellow-300 hover:bg-gray-800 transition">
+              <span className="text-sm text-gray-300">{label}</span>
               <input type="checkbox" className="w-4 h-4 accent-yellow-500"
                 checked={!!(current?.[key])}
                 onChange={(e) => set(key, e.target.checked)} />
@@ -124,9 +124,9 @@ export default function SettingsPage() {
 
       {/* Navigation Bar */}
       <Link href="/settings/nav">
-        <section className="rounded-xl border border-yellow-100 bg-white p-5 hover:border-yellow-300 hover:shadow-sm transition cursor-pointer group shadow-sm">
+        <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 hover:border-yellow-300 hover:shadow-sm transition cursor-pointer group shadow-sm">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-black text-gray-800 flex items-center gap-2">
+            <h2 className="text-base font-black text-gray-200 flex items-center gap-2">
               <Navigation size={18} className="text-yellow-500" /> Navigation Bar
             </h2>
             <ChevronRight size={18} className="text-gray-500 group-hover:text-yellow-500 transition" />
@@ -137,9 +137,9 @@ export default function SettingsPage() {
 
       {/* Payment Methods */}
       <Link href="/settings/payment-methods">
-        <section className="rounded-xl border border-yellow-100 bg-white p-5 hover:border-yellow-300 hover:shadow-sm transition cursor-pointer group shadow-sm">
+        <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 hover:border-yellow-300 hover:shadow-sm transition cursor-pointer group shadow-sm">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-black text-gray-800 flex items-center gap-2">
+            <h2 className="text-base font-black text-gray-200 flex items-center gap-2">
               <CreditCard size={18} className="text-yellow-500" /> Payment Methods
             </h2>
             <ChevronRight size={18} className="text-gray-500 group-hover:text-yellow-500 transition" />
@@ -152,7 +152,7 @@ export default function SettingsPage() {
       <button
         onClick={save}
         disabled={busy || !form}
-        className="rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-2.5 font-bold text-slate-900 shadow-sm disabled:opacity-40 hover:brightness-110 transition"
+        className="rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-2.5 font-bold text-gray-100 shadow-sm disabled:opacity-40 hover:brightness-110 transition"
       >
         {busy ? "Saving…" : "Save Settings"}
       </button>
@@ -165,7 +165,7 @@ export default function SettingsPage() {
         <button
           onClick={syncCricket}
           disabled={syncBusy}
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-2 font-bold text-slate-900 shadow-sm disabled:opacity-50 hover:brightness-110 transition"
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-2 font-bold text-gray-100 shadow-sm disabled:opacity-50 hover:brightness-110 transition"
         >
           <RefreshCw size={16} className={syncBusy ? "animate-spin" : ""} />
           {syncBusy ? "Syncing…" : "Sync Cricket Series"}
@@ -174,10 +174,10 @@ export default function SettingsPage() {
 
       {/* Platform info */}
       <Section title="Platform Info" Icon={Database}>
-        <ul className="text-sm text-gray-600 space-y-2">
-          <li>Currency: <span className="text-gray-900 font-semibold">{current?.currency ?? "INR"}</span></li>
-          <li>Exchange type: <span className="text-gray-900 font-semibold">P2P Betting Exchange</span></li>
-          <li>Settlement: <span className="text-gray-900 font-semibold">Queue-based (BullMQ)</span></li>
+        <ul className="text-sm text-gray-400 space-y-2">
+          <li>Currency: <span className="text-gray-100 font-semibold">{current?.currency ?? "INR"}</span></li>
+          <li>Exchange type: <span className="text-gray-100 font-semibold">P2P Betting Exchange</span></li>
+          <li>Settlement: <span className="text-gray-100 font-semibold">Queue-based (BullMQ)</span></li>
         </ul>
       </Section>
     </div>
@@ -186,8 +186,8 @@ export default function SettingsPage() {
 
 function Section({ title, Icon, children }: { title: string; Icon: React.ElementType; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-yellow-100 bg-white p-5 shadow-sm">
-      <h2 className="text-base font-black text-gray-800 flex items-center gap-2 mb-4">
+    <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 shadow-sm">
+      <h2 className="text-base font-black text-gray-200 flex items-center gap-2 mb-4">
         <Icon size={18} className="text-yellow-500" /> {title}
       </h2>
       {children}

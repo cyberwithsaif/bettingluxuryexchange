@@ -4,11 +4,11 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: "#1a1a1a",
-        bg: "#ffffff",
-        panel: "#f8f8f8",
-        panel2: "#f0f0f0",
-        line: "rgba(255,204,0,0.25)",
+        ink: "#f3f4f6",
+        bg: "#111827",
+        panel: "#1f2937",
+        panel2: "#374151",
+        line: "rgba(255,204,0,0.15)",
         accent: "#ffcc00",
         accentSoft: "#ffd700",
         gold: "#ffc107",

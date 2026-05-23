@@ -34,7 +34,7 @@ const GRADIENT_PRESETS = [
   { label: "Gold",        value: "linear-gradient(135deg,#3d2d00 0%,#6b4e0a 40%,#1a1200 100%)" },
 ];
 
-const inputCls = "w-full bg-white border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100 transition";
+const inputCls = "w-full bg-gray-800 border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-400 focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100 transition";
 
 function CardForm({ value, onChange, onSubmit, label, saving }: {
   value: Omit<CategoryBanner, "id" | "sortOrder">;
@@ -81,10 +81,10 @@ function CardForm({ value, onChange, onSubmit, label, saving }: {
           ))}
         </div>
         <input value={value.gradient} onChange={e => onChange({ ...value, gradient: e.target.value })} placeholder="linear-gradient(135deg,...)" className={inputCls} />
-        <div className="mt-2 h-10 rounded-lg border border-gray-200 transition-all" style={{ background: value.gradient }} />
+        <div className="mt-2 h-10 rounded-lg border border-gray-700 transition-all" style={{ background: value.gradient }} />
       </div>
       <button type="button" onClick={onSubmit} disabled={saving}
-        className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-2 rounded-lg font-bold text-slate-900 text-sm shadow-sm hover:brightness-110 disabled:opacity-50 transition">
+        className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-2 rounded-lg font-bold text-gray-100 text-sm shadow-sm hover:brightness-110 disabled:opacity-50 transition">
         <Save size={14} />
         {saving ? "Saving…" : label}
       </button>
@@ -162,7 +162,7 @@ export default function BannerSettingsPage() {
   return (
     <div className="space-y-6 max-w-3xl animate-fade-in">
       <div>
-        <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+        <h1 className="text-2xl font-black text-gray-100 flex items-center gap-2">
           <Megaphone size={24} className="text-yellow-500" />
           Banner Settings
         </h1>
@@ -170,38 +170,38 @@ export default function BannerSettingsPage() {
       </div>
 
       {/* Category Cards */}
-      <section className="rounded-xl border border-yellow-100 bg-white p-5 space-y-4 shadow-sm">
+      <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 space-y-4 shadow-sm">
         <div>
-          <h2 className="font-black text-gray-800 text-sm uppercase tracking-wider flex items-center gap-2">
+          <h2 className="font-black text-gray-200 text-sm uppercase tracking-wider flex items-center gap-2">
             <Layout size={16} className="text-yellow-500" />
             Category Cards (Homepage)
           </h2>
           <p className="text-xs text-gray-500 mt-1">
             The large Casino & Sports Betting cards shown at the top of the homepage.
-            Size: <span className="text-gray-600 font-semibold">~680 Ã— 140 px</span> each.
+            Size: <span className="text-gray-400 font-semibold">~680 Ã— 140 px</span> each.
           </p>
         </div>
 
         <div className="space-y-2">
           {banners.length === 0 && (
-            <div className="text-xs text-gray-500 py-6 text-center border border-dashed border-gray-200 rounded-lg">
+            <div className="text-xs text-gray-500 py-6 text-center border border-dashed border-gray-700 rounded-lg">
               No cards saved – defaults (Casino & Sports Betting) are showing on homepage.
             </div>
           )}
           {banners.map((cat, i) => (
             <div key={cat.id} className="border border-yellow-100 rounded-xl overflow-hidden">
-              <div className="flex items-center gap-3 p-3 bg-gray-50">
+              <div className="flex items-center gap-3 p-3 bg-gray-800">
                 <GripVertical size={16} className="text-gray-400 shrink-0" />
-                <div className="w-20 h-9 rounded-lg overflow-hidden shrink-0 border border-gray-200" style={{ background: cat.gradient }} />
+                <div className="w-20 h-9 rounded-lg overflow-hidden shrink-0 border border-gray-700" style={{ background: cat.gradient }} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800">{cat.emoji} {cat.title}</p>
+                  <p className="text-sm font-semibold text-gray-200">{cat.emoji} {cat.title}</p>
                   <p className="text-xs text-gray-500 truncate">{cat.subtitle} Â· <span className="text-gray-400">{cat.href}</span></p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button disabled={i === 0} onClick={() => move(i, -1)}
-                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30 text-gray-500 text-xs">↑</button>
+                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-700 disabled:opacity-30 text-gray-500 text-xs">↑</button>
                   <button disabled={i === banners.length - 1} onClick={() => move(i, 1)}
-                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30 text-gray-500 text-xs">↓</button>
+                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-700 disabled:opacity-30 text-gray-500 text-xs">↓</button>
                   <button
                     onClick={() => {
                       if (editingId === cat.id) { setEditingId(null); }
@@ -221,7 +221,7 @@ export default function BannerSettingsPage() {
                 </div>
               </div>
               {editingId === cat.id && (
-                <div className="p-4 bg-white border-t border-yellow-100">
+                <div className="p-4 bg-gray-800 border-t border-yellow-100">
                   <CardForm value={editForm} onChange={setEditForm} onSubmit={saveEdit} label="Save Changes" saving={saving} />
                 </div>
               )}
@@ -229,7 +229,7 @@ export default function BannerSettingsPage() {
           ))}
         </div>
 
-        <div className="border border-yellow-100 rounded-xl p-4 space-y-3 bg-gray-50">
+        <div className="border border-yellow-100 rounded-xl p-4 space-y-3 bg-gray-800">
           <p className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
             <Plus size={13} /> Add New Card
           </p>
@@ -244,9 +244,9 @@ export default function BannerSettingsPage() {
       </section>
 
       {/* Site Identity */}
-      <section className="rounded-xl border border-yellow-100 bg-white p-5 space-y-4 shadow-sm">
+      <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 space-y-4 shadow-sm">
         <div>
-          <h2 className="font-black text-gray-800 text-sm uppercase tracking-wider">Site Identity</h2>
+          <h2 className="font-black text-gray-200 text-sm uppercase tracking-wider">Site Identity</h2>
           <p className="text-xs text-gray-500 mt-0.5">Used in the sidebar logo and browser tab title.</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -263,7 +263,7 @@ export default function BannerSettingsPage() {
           <button
             onClick={saveSite}
             disabled={siteBusy}
-            className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-amber-500 px-5 py-2 rounded-lg font-bold text-slate-900 text-sm shadow-sm hover:brightness-110 disabled:opacity-50 transition"
+            className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-amber-500 px-5 py-2 rounded-lg font-bold text-gray-100 text-sm shadow-sm hover:brightness-110 disabled:opacity-50 transition"
           >
             <Save size={15} />
             {siteBusy ? "Saving…" : "Save"}

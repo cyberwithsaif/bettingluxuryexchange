@@ -430,7 +430,7 @@ export default function PumpAdminPage() {
             <button
               onClick={applyGlobalPop}
               disabled={busy || !globalPop}
-              className="flex-1 py-2.5 rounded-lg font-bold text-sm bg-amber-600 hover:bg-amber-500 disabled:opacity-40 transition text-white"
+              className="flex-1 py-2.5 rounded-lg font-bold text-sm bg-amber-600 hover:bg-gray-8000 disabled:opacity-40 transition text-white"
             >
               Set Override
             </button>
@@ -449,11 +449,11 @@ export default function PumpAdminPage() {
           <h2 className="font-display text-xl flex items-center gap-2">
             <TrendingUp size={18} className="text-accentSoft" /> Top Wins
           </h2>
-          {statsLoading && <div className="animate-pulse h-24 bg-white/5 rounded-lg" />}
+          {statsLoading && <div className="animate-pulse h-24 bg-gray-800/5 rounded-lg" />}
           {stats?.bigWins?.length === 0 && <p className="text-sm text-white/40">No wins yet.</p>}
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {stats?.bigWins?.map(w => (
-              <div key={w.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-white/4 border border-line">
+              <div key={w.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-800/4 border border-line">
                 <div>
                   <p className="text-sm font-bold text-white">{w.username}</p>
                   <p className="text-[11px] text-white/50">Bet ₹{fmt(w.betAmount)} · {w.difficulty}</p>
