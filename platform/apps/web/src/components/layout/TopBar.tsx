@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDownToLine, ArrowUpToLine, LogOut, Bell,
   ChevronDown, Search, Zap, Plus,
@@ -10,18 +10,14 @@ import useSWR from "swr";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
 import { MobileSidebar } from "../mobile/MobileSidebar";
+import { VipRank, calcTotalDeposited, getTierIndex, VIP_TIERS } from "@/lib/vip";
 
 function fmtMoney(n: number | undefined) {
   if (n == null) return "—";
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(n);
 }
 
-/* ── Rank system ─────────────────────────────────────────────
-   Add more ranks here when icons are provided.
-   Each rank has: an SVG icon and a bar color.
-   Current rank: gold (wired to deposits later).
-────────────────────────────────────────────────────────────── */
-type Rank = "bronze" | "silver" | "gold" | "platinum" | "diamond";
+type Rank = VipRank;
 
 const RANK_BAR_COLOR: Record<Rank, string> = {
   bronze:   "linear-gradient(90deg,#92400e,#d97706)",
@@ -31,52 +27,39 @@ const RANK_BAR_COLOR: Record<Rank, string> = {
   diamond:  "linear-gradient(90deg,#6d28d9,#a78bfa,#e879f9)",
 };
 
+const RANK_SVG_CONFIG: Record<Rank, { outer: [string, string]; inner: [string, string]; ring: string; shine: string }> = {
+  bronze:   { outer: ["#78350f", "#b45309"], inner: ["#d97706", "#fbbf24"], ring: "#92400e",  shine: "#fef3c7" },
+  silver:   { outer: ["#374151", "#9ca3af"], inner: ["#d1d5db", "#f3f4f6"], ring: "#6b7280",  shine: "#ffffff" },
+  gold:     { outer: ["#d97706", "#f59e0b"], inner: ["#fbbf24", "#fef08a"], ring: "#c2410c",  shine: "#fef3c7" },
+  platinum: { outer: ["#0369a1", "#0ea5e9"], inner: ["#38bdf8", "#bae6fd"], ring: "#0284c7",  shine: "#e0f2fe" },
+  diamond:  { outer: ["#6d28d9", "#a78bfa"], inner: ["#c4b5fd", "#e879f9"], ring: "#7c3aed",  shine: "#fae8ff" },
+};
+
 function RankBadge({ rank, size = 28 }: { rank: Rank; size?: number }) {
-  if (rank === "gold") {
-    return (
-      <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Dark background circle */}
-        <circle cx="20" cy="20" r="20" fill="#1a1a2e" />
-        {/* Outer hex ring — deep orange */}
-        <polygon
-          points="20,4 34,12 34,28 20,36 6,28 6,12"
-          fill="none"
-          stroke="#c2410c"
-          strokeWidth="2.5"
-        />
-        {/* Middle hex — amber */}
-        <polygon
-          points="20,8 31,14.5 31,25.5 20,32 9,25.5 9,14.5"
-          fill="url(#goldOuter)"
-        />
-        {/* Inner hex — bright gold */}
-        <polygon
-          points="20,12 28,16.5 28,23.5 20,28 12,23.5 12,16.5"
-          fill="url(#goldInner)"
-        />
-        {/* Center shine dot */}
-        <circle cx="20" cy="20" r="3" fill="#fef3c7" fillOpacity="0.9" />
-        <defs>
-          <linearGradient id="goldOuter" x1="6" y1="8" x2="34" y2="32" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#d97706" />
-            <stop offset="50%" stopColor="#f59e0b" />
-            <stop offset="100%" stopColor="#b45309" />
-          </linearGradient>
-          <linearGradient id="goldInner" x1="12" y1="12" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#fbbf24" />
-            <stop offset="50%" stopColor="#fef08a" />
-            <stop offset="100%" stopColor="#f59e0b" />
-          </linearGradient>
-        </defs>
-      </svg>
-    );
-  }
-  // Fallback for future ranks — plain colored hexagon placeholder
+  const cfg = RANK_SVG_CONFIG[rank];
+  const id = `rb-${rank}`;
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="20" cy="20" r="20" fill="#1a1a2e" />
-      <polygon points="20,6 32,13 32,27 20,34 8,27 8,13" fill="#4b5563" />
-      <polygon points="20,11 28,15.5 28,24.5 20,29 12,24.5 12,15.5" fill="#6b7280" />
+      <polygon
+        points="20,4 34,12 34,28 20,36 6,28 6,12"
+        fill="none"
+        stroke={cfg.ring}
+        strokeWidth="2.5"
+      />
+      <polygon points="20,8 31,14.5 31,25.5 20,32 9,25.5 9,14.5" fill={`url(#${id}-outer)`} />
+      <polygon points="20,12 28,16.5 28,23.5 20,28 12,23.5 12,16.5" fill={`url(#${id}-inner)`} />
+      <circle cx="20" cy="20" r="3" fill={cfg.shine} fillOpacity="0.9" />
+      <defs>
+        <linearGradient id={`${id}-outer`} x1="6" y1="8" x2="34" y2="32" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor={cfg.outer[0]} />
+          <stop offset="100%" stopColor={cfg.outer[1]} />
+        </linearGradient>
+        <linearGradient id={`${id}-inner`} x1="12" y1="12" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor={cfg.inner[0]} />
+          <stop offset="100%" stopColor={cfg.inner[1]} />
+        </linearGradient>
+      </defs>
     </svg>
   );
 }
@@ -85,6 +68,8 @@ export function TopBar() {
   const { user, clear } = useAuthStore();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { data: wallet, mutate } = useSWR(user ? "/wallet/summary" : null);
+  /* Same SWR key as account/page.tsx — shared cache, no double request */
+  const { data: ledger } = useSWR(user ? "/wallet/ledger?limit=200" : null);
 
   useEffect(() => {
     if (!user) return;
@@ -94,6 +79,14 @@ export function TopBar() {
   }, [user, mutate]);
 
   const balance = Number(wallet?.available ?? 0);
+
+  /* Compute VIP rank from total lifetime deposits in ledger */
+  const rank: Rank = useMemo(() => {
+    const items: any[] = ledger?.items ?? [];
+    const totalDeposited = calcTotalDeposited(items);
+    const idx = getTierIndex(totalDeposited);
+    return VIP_TIERS[idx]!.rank;
+  }, [ledger]);
 
   return (
     <header className="sticky top-0 z-50 text-white" style={{ background: "#191938" }}>
@@ -231,7 +224,7 @@ export function TopBar() {
             <NotificationBell />
 
             {/* Profile menu — all viewports */}
-            <ProfileMenu username={user.username} onLogout={clear} />
+            <ProfileMenu username={user.username} onLogout={clear} rank={rank} />
           </div>
         )}
       </div>
@@ -265,12 +258,9 @@ function NotificationBell() {
 }
 
 /* ── Profile Menu ───────────────────────────────────────────── */
-function ProfileMenu({ username, onLogout }: { username: string; onLogout: () => void }) {
+function ProfileMenu({ username, onLogout, rank }: { username: string; onLogout: () => void; rank: Rank }) {
   const [open, setOpen] = useState(false);
 
-  // Wire these to real deposit data later
-  const rank: Rank = "gold";
-  const level = 1;
   const progress = 0;
   const barColor = RANK_BAR_COLOR[rank];
 

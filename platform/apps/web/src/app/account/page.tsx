@@ -9,68 +9,10 @@ import {
   ArrowDownLeft, BarChart3, Bitcoin, Phone, Mail,
 } from "lucide-react";
 import { useState, useMemo } from "react";
+import { VIP_TIERS, getTierIndex, calcTotalDeposited } from "@/lib/vip";
 
-/* ─── VIP Tier System ─────────────────────────────────────── */
-const TIERS = [
-  {
-    name: "Bronze",
-    min: 0,
-    max: 10_000,
-    color: "#d97706",
-    grad: "linear-gradient(135deg, #92400e, #d97706)",
-    cashback: 1,
-    Icon: Medal,
-    perks: ["1% cashback", "Standard support", "Weekly bonus"],
-  },
-  {
-    name: "Silver",
-    min: 10_000,
-    max: 50_000,
-    color: "#d1d5db",
-    grad: "linear-gradient(135deg, #6b7280, #d1d5db)",
-    cashback: 2,
-    Icon: Star,
-    perks: ["2% cashback", "Priority support", "Bi-weekly bonus", "Free spins"],
-  },
-  {
-    name: "Gold",
-    min: 50_000,
-    max: 2_00_000,
-    color: "#fbbf24",
-    grad: "linear-gradient(135deg, #b45309, #f59e0b, #fbbf24)",
-    cashback: 3,
-    Icon: Award,
-    perks: ["3% cashback", "Dedicated support", "Weekly bonus", "Higher limits"],
-  },
-  {
-    name: "Platinum",
-    min: 2_00_000,
-    max: 10_00_000,
-    color: "#38bdf8",
-    grad: "linear-gradient(135deg, #0369a1, #38bdf8)",
-    cashback: 5,
-    Icon: Crown,
-    perks: ["5% cashback", "Personal manager", "Daily bonus", "VIP events", "Exclusive games"],
-  },
-  {
-    name: "Diamond",
-    min: 10_00_000,
-    max: Infinity,
-    color: "#a78bfa",
-    grad: "linear-gradient(135deg, #6d28d9, #a78bfa, #e879f9)",
-    cashback: 8,
-    Icon: Gem,
-    perks: ["8% cashback", "Dedicated manager", "Custom bonuses", "Private tables", "Luxury rewards"],
-  },
-];
-
-function getTier(totalDeposited: number) {
-  const idx = TIERS.findIndex((t, i) => {
-    const next = TIERS[i + 1];
-    return totalDeposited >= t.min && (!next || totalDeposited < next.min);
-  });
-  return Math.max(0, idx);
-}
+/* Icon map for each tier (same order as VIP_TIERS) */
+const TIER_ICONS = [Medal, Star, Award, Crown, Gem] as const;
 
 /* ─── Formatters ──────────────────────────────────────────── */
 function fmt(n: number | undefined, opts?: Intl.NumberFormatOptions) {
@@ -86,7 +28,7 @@ export default function AccountDashboard() {
   const user = useAuthStore((s) => s.user);
   const { data: wallet } = useSWR(user ? "/wallet/summary" : null);
   const { data: bets } = useSWR(user ? "/bets/mine?status=OPEN" : null);
-  const { data: ledger } = useSWR(user ? "/wallet/ledger?limit=20" : null);
+  const { data: ledger } = useSWR(user ? "/wallet/ledger?limit=200" : null);
   const [copied, setCopied] = useState(false);
 
   const referralCode = user ? `${user.username.toUpperCase().slice(0, 6)}${user.id?.slice(-4) ?? "0000"}` : "";
@@ -94,17 +36,16 @@ export default function AccountDashboard() {
   /* derive VIP data from ledger entries */
   const { totalDeposited, recentTxns } = useMemo(() => {
     const items: any[] = ledger?.items ?? [];
-    const totalDeposited = items
-      .filter((e) => e.kind === "DEPOSIT")
-      .reduce((s, e) => s + Math.abs(Number(e.amount)), 0);
+    const totalDeposited = calcTotalDeposited(items);
     const recentTxns = items.slice(0, 5);
     return { totalDeposited, recentTxns };
   }, [ledger]);
 
-  const tierIdx = getTier(totalDeposited);
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const tier = TIERS[tierIdx]!;
-  const nextTier = TIERS[tierIdx + 1] ?? null;
+  const tierIdx = getTierIndex(totalDeposited);
+  const tierBase = VIP_TIERS[tierIdx]!;
+  const TierIcon = TIER_ICONS[tierIdx]!;
+  const tier = { ...tierBase, Icon: TierIcon };
+  const nextTier = VIP_TIERS[tierIdx + 1] ?? null;
   const tierProgress = nextTier
     ? Math.min(100, Math.round(((totalDeposited - tier.min) / (nextTier.min - tier.min)) * 100))
     : 100;
@@ -238,16 +179,17 @@ export default function AccountDashboard() {
           <div className="rounded-2xl p-5" style={{ background: "linear-gradient(135deg, #12183a, #0d1224)", border: "1px solid rgba(255,255,255,0.06)" }}>
             <div className="text-[10px] uppercase tracking-widest text-white/40 mb-3">All VIP Levels</div>
             <div className="space-y-2">
-              {TIERS.map((t, i) => {
+              {VIP_TIERS.map((t, i) => {
                 const isActive = i === tierIdx;
                 const isPast = i < tierIdx;
+                const RowIcon = TIER_ICONS[i]!;
                 return (
                   <div key={t.name} className="flex items-center gap-3 rounded-xl px-3 py-2 transition-all"
                     style={{
                       background: isActive ? `${t.color}15` : "rgba(255,255,255,0.02)",
                       border: isActive ? `1px solid ${t.color}40` : "1px solid transparent",
                     }}>
-                    <t.Icon size={14} style={{ color: isPast || isActive ? t.color : "rgba(255,255,255,0.2)" }} />
+                    <RowIcon size={14} style={{ color: isPast || isActive ? t.color : "rgba(255,255,255,0.2)" }} />
                     <div className="flex-1 min-w-0">
                       <div className={`text-xs font-semibold ${isActive ? "" : isPast ? "text-white/50" : "text-white/30"}`}
                         style={isActive ? { color: t.color } : {}}>
