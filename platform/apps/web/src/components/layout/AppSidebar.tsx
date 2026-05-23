@@ -93,8 +93,12 @@ function SidebarInner() {
           <NavIcon icon={<Gamepad2 size={20} strokeWidth={2.5} className="text-white" />} href="/casino" active={pathname.startsWith("/casino")} />
         ) : (
           <>
-            <SectionToggle label="Casino" open={casinoOpen} onToggle={() => setCasinoOpen(o => !o)}
-              icon={<Gamepad2 size={20} strokeWidth={2.5} className="text-white" />} />
+            <SectionRow
+              label="Casino" href="/casino"
+              active={pathname.startsWith("/casino")}
+              open={casinoOpen} onToggle={() => setCasinoOpen(o => !o)}
+              icon={<Gamepad2 size={20} strokeWidth={2.5} className="text-white" />}
+            />
             {casinoOpen && (
               <div className="space-y-0.5 ml-2 pl-3">
                 {CASINO_GAMES.map(g => (
@@ -110,8 +114,12 @@ function SidebarInner() {
           <NavIcon icon={<Trophy size={20} strokeWidth={2.5} className="text-white" />} href="/exchange" active={pathname === "/exchange"} />
         ) : (
           <>
-            <SectionToggle label="Sportsbook" open={exchangeOpen} onToggle={() => setExchangeOpen(o => !o)}
-              icon={<Trophy size={20} strokeWidth={2.5} className="text-white" />} />
+            <SectionRow
+              label="Sportsbook" href="/exchange"
+              active={pathname.startsWith("/exchange")}
+              open={exchangeOpen} onToggle={() => setExchangeOpen(o => !o)}
+              icon={<Trophy size={20} strokeWidth={2.5} className="text-white" />}
+            />
             {exchangeOpen && (
               <div className="space-y-0.5 ml-2 pl-3">
                 {(sports ?? []).map(s => (
@@ -180,23 +188,34 @@ function NavRow({ href, active, icon, label }: { href: string; active: boolean; 
   );
 }
 
-function SectionToggle({ label, open, onToggle, icon }: {
-  label: string; open: boolean; onToggle: () => void; icon: React.ReactNode;
+function SectionRow({ label, href, active, open, onToggle, icon }: {
+  label: string; href: string; active: boolean; open: boolean; onToggle: () => void; icon: React.ReactNode;
 }) {
   const [hovered, setHovered] = useState(false);
+  const bg = hovered ? (active ? "#8a50f5" : "#5a5a8a") : (active ? "#7740ed" : "#463e7a");
   return (
-    <button
-      onClick={onToggle}
+    <div
+      className="flex items-center rounded-2xl overflow-hidden transition-all"
+      style={{ background: bg }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="w-full flex items-center justify-between px-4 py-2 rounded-2xl text-[15px] font-bold text-white transition-all cursor-pointer"
-      style={{ background: hovered ? (open ? "#8a50f5" : "#5a5a8a") : (open ? "#7740ed" : "#463e7a") }}
     >
-      <div className="flex items-center gap-3">{icon}{label}</div>
-      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-transform", open && "rotate-180")} style={{ background: "#605499" }}>
-        <ChevronDown size={16} strokeWidth={2.5} className="text-white" />
-      </div>
-    </button>
+      <Link
+        href={href}
+        className="flex-1 flex items-center gap-3 px-4 py-2 text-[15px] font-bold text-white"
+      >
+        {icon}{label}
+      </Link>
+      <button
+        onClick={onToggle}
+        className="shrink-0 w-10 h-10 flex items-center justify-center"
+        aria-label={open ? `Collapse ${label}` : `Expand ${label}`}
+      >
+        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-transform", open && "rotate-180")} style={{ background: "#605499" }}>
+          <ChevronDown size={16} strokeWidth={2.5} className="text-white" />
+        </div>
+      </button>
+    </div>
   );
 }
 
