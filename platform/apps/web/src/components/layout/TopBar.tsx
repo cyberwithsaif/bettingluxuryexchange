@@ -315,60 +315,53 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
           {/* Backdrop */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
-            className="absolute right-0 mt-2 w-60 rounded-2xl shadow-2xl z-50 p-2"
-            style={{ background: "#191938", border: "1px solid rgba(139,92,246,0.2)" }}
+            className="absolute right-0 mt-1.5 rounded-xl shadow-2xl z-50 p-1.5"
+            style={{ background: "#191938", border: "1px solid rgba(139,92,246,0.2)", width: "48vw", maxWidth: 200, minWidth: 150 }}
           >
-            {/* Single card for all items */}
-            <div className="rounded-xl overflow-hidden" style={{ background: "#2c2852" }}>
+            {/* Card 1 */}
+            <div className="rounded-lg overflow-hidden" style={{ background: "#2c2852" }}>
               {([
-                ["Notifications",     "/account/notifications"],
-                ["Cashier",           "/account/deposit"],
-                ["Rewards",           "/rewards"],
-                ["Account Settings",  "/account/security"],
-                ["Profile",           "/account"],
-                ["History",           "/account/statement"],
-                ["Refer & Earn",      "/refer-earn"],
+                ["Notifications",    "/account/notifications"],
+                ["Cashier",          "/account/deposit"],
+                ["Rewards",          "/rewards"],
+                ["Account Settings", "/account/security"],
+                ["Profile",          "/account"],
+                ["History",          "/account/statement"],
+                ["Refer & Earn",     "/refer-earn"],
               ] as const).map(([l, h], i, arr) => (
-                <Link
-                  key={h} href={h}
-                  className="flex items-center gap-2.5 px-4 py-3 text-[13px] font-semibold text-white/80 hover:text-white hover:bg-white/5 transition-colors"
+                <Link key={h} href={h}
+                  className="flex items-center px-3 py-2 text-[11px] font-semibold text-white/80 hover:text-white hover:bg-white/5 transition-colors"
                   style={{ borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}
                   onClick={() => setOpen(false)}
-                >
-                  {l}
-                </Link>
+                >{l}</Link>
               ))}
             </div>
 
-            <div className="my-2 h-px" style={{ background: "rgba(139,92,246,0.15)" }} />
+            <div className="my-1 h-px" style={{ background: "rgba(139,92,246,0.15)" }} />
 
-            {/* Second card */}
-            <div className="rounded-xl overflow-hidden" style={{ background: "#2c2852" }}>
+            {/* Card 2 */}
+            <div className="rounded-lg overflow-hidden" style={{ background: "#2c2852" }}>
               {([
-                ["Help Center",      "/contact"],
-                ["Roo Responsibly",  "/responsible"],
-                ["Live Support",     "/contact"],
+                ["Help Center",     "/contact"],
+                ["Roo Responsibly", "/responsible"],
+                ["Live Support",    "/contact"],
               ] as const).map(([l, h], i, arr) => (
-                <Link
-                  key={l} href={h}
-                  className="flex items-center gap-2.5 px-4 py-3 text-[13px] font-semibold text-white/80 hover:text-white hover:bg-white/5 transition-colors"
+                <Link key={l} href={h}
+                  className="flex items-center px-3 py-2 text-[11px] font-semibold text-white/80 hover:text-white hover:bg-white/5 transition-colors"
                   style={{ borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}
                   onClick={() => setOpen(false)}
-                >
-                  {l}
-                </Link>
+                >{l}</Link>
               ))}
             </div>
 
-            <div className="my-2 h-px" style={{ background: "rgba(139,92,246,0.15)" }} />
+            <div className="my-1 h-px" style={{ background: "rgba(139,92,246,0.15)" }} />
 
-            {/* Logout card */}
-            <div className="rounded-xl overflow-hidden" style={{ background: "#2c2852" }}>
-              <button
-                onClick={onLogout}
-                className="flex w-full items-center gap-2.5 px-4 py-3 text-[13px] font-semibold text-red-400 hover:text-red-300 hover:bg-white/5 transition-colors"
+            {/* Logout */}
+            <div className="rounded-lg overflow-hidden" style={{ background: "#2c2852" }}>
+              <button onClick={onLogout}
+                className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-semibold text-red-400 hover:text-red-300 hover:bg-white/5 transition-colors"
               >
-                <LogOut size={14} /> Logout
+                <LogOut size={12} /> Logout
               </button>
             </div>
           </div>
