@@ -314,7 +314,6 @@ export default function AccountDashboard() {
             <QuickAction href="/account/withdraw" icon={<ArrowUpRight size={14} />} label="Withdraw" color="#f59e0b" />
             <QuickAction href="/account/bets" icon={<BarChart3 size={14} />} label="My Bets" color="#38bdf8" />
             <QuickAction href="/account/statement" icon={<Wallet size={14} />} label="Statement" color="#a78bfa" />
-            <QuickAction href="/account/pl" icon={<TrendingUp size={14} />} label="Profit / Loss" color="#fb923c" />
             <QuickAction href="/account/security" icon={<Shield size={14} />} label="Security & 2FA" color="#f43f5e" />
           </div>
         </div>
