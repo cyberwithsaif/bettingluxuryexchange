@@ -72,6 +72,7 @@ model User {
   plinkoBets      PlinkoBet[]
   pumpBets        PumpBet[]
   diceBets        DiceBet[]
+  towersSessions  TowersSession[]
 
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -758,5 +759,53 @@ model DiceBet {
   createdAt       DateTime  @default(now())
 
   @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+// ─── Towers ──────────────────────────────────────────────────────────────────
+
+enum TowersStatus {
+  IN_PROGRESS
+  CASHED_OUT
+  BUSTED
+}
+
+enum TowersDifficulty {
+  EASY
+  MEDIUM
+  HARD
+  EXPERT
+}
+
+model TowersSession {
+  id             String           @id @default(cuid())
+  userId         String
+  user           User             @relation(fields: [userId], references: [id])
+  betAmount      Decimal          @db.Decimal(20, 4)
+  difficulty     TowersDifficulty @default(EASY)
+  columns        Int
+  safeTiles      Int
+  bombCount      Int
+  levels         Int              @default(8)
+
+  serverSeed     String
+  serverSeedHash String
+  clientSeed     String
+  nonce          Int
+
+  status         TowersStatus     @default(IN_PROGRESS)
+  currentLevel   Int              @default(0)
+  multiplier     Decimal          @default(1.00) @db.Decimal(10, 4)
+  payout         Decimal          @default(0)    @db.Decimal(20, 4)
+
+  bombPositions  Json             @default("[]")
+  pickedCols     Json             @default("[]")
+
+  settledAt      DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([status])
   @@index([createdAt])
 }

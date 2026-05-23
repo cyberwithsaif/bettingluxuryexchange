@@ -26,6 +26,7 @@ import { MinesModule } from "./modules/mines/mines.module";
 import { PlinkoModule } from "./modules/plinko/plinko.module";
 import { PumpModule } from "./modules/pump/pump.module";
 import { DiceModule } from "./modules/dice/dice.module";
+import { TowersModule } from "./modules/towers/towers.module";
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { DiceModule } from "./modules/dice/dice.module";
     PlinkoModule,
     PumpModule,
     DiceModule,
+    TowersModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
