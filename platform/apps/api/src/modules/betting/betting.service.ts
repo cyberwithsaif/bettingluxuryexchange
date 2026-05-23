@@ -70,7 +70,9 @@ export class BettingService {
 
     // The wallet exposure column already includes the persisted worst-case
     // for this market. The change to wallet.exposure is exactly preview.delta.
-    const newWalletExposure = wallet.exposure.add(new Prisma.Decimal(preview.delta));
+    // Clamp to 0: delta can be negative when opposing bets reduce worst-case.
+    const rawExposure = wallet.exposure.add(new Prisma.Decimal(preview.delta));
+    const newWalletExposure = rawExposure.lt(0) ? new Prisma.Decimal(0) : rawExposure;
     if (wallet.balance.sub(newWalletExposure).lt(0)) {
       throw new BadRequestException("Insufficient available balance");
     }

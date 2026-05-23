@@ -69,13 +69,14 @@ export class WalletService {
           if (!wallet) throw new NotFoundException("Wallet not found");
 
           const newBalance = wallet.balance.add(amount);
-          const newExposure = wallet.exposure.add(expDelta);
+          // Clamp exposure to 0: release-delta can exceed current exposure
+          // when bets are cancelled/settled out of order or when opposing bets
+          // reduce worst-case exposure. Never let exposure go negative.
+          const rawExposure = wallet.exposure.add(expDelta);
+          const newExposure = rawExposure.lt(0) ? new Prisma.Decimal(0) : rawExposure;
 
           if (!input.allowNegative && newBalance.lt(0)) {
             throw new BadRequestException("Insufficient balance");
-          }
-          if (newExposure.lt(0)) {
-            throw new BadRequestException("Exposure would go negative");
           }
           // Spendable check: balance - exposure must remain >= 0 unless admin override.
           if (!input.allowNegative && newBalance.sub(newExposure).lt(0)) {
