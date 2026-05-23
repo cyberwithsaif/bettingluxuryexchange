@@ -19,8 +19,7 @@ export function connectSocket(token?: string | null) {
   socket = io(url, {
     path: "/socket.io",
     auth: token ? { token } : undefined,
-    transports: ["polling", "websocket"],
-    upgrade: true,
+    transports: ["websocket"],
     reconnection: true,
     reconnectionDelay: 1000,
   });
