@@ -1,8 +1,20 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
 import useSWR from "swr";
 import Link from "next/link";
+
+function seededRand(seed: number): number {
+  const x = Math.sin(seed + 1) * 43758.5453123;
+  return x - Math.floor(x);
+}
+function initCount(seed: number): number {
+  return Math.floor(seededRand(seed) * 9001) + 3000;
+}
+function nudge(n: number): number {
+  const delta = Math.floor(Math.random() * 401) - 200;
+  return Math.min(12000, Math.max(3000, n + delta));
+}
 
 interface ApiGame {
   id: string; name: string; category: string;
@@ -31,6 +43,8 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
   const [q, setQ] = useState("");
   const [showSort, setShowSort] = useState(false);
   const [sortLabel, setSortLabel] = useState("Popular");
+  const [counts, setCounts] = useState<number[]>([]);
+  const totalRef = useRef(0);
 
   const apiCategory = category === "LIVE"    ? "LIVE"
     : category === "CRASH"   ? "CRASH"
@@ -65,6 +79,19 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
   );
 
   const totalCount = (showInHouse ? filteredInhouse.length : 0) + filtered.length;
+
+  // Init counts when total changes, then nudge every 60s
+  useEffect(() => {
+    if (totalCount === 0) return;
+    if (totalRef.current !== totalCount) {
+      totalRef.current = totalCount;
+      setCounts(Array.from({ length: totalCount }, (_, i) => initCount(i + (category?.charCodeAt(0) ?? 0))));
+    }
+    const id = setInterval(() => {
+      setCounts(prev => prev.map(nudge));
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [totalCount, category]);
 
   return (
     <div className="min-h-screen" style={{ background: "#0f1923" }}>
@@ -132,32 +159,39 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
 
           {/* In-house games */}
           {showInHouse && filteredInhouse.map((g, idx) => (
-            <GameCard
-              key={`ih-${g.id}`}
-              as="link"
-              href={g.href}
-              name={g.name}
-              publisher="Our Originals"
-              thumbnail={g.thumbnail}
-              fallbackBg={fallback(idx)}
-              fallbackEmoji={g.emoji}
-              clean
-              isLive={false}
-            />
+            <div key={`ih-${g.id}`} className="flex flex-col gap-1">
+              <GameCard
+                as="link"
+                href={g.href}
+                name={g.name}
+                publisher="Our Originals"
+                thumbnail={g.thumbnail}
+                fallbackBg={fallback(idx)}
+                fallbackEmoji={g.emoji}
+                clean
+                isLive={false}
+              />
+              <PlayingBadge count={counts[idx]} />
+            </div>
           ))}
 
           {/* Provider games */}
-          {filtered.map((g, idx) => (
-            <GameCard
-              key={`api-${g.id}`}
-              as="button"
-              name={g.name}
-              publisher={g.provider.name}
-              thumbnail={g.thumbnail}
-              fallbackBg={fallback(idx)}
-              isLive={g.isLive}
-            />
-          ))}
+          {filtered.map((g, idx) => {
+            const countIdx = (showInHouse ? filteredInhouse.length : 0) + idx;
+            return (
+              <div key={`api-${g.id}`} className="flex flex-col gap-1">
+                <GameCard
+                  as="button"
+                  name={g.name}
+                  publisher={g.provider.name}
+                  thumbnail={g.thumbnail}
+                  fallbackBg={fallback(idx)}
+                  isLive={g.isLive}
+                />
+                <PlayingBadge count={counts[countIdx]} />
+              </div>
+            );
+          })}
         </div>
 
         {/* ── Empty state ── */}
@@ -169,6 +203,20 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ─────────────────────── PlayingBadge ─────────────────── */
+function PlayingBadge({ count }: { count?: number }) {
+  if (!count) return <div className="h-4" />;
+  return (
+    <div className="flex items-center gap-1 px-1">
+      <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0 animate-pulse" />
+      <span className="text-[11px] font-semibold text-white/70 tabular-nums leading-none">
+        {count.toLocaleString("en-IN")}
+        <span className="text-white/40 font-normal"> playing</span>
+      </span>
     </div>
   );
 }
