@@ -20,7 +20,7 @@ interface DashboardData {
 }
 
 function fmt(n: number | undefined) {
-  return n == null ? "â€”" : new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n);
+  return n == null ? "–" : new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n);
 }
 
 export default function AdminDashboard() {
@@ -40,7 +40,7 @@ export default function AdminDashboard() {
         <KPI label="Live Markets"         value={data?.activeMarkets}      Icon={BarChart2}       loading={isLoading} />
         <KPI label="Pending Deposits"     value={data?.pendingDeposits}    Icon={ArrowDownToLine} loading={isLoading} tone={(data?.pendingDeposits ?? 0) > 0 ? "warn" : undefined} />
         <KPI label="Pending Withdrawals"  value={data?.pendingWithdrawals} Icon={ArrowUpToLine}   loading={isLoading} tone={(data?.pendingWithdrawals ?? 0) > 0 ? "warn" : undefined} />
-        <KPI label="Platform Exposure"    value={`â‚¹${fmt(data?.totalExposure)}`} Icon={ShieldAlert} loading={isLoading} tone="bad" />
+        <KPI label="Platform Exposure"    value={`₹${fmt(data?.totalExposure)}`} Icon={ShieldAlert} loading={isLoading} tone="bad" />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-5">
@@ -52,7 +52,7 @@ export default function AdminDashboard() {
               <p className="text-xs text-gray-500 mt-0.5">Operator revenue</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-black text-emerald-600">{data?.pl7d ? `â‚¹${fmt(data.pl7d.reduce((s, d) => s + d.pl, 0))}` : "â€”"}</p>
+              <p className="text-2xl font-black text-emerald-600">{data?.pl7d ? `₹${fmt(data.pl7d.reduce((s, d) => s + d.pl, 0))}` : "–"}</p>
               <p className="text-xs text-gray-500">Net</p>
             </div>
           </div>
@@ -72,7 +72,7 @@ export default function AdminDashboard() {
                       className={`w-full rounded-t-md transition-all duration-300 group-hover:brightness-110 cursor-pointer ${
                         d.pl >= 0 ? "bg-emerald-400" : "bg-red-400"
                       }`}
-                      title={`${d.date}: â‚¹${Math.round(d.pl).toLocaleString("en-IN")}`}
+                      title={`${d.date}: ₹${Math.round(d.pl).toLocaleString("en-IN")}`}
                     />
                     <span className="text-[10px] text-gray-500 group-hover:text-gray-600 transition-colors">
                       {d.date.slice(5)}
@@ -92,10 +92,10 @@ export default function AdminDashboard() {
               Array(4).fill(0).map((_, i) => <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />)
             ) : (
               <>
-                <MetricRow label="Total Revenue"     value={`â‚¹${fmt(data?.totalRevenue)}`}  trend={data?.revenueTrend} />
-                <MetricRow label="Commission Earned" value={`â‚¹${fmt(data?.commission)}`}    trend={data?.commissionTrend} />
-                <MetricRow label="Active Users 24h"  value={String(data?.activeUsers24h ?? "â€”")} />
-                <MetricRow label="Avg Bet Size"      value={`â‚¹${fmt(data?.avgBetSize)}`} />
+                <MetricRow label="Total Revenue"     value={`₹${fmt(data?.totalRevenue)}`}  trend={data?.revenueTrend} />
+                <MetricRow label="Commission Earned" value={`₹${fmt(data?.commission)}`}    trend={data?.commissionTrend} />
+                <MetricRow label="Active Users 24h"  value={String(data?.activeUsers24h ?? "–")} />
+                <MetricRow label="Avg Bet Size"      value={`₹${fmt(data?.avgBetSize)}`} />
               </>
             )}
           </div>
@@ -131,7 +131,7 @@ function KPI({ label, value, Icon, tone, loading }: {
           {loading ? (
             <div className="h-7 w-16 bg-gray-100 rounded animate-pulse" />
           ) : (
-            <p className={`text-xl font-black tabular-nums ${valueColor}`}>{value ?? "â€”"}</p>
+            <p className={`text-xl font-black tabular-nums ${valueColor}`}>{value ?? "–"}</p>
           )}
         </div>
         <div className={`p-2 rounded-lg shrink-0 ${

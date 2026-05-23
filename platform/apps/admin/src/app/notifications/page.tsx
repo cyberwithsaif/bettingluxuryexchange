@@ -184,7 +184,7 @@ function CreateAnnouncementModal({ onClose }: { onClose: (saved?: boolean) => vo
             className="modal-input resize-none"
             value={form.text}
             onChange={(e) => setForm({ ...form, text: e.target.value })}
-            placeholder="Enter announcement textâ€¦"
+            placeholder="Enter announcement text…"
           />
         </Field>
 
@@ -224,7 +224,7 @@ function CreateAnnouncementModal({ onClose }: { onClose: (saved?: boolean) => vo
             onClick={submit}
             className="px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 font-bold text-slate-900 shadow-sm disabled:opacity-50 text-sm hover:brightness-110 transition"
           >
-            {busy ? "Creatingâ€¦" : "Create"}
+            {busy ? "Creating…" : "Create"}
           </button>
         </div>
       </div>

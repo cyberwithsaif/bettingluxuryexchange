@@ -19,7 +19,7 @@ export default function RiskPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={5} className="text-center py-8 text-gray-500">Loading risk dataâ€¦</td>
+                <td colSpan={5} className="text-center py-8 text-gray-500">Loading risk data…</td>
               </tr>
             )}
             {!isLoading && (!data || (data as any[]).length === 0) && (
@@ -38,9 +38,9 @@ export default function RiskPage() {
                     {w.user.role}
                   </span>
                 </Td>
-                <Td className="tabular-nums text-gray-700">â‚¹{Number(w.balance).toLocaleString("en-IN")}</Td>
-                <Td className="tabular-nums text-red-600 font-semibold">â‚¹{Number(w.exposure).toLocaleString("en-IN")}</Td>
-                <Td className="tabular-nums text-emerald-600 font-semibold">â‚¹{(Number(w.balance) - Number(w.exposure)).toLocaleString("en-IN")}</Td>
+                <Td className="tabular-nums text-gray-700">₹{Number(w.balance).toLocaleString("en-IN")}</Td>
+                <Td className="tabular-nums text-red-600 font-semibold">₹{Number(w.exposure).toLocaleString("en-IN")}</Td>
+                <Td className="tabular-nums text-emerald-600 font-semibold">₹{(Number(w.balance) - Number(w.exposure)).toLocaleString("en-IN")}</Td>
               </tr>
             ))}
           </tbody>

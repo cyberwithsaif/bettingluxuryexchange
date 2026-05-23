@@ -22,7 +22,7 @@ interface SiteSettings {
 const SETTINGS_KEY = "/admin/platform-settings";
 const DEFAULTS: SiteSettings = { siteName: "DiamondPlay22", siteTagline: "Bet & Win" };
 const EMPTY_CAT: Omit<CategoryBanner, "id" | "sortOrder"> = {
-  title: "", subtitle: "", href: "/casino", emoji: "ðŸŽ°",
+  title: "", subtitle: "", href: "/casino", emoji: "🎰",
   gradient: "linear-gradient(135deg,#3d0810 0%,#6b0e1a 40%,#1a0408 100%)",
 };
 
@@ -62,7 +62,7 @@ function CardForm({ value, onChange, onSubmit, label, saving }: {
         </div>
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Emoji</label>
-          <input value={value.emoji} onChange={e => onChange({ ...value, emoji: e.target.value })} placeholder="ðŸŽ°" className={inputCls} />
+          <input value={value.emoji} onChange={e => onChange({ ...value, emoji: e.target.value })} placeholder="🎰" className={inputCls} />
         </div>
       </div>
       <div>
@@ -86,7 +86,7 @@ function CardForm({ value, onChange, onSubmit, label, saving }: {
       <button type="button" onClick={onSubmit} disabled={saving}
         className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-2 rounded-lg font-bold text-slate-900 text-sm shadow-sm hover:brightness-110 disabled:opacity-50 transition">
         <Save size={14} />
-        {saving ? "Savingâ€¦" : label}
+        {saving ? "Saving…" : label}
       </button>
     </div>
   );
@@ -185,7 +185,7 @@ export default function BannerSettingsPage() {
         <div className="space-y-2">
           {banners.length === 0 && (
             <div className="text-xs text-gray-500 py-6 text-center border border-dashed border-gray-200 rounded-lg">
-              No cards saved â€” defaults (Casino & Sports Betting) are showing on homepage.
+              No cards saved – defaults (Casino & Sports Betting) are showing on homepage.
             </div>
           )}
           {banners.map((cat, i) => (
@@ -199,9 +199,9 @@ export default function BannerSettingsPage() {
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button disabled={i === 0} onClick={() => move(i, -1)}
-                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30 text-gray-500 text-xs">â†‘</button>
+                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30 text-gray-500 text-xs">↑</button>
                   <button disabled={i === banners.length - 1} onClick={() => move(i, 1)}
-                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30 text-gray-500 text-xs">â†“</button>
+                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30 text-gray-500 text-xs">↓</button>
                   <button
                     onClick={() => {
                       if (editingId === cat.id) { setEditingId(null); }
@@ -266,7 +266,7 @@ export default function BannerSettingsPage() {
             className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-amber-500 px-5 py-2 rounded-lg font-bold text-slate-900 text-sm shadow-sm hover:brightness-110 disabled:opacity-50 transition"
           >
             <Save size={15} />
-            {siteBusy ? "Savingâ€¦" : "Save"}
+            {siteBusy ? "Saving…" : "Save"}
           </button>
           {siteMsg && (
             <p className={`text-sm flex items-center gap-1 font-medium ${siteMsg.ok ? "text-emerald-600" : "text-red-500"}`}>

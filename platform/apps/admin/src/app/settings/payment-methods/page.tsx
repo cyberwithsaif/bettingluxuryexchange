@@ -187,7 +187,7 @@ export default function PaymentMethodsPage() {
           className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-2.5 rounded-lg font-bold text-slate-900 shadow-sm hover:brightness-110 disabled:opacity-50 transition"
         >
           <Save size={16} />
-          {busy ? "Savingâ€¦" : "Save & Apply"}
+          {busy ? "Saving…" : "Save & Apply"}
         </button>
         {msg && (
           <p className={`text-sm flex items-center gap-1 font-medium ${msg.ok ? "text-emerald-600" : "text-red-500"}`}>

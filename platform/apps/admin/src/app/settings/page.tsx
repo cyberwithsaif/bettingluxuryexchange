@@ -49,7 +49,7 @@ export default function SettingsPage() {
       const res = await api.post("/sports/cricket/sync/series");
       setMsg({ text: `âœ“ Imported ${res.data.synced} series from Cricket API.`, ok: true });
     } catch (e: any) {
-      setMsg({ text: e?.response?.data?.message || "Sync failed â€” check your Cricket API key in API Keys.", ok: false });
+      setMsg({ text: e?.response?.data?.message || "Sync failed – check your Cricket API key in API Keys.", ok: false });
     } finally { setSyncBusy(false); }
   }
 
@@ -84,15 +84,15 @@ export default function SettingsPage() {
       {/* Betting limits */}
       <Section title="Betting Limits" Icon={Shield}>
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Min Stake (â‚¹)">
+          <Field label="Min Stake (₹)">
             <input type="number" min={1} className={inputCls} value={current?.minStake ?? 100}
               onChange={(e) => set("minStake", Number(e.target.value))} />
           </Field>
-          <Field label="Max Stake (â‚¹)">
+          <Field label="Max Stake (₹)">
             <input type="number" min={100} className={inputCls} value={current?.maxStake ?? 100000}
               onChange={(e) => set("maxStake", Number(e.target.value))} />
           </Field>
-          <Field label="Max Market Exposure (â‚¹)">
+          <Field label="Max Market Exposure (₹)">
             <input type="number" min={1000} className={inputCls} value={current?.maxMarketExposure ?? 1000000}
               onChange={(e) => set("maxMarketExposure", Number(e.target.value))} />
           </Field>
@@ -107,7 +107,7 @@ export default function SettingsPage() {
       <Section title="Feature Toggles" Icon={Settings2}>
         <div className="grid grid-cols-2 gap-4">
           {([
-            ["maintenanceMode",     "ðŸ”´ Maintenance Mode (disables site)"],
+            ["maintenanceMode",     "🔴 Maintenance Mode (disables site)"],
             ["registrationEnabled", "âœ… New User Registration"],
             ["depositEnabled",      "âœ… Deposits"],
             ["withdrawalEnabled",   "âœ… Withdrawals"],
@@ -154,13 +154,13 @@ export default function SettingsPage() {
         disabled={busy || !form}
         className="rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-2.5 font-bold text-slate-900 shadow-sm disabled:opacity-40 hover:brightness-110 transition"
       >
-        {busy ? "Savingâ€¦" : "Save Settings"}
+        {busy ? "Saving…" : "Save Settings"}
       </button>
 
       {/* Cricket Sync */}
       <Section title="Data Sync" Icon={Database}>
         <p className="text-sm text-gray-500 mb-3">
-          Sync live cricket series from the Cricket API (requires an API key set under <span className="text-yellow-600 font-semibold">API Keys â†’ Cricket API</span>).
+          Sync live cricket series from the Cricket API (requires an API key set under <span className="text-yellow-600 font-semibold">API Keys → Cricket API</span>).
         </p>
         <button
           onClick={syncCricket}
@@ -168,7 +168,7 @@ export default function SettingsPage() {
           className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-2 font-bold text-slate-900 shadow-sm disabled:opacity-50 hover:brightness-110 transition"
         >
           <RefreshCw size={16} className={syncBusy ? "animate-spin" : ""} />
-          {syncBusy ? "Syncingâ€¦" : "Sync Cricket Series"}
+          {syncBusy ? "Syncing…" : "Sync Cricket Series"}
         </button>
       </Section>
 

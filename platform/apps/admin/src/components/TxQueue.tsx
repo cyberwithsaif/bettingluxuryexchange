@@ -32,8 +32,8 @@ export function TxQueue({ kind, title }: { kind: "DEPOSIT" | "WITHDRAWAL"; title
                 <Td className="whitespace-nowrap text-gray-500">{new Date(t.createdAt).toLocaleString("en-IN", { hour12: false })}</Td>
                 <Td className="font-semibold text-gray-800">{t.user.username}</Td>
                 <Td className="text-xs text-gray-600">{t.method}</Td>
-                <Td className="tabular-nums text-gray-800 font-semibold">â‚¹{Number(t.amount).toLocaleString("en-IN")}</Td>
-                <Td className="text-xs text-gray-500">{t.reference ?? "â€”"}</Td>
+                <Td className="tabular-nums text-gray-800 font-semibold">₹{Number(t.amount).toLocaleString("en-IN")}</Td>
+                <Td className="text-xs text-gray-500">{t.reference ?? "–"}</Td>
                 <Td>
                   <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${
                     t.status === "PENDING"   ? "bg-yellow-50 text-yellow-700 border-yellow-200" :

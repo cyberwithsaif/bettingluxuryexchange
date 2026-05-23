@@ -63,7 +63,7 @@ export default function ApiKeysPage() {
                         {c.fields.map((f) => (
                           <span key={f} className="px-2 py-0.5 rounded-full bg-gray-50 border border-gray-200">
                             <span className="text-gray-500">{f}:</span>
-                            <span className="font-mono text-gray-700 ml-1">{e.masked[f] ?? "â€”"}</span>
+                            <span className="font-mono text-gray-700 ml-1">{e.masked[f] ?? "–"}</span>
                           </span>
                         ))}
                       </div>
@@ -147,7 +147,7 @@ function EditModal({ cat, existing, onClose }: { cat: Cat; existing?: Existing; 
             <input
               type={f.toLowerCase().includes("secret") || f.toLowerCase().includes("password") ? "password" : "text"}
               className={inputCls}
-              placeholder={existing?.masked[f] ? `Current: ${existing.masked[f]} â€” enter to replace` : ""}
+              placeholder={existing?.masked[f] ? `Current: ${existing.masked[f]} – enter to replace` : ""}
               value={fields[f]}
               onChange={(e) => setFields({ ...fields, [f]: e.target.value })}
             />
@@ -173,7 +173,7 @@ function EditModal({ cat, existing, onClose }: { cat: Cat; existing?: Existing; 
             disabled={busy}
             className="px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 font-bold shadow-sm disabled:opacity-50 hover:brightness-110 transition"
           >
-            {busy ? "Savingâ€¦" : "Save"}
+            {busy ? "Saving…" : "Save"}
           </button>
         </div>
       </div>

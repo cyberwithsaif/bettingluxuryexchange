@@ -19,7 +19,7 @@ export default function LogsPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={6} className="text-center py-8 text-gray-500">Loading logsâ€¦</td>
+                <td colSpan={6} className="text-center py-8 text-gray-500">Loading logs…</td>
               </tr>
             )}
             {!isLoading && (!data || (data as any[]).length === 0) && (
@@ -34,15 +34,15 @@ export default function LogsPage() {
               <tr key={l.id} className="border-t border-gray-100 hover:bg-yellow-50/30 transition align-top">
                 <Td className="whitespace-nowrap text-gray-500">{new Date(l.createdAt).toLocaleString("en-IN", { hour12: false })}</Td>
                 <Td className="font-semibold text-gray-800">
-                  {l.actor?.username ?? "â€”"}
+                  {l.actor?.username ?? "–"}
                   <span className="text-xs text-gray-500 ml-1">{l.actor?.role}</span>
                 </Td>
                 <Td className="text-xs">
                   <code className="bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded font-mono">{l.action}</code>
                 </Td>
                 <Td className="text-xs text-gray-600">{l.targetType}:{l.targetId?.slice(0, 8)}</Td>
-                <Td className="text-xs text-gray-500">{l.ip ?? "â€”"}</Td>
-                <Td className="text-xs text-gray-500 max-w-[26rem] truncate">{l.metadata ? JSON.stringify(l.metadata) : "â€”"}</Td>
+                <Td className="text-xs text-gray-500">{l.ip ?? "–"}</Td>
+                <Td className="text-xs text-gray-500 max-w-[26rem] truncate">{l.metadata ? JSON.stringify(l.metadata) : "–"}</Td>
               </tr>
             ))}
           </tbody>

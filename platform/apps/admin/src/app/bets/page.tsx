@@ -51,7 +51,7 @@ export default function AdminBetsPage() {
       await api.patch(`/admin/bets/${betId}`, { action });
       globalMutate(swrKey);
     } catch {
-      alert("Action failed â€” ensure the endpoint is available.");
+      alert("Action failed – ensure the endpoint is available.");
     }
   };
 
@@ -64,7 +64,7 @@ export default function AdminBetsPage() {
         <input
           value={q}
           onChange={(e) => { setQ(e.target.value); setSkip(0); }}
-          placeholder="Search usernameâ€¦"
+          placeholder="Search username…"
           className="border border-yellow-200 bg-white rounded-lg px-3 py-2 text-sm w-56 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-yellow-400 shadow-sm"
         />
         <select
@@ -106,7 +106,7 @@ export default function AdminBetsPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={11} className="text-center py-8 text-gray-500">Loading betsâ€¦</td>
+                <td colSpan={11} className="text-center py-8 text-gray-500">Loading bets…</td>
               </tr>
             )}
             {!isLoading && (!bets || bets.length === 0) && (
@@ -132,9 +132,9 @@ export default function AdminBetsPage() {
                   </span>
                 </Td>
                 <Td className="tabular-nums text-gray-700 font-semibold">{Number(bet.odds).toFixed(2)}</Td>
-                <Td className="tabular-nums text-gray-800 font-semibold">â‚¹{Number(bet.stake).toLocaleString("en-IN")}</Td>
+                <Td className="tabular-nums text-gray-800 font-semibold">₹{Number(bet.stake).toLocaleString("en-IN")}</Td>
                 <Td className={cn("tabular-nums font-semibold", Number(bet.potentialProfit) >= 0 ? "text-emerald-600" : "text-red-500")}>
-                  â‚¹{Number(bet.potentialProfit).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                  ₹{Number(bet.potentialProfit).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                 </Td>
                 <Td>
                   <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold border", STATUS_STYLE[bet.status as BetStatus] ?? "")}>
@@ -170,13 +170,13 @@ export default function AdminBetsPage() {
           disabled={skip === 0}
           onClick={() => setSkip(Math.max(0, skip - 50))}
           className="px-4 py-2 rounded-lg border border-yellow-200 text-sm text-gray-600 font-medium disabled:opacity-40 hover:border-yellow-400 hover:bg-yellow-50 transition"
-        >â† Prev</button>
-        <span className="text-sm text-gray-500">Showing {skip + 1}â€“{skip + (bets?.length ?? 0)}</span>
+        >← Prev</button>
+        <span className="text-sm text-gray-500">Showing {skip + 1}–{skip + (bets?.length ?? 0)}</span>
         <button
           disabled={(bets?.length ?? 0) < 50}
           onClick={() => setSkip(skip + 50)}
           className="px-4 py-2 rounded-lg border border-yellow-200 text-sm text-gray-600 font-medium disabled:opacity-40 hover:border-yellow-400 hover:bg-yellow-50 transition"
-        >Next â†’</button>
+        >Next →</button>
       </div>
     </div>
   );

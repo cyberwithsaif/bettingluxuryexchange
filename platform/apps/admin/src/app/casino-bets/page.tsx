@@ -16,11 +16,11 @@ interface CasinoBet {
 }
 
 const GAME_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
-  mines:    { label: "Mines",    emoji: "ðŸ’£", color: "bg-red-50    text-red-600    border-red-200" },
-  plinko:   { label: "Plinko",   emoji: "ðŸŽ¯", color: "bg-purple-50 text-purple-700 border-purple-200" },
-  pump:     { label: "Pump",     emoji: "ðŸŽˆ", color: "bg-pink-50   text-pink-700   border-pink-200" },
-  dice:     { label: "Dice",     emoji: "ðŸŽ²", color: "bg-blue-50   text-blue-700   border-blue-200" },
-  roulette: { label: "Roulette", emoji: "ðŸŽ¡", color: "bg-amber-50  text-amber-700  border-amber-200" },
+  mines:    { label: "Mines",    emoji: "💣", color: "bg-red-50    text-red-600    border-red-200" },
+  plinko:   { label: "Plinko",   emoji: "🎯", color: "bg-purple-50 text-purple-700 border-purple-200" },
+  pump:     { label: "Pump",     emoji: "🎈", color: "bg-pink-50   text-pink-700   border-pink-200" },
+  dice:     { label: "Dice",     emoji: "🎲", color: "bg-blue-50   text-blue-700   border-blue-200" },
+  roulette: { label: "Roulette", emoji: "🎡", color: "bg-amber-50  text-amber-700  border-amber-200" },
 };
 
 function buildKey(q: string, game: string, skip: number) {
@@ -49,7 +49,7 @@ export default function AdminCasinoBetsPage() {
         <input
           value={q}
           onChange={(e) => { setQ(e.target.value); setSkip(0); }}
-          placeholder="Search usernameâ€¦"
+          placeholder="Search username…"
           className="border border-yellow-200 bg-white rounded-lg px-3 py-2 text-sm w-56 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-yellow-400 shadow-sm"
         />
         <select
@@ -83,7 +83,7 @@ export default function AdminCasinoBetsPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={9} className="text-center py-8 text-gray-500">Loadingâ€¦</td>
+                <td colSpan={9} className="text-center py-8 text-gray-500">Loading…</td>
               </tr>
             )}
             {!isLoading && (!bets || bets.length === 0) && (
@@ -105,10 +105,10 @@ export default function AdminCasinoBetsPage() {
                     </span>
                   </Td>
                   <Td className="font-semibold text-gray-800">{bet.user.username}</Td>
-                  <Td className="tabular-nums text-gray-700 font-semibold">â‚¹{Number(bet.betAmount).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</Td>
-                  <Td className="tabular-nums text-gray-700">â‚¹{Number(bet.payout).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</Td>
+                  <Td className="tabular-nums text-gray-700 font-semibold">₹{Number(bet.betAmount).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</Td>
+                  <Td className="tabular-nums text-gray-700">₹{Number(bet.payout).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</Td>
                   <Td className={cn("tabular-nums font-semibold", bet.profit >= 0 ? "text-emerald-600" : "text-red-500")}>
-                    {bet.profit >= 0 ? "+" : ""}â‚¹{Number(bet.profit).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                    {bet.profit >= 0 ? "+" : ""}₹{Number(bet.profit).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                   </Td>
                   <Td className="text-xs text-gray-500 max-w-[100px] truncate">{bet.extra}</Td>
                   <Td>
@@ -137,13 +137,13 @@ export default function AdminCasinoBetsPage() {
           disabled={skip === 0}
           onClick={() => setSkip(Math.max(0, skip - 50))}
           className="px-4 py-2 rounded-lg border border-yellow-200 text-sm text-gray-600 font-medium disabled:opacity-40 hover:border-yellow-400 hover:bg-yellow-50 transition"
-        >â† Prev</button>
-        <span className="text-sm text-gray-500">Showing {skip + 1}â€“{skip + (bets?.length ?? 0)}</span>
+        >← Prev</button>
+        <span className="text-sm text-gray-500">Showing {skip + 1}–{skip + (bets?.length ?? 0)}</span>
         <button
           disabled={(bets?.length ?? 0) < 50}
           onClick={() => setSkip(skip + 50)}
           className="px-4 py-2 rounded-lg border border-yellow-200 text-sm text-gray-600 font-medium disabled:opacity-40 hover:border-yellow-400 hover:bg-yellow-50 transition"
-        >Next â†’</button>
+        >Next →</button>
       </div>
     </div>
   );

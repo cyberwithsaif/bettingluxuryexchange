@@ -18,13 +18,13 @@ interface PlatformSettings {
 const SETTINGS_KEY = "/admin/platform-settings";
 
 const DEFAULT_ITEMS: NavItem[] = [
-  { href: "/exchange",   label: "EXCHANGE",    emoji: "ðŸŽ°", enabled: true },
-  { href: "/crash",      label: "CRASH GAMES", emoji: "ðŸš€", enabled: true },
-  { href: "/virtual",    label: "VIRTUAL GAME",emoji: "ðŸŽ®", enabled: true },
-  { href: "/vr-games",   label: "VR GAMES",    emoji: "ðŸ¥½", enabled: true },
+  { href: "/exchange",   label: "EXCHANGE",    emoji: "🎰", enabled: true },
+  { href: "/crash",      label: "CRASH GAMES", emoji: "🚀", enabled: true },
+  { href: "/virtual",    label: "VIRTUAL GAME",emoji: "🎮", enabled: true },
+  { href: "/vr-games",   label: "VR GAMES",    emoji: "🥽", enabled: true },
   { href: "/slots",      label: "SLOT GAMES",  emoji: "âœ¨", enabled: true },
-  { href: "/lottery",    label: "LOTTERY",     emoji: "ðŸŽŸï¸", enabled: true },
-  { href: "/sportsbook", label: "SPORTS BOOK", emoji: "ðŸŽ¯", enabled: true },
+  { href: "/lottery",    label: "LOTTERY",     emoji: "🎟️", enabled: true },
+  { href: "/sportsbook", label: "SPORTS BOOK", emoji: "🎯", enabled: true },
 ];
 
 const inputCls = "bg-white border border-yellow-200 rounded px-2 py-1 text-sm text-gray-800 outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100 transition";
@@ -35,7 +35,7 @@ export default function NavSettingsPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [newItem, setNewItem] = useState<NavItem>({ href: "", label: "", emoji: "ðŸŽ®", enabled: true });
+  const [newItem, setNewItem] = useState<NavItem>({ href: "", label: "", emoji: "🎮", enabled: true });
 
   const current: NavItem[] = items ?? data?.navItems ?? DEFAULT_ITEMS;
 
@@ -51,7 +51,7 @@ export default function NavSettingsPage() {
     if (!newItem.href || !newItem.label) return;
     const href = newItem.href.startsWith("/") ? newItem.href : "/" + newItem.href;
     setItems([...current, { ...newItem, href }]);
-    setNewItem({ href: "", label: "", emoji: "ðŸŽ®", enabled: true });
+    setNewItem({ href: "", label: "", emoji: "🎮", enabled: true });
   }
 
   function onDragStart(idx: number) { setDragIdx(idx); }
@@ -145,7 +145,7 @@ export default function NavSettingsPage() {
             <button
               onClick={() => update(idx, { enabled: !item.enabled })}
               className={`shrink-0 transition ${item.enabled ? "text-emerald-500" : "text-gray-400"}`}
-              title={item.enabled ? "Visible â€” click to hide" : "Hidden â€” click to show"}
+              title={item.enabled ? "Visible – click to hide" : "Hidden – click to show"}
             >
               {item.enabled ? <Eye size={16} /> : <EyeOff size={16} />}
             </button>
@@ -167,7 +167,7 @@ export default function NavSettingsPage() {
         <div className="flex items-center gap-3">
           <input
             type="text"
-            placeholder="ðŸŽ®"
+            placeholder="🎮"
             value={newItem.emoji}
             onChange={(e) => setNewItem(p => ({ ...p, emoji: e.target.value }))}
             className={`w-12 text-center ${inputCls}`}
@@ -202,7 +202,7 @@ export default function NavSettingsPage() {
         className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-2.5 font-bold text-slate-900 shadow-sm disabled:opacity-40 hover:brightness-110 transition"
       >
         <Save size={16} />
-        {busy ? "Savingâ€¦" : "Save Navigation"}
+        {busy ? "Saving…" : "Save Navigation"}
       </button>
     </div>
   );

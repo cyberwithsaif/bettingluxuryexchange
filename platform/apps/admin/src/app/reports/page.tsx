@@ -57,12 +57,12 @@ export default function AdminReportsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KPI label="Total Bets"         value={data ? fmt(data.totalBets) : "â€”"}            Icon={Activity}    />
-        <KPI label="Open Bets"          value={data ? fmt(data.openBets)  : "â€”"}            Icon={BarChart3}   />
-        <KPI label="Total User Wins"    value={data ? `â‚¹${fmt(data.totalUserWin)}` : "â€”"}  Icon={TrendingUp}   tone="bad" />
+        <KPI label="Total Bets"         value={data ? fmt(data.totalBets) : "–"}            Icon={Activity}    />
+        <KPI label="Open Bets"          value={data ? fmt(data.openBets)  : "–"}            Icon={BarChart3}   />
+        <KPI label="Total User Wins"    value={data ? `₹${fmt(data.totalUserWin)}` : "–"}  Icon={TrendingUp}   tone="bad" />
         <KPI
           label="Operator P/L"
-          value={data ? `â‚¹${fmt(data.totalOperatorPL)}` : "â€”"}
+          value={data ? `₹${fmt(data.totalOperatorPL)}` : "–"}
           Icon={data && data.totalOperatorPL >= 0 ? TrendingUp : TrendingDown}
           tone={data && data.totalOperatorPL >= 0 ? "ok" : "bad"}
         />
@@ -85,7 +85,7 @@ export default function AdminReportsPage() {
                   <div
                     style={{ height: `${h}%` }}
                     className="w-full rounded-t bg-yellow-400 hover:bg-yellow-500 transition cursor-pointer"
-                    title={`${s.date}: â‚¹${fmt(s.volume)}`}
+                    title={`${s.date}: ₹${fmt(s.volume)}`}
                   />
                   {data.series.length <= 14 && (
                     <span className="text-[9px] text-gray-500 group-hover:text-gray-600 transition-colors">{s.date.slice(5)}</span>
@@ -114,7 +114,7 @@ export default function AdminReportsPage() {
                   <div
                     style={{ height: `${h}%` }}
                     className={`w-full rounded-t transition cursor-pointer ${s.pl >= 0 ? "bg-emerald-400 hover:bg-emerald-500" : "bg-red-400 hover:bg-red-500"}`}
-                    title={`${s.date}: â‚¹${fmt(s.pl)}`}
+                    title={`${s.date}: ₹${fmt(s.pl)}`}
                   />
                   {data.series.length <= 14 && (
                     <span className="text-[9px] text-gray-500 group-hover:text-gray-600 transition-colors">{s.date.slice(5)}</span>
@@ -141,9 +141,9 @@ export default function AdminReportsPage() {
               {[...data.series].reverse().map((s) => (
                 <tr key={s.date} className="border-t border-gray-100 hover:bg-yellow-50/30 transition">
                   <td className="px-4 py-2.5 text-gray-600">{s.date}</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-gray-700 font-semibold">â‚¹{fmt(s.volume)}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-gray-700 font-semibold">₹{fmt(s.volume)}</td>
                   <td className={`px-4 py-2.5 text-right tabular-nums font-bold ${s.pl >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                    {s.pl >= 0 ? "+" : ""}â‚¹{fmt(s.pl)}
+                    {s.pl >= 0 ? "+" : ""}₹{fmt(s.pl)}
                   </td>
                 </tr>
               ))}

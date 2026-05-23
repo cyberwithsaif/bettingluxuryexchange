@@ -32,7 +32,7 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen flex bg-gray-50">
-      {/* Left panel â€” branding */}
+      {/* Left panel – branding */}
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12"
         style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%)" }}>
         <div className="flex items-center gap-3">
@@ -50,9 +50,9 @@ export default function AdminLogin() {
           </p>
           <div className="mt-8 grid grid-cols-2 gap-4">
             {[
-              { label: "Users", icon: "ðŸ‘¥" },
-              { label: "Live Markets", icon: "ðŸ“Š" },
-              { label: "Transactions", icon: "ðŸ’³" },
+              { label: "Users", icon: "👥" },
+              { label: "Live Markets", icon: "📊" },
+              { label: "Transactions", icon: "💳" },
               { label: "Risk Monitor", icon: "âš¡" },
             ].map(({ label, icon }) => (
               <div key={label} className="flex items-center gap-2 p-3 rounded-xl" style={{ background: "rgba(255,255,255,0.06)" }}>
@@ -62,10 +62,10 @@ export default function AdminLogin() {
             ))}
           </div>
         </div>
-        <p className="text-slate-500 text-xs">DiamondPlay22 Admin v1.0 â€¢ Secure Access Only</p>
+        <p className="text-slate-500 text-xs">DiamondPlay22 Admin v1.0 • Secure Access Only</p>
       </div>
 
-      {/* Right panel â€” form */}
+      {/* Right panel – form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white">
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
@@ -101,7 +101,7 @@ export default function AdminLogin() {
                   required
                   autoComplete="current-password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                  placeholder="••••••••"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   className="w-full px-4 py-3 pr-12 rounded-xl border border-yellow-200 bg-white text-gray-800 placeholder-gray-300 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition-all"
@@ -151,12 +151,12 @@ export default function AdminLogin() {
               }}
             >
               <Lock size={16} />
-              {busy ? "Signing inâ€¦" : "Enter Admin Panel"}
+              {busy ? "Signing in…" : "Enter Admin Panel"}
             </button>
           </form>
 
           <p className="text-center text-xs text-gray-400 mt-8">
-            Secure connection â€¢ diamondplay22.site
+            Secure connection • diamondplay22.site
           </p>
         </div>
       </div>
