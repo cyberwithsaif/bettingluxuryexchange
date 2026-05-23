@@ -136,7 +136,8 @@ export default function StatementPage() {
             All
           </button>
           {uniqueKinds.map((k) => {
-            const cfg = KIND_CONFIG[k] || { icon: null, color: "#fff", displayName: k };
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const cfg = (KIND_CONFIG as Record<string, any>)[k] || { icon: null, color: "#fff", displayName: k };
             const isActive = kindFilter === k;
             return (
               <button
@@ -171,7 +172,8 @@ export default function StatementPage() {
           {items.map((e: any) => {
             const amt = Number(e.amount);
             const isPositive = amt > 0;
-            const cfg = KIND_CONFIG[e.kind] || {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const cfg = (KIND_CONFIG as Record<string, any>)[e.kind] || {
               icon: <AlertCircle size={14} />,
               color: "#fff",
               bg: "rgba(255,255,255,0.05)",
