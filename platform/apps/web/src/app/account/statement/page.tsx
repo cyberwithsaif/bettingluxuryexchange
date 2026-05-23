@@ -54,6 +54,16 @@ function fmt(n: number | undefined) {
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(n);
 }
 
+function getKindConfig(kind: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (KIND_CONFIG as any)[kind] || {
+    icon: <AlertCircle size={14} />,
+    color: "#fff",
+    bg: "rgba(255,255,255,0.05)",
+    displayName: kind,
+  };
+}
+
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString("en-IN", {
     day: "2-digit",
@@ -137,7 +147,7 @@ export default function StatementPage() {
           </button>
           {uniqueKinds.map((k) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const cfg = (KIND_CONFIG as any)[k] || { icon: null, color: "#fff", displayName: k };
+            const cfg = getKindConfig(k);
             const isActive = kindFilter === k;
             return (
               <button
@@ -172,13 +182,7 @@ export default function StatementPage() {
           {items.map((e: any) => {
             const amt = Number(e.amount);
             const isPositive = amt > 0;
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const cfg = (KIND_CONFIG as Record<string, any>)[e.kind] || {
-              icon: <AlertCircle size={14} />,
-              color: "#fff",
-              bg: "rgba(255,255,255,0.05)",
-              displayName: e.kind,
-            };
+            const cfg = getKindConfig(e.kind);
 
             return (
               <div
