@@ -1,58 +1,74 @@
 "use client";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 export function NavigationProgress() {
-  const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(false);
   const pathname = usePathname();
   const search = useSearchParams();
 
   useEffect(() => {
     setVisible(true);
-    setProgress(10);
-    const t1 = setTimeout(() => setProgress(40), 100);
-    const t2 = setTimeout(() => setProgress(70), 250);
-    const t3 = setTimeout(() => setProgress(95), 500);
-    const t4 = setTimeout(() => {
-      setProgress(100);
-      const t5 = setTimeout(() => {
-        setVisible(false);
-        setProgress(0);
-      }, 200);
-      return () => clearTimeout(t5);
-    }, 700);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      clearTimeout(t4);
-    };
+    const t = setTimeout(() => setVisible(false), 600);
+    return () => clearTimeout(t);
   }, [pathname, search]);
+
+  if (!visible) return null;
 
   return (
     <div
       style={{
         position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 3,
+        inset: 0,
         zIndex: 9999,
+        background: "#0d1224",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         pointerEvents: "none",
-        opacity: visible ? 1 : 0,
-        transition: "opacity 200ms ease",
       }}
     >
-      <div
-        style={{
-          height: "100%",
-          width: `${progress}%`,
-          background: "linear-gradient(90deg, #f59e0b, #ef4444, #f59e0b)",
-          boxShadow: "0 0 10px rgba(245, 158, 11, 0.7)",
-          transition: "width 300ms ease",
-        }}
-      />
+      <div style={{ position: "relative", width: 96, height: 96, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {/* Faint background ring */}
+        <svg style={{ position: "absolute", inset: 0 }} width="96" height="96" viewBox="0 0 96 96" fill="none">
+          <circle cx="48" cy="48" r="44" stroke="rgba(245,166,35,0.15)" strokeWidth="5" fill="none" />
+        </svg>
+
+        {/* Spinning segmented ring */}
+        <svg
+          style={{ position: "absolute", inset: 0, animation: "spin 1.2s linear infinite" }}
+          width="96"
+          height="96"
+          viewBox="0 0 96 96"
+          fill="none"
+        >
+          <circle cx="48" cy="48" r="44" stroke="#f5a623" strokeWidth="5" strokeLinecap="round"
+            strokeDasharray="50 226" strokeDashoffset="0" fill="none" />
+          <circle cx="48" cy="48" r="44" stroke="#f5a623" strokeWidth="5" strokeLinecap="round"
+            strokeDasharray="25 251" strokeDashoffset="-100" fill="none" opacity="0.6" />
+          <circle cx="48" cy="48" r="44" stroke="#f5a623" strokeWidth="5" strokeLinecap="round"
+            strokeDasharray="15 261" strokeDashoffset="-180" fill="none" opacity="0.3" />
+        </svg>
+
+        {/* Logo */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo.png"
+          alt="Logo"
+          width={56}
+          height={56}
+          style={{
+            borderRadius: "50%",
+            position: "relative",
+            zIndex: 10,
+            filter: "drop-shadow(0 0 12px rgba(245,166,35,0.6))",
+          }}
+        />
+      </div>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }

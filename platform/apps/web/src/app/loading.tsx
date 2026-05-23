@@ -1,45 +1,36 @@
 export default function Loading() {
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center z-50"
-      style={{ background: "#0d1224" }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "#0d1224",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 9999,
+      }}
     >
-      <div className="relative flex items-center justify-center">
-        {/* Segmented spinner ring */}
-        <svg
-          className="absolute animate-spin"
-          width="96"
-          height="96"
-          viewBox="0 0 96 96"
-          fill="none"
-          style={{ animationDuration: "1.4s" }}
-        >
-          {/* 8 arc segments, alternating visible/gap */}
-          {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => (
-            <circle
-              key={deg}
-              cx="48"
-              cy="48"
-              r="44"
-              stroke={i % 2 === 0 ? "#f5a623" : "transparent"}
-              strokeWidth="5"
-              strokeLinecap="round"
-              strokeDasharray="22 278"
-              strokeDashoffset={-((deg / 360) * 276.46)}
-              fill="none"
-            />
-          ))}
+      <div style={{ position: "relative", width: 96, height: 96, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {/* Faint background ring */}
+        <svg style={{ position: "absolute", inset: 0 }} width="96" height="96" viewBox="0 0 96 96" fill="none">
+          <circle cx="48" cy="48" r="44" stroke="rgba(245,166,35,0.15)" strokeWidth="5" fill="none" />
         </svg>
 
-        {/* Faint background ring */}
+        {/* Spinning segmented ring */}
         <svg
-          className="absolute"
+          style={{ position: "absolute", inset: 0, animation: "spin 1.2s linear infinite" }}
           width="96"
           height="96"
           viewBox="0 0 96 96"
           fill="none"
         >
-          <circle cx="48" cy="48" r="44" stroke="rgba(245,166,35,0.12)" strokeWidth="5" fill="none" />
+          <circle cx="48" cy="48" r="44" stroke="#f5a623" strokeWidth="5" strokeLinecap="round"
+            strokeDasharray="50 226" strokeDashoffset="0" fill="none" />
+          <circle cx="48" cy="48" r="44" stroke="#f5a623" strokeWidth="5" strokeLinecap="round"
+            strokeDasharray="25 251" strokeDashoffset="-100" fill="none" opacity="0.6" />
+          <circle cx="48" cy="48" r="44" stroke="#f5a623" strokeWidth="5" strokeLinecap="round"
+            strokeDasharray="15 261" strokeDashoffset="-180" fill="none" opacity="0.3" />
         </svg>
 
         {/* Logo */}
@@ -47,12 +38,20 @@ export default function Loading() {
         <img
           src="/logo.png"
           alt="Logo"
-          width={52}
-          height={52}
-          className="rounded-full relative z-10"
-          style={{ display: "block" }}
+          width={56}
+          height={56}
+          style={{
+            borderRadius: "50%",
+            position: "relative",
+            zIndex: 10,
+            filter: "drop-shadow(0 0 12px rgba(245,166,35,0.6))",
+          }}
         />
       </div>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }
