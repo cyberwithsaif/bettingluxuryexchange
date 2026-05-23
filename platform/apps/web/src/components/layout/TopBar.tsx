@@ -226,23 +226,50 @@ function NotificationBell() {
 /* ── Profile Menu ───────────────────────────────────────────── */
 function ProfileMenu({ username, onLogout }: { username: string; onLogout: () => void }) {
   const [open, setOpen] = useState(false);
+
+  // Level progress — wire up to real deposit data later
+  // progress: 0–100 (percentage of current level filled)
+  const level = 1;
+  const progress = 0; // fill based on deposits later
+
   return (
     <div className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-2 h-9 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 transition"
+        className="flex items-center gap-2 h-10 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition"
       >
-        {/* Hexagon-style avatar like Roobet */}
+        {/* Avatar */}
         <div
-          className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0"
+          className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black text-white shrink-0"
           style={{ background: "linear-gradient(135deg,#7c3aed,#c026d3)" }}
         >
           {username[0]?.toUpperCase()}
         </div>
-        <span className="hidden sm:inline text-[13px] font-semibold text-white/80 max-w-[80px] truncate">
-          {username}
-        </span>
-        <ChevronDown size={12} className="text-white/30" />
+
+        {/* Name + level bar */}
+        <div className="hidden sm:flex flex-col gap-[3px] min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[13px] font-semibold text-white/90 max-w-[80px] truncate leading-none">
+              {username}
+            </span>
+            <span className="text-[9px] font-bold text-violet-400 leading-none shrink-0">
+              Lv.{level}
+            </span>
+          </div>
+          {/* Progress bar */}
+          <div className="h-[3px] w-full rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${progress}%`,
+                background: "linear-gradient(90deg, #7c3aed, #c026d3)",
+                boxShadow: progress > 0 ? "0 0 6px rgba(168,85,247,0.8)" : "none",
+              }}
+            />
+          </div>
+        </div>
+
+        <ChevronDown size={12} className="text-white/30 shrink-0" />
       </button>
 
       {open && (
