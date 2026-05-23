@@ -96,9 +96,9 @@ export default function StatementPage() {
     return { totalIn, totalOut, net: totalIn - totalOut };
   }, [data]);
 
-  const uniqueKinds = useMemo(() => {
+  const uniqueKinds = useMemo((): string[] => {
     if (!data?.items) return [];
-    return [...new Set(data.items.map((e: any) => e.kind))];
+    return [...new Set<string>(data.items.map((e: any) => String(e.kind)))];
   }, [data]);
 
   return (
