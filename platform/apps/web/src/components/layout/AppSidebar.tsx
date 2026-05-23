@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState, Suspense, useContext } from "react";
@@ -65,7 +64,7 @@ function SidebarInner() {
       )}>
 
         {/* Arrow Button */}
-        <div className="flex items-center justify-center mb-2">
+        <div className="flex items-center justify-center mb-4">
           <button
             onClick={() => ctx?.setCollapsed(!collapsed)}
             className="flex items-center justify-center w-9 h-9 rounded-xl transition-all group"
