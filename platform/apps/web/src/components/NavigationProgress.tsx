@@ -12,47 +12,15 @@ function Loader({ opacity }: { opacity: number }) {
       opacity,
       transition: "opacity 350ms ease",
     }}>
-      <div style={{ position: "relative", width: 200, height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
 
-        {/* Faint track ring */}
-        <svg style={{ position: "absolute", inset: 0 }} width="200" height="200" viewBox="0 0 200 200" fill="none">
-          <circle cx="100" cy="100" r="92" stroke="rgba(255,255,255,0.06)" strokeWidth="6" fill="none" />
-        </svg>
-
-        {/* Main spinning gradient arc */}
-        <svg style={{ position: "absolute", inset: 0, animation: "np-spin 2s linear infinite" }}
-          width="200" height="200" viewBox="0 0 200 200" fill="none">
-          <defs>
-            <linearGradient id="arc-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#ffcc00" />
-              <stop offset="50%" stopColor="#ff6a00" />
-              <stop offset="100%" stopColor="#ef4444" />
-            </linearGradient>
-          </defs>
-          {/* Bold leading arc */}
-          <circle cx="100" cy="100" r="92" stroke="url(#arc-grad)" strokeWidth="6" strokeLinecap="round"
-            strokeDasharray="140 438" strokeDashoffset="0" fill="none" />
-          {/* Fading tail */}
-          <circle cx="100" cy="100" r="92" stroke="#ef4444" strokeWidth="6" strokeLinecap="round"
-            strokeDasharray="60 518" strokeDashoffset="-145" fill="none" opacity="0.35" />
-          <circle cx="100" cy="100" r="92" stroke="#ffcc00" strokeWidth="6" strokeLinecap="round"
-            strokeDasharray="20 558" strokeDashoffset="-210" fill="none" opacity="0.15" />
-        </svg>
-
-        {/* Inner counter ring (red tint) */}
-        <svg style={{ position: "absolute", inset: "16px", animation: "np-spin-r 1.6s linear infinite" }}
-          width="168" height="168" viewBox="0 0 168 168" fill="none">
-          <circle cx="84" cy="84" r="78" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round"
-            strokeDasharray="35 455" strokeDashoffset="0" fill="none" opacity="0.3" />
-        </svg>
-
-        {/* Logo — shown immediately, no delay */}
+        {/* Logo with zoom animations */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/logo.png"
           alt=""
-          width={140}
-          height={140}
+          width={280}
+          height={280}
           // @ts-ignore
           fetchpriority="high"
           style={{
@@ -61,15 +29,25 @@ function Loader({ opacity }: { opacity: number }) {
             objectFit: "contain",
             display: "block",
             filter: "drop-shadow(0 0 16px rgba(255,100,0,0.5)) drop-shadow(0 0 40px rgba(255,200,0,0.2))",
-            animation: "np-pulse 2.2s ease-in-out infinite",
+            animation: "np-zoom 2.4s ease-in-out infinite",
+            width: "clamp(140px, 100vw, 280px)",
+            height: "auto",
           }}
         />
       </div>
 
       <style>{`
-        @keyframes np-spin   { to { transform: rotate(360deg); } }
-        @keyframes np-spin-r { to { transform: rotate(-360deg); } }
-        @keyframes np-pulse  { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes np-zoom {
+          0% { transform: scale(0.6); opacity: 0.8; }
+          50% { transform: scale(1.1); opacity: 1; }
+          100% { transform: scale(0.6); opacity: 0.8; }
+        }
+        @media (max-width: 640px) {
+          img {
+            width: 280px !important;
+            height: 280px !important;
+          }
+        }
       `}</style>
     </div>
   );
