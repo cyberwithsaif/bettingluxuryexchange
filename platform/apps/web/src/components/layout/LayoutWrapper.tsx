@@ -57,9 +57,9 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* ── Main column ──────────────────────────────────── */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <TopBar />
-          <main className="flex-1 pb-16 md:pb-0 overflow-x-hidden">{children}</main>
+          <main className="flex-1 pb-16 md:pb-0">{children}</main>
           <div className="hidden md:block">
             <Footer />
           </div>
