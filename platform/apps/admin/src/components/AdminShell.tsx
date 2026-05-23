@@ -136,7 +136,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               "w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
               isLoggingOut
                 ? "opacity-50 cursor-not-allowed text-slate-400"
-                : "text-red-400 hover:bg-red-500/10 hover:text-red-300",
+                : "text-red-400 hover:bg-red-900/200/10 hover:text-red-300",
             )}
           >
             <LogOut size={14} />

@@ -9,9 +9,9 @@ export default function RiskPage() {
         <h1 className="text-2xl font-black text-gray-100">Live Risk</h1>
         <p className="text-sm text-gray-500 mt-0.5">Top users by current exposure. Auto-refreshes from real-time wallet stream.</p>
       </div>
-      <div className="rounded-xl border border-yellow-100 bg-gray-800 overflow-x-auto shadow-sm">
+      <div className="rounded-xl border border-yellow-500/20 bg-gray-800 overflow-x-auto shadow-sm">
         <table className="w-full text-sm">
-          <thead className="bg-gray-800/80 border-b border-yellow-100">
+          <thead className="bg-gray-800/80 border-b border-yellow-500/20">
             <tr>
               <Th>User</Th><Th>Role</Th><Th>Balance</Th><Th>Exposure</Th><Th>Available</Th>
             </tr>
@@ -31,16 +31,16 @@ export default function RiskPage() {
               </tr>
             )}
             {(data as any[] ?? []).map((w: any) => (
-              <tr key={w.id} className="border-t border-gray-100 hover:bg-gray-800/30 transition">
+              <tr key={w.id} className="border-t border-gray-700 hover:bg-gray-800/30 transition">
                 <Td className="font-semibold text-gray-200">{w.user.username}</Td>
                 <Td className="text-xs">
-                  <span className="px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-semibold uppercase">
+                  <span className="px-1.5 py-0.5 rounded-full bg-blue-900/20 text-blue-300 border border-blue-200 text-[10px] font-semibold uppercase">
                     {w.user.role}
                   </span>
                 </Td>
                 <Td className="tabular-nums text-gray-300">₹{Number(w.balance).toLocaleString("en-IN")}</Td>
-                <Td className="tabular-nums text-red-600 font-semibold">₹{Number(w.exposure).toLocaleString("en-IN")}</Td>
-                <Td className="tabular-nums text-emerald-600 font-semibold">₹{(Number(w.balance) - Number(w.exposure)).toLocaleString("en-IN")}</Td>
+                <Td className="tabular-nums text-red-400 font-semibold">₹{Number(w.exposure).toLocaleString("en-IN")}</Td>
+                <Td className="tabular-nums text-emerald-400 font-semibold">₹{(Number(w.balance) - Number(w.exposure)).toLocaleString("en-IN")}</Td>
               </tr>
             ))}
           </tbody>

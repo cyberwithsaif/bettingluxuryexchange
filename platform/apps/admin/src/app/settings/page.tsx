@@ -75,7 +75,7 @@ export default function SettingsPage() {
 
       {msg && (
         <div className={`text-sm px-4 py-2.5 rounded-lg border font-medium ${
-          msg.ok ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-600"
+          msg.ok ? "bg-emerald-50 border-emerald-200 text-emerald-300" : "bg-red-900/20 border-red-200 text-red-400"
         }`}>
           {msg.text}
         </div>
@@ -112,7 +112,7 @@ export default function SettingsPage() {
             ["depositEnabled",      "âœ… Deposits"],
             ["withdrawalEnabled",   "âœ… Withdrawals"],
           ] as [keyof PlatformSettings, string][]).map(([key, label]) => (
-            <label key={key} className="flex items-center justify-between rounded-lg border border-yellow-100 bg-gray-800/50 px-4 py-3 cursor-pointer hover:border-yellow-300 hover:bg-gray-800 transition">
+            <label key={key} className="flex items-center justify-between rounded-lg border border-yellow-500/20 bg-gray-800/50 px-4 py-3 cursor-pointer hover:border-yellow-400 hover:bg-gray-800 transition">
               <span className="text-sm text-gray-300">{label}</span>
               <input type="checkbox" className="w-4 h-4 accent-yellow-500"
                 checked={!!(current?.[key])}
@@ -124,7 +124,7 @@ export default function SettingsPage() {
 
       {/* Navigation Bar */}
       <Link href="/settings/nav">
-        <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 hover:border-yellow-300 hover:shadow-sm transition cursor-pointer group shadow-sm">
+        <section className="rounded-xl border border-yellow-500/20 bg-gray-800 p-5 hover:border-yellow-400 hover:shadow-sm transition cursor-pointer group shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-black text-gray-200 flex items-center gap-2">
               <Navigation size={18} className="text-yellow-500" /> Navigation Bar
@@ -137,7 +137,7 @@ export default function SettingsPage() {
 
       {/* Payment Methods */}
       <Link href="/settings/payment-methods">
-        <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 hover:border-yellow-300 hover:shadow-sm transition cursor-pointer group shadow-sm">
+        <section className="rounded-xl border border-yellow-500/20 bg-gray-800 p-5 hover:border-yellow-400 hover:shadow-sm transition cursor-pointer group shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-black text-gray-200 flex items-center gap-2">
               <CreditCard size={18} className="text-yellow-500" /> Payment Methods
@@ -160,7 +160,7 @@ export default function SettingsPage() {
       {/* Cricket Sync */}
       <Section title="Data Sync" Icon={Database}>
         <p className="text-sm text-gray-500 mb-3">
-          Sync live cricket series from the Cricket API (requires an API key set under <span className="text-yellow-600 font-semibold">API Keys → Cricket API</span>).
+          Sync live cricket series from the Cricket API (requires an API key set under <span className="text-yellow-400 font-semibold">API Keys → Cricket API</span>).
         </p>
         <button
           onClick={syncCricket}
@@ -186,7 +186,7 @@ export default function SettingsPage() {
 
 function Section({ title, Icon, children }: { title: string; Icon: React.ElementType; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 shadow-sm">
+    <section className="rounded-xl border border-yellow-500/20 bg-gray-800 p-5 shadow-sm">
       <h2 className="text-base font-black text-gray-200 flex items-center gap-2 mb-4">
         <Icon size={18} className="text-yellow-500" /> {title}
       </h2>

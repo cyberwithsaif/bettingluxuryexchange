@@ -37,33 +37,33 @@ export default function MarketsAdmin() {
       </div>
 
       {(!matches || (matches as any[]).length === 0) && (
-        <div className="rounded-xl border border-yellow-100 bg-gray-800 p-10 text-center text-gray-500 shadow-sm">
+        <div className="rounded-xl border border-yellow-500/20 bg-gray-800 p-10 text-center text-gray-500 shadow-sm">
           <p className="font-medium">No live matches</p>
           <p className="text-xs mt-1 text-gray-400">No {sport} matches available right now.</p>
         </div>
       )}
 
       {(matches as any[] ?? []).map((m: any) => (
-        <div key={m.id} className="rounded-xl border border-yellow-100 bg-gray-800 p-4 shadow-sm">
+        <div key={m.id} className="rounded-xl border border-yellow-500/20 bg-gray-800 p-4 shadow-sm">
           <h3 className="font-bold text-gray-200">
             {m.name}
             <span className="text-xs text-gray-500 ml-2">{new Date(m.startTime).toLocaleString("en-IN")}</span>
           </h3>
           {(m.markets ?? []).map((mk: any) => (
-            <div key={mk.id} className="mt-3 rounded-lg border border-gray-100 p-3 bg-gray-800">
+            <div key={mk.id} className="mt-3 rounded-lg border border-gray-700 p-3 bg-gray-800">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-gray-200">
                   {mk.name}
                   <span className={`text-xs ml-2 px-1.5 py-0.5 rounded-full border font-semibold ${
-                    mk.status === "OPEN" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-gray-800 text-yellow-700 border-yellow-200"
+                    mk.status === "OPEN" ? "bg-emerald-50 text-emerald-300 border-emerald-200" : "bg-gray-800 text-yellow-300 border-yellow-200"
                   }`}>{mk.status}</span>
                 </span>
                 <div className="flex gap-1">
                   {mk.status === "OPEN"
-                    ? <button onClick={() => setStatus(mk.id, "SUSPENDED")} className="text-xs px-2 py-1 rounded-lg border border-yellow-200 text-yellow-700 bg-gray-800 hover:bg-yellow-100 font-medium transition">Suspend</button>
-                    : <button onClick={() => setStatus(mk.id, "OPEN")} className="text-xs px-2 py-1 rounded-lg border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 font-medium transition">Resume</button>
+                    ? <button onClick={() => setStatus(mk.id, "SUSPENDED")} className="text-xs px-2 py-1 rounded-lg border border-yellow-200 text-yellow-300 bg-gray-800 hover:bg-yellow-100 font-medium transition">Suspend</button>
+                    : <button onClick={() => setStatus(mk.id, "OPEN")} className="text-xs px-2 py-1 rounded-lg border border-emerald-200 text-emerald-300 bg-emerald-50 hover:bg-emerald-100 font-medium transition">Resume</button>
                   }
-                  <button onClick={() => settle(mk.id, undefined, true)} className="text-xs px-2 py-1 rounded-lg border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 font-medium transition">Void</button>
+                  <button onClick={() => settle(mk.id, undefined, true)} className="text-xs px-2 py-1 rounded-lg border border-red-200 text-red-400 bg-red-900/20 hover:bg-red-100 font-medium transition">Void</button>
                 </div>
               </div>
 
@@ -109,7 +109,7 @@ function RunnerRow({ marketId, runner, onOdds, onSettleWinner }: {
       >Set</button>
       <button
         onClick={() => onSettleWinner(runner.id)}
-        className="col-span-2 text-xs px-2 py-1 rounded-lg border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 font-medium transition"
+        className="col-span-2 text-xs px-2 py-1 rounded-lg border border-emerald-200 text-emerald-300 bg-emerald-50 hover:bg-emerald-100 font-medium transition"
       >Settle as winner</button>
     </div>
   );

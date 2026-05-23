@@ -20,11 +20,11 @@ interface Bet {
 }
 
 const STATUS_STYLE: Record<BetStatus, string> = {
-  OPEN:         "bg-blue-50    text-blue-700   border-blue-200",
-  MATCHED:      "bg-blue-50    text-blue-700   border-blue-200",
-  SETTLED_WON:  "bg-emerald-50 text-emerald-700 border-emerald-200",
-  SETTLED_LOST: "bg-red-50     text-red-600    border-red-200",
-  VOID:         "bg-gray-800  text-yellow-700 border-yellow-200",
+  OPEN:         "bg-blue-900/20    text-blue-300   border-blue-200",
+  MATCHED:      "bg-blue-900/20    text-blue-300   border-blue-200",
+  SETTLED_WON:  "bg-emerald-50 text-emerald-300 border-emerald-200",
+  SETTLED_LOST: "bg-red-900/20     text-red-400    border-red-200",
+  VOID:         "bg-gray-800  text-yellow-300 border-yellow-200",
   CANCELLED:    "bg-gray-700   text-gray-500   border-gray-700",
 };
 
@@ -86,10 +86,10 @@ export default function AdminBetsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-yellow-100 bg-gray-800 overflow-x-auto shadow-sm">
+      <div className="rounded-xl border border-yellow-500/20 bg-gray-800 overflow-x-auto shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-800/80 border-b border-yellow-100">
+            <tr className="bg-gray-800/80 border-b border-yellow-500/20">
               <Th>Bet ID</Th>
               <Th>User</Th>
               <Th>Market</Th>
@@ -118,7 +118,7 @@ export default function AdminBetsPage() {
               </tr>
             )}
             {(bets ?? []).map((bet) => (
-              <tr key={bet.id} className="border-t border-gray-100 hover:bg-gray-800/30 transition">
+              <tr key={bet.id} className="border-t border-gray-700 hover:bg-gray-800/30 transition">
                 <Td className="font-mono text-xs text-gray-500">{bet.id.slice(0, 8)}</Td>
                 <Td className="font-semibold text-gray-200">{bet.user.username}</Td>
                 <Td className="text-xs text-gray-400 max-w-[140px] truncate">{bet.market.name}</Td>
@@ -126,14 +126,14 @@ export default function AdminBetsPage() {
                 <Td>
                   <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-black border",
                     bet.side === "BACK"
-                      ? "bg-blue-50 text-blue-700 border-blue-200"
-                      : "bg-orange-50 text-orange-600 border-orange-200")}>
+                      ? "bg-blue-900/20 text-blue-300 border-blue-200"
+                      : "bg-orange-900/30 text-orange-400 border-orange-700")}>
                     {bet.side}
                   </span>
                 </Td>
                 <Td className="tabular-nums text-gray-300 font-semibold">{Number(bet.odds).toFixed(2)}</Td>
                 <Td className="tabular-nums text-gray-200 font-semibold">₹{Number(bet.stake).toLocaleString("en-IN")}</Td>
-                <Td className={cn("tabular-nums font-semibold", Number(bet.potentialProfit) >= 0 ? "text-emerald-600" : "text-red-500")}>
+                <Td className={cn("tabular-nums font-semibold", Number(bet.potentialProfit) >= 0 ? "text-emerald-400" : "text-red-500")}>
                   ₹{Number(bet.potentialProfit).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                 </Td>
                 <Td>
@@ -148,11 +148,11 @@ export default function AdminBetsPage() {
                   {bet.status === "OPEN" && (
                     <div className="flex gap-1">
                       <button onClick={() => handleAction(bet.id, "void")}
-                        className="text-xs px-2 py-1 rounded-lg border border-yellow-200 text-yellow-700 bg-gray-800 hover:bg-yellow-100 font-medium transition">
+                        className="text-xs px-2 py-1 rounded-lg border border-yellow-200 text-yellow-300 bg-gray-800 hover:bg-yellow-100 font-medium transition">
                         Void
                       </button>
                       <button onClick={() => handleAction(bet.id, "cancel")}
-                        className="text-xs px-2 py-1 rounded-lg border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 font-medium transition">
+                        className="text-xs px-2 py-1 rounded-lg border border-red-200 text-red-400 bg-red-900/20 hover:bg-red-100 font-medium transition">
                         Cancel
                       </button>
                     </div>

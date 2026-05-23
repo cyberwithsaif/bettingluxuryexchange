@@ -69,7 +69,7 @@ export default function AdminReportsPage() {
       </div>
 
       {/* Volume chart */}
-      <div className="rounded-xl bg-gray-800 border border-yellow-100 p-5 shadow-sm">
+      <div className="rounded-xl bg-gray-800 border border-yellow-500/20 p-5 shadow-sm">
         <h2 className="text-lg font-black text-gray-100 mb-1">Daily Bet Volume</h2>
         <p className="text-xs text-gray-500 mb-4">Last {days} day{days > 1 ? "s" : ""}</p>
         {isLoading && <div className="h-32 animate-pulse bg-gray-700 rounded-lg" />}
@@ -98,7 +98,7 @@ export default function AdminReportsPage() {
       </div>
 
       {/* P/L Chart */}
-      <div className="rounded-xl bg-gray-800 border border-yellow-100 p-5 shadow-sm">
+      <div className="rounded-xl bg-gray-800 border border-yellow-500/20 p-5 shadow-sm">
         <h2 className="text-lg font-black text-gray-100 mb-1">Daily Operator P/L</h2>
         <p className="text-xs text-gray-500 mb-4">Positive = operator profit</p>
         {isLoading && <div className="h-32 animate-pulse bg-gray-700 rounded-lg" />}
@@ -113,7 +113,7 @@ export default function AdminReportsPage() {
                 <div key={s.date} className="flex flex-col items-center gap-1 shrink-0 flex-1 min-w-[24px] group">
                   <div
                     style={{ height: `${h}%` }}
-                    className={`w-full rounded-t transition cursor-pointer ${s.pl >= 0 ? "bg-emerald-400 hover:bg-emerald-500" : "bg-red-400 hover:bg-red-500"}`}
+                    className={`w-full rounded-t transition cursor-pointer ${s.pl >= 0 ? "bg-emerald-400 hover:bg-emerald-500" : "bg-red-400 hover:bg-red-900/200"}`}
                     title={`${s.date}: ₹${fmt(s.pl)}`}
                   />
                   {data.series.length <= 14 && (
@@ -128,9 +128,9 @@ export default function AdminReportsPage() {
 
       {/* Tabular breakdown */}
       {data && data.series.length > 0 && (
-        <div className="rounded-xl border border-yellow-100 bg-gray-800 overflow-x-auto shadow-sm">
+        <div className="rounded-xl border border-yellow-500/20 bg-gray-800 overflow-x-auto shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-gray-800/80 border-b border-yellow-100">
+            <thead className="bg-gray-800/80 border-b border-yellow-500/20">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Date</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Volume</th>
@@ -139,10 +139,10 @@ export default function AdminReportsPage() {
             </thead>
             <tbody>
               {[...data.series].reverse().map((s) => (
-                <tr key={s.date} className="border-t border-gray-100 hover:bg-gray-800/30 transition">
+                <tr key={s.date} className="border-t border-gray-700 hover:bg-gray-800/30 transition">
                   <td className="px-4 py-2.5 text-gray-400">{s.date}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums text-gray-300 font-semibold">₹{fmt(s.volume)}</td>
-                  <td className={`px-4 py-2.5 text-right tabular-nums font-bold ${s.pl >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                  <td className={`px-4 py-2.5 text-right tabular-nums font-bold ${s.pl >= 0 ? "text-emerald-400" : "text-red-500"}`}>
                     {s.pl >= 0 ? "+" : ""}₹{fmt(s.pl)}
                   </td>
                 </tr>
@@ -159,11 +159,11 @@ function KPI({ label, value, Icon, tone }: {
   label: string; value: string; Icon: React.ElementType; tone?: "ok" | "bad";
 }) {
   return (
-    <div className="rounded-xl bg-gray-800 border border-yellow-100 p-4 shadow-sm flex items-start gap-3">
+    <div className="rounded-xl bg-gray-800 border border-yellow-500/20 p-4 shadow-sm flex items-start gap-3">
       <div className={`mt-0.5 p-2 rounded-lg ${
-        tone === "ok"  ? "bg-emerald-50 text-emerald-600" :
-        tone === "bad" ? "bg-red-50 text-red-500" :
-                         "bg-gray-800 text-yellow-600"
+        tone === "ok"  ? "bg-emerald-50 text-emerald-400" :
+        tone === "bad" ? "bg-red-900/20 text-red-500" :
+                         "bg-gray-800 text-yellow-400"
       }`}>
         <Icon size={16} />
       </div>

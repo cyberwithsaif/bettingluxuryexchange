@@ -53,11 +53,11 @@ const fmtShort = (d: string | null) =>
   d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 const STATUS_STYLE: Record<string, string> = {
-  ACTIVE:    "bg-emerald-50 text-emerald-700 border-emerald-200",
-  SUSPENDED: "bg-gray-800  text-yellow-700  border-yellow-200",
-  LOCKED:    "bg-red-50     text-red-600     border-red-200",
+  ACTIVE:    "bg-emerald-50 text-emerald-300 border-emerald-200",
+  SUSPENDED: "bg-gray-800  text-yellow-300  border-yellow-200",
+  LOCKED:    "bg-red-900/20     text-red-400     border-red-200",
   CLOSED:    "bg-gray-700   text-gray-500    border-gray-700",
-  BANNED:    "bg-red-100    text-red-700     border-red-300",
+  BANNED:    "bg-red-100    text-red-300     border-red-300",
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -70,7 +70,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function RoleBadge({ role }: { role: string }) {
   return (
-    <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-blue-50 text-blue-700 border border-blue-200">
+    <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-blue-900/20 text-blue-300 border border-blue-200">
       {role}
     </span>
   );
@@ -82,7 +82,7 @@ function NA({ label }: { label?: string }) {
 
 function SectionCard({ title, icon: Icon, children, badge }: { title: string; icon: any; children: React.ReactNode; badge?: string }) {
   return (
-    <div className="bg-gray-800 rounded-xl border border-yellow-100 p-5 space-y-4 shadow-sm">
+    <div className="bg-gray-800 rounded-xl border border-yellow-500/20 p-5 space-y-4 shadow-sm">
       <div className="flex items-center gap-2">
         <Icon size={15} className="text-yellow-500" />
         <h3 className="font-bold text-sm uppercase tracking-wider text-gray-500">{title}</h3>
@@ -95,7 +95,7 @@ function SectionCard({ title, icon: Icon, children, badge }: { title: string; ic
 
 function DataRow({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-1.5 border-b border-gray-100 last:border-0">
+    <div className="flex items-start justify-between gap-4 py-1.5 border-b border-gray-700 last:border-0">
       <span className="text-xs text-gray-400 shrink-0">{label}</span>
       <span className={cn("text-sm font-medium text-gray-200 text-right", mono && "font-mono tabular-nums")}>{value}</span>
     </div>
@@ -104,7 +104,7 @@ function DataRow({ label, value, mono }: { label: string; value: React.ReactNode
 
 function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
-    <div className="bg-gray-800 rounded-xl p-3.5 border border-gray-100">
+    <div className="bg-gray-800 rounded-xl p-3.5 border border-gray-700">
       <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">{label}</p>
       <p className={cn("font-black text-lg tabular-nums", color ?? "text-gray-200")}>{value}</p>
       {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
@@ -228,10 +228,10 @@ export default function UserProfilePage() {
       </button>
 
       {/* ── Profile Header ── */}
-      <div className="bg-gray-800 rounded-xl border border-yellow-100 p-5 shadow-sm">
+      <div className="bg-gray-800 rounded-xl border border-yellow-500/20 p-5 shadow-sm">
         <div className="flex flex-wrap items-start gap-4">
           <div className="w-16 h-16 rounded-2xl bg-yellow-100 border-2 border-yellow-300 flex items-center justify-center shrink-0">
-            <span className="font-black text-2xl text-yellow-600">{avatarLetter}</span>
+            <span className="font-black text-2xl text-yellow-400">{avatarLetter}</span>
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -239,7 +239,7 @@ export default function UserProfilePage() {
               <StatusBadge status={user.status} />
               <RoleBadge role={user.role} />
               {user.twoFactorEnabled && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 flex items-center gap-1 font-bold">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-900/20 text-blue-400 border border-blue-200 flex items-center gap-1 font-bold">
                   <Shield size={10} /> 2FA
                 </span>
               )}
@@ -254,7 +254,7 @@ export default function UserProfilePage() {
           <div className="flex gap-4 shrink-0">
             <div className="text-right">
               <p className="text-[10px] text-gray-400 uppercase tracking-wider">Balance</p>
-              <p className="font-black text-xl text-emerald-600">{fmt(wallet.balance)}</p>
+              <p className="font-black text-xl text-emerald-400">{fmt(wallet.balance)}</p>
             </div>
             <div className="text-right">
               <p className="text-[10px] text-gray-400 uppercase tracking-wider">Exposure</p>
@@ -270,7 +270,7 @@ export default function UserProfilePage() {
           <button key={t} onClick={() => setTab(t)}
             className={cn(
               "px-4 py-2 text-sm font-semibold rounded-t-lg transition border-b-2",
-              tab === t ? "text-yellow-700 border-yellow-400 bg-gray-800" : "text-gray-400 border-transparent hover:text-gray-400"
+              tab === t ? "text-yellow-300 border-yellow-400 bg-gray-800" : "text-gray-400 border-transparent hover:text-gray-400"
             )}>{t}</button>
         ))}
       </div>
@@ -297,17 +297,17 @@ export default function UserProfilePage() {
             <div className="pt-3 grid grid-cols-2 gap-2">
               {user.status !== "ACTIVE" ? (
                 <button onClick={() => handleStatusChange("ACTIVE")} disabled={saving}
-                  className="flex items-center justify-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-bold py-2 rounded-lg transition disabled:opacity-50">
+                  className="flex items-center justify-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-300 text-xs font-bold py-2 rounded-lg transition disabled:opacity-50">
                   <UserCheck size={12} /> Activate
                 </button>
               ) : (
                 <button onClick={() => handleStatusChange("SUSPENDED")} disabled={saving}
-                  className="flex items-center justify-center gap-1.5 bg-gray-800 hover:bg-yellow-100 border border-yellow-200 text-yellow-700 text-xs font-bold py-2 rounded-lg transition disabled:opacity-50">
+                  className="flex items-center justify-center gap-1.5 bg-gray-800 hover:bg-yellow-100 border border-yellow-200 text-yellow-300 text-xs font-bold py-2 rounded-lg transition disabled:opacity-50">
                   <UserX size={12} /> Suspend
                 </button>
               )}
               <button onClick={() => handleStatusChange("LOCKED")} disabled={saving}
-                className="flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 text-xs font-bold py-2 rounded-lg transition disabled:opacity-50">
+                className="flex items-center justify-center gap-1.5 bg-red-900/20 hover:bg-red-100 border border-red-200 text-red-400 text-xs font-bold py-2 rounded-lg transition disabled:opacity-50">
                 <Lock size={12} /> Lock Account
               </button>
             </div>
@@ -322,7 +322,7 @@ export default function UserProfilePage() {
               <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Recent Sessions</p>
               {recentLogins.length === 0 && <p className="text-xs text-gray-300">No session data</p>}
               {recentLogins.map((l, i) => (
-                <div key={i} className="text-xs bg-gray-800 rounded-lg p-2 border border-gray-100">
+                <div key={i} className="text-xs bg-gray-800 rounded-lg p-2 border border-gray-700">
                   <p className="font-mono text-gray-400">{l.ip ?? "—"}</p>
                   <p className="text-gray-400 mt-0.5 truncate">{l.userAgent ?? "Unknown browser"}</p>
                   <p className="text-gray-300 text-[10px] mt-0.5">{fmtDate(l.createdAt)}</p>
@@ -346,15 +346,15 @@ export default function UserProfilePage() {
         <div className="space-y-5">
           <SectionCard title="Wallet Details" icon={Wallet}>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              <StatCard label="Main Balance"     value={fmt(wallet.balance)}              color="text-emerald-600" />
+              <StatCard label="Main Balance"     value={fmt(wallet.balance)}              color="text-emerald-400" />
               <StatCard label="Exposure"          value={fmt(wallet.exposure)}             color="text-red-500" />
-              <StatCard label="Bonus Balance"     value={fmt(wallet.bonus)}               color="text-yellow-600" />
-              <StatCard label="Total Deposits"    value={fmt(financials.totalDeposits)}   color="text-emerald-600" />
+              <StatCard label="Bonus Balance"     value={fmt(wallet.bonus)}               color="text-yellow-400" />
+              <StatCard label="Total Deposits"    value={fmt(financials.totalDeposits)}   color="text-emerald-400" />
               <StatCard label="Total Withdrawals" value={fmt(financials.totalWithdrawals)} color="text-red-500" />
-              <StatCard label="Admin Credits"     value={fmt(financials.adminCredits)}    color="text-blue-600" />
-              <StatCard label="Total Winnings"    value={fmt(totalWinnings)}              color="text-emerald-600" />
+              <StatCard label="Admin Credits"     value={fmt(financials.adminCredits)}    color="text-blue-400" />
+              <StatCard label="Total Winnings"    value={fmt(totalWinnings)}              color="text-emerald-400" />
               <StatCard label="Total Losses"      value={fmt(totalLosses)}                color="text-red-500" />
-              <StatCard label="Net P&L"           value={fmt(netPL)}                      color={netPL >= 0 ? "text-emerald-600" : "text-red-500"} />
+              <StatCard label="Net P&L"           value={fmt(netPL)}                      color={netPL >= 0 ? "text-emerald-400" : "text-red-500"} />
             </div>
           </SectionCard>
 
@@ -375,7 +375,7 @@ export default function UserProfilePage() {
                     </button>
                     <button type="button" onClick={() => setAdjustMode("debit")}
                       className={cn("flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-sm transition",
-                        !isCredit ? "bg-red-500 text-white shadow-md" : "text-gray-400 hover:text-gray-300")}>
+                        !isCredit ? "bg-red-900/200 text-white shadow-md" : "text-gray-400 hover:text-gray-300")}>
                       <span className="text-lg leading-none">−</span> Debit (Remove)
                     </button>
                   </div>
@@ -393,26 +393,26 @@ export default function UserProfilePage() {
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {QUICK.map(v => (
                           <button key={v} type="button" onClick={() => { setAdjustAmt(String(v)); setAdjustStatus(null); }}
-                            className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-gray-800 border border-yellow-200 text-gray-400 hover:bg-gray-800 hover:border-yellow-400 hover:text-yellow-700 transition">
+                            className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-gray-800 border border-yellow-200 text-gray-400 hover:bg-gray-800 hover:border-yellow-400 hover:text-yellow-300 transition">
                             +{v >= 1000 ? `${v/1000}K` : v}
                           </button>
                         ))}
                       </div>
                     </div>
-                    <div className="bg-gray-800 border border-gray-100 rounded-xl p-4 space-y-2">
+                    <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 space-y-2">
                       <div className="flex justify-between">
                         <span className="text-[11px] uppercase tracking-wider text-gray-400">Current Balance</span>
                         <span className="font-black text-sm tabular-nums text-gray-300">{fmt(wallet.balance)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-[11px] uppercase tracking-wider text-gray-400">Adjustment</span>
-                        <span className={cn("font-black text-sm tabular-nums", isCredit ? "text-emerald-600" : "text-red-500")}>
+                        <span className={cn("font-black text-sm tabular-nums", isCredit ? "text-emerald-400" : "text-red-500")}>
                           {amt > 0 ? `${isCredit ? "+" : "−"}${fmt(amt)}` : "—"}
                         </span>
                       </div>
                       <div className="border-t border-gray-700 pt-2 flex justify-between">
                         <span className="text-[11px] uppercase tracking-wider text-gray-400 font-bold">New Balance</span>
-                        <span className={cn("font-black text-xl tabular-nums", projected >= 0 ? "text-emerald-600" : "text-red-500")}>
+                        <span className={cn("font-black text-xl tabular-nums", projected >= 0 ? "text-emerald-400" : "text-red-500")}>
                           {fmt(projected)}
                         </span>
                       </div>
@@ -428,7 +428,7 @@ export default function UserProfilePage() {
 
                   {adjustStatus && (
                     <div className={cn("rounded-lg px-3 py-2 text-sm flex items-center gap-2 border",
-                      adjustStatus.kind === "ok" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-600")}>
+                      adjustStatus.kind === "ok" ? "bg-emerald-50 border-emerald-200 text-emerald-300" : "bg-red-900/20 border-red-200 text-red-400")}>
                       {adjustStatus.kind === "ok" ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
                       {adjustStatus.msg}
                     </div>
@@ -436,7 +436,7 @@ export default function UserProfilePage() {
 
                   <button type="button" onClick={handleAdjust} disabled={adjusting || !amt}
                     className={cn("w-full py-3 rounded-lg font-bold text-sm tracking-wide transition disabled:opacity-40 disabled:cursor-not-allowed",
-                      isCredit ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-red-500 hover:bg-red-600 text-white")}>
+                      isCredit ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-red-900/200 hover:bg-red-600 text-white")}>
                     {adjusting ? "Processing…" : amt > 0 ? `${isCredit ? "Credit" : "Debit"} ₹${amt.toLocaleString("en-IN")}` : `${isCredit ? "Credit" : "Debit"} Account`}
                   </button>
                 </div>
@@ -451,7 +451,7 @@ export default function UserProfilePage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-gray-100">
+                    <tr className="border-b border-gray-700">
                       <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Type</th>
                       <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Method</th>
                       <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Amount</th>
@@ -464,14 +464,14 @@ export default function UserProfilePage() {
                       <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-800 transition">
                         <td className="py-2 px-2 font-semibold text-gray-300">{t.kind}</td>
                         <td className="py-2 px-2 text-gray-500">{t.method}</td>
-                        <td className={cn("py-2 px-2 tabular-nums text-right font-bold", t.kind === "DEPOSIT" ? "text-emerald-600" : "text-red-500")}>
+                        <td className={cn("py-2 px-2 tabular-nums text-right font-bold", t.kind === "DEPOSIT" ? "text-emerald-400" : "text-red-500")}>
                           {t.kind === "WITHDRAWAL" ? "-" : "+"}{fmt(Number(t.amount))}
                         </td>
                         <td className="py-2 px-2">
                           <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold",
-                            t.status === "APPROVED" || t.status === "COMPLETED" ? "bg-emerald-50 text-emerald-700" :
-                            t.status === "REJECTED" || t.status === "FAILED"   ? "bg-red-50 text-red-600" :
-                            "bg-gray-800 text-yellow-700")}>{t.status}</span>
+                            t.status === "APPROVED" || t.status === "COMPLETED" ? "bg-emerald-50 text-emerald-300" :
+                            t.status === "REJECTED" || t.status === "FAILED"   ? "bg-red-900/20 text-red-400" :
+                            "bg-gray-800 text-yellow-300")}>{t.status}</span>
                         </td>
                         <td className="py-2 px-2 text-gray-400">{fmtShort(t.createdAt)}</td>
                       </tr>
@@ -504,12 +504,12 @@ export default function UserProfilePage() {
           <SectionCard title="Betting Statistics" icon={BarChart3}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <StatCard label="Total Bets"   value={bettingStats.total} />
-              <StatCard label="Won"          value={bettingStats.won}        color="text-emerald-600" />
+              <StatCard label="Won"          value={bettingStats.won}        color="text-emerald-400" />
               <StatCard label="Lost"         value={bettingStats.lost}       color="text-red-500" />
-              <StatCard label="Open"         value={bettingStats.open}       color="text-yellow-600" />
-              <StatCard label="Win Rate"     value={`${bettingStats.winRate}%`} color="text-blue-600" />
+              <StatCard label="Open"         value={bettingStats.open}       color="text-yellow-400" />
+              <StatCard label="Win Rate"     value={`${bettingStats.winRate}%`} color="text-blue-400" />
               <StatCard label="Total Stake"  value={fmt(bettingStats.totalStake)} />
-              <StatCard label="Total Wins"   value={fmt(financials.betWins)}   color="text-emerald-600" />
+              <StatCard label="Total Wins"   value={fmt(financials.betWins)}   color="text-emerald-400" />
               <StatCard label="Total Losses" value={fmt(financials.betLosses)}  color="text-red-500" />
             </div>
           </SectionCard>
@@ -523,10 +523,10 @@ export default function UserProfilePage() {
                   <StatCard label="Max Market Exp." value={fmt(limits.maxMarketExposure)} />
                   <StatCard label="Max Daily Loss"  value={fmt(limits.maxDailyLoss)} />
                   <StatCard label="Bet Delay"       value={`${limits.betDelayMs}ms`} />
-                  <StatCard label="Fancy Bets"      value={limits.fancyEnabled ? "Enabled" : "Disabled"} color={limits.fancyEnabled ? "text-emerald-600" : "text-red-500"} />
+                  <StatCard label="Fancy Bets"      value={limits.fancyEnabled ? "Enabled" : "Disabled"} color={limits.fancyEnabled ? "text-emerald-400" : "text-red-500"} />
                 </div>
                 <div className="flex gap-3 text-xs font-semibold">
-                  <span className={cn("px-3 py-1.5 rounded-lg border", limits.casinoEnabled ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-red-50 text-red-600 border-red-200")}>
+                  <span className={cn("px-3 py-1.5 rounded-lg border", limits.casinoEnabled ? "bg-emerald-50 text-emerald-300 border-emerald-200" : "bg-red-900/20 text-red-400 border-red-200")}>
                     Casino: {limits.casinoEnabled ? "Enabled" : "Disabled"}
                   </span>
                 </div>
@@ -546,7 +546,7 @@ export default function UserProfilePage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-gray-100">
+                    <tr className="border-b border-gray-700">
                       <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Market</th>
                       <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Runner</th>
                       <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Side</th>
@@ -562,14 +562,14 @@ export default function UserProfilePage() {
                         <td className="py-2 px-2 text-gray-500">{b.runner?.name ?? "—"}</td>
                         <td className="py-2 px-2">
                           <span className={cn("font-black text-xs px-2 py-0.5 rounded",
-                            b.side === "BACK" ? "bg-blue-50 text-blue-700" : "bg-orange-50 text-orange-600")}>{b.side}</span>
+                            b.side === "BACK" ? "bg-blue-900/20 text-blue-300" : "bg-orange-900/30 text-orange-400")}>{b.side}</span>
                         </td>
                         <td className="py-2 px-2 tabular-nums text-right text-gray-300 font-semibold">{fmt(Number(b.stake))}</td>
                         <td className="py-2 px-2">
                           <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold",
-                            b.status === "SETTLED_WON"  ? "bg-emerald-50 text-emerald-700" :
-                            b.status === "SETTLED_LOST" ? "bg-red-50 text-red-600" :
-                            "bg-gray-800 text-yellow-700")}>{b.status}</span>
+                            b.status === "SETTLED_WON"  ? "bg-emerald-50 text-emerald-300" :
+                            b.status === "SETTLED_LOST" ? "bg-red-900/20 text-red-400" :
+                            "bg-gray-800 text-yellow-300")}>{b.status}</span>
                         </td>
                         <td className="py-2 px-2 text-gray-400">{fmtShort(b.createdAt)}</td>
                       </tr>
@@ -588,14 +588,14 @@ export default function UserProfilePage() {
           <SectionCard title="Mines Game Statistics" icon={Bomb}>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               <StatCard label="Total Games"    value={casinoStats.totalGames} />
-              <StatCard label="Cashed Out"     value={casinoStats.won}    color="text-emerald-600" />
+              <StatCard label="Cashed Out"     value={casinoStats.won}    color="text-emerald-400" />
               <StatCard label="Busted"         value={casinoStats.busted} color="text-red-500" />
-              <StatCard label="Win Rate"       value={casinoStats.totalGames > 0 ? `${((casinoStats.won / casinoStats.totalGames) * 100).toFixed(1)}%` : "0%"} color="text-blue-600" />
+              <StatCard label="Win Rate"       value={casinoStats.totalGames > 0 ? `${((casinoStats.won / casinoStats.totalGames) * 100).toFixed(1)}%` : "0%"} color="text-blue-400" />
               <StatCard label="Total Bet"      value={fmt(casinoStats.totalBet)} />
-              <StatCard label="Total Payout"   value={fmt(casinoStats.totalPayout)} color="text-emerald-600" />
-              <StatCard label="Casino Win Vol" value={fmt(financials.casinoWins)}   color="text-emerald-600" />
+              <StatCard label="Total Payout"   value={fmt(casinoStats.totalPayout)} color="text-emerald-400" />
+              <StatCard label="Casino Win Vol" value={fmt(financials.casinoWins)}   color="text-emerald-400" />
               <StatCard label="Casino Bet Vol" value={fmt(financials.casinoBets)} />
-              <StatCard label="Net"            value={fmt(financials.casinoWins - financials.casinoBets)} color={financials.casinoWins >= financials.casinoBets ? "text-emerald-600" : "text-red-500"} />
+              <StatCard label="Net"            value={fmt(financials.casinoWins - financials.casinoBets)} color={financials.casinoWins >= financials.casinoBets ? "text-emerald-400" : "text-red-500"} />
             </div>
           </SectionCard>
 
@@ -633,7 +633,7 @@ export default function UserProfilePage() {
             <SectionCard title="Security Settings" icon={Shield}>
               <DataRow label="Two-Factor Auth"
                 value={user.twoFactorEnabled
-                  ? <span className="flex items-center gap-1 text-emerald-700 text-xs font-bold"><CheckCircle2 size={12} /> Enabled</span>
+                  ? <span className="flex items-center gap-1 text-emerald-300 text-xs font-bold"><CheckCircle2 size={12} /> Enabled</span>
                   : <span className="flex items-center gap-1 text-gray-400 text-xs"><XCircle size={12} /> Disabled</span>} />
               <DataRow label="Email Verification" value={<NA label="Not tracked" />} />
               <DataRow label="Mobile Verification" value={<NA label="Not tracked" />} />
@@ -662,7 +662,7 @@ export default function UserProfilePage() {
             ) : (
               <div className="space-y-2">
                 {recentLogins.map((l, i) => (
-                  <div key={i} className="flex items-start gap-3 bg-gray-800 rounded-lg p-3 border border-gray-100">
+                  <div key={i} className="flex items-start gap-3 bg-gray-800 rounded-lg p-3 border border-gray-700">
                     <Eye size={14} className="text-gray-300 mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-mono text-gray-300">{l.ip ?? "Unknown IP"}</p>
@@ -697,19 +697,19 @@ export default function UserProfilePage() {
             <SectionCard title="Admin Actions" icon={Settings}>
               <div className="grid grid-cols-2 gap-2">
                 <button onClick={() => handleStatusChange("ACTIVE")} disabled={saving || user.status === "ACTIVE"}
-                  className="flex items-center justify-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-30">
+                  className="flex items-center justify-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-300 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-30">
                   <UserCheck size={12} /> Activate
                 </button>
                 <button onClick={() => handleStatusChange("SUSPENDED")} disabled={saving}
-                  className="flex items-center justify-center gap-1.5 bg-gray-800 hover:bg-yellow-100 border border-yellow-200 text-yellow-700 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-50">
+                  className="flex items-center justify-center gap-1.5 bg-gray-800 hover:bg-yellow-100 border border-yellow-200 text-yellow-300 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-50">
                   <UserX size={12} /> Suspend
                 </button>
                 <button onClick={() => handleStatusChange("LOCKED")} disabled={saving}
-                  className="flex items-center justify-center gap-1.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-50">
+                  className="flex items-center justify-center gap-1.5 bg-red-900/20 hover:bg-red-100 border border-red-200 text-red-400 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-50">
                   <Lock size={12} /> Lock
                 </button>
                 <button onClick={() => handleStatusChange("CLOSED")} disabled={saving}
-                  className="flex items-center justify-center gap-1.5 bg-red-100 hover:bg-red-200 border border-red-300 text-red-700 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-50">
+                  className="flex items-center justify-center gap-1.5 bg-red-100 hover:bg-red-200 border border-red-300 text-red-300 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-50">
                   <Ban size={12} /> Ban
                 </button>
                 <button onClick={handleResetPwd}
@@ -752,11 +752,11 @@ export default function UserProfilePage() {
                     <StatCard label="Max Exposure"   value={fmt(limits.maxMarketExposure)} />
                     <StatCard label="Max Daily Loss" value={fmt(limits.maxDailyLoss)} />
                     <StatCard label="Bet Delay"      value={`${limits.betDelayMs}ms`} />
-                    <StatCard label="Casino"         value={limits.casinoEnabled ? "On" : "Off"} color={limits.casinoEnabled ? "text-emerald-600" : "text-red-500"} />
+                    <StatCard label="Casino"         value={limits.casinoEnabled ? "On" : "Off"} color={limits.casinoEnabled ? "text-emerald-400" : "text-red-500"} />
                   </div>
                 ) : <p className="text-sm text-gray-400">Using platform defaults.</p>}
                 <button onClick={() => setLimitForm(limits ?? { minStake: 100, maxStake: 100000, maxMarketExposure: 1000000, maxDailyLoss: 500000, betDelayMs: 0, fancyEnabled: true, casinoEnabled: true })}
-                  className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-lg border border-yellow-300 text-yellow-700 bg-gray-800 hover:bg-yellow-100 transition">
+                  className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-lg border border-yellow-300 text-yellow-300 bg-gray-800 hover:bg-yellow-100 transition">
                   <Edit2 size={12} /> Edit Limits
                 </button>
               </div>
@@ -814,7 +814,7 @@ export default function UserProfilePage() {
               {adminNotes.length === 0
                 ? <p className="text-sm text-gray-400 text-center py-3">No notes yet.</p>
                 : adminNotes.map(n => (
-                  <div key={n.id} className="bg-gray-800 rounded-lg p-3 border border-gray-100">
+                  <div key={n.id} className="bg-gray-800 rounded-lg p-3 border border-gray-700">
                     <p className="text-sm text-gray-300">{n.metadata?.note ?? "—"}</p>
                     <p className="text-[10px] text-gray-400 mt-1">
                       {n.actor?.username ?? "admin"} · {fmtDate(n.createdAt)}

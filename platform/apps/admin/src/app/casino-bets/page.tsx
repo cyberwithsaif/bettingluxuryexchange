@@ -16,10 +16,10 @@ interface CasinoBet {
 }
 
 const GAME_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
-  mines:    { label: "Mines",    emoji: "💣", color: "bg-red-50    text-red-600    border-red-200" },
+  mines:    { label: "Mines",    emoji: "💣", color: "bg-red-900/20    text-red-400    border-red-200" },
   plinko:   { label: "Plinko",   emoji: "🎯", color: "bg-purple-50 text-purple-700 border-purple-200" },
   pump:     { label: "Pump",     emoji: "🎈", color: "bg-pink-50   text-pink-700   border-pink-200" },
-  dice:     { label: "Dice",     emoji: "🎲", color: "bg-blue-50   text-blue-700   border-blue-200" },
+  dice:     { label: "Dice",     emoji: "🎲", color: "bg-blue-900/20   text-blue-300   border-blue-200" },
   roulette: { label: "Roulette", emoji: "🎡", color: "bg-gray-800  text-amber-700  border-yellow-800" },
 };
 
@@ -65,10 +65,10 @@ export default function AdminCasinoBetsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-yellow-100 bg-gray-800 overflow-x-auto shadow-sm">
+      <div className="rounded-xl border border-yellow-500/20 bg-gray-800 overflow-x-auto shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-800/80 border-b border-yellow-100">
+            <tr className="bg-gray-800/80 border-b border-yellow-500/20">
               <Th>ID</Th>
               <Th>Game</Th>
               <Th>User</Th>
@@ -97,7 +97,7 @@ export default function AdminCasinoBetsPage() {
             {(bets ?? []).map((bet) => {
               const g = GAME_LABELS[bet.game];
               return (
-                <tr key={bet.id} className="border-t border-gray-100 hover:bg-gray-800/30 transition">
+                <tr key={bet.id} className="border-t border-gray-700 hover:bg-gray-800/30 transition">
                   <Td className="font-mono text-xs text-gray-500">{bet.id.slice(0, 8)}</Td>
                   <Td>
                     <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold border", g?.color ?? "")}>
@@ -107,7 +107,7 @@ export default function AdminCasinoBetsPage() {
                   <Td className="font-semibold text-gray-200">{bet.user.username}</Td>
                   <Td className="tabular-nums text-gray-300 font-semibold">₹{Number(bet.betAmount).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</Td>
                   <Td className="tabular-nums text-gray-300">₹{Number(bet.payout).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</Td>
-                  <Td className={cn("tabular-nums font-semibold", bet.profit >= 0 ? "text-emerald-600" : "text-red-500")}>
+                  <Td className={cn("tabular-nums font-semibold", bet.profit >= 0 ? "text-emerald-400" : "text-red-500")}>
                     {bet.profit >= 0 ? "+" : ""}₹{Number(bet.profit).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                   </Td>
                   <Td className="text-xs text-gray-500 max-w-[100px] truncate">{bet.extra}</Td>
@@ -115,8 +115,8 @@ export default function AdminCasinoBetsPage() {
                     <span className={cn(
                       "px-2 py-0.5 rounded-full text-[10px] font-bold border",
                       bet.status === "WON"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : "bg-red-50 text-red-600 border-red-200",
+                        ? "bg-emerald-50 text-emerald-300 border-emerald-200"
+                        : "bg-red-900/20 text-red-400 border-red-200",
                     )}>
                       {bet.status}
                     </span>

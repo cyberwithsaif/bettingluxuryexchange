@@ -22,9 +22,9 @@ const LEVEL_ICONS: Record<string, React.ElementType> = {
 };
 
 const LEVEL_COLORS: Record<string, string> = {
-  info:  "bg-blue-50 text-blue-700 border-blue-200",
-  warn:  "bg-gray-800 text-yellow-700 border-yellow-200",
-  promo: "bg-orange-50 text-orange-600 border-orange-200",
+  info:  "bg-blue-900/20 text-blue-300 border-blue-200",
+  warn:  "bg-gray-800 text-yellow-300 border-yellow-200",
+  promo: "bg-orange-900/30 text-orange-400 border-orange-700",
 };
 
 const SWR_KEY = "/announcements?limit=100";
@@ -51,7 +51,7 @@ export default function AdminNotificationsPage() {
       {isLoading && (
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="rounded-xl border border-yellow-100 bg-gray-800 p-5 animate-pulse">
+            <div key={i} className="rounded-xl border border-yellow-500/20 bg-gray-800 p-5 animate-pulse">
               <div className="h-4 bg-gray-700 rounded w-1/3 mb-3" />
               <div className="h-3 bg-gray-700 rounded w-2/3" />
             </div>
@@ -60,7 +60,7 @@ export default function AdminNotificationsPage() {
       )}
 
       {!isLoading && (!announcements || announcements.length === 0) && (
-        <div className="rounded-xl border border-yellow-100 bg-gray-800 p-10 text-center shadow-sm">
+        <div className="rounded-xl border border-yellow-500/20 bg-gray-800 p-10 text-center shadow-sm">
           <Bell size={40} className="mx-auto mb-3 text-gray-200" />
           <p className="text-gray-500 text-sm">No announcements yet. Create one above.</p>
         </div>
@@ -76,7 +76,7 @@ export default function AdminNotificationsPage() {
               key={ann.id}
               className={cn(
                 "rounded-xl border p-5 flex items-start gap-4 transition bg-gray-800",
-                ann.active ? "border-yellow-100" : "border-gray-100 opacity-60",
+                ann.active ? "border-yellow-500/20" : "border-gray-700 opacity-60",
               )}
             >
               <div className={cn("mt-0.5 p-2 rounded-lg border shrink-0", levelColor)}>
@@ -91,7 +91,7 @@ export default function AdminNotificationsPage() {
                   <span className={cn(
                     "text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded border",
                     ann.active
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      ? "bg-emerald-50 text-emerald-300 border-emerald-200"
                       : "bg-gray-800 text-gray-500 border-gray-700",
                   )}>
                     {ann.active ? "Active" : "Inactive"}
@@ -116,10 +116,10 @@ export default function AdminNotificationsPage() {
                     await api.patch(`/announcements/${ann.id}`, { active: !ann.active });
                     globalMutate(SWR_KEY);
                   }}
-                  className="p-2 rounded-md border border-gray-700 hover:border-yellow-300 transition"
+                  className="p-2 rounded-md border border-gray-700 hover:border-yellow-400 transition"
                 >
                   {ann.active
-                    ? <ToggleRight size={16} className="text-emerald-600" />
+                    ? <ToggleRight size={16} className="text-emerald-400" />
                     : <ToggleLeft size={16} className="text-gray-500" />}
                 </button>
                 <button
@@ -175,7 +175,7 @@ function CreateAnnouncementModal({ onClose }: { onClose: (saved?: boolean) => vo
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-yellow-100 bg-gray-800 p-6 space-y-4 shadow-xl">
+      <div className="w-full max-w-lg rounded-2xl border border-yellow-500/20 bg-gray-800 p-6 space-y-4 shadow-xl">
         <h2 className="text-xl font-black text-gray-100">New Announcement</h2>
 
         <Field label="Message Text">
@@ -214,7 +214,7 @@ function CreateAnnouncementModal({ onClose }: { onClose: (saved?: boolean) => vo
         </div>
 
         {err && (
-          <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{err}</div>
+          <div className="text-xs text-red-400 bg-red-900/20 border border-red-200 rounded px-3 py-2">{err}</div>
         )}
 
         <div className="flex gap-2 justify-end pt-1">

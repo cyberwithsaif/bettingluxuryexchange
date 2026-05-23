@@ -170,7 +170,7 @@ export default function BannerSettingsPage() {
       </div>
 
       {/* Category Cards */}
-      <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 space-y-4 shadow-sm">
+      <section className="rounded-xl border border-yellow-500/20 bg-gray-800 p-5 space-y-4 shadow-sm">
         <div>
           <h2 className="font-black text-gray-200 text-sm uppercase tracking-wider flex items-center gap-2">
             <Layout size={16} className="text-yellow-500" />
@@ -189,7 +189,7 @@ export default function BannerSettingsPage() {
             </div>
           )}
           {banners.map((cat, i) => (
-            <div key={cat.id} className="border border-yellow-100 rounded-xl overflow-hidden">
+            <div key={cat.id} className="border border-yellow-500/20 rounded-xl overflow-hidden">
               <div className="flex items-center gap-3 p-3 bg-gray-800">
                 <GripVertical size={16} className="text-gray-400 shrink-0" />
                 <div className="w-20 h-9 rounded-lg overflow-hidden shrink-0 border border-gray-700" style={{ background: cat.gradient }} />
@@ -215,13 +215,13 @@ export default function BannerSettingsPage() {
                   >
                     {editingId === cat.id ? "Cancel" : "Edit"}
                   </button>
-                  <button onClick={() => remove(cat.id)} className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-50 text-gray-500 hover:text-red-500 transition">
+                  <button onClick={() => remove(cat.id)} className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-900/20 text-gray-500 hover:text-red-500 transition">
                     <Trash2 size={14} />
                   </button>
                 </div>
               </div>
               {editingId === cat.id && (
-                <div className="p-4 bg-gray-800 border-t border-yellow-100">
+                <div className="p-4 bg-gray-800 border-t border-yellow-500/20">
                   <CardForm value={editForm} onChange={setEditForm} onSubmit={saveEdit} label="Save Changes" saving={saving} />
                 </div>
               )}
@@ -229,7 +229,7 @@ export default function BannerSettingsPage() {
           ))}
         </div>
 
-        <div className="border border-yellow-100 rounded-xl p-4 space-y-3 bg-gray-800">
+        <div className="border border-yellow-500/20 rounded-xl p-4 space-y-3 bg-gray-800">
           <p className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
             <Plus size={13} /> Add New Card
           </p>
@@ -237,14 +237,14 @@ export default function BannerSettingsPage() {
         </div>
 
         {catMsg && (
-          <p className={`text-sm flex items-center gap-1.5 font-medium ${catMsg.ok ? "text-emerald-600" : "text-red-500"}`}>
+          <p className={`text-sm flex items-center gap-1.5 font-medium ${catMsg.ok ? "text-emerald-400" : "text-red-500"}`}>
             {catMsg.ok && <CheckCircle2 size={14} />} {catMsg.text}
           </p>
         )}
       </section>
 
       {/* Site Identity */}
-      <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 space-y-4 shadow-sm">
+      <section className="rounded-xl border border-yellow-500/20 bg-gray-800 p-5 space-y-4 shadow-sm">
         <div>
           <h2 className="font-black text-gray-200 text-sm uppercase tracking-wider">Site Identity</h2>
           <p className="text-xs text-gray-500 mt-0.5">Used in the sidebar logo and browser tab title.</p>
@@ -269,7 +269,7 @@ export default function BannerSettingsPage() {
             {siteBusy ? "Saving…" : "Save"}
           </button>
           {siteMsg && (
-            <p className={`text-sm flex items-center gap-1 font-medium ${siteMsg.ok ? "text-emerald-600" : "text-red-500"}`}>
+            <p className={`text-sm flex items-center gap-1 font-medium ${siteMsg.ok ? "text-emerald-400" : "text-red-500"}`}>
               {siteMsg.ok && <CheckCircle2 size={14} />} {siteMsg.text}
             </p>
           )}

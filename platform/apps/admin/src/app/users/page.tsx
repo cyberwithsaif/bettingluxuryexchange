@@ -24,11 +24,11 @@ interface UserRecord {
 const ROLES = ["USER", "AGENT", "MASTER", "SUPER_MASTER", "ADMIN"];
 
 const STATUS_BG: Record<string, string> = {
-  ACTIVE:    "bg-emerald-50 text-emerald-700 border-emerald-200",
-  SUSPENDED: "bg-gray-800  text-yellow-700  border-yellow-200",
-  LOCKED:    "bg-red-50     text-red-600     border-red-200",
+  ACTIVE:    "bg-emerald-50 text-emerald-300 border-emerald-200",
+  SUSPENDED: "bg-gray-800  text-yellow-300  border-yellow-200",
+  LOCKED:    "bg-red-900/20     text-red-400     border-red-200",
   CLOSED:    "bg-gray-700   text-gray-500    border-gray-700",
-  BANNED:    "bg-red-100    text-red-700     border-red-300",
+  BANNED:    "bg-red-100    text-red-300     border-red-300",
 };
 
 function buildKey(q: string, role: string) {
@@ -78,10 +78,10 @@ export default function UsersPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-yellow-100 bg-gray-800 overflow-x-auto shadow-sm">
+      <div className="rounded-xl border border-yellow-500/20 bg-gray-800 overflow-x-auto shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-800/80 border-b border-yellow-100">
+            <tr className="bg-gray-800/80 border-b border-yellow-500/20">
               <Th>Username</Th>
               <Th>Role</Th>
               <Th>Status</Th>
@@ -99,12 +99,12 @@ export default function UsersPage() {
             {!isLoading && (users ?? []).map((u) => (
               <tr
                 key={u.id}
-                className="border-t border-gray-100 hover:bg-gray-800/40 transition cursor-pointer group"
+                className="border-t border-gray-700 hover:bg-gray-800/40 transition cursor-pointer group"
                 onClick={() => router.push(`/users/${u.id}`)}
               >
-                <Td className="font-semibold text-gray-100 group-hover:text-yellow-700 transition">{u.username}</Td>
+                <Td className="font-semibold text-gray-100 group-hover:text-yellow-300 transition">{u.username}</Td>
                 <Td>
-                  <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                  <span className="text-xs px-2 py-0.5 rounded-full font-bold bg-blue-900/20 text-blue-300 border border-blue-200">
                     {u.role}
                   </span>
                 </Td>
@@ -113,17 +113,17 @@ export default function UsersPage() {
                     {u.status}
                   </span>
                 </Td>
-                <Td className="tabular-nums text-emerald-700 font-semibold">₹{Number(u.wallet?.balance ?? 0).toLocaleString("en-IN")}</Td>
+                <Td className="tabular-nums text-emerald-300 font-semibold">₹{Number(u.wallet?.balance ?? 0).toLocaleString("en-IN")}</Td>
                 <Td className="tabular-nums text-red-500 font-semibold">₹{Number(u.wallet?.exposure ?? 0).toLocaleString("en-IN")}</Td>
                 <Td className="text-gray-400">{(u.partnershipBps / 100).toFixed(2)}%</Td>
                 <Td className="tabular-nums text-gray-300">₹{Number(u.creditReference ?? 0).toLocaleString("en-IN")}</Td>
                 <Td>
                   <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     <ActionBtn title="Edit user" icon={<Edit2 size={13} />}
-                      className="hover:border-yellow-400 hover:text-yellow-600 hover:bg-gray-800"
+                      className="hover:border-yellow-400 hover:text-yellow-400 hover:bg-gray-800"
                       onClick={() => setEditing(u)} />
                     <ActionBtn title="Wallet adjust" icon={<Wallet size={13} />}
-                      className="hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50"
+                      className="hover:border-blue-400 hover:text-blue-400 hover:bg-blue-900/20"
                       onClick={async () => {
                         const amt = Number(prompt("Credit (+) or Debit (-) amount:") || 0);
                         if (!amt) return;
@@ -133,7 +133,7 @@ export default function UsersPage() {
                     <ActionBtn
                       title={u.status === "ACTIVE" ? "Suspend" : "Activate"}
                       icon={u.status === "ACTIVE" ? <UserX size={13} /> : <UserCheck size={13} />}
-                      className={u.status === "ACTIVE" ? "hover:border-red-400 hover:text-red-500 hover:bg-red-50" : "hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50"}
+                      className={u.status === "ACTIVE" ? "hover:border-red-400 hover:text-red-500 hover:bg-red-900/20" : "hover:border-emerald-400 hover:text-emerald-400 hover:bg-emerald-50"}
                       onClick={async () => {
                         await api.patch(`/users/${u.id}/status`, { status: u.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE" });
                         refresh();
@@ -205,28 +205,28 @@ function EditUserModal({ user, onClose }: { user: UserRecord; onClose: (saved?: 
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-yellow-100 bg-gray-800 shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div className="w-full max-w-lg rounded-2xl border border-yellow-500/20 bg-gray-800 shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
           <div>
             <h2 className="text-xl font-black text-gray-100">Edit User</h2>
-            <p className="text-xs text-gray-500 mt-0.5">{user.username} Â· <span className="text-yellow-600 font-semibold">{user.role}</span></p>
+            <p className="text-xs text-gray-500 mt-0.5">{user.username} Â· <span className="text-yellow-400 font-semibold">{user.role}</span></p>
           </div>
           <button onClick={() => onClose()} className="p-2 rounded-lg hover:bg-gray-700 text-gray-500 transition"><X size={18} /></button>
         </div>
 
-        <div className="flex border-b border-gray-100">
+        <div className="flex border-b border-gray-700">
           {(["profile", "limits"] as const).map((t) => (
             <button key={t} onClick={() => { setTab(t); setErr(null); setOk(null); }}
               className={cn(
                 "flex-1 py-2.5 text-sm font-semibold capitalize transition border-b-2",
-                tab === t ? "border-yellow-400 text-yellow-700" : "border-transparent text-gray-500 hover:text-gray-300"
+                tab === t ? "border-yellow-400 text-yellow-300" : "border-transparent text-gray-500 hover:text-gray-300"
               )}>{t}</button>
           ))}
         </div>
 
         <div className="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
-          {err && <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{err}</div>}
-          {ok  && <div className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">{ok}</div>}
+          {err && <div className="text-xs text-red-400 bg-red-900/20 border border-red-200 rounded-lg px-3 py-2">{err}</div>}
+          {ok  && <div className="text-xs text-emerald-300 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">{ok}</div>}
 
           {tab === "profile" && (
             <div className="space-y-4">
@@ -277,7 +277,7 @@ function EditUserModal({ user, onClose }: { user: UserRecord; onClose: (saved?: 
               </div>
               <div className="space-y-2">
                 {([["fancyEnabled", "Enable Fancy/Session Markets"], ["casinoEnabled", "Enable Casino Games"]] as [keyof typeof limits, string][]).map(([key, label]) => (
-                  <label key={key} className="flex items-center justify-between rounded-lg border border-yellow-100 bg-gray-800/40 px-4 py-2.5 cursor-pointer hover:border-yellow-300 transition">
+                  <label key={key} className="flex items-center justify-between rounded-lg border border-yellow-500/20 bg-gray-800/40 px-4 py-2.5 cursor-pointer hover:border-yellow-400 transition">
                     <span className="text-sm text-gray-300 font-medium">{label}</span>
                     <input type="checkbox" className="w-4 h-4 accent-yellow-500"
                       checked={!!(limits[key])}
@@ -305,7 +305,7 @@ function CreateUserModal({ onClose }: { onClose: (saved?: boolean) => void }) {
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md rounded-2xl border border-yellow-100 bg-gray-800 shadow-2xl p-6 space-y-4">
+      <div className="w-full max-w-md rounded-2xl border border-yellow-500/20 bg-gray-800 shadow-2xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-black text-gray-100">New User</h2>
           <button onClick={() => onClose()} className="p-2 rounded-lg hover:bg-gray-700 text-gray-500"><X size={18} /></button>
@@ -329,7 +329,7 @@ function CreateUserModal({ onClose }: { onClose: (saved?: boolean) => void }) {
           </Field>
         </div>
 
-        {err && <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{err}</div>}
+        {err && <div className="text-xs text-red-400 bg-red-900/20 border border-red-200 rounded-lg px-3 py-2">{err}</div>}
 
         <div className="flex gap-2 pt-1">
           <button onClick={() => onClose()} className="btn-secondary flex-1 text-sm">Cancel</button>

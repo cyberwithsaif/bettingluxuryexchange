@@ -46,8 +46,8 @@ export default function ApiKeysPage() {
       </div>
 
       {Object.entries(grouped).map(([cat, items]) => (
-        <section key={cat} className="rounded-xl border border-yellow-100 bg-gray-800 shadow-sm overflow-hidden">
-          <header className="px-4 py-2.5 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-yellow-100 bg-gray-800/80">{cat}</header>
+        <section key={cat} className="rounded-xl border border-yellow-500/20 bg-gray-800 shadow-sm overflow-hidden">
+          <header className="px-4 py-2.5 text-xs uppercase tracking-wider text-gray-500 font-semibold border-b border-yellow-500/20 bg-gray-800/80">{cat}</header>
           <ul className="divide-y divide-gray-100">
             {items.map((c) => {
               const e = map.get(c.key);
@@ -88,7 +88,7 @@ export default function ApiKeysPage() {
                           await api.delete(`/admin/api-keys/${c.key}`);
                           mutate("/admin/api-keys");
                         }}
-                        className="text-xs px-2 py-1 rounded-lg border border-gray-700 hover:border-red-200 hover:bg-red-50 text-red-500 inline-flex items-center gap-1 transition"
+                        className="text-xs px-2 py-1 rounded-lg border border-gray-700 hover:border-red-200 hover:bg-red-900/20 text-red-500 inline-flex items-center gap-1 transition"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -135,7 +135,7 @@ function EditModal({ cat, existing, onClose }: { cat: Cat; existing?: Existing; 
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-2xl border border-yellow-100 bg-gray-800 p-6 space-y-3 max-h-[90vh] overflow-y-auto shadow-xl">
+      <div className="w-full max-w-lg rounded-2xl border border-yellow-500/20 bg-gray-800 p-6 space-y-3 max-h-[90vh] overflow-y-auto shadow-xl">
         <div>
           <h2 className="text-xl font-black text-gray-100">{cat.label}</h2>
           <p className="text-xs text-gray-500">{cat.key} Â· {cat.category}</p>
@@ -164,7 +164,7 @@ function EditModal({ cat, existing, onClose }: { cat: Cat; existing?: Existing; 
           <textarea className={inputCls} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </label>
 
-        {err && <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1.5">{err}</div>}
+        {err && <div className="text-xs text-red-400 bg-red-900/20 border border-red-200 rounded px-2 py-1.5">{err}</div>}
 
         <div className="flex gap-2 justify-end pt-2">
           <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-700 text-sm text-gray-400 hover:bg-gray-800 transition">Cancel</button>

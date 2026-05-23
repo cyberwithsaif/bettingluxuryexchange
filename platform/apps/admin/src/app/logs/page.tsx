@@ -9,9 +9,9 @@ export default function LogsPage() {
         <h1 className="text-2xl font-black text-gray-100">Audit Logs</h1>
         <p className="text-sm text-gray-500 mt-0.5">Admin actions and system events</p>
       </div>
-      <div className="rounded-xl border border-yellow-100 bg-gray-800 overflow-x-auto shadow-sm">
+      <div className="rounded-xl border border-yellow-500/20 bg-gray-800 overflow-x-auto shadow-sm">
         <table className="w-full text-sm">
-          <thead className="bg-gray-800/80 border-b border-yellow-100">
+          <thead className="bg-gray-800/80 border-b border-yellow-500/20">
             <tr>
               <Th>Date</Th><Th>Actor</Th><Th>Action</Th><Th>Target</Th><Th>IP</Th><Th>Metadata</Th>
             </tr>
@@ -31,7 +31,7 @@ export default function LogsPage() {
               </tr>
             )}
             {(data as any[] ?? []).map((l: any) => (
-              <tr key={l.id} className="border-t border-gray-100 hover:bg-gray-800/30 transition align-top">
+              <tr key={l.id} className="border-t border-gray-700 hover:bg-gray-800/30 transition align-top">
                 <Td className="whitespace-nowrap text-gray-500">{new Date(l.createdAt).toLocaleString("en-IN", { hour12: false })}</Td>
                 <Td className="font-semibold text-gray-200">
                   {l.actor?.username ?? "–"}

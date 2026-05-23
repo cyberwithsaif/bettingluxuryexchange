@@ -45,14 +45,14 @@ export default function AdminDashboard() {
 
       <div className="grid lg:grid-cols-2 gap-5">
         {/* 7-day P/L Chart */}
-        <div className="bg-gray-800 rounded-xl border border-yellow-100 p-6 shadow-sm animate-slide-in-up" style={{ animationDelay: "100ms" }}>
+        <div className="bg-gray-800 rounded-xl border border-yellow-500/20 p-6 shadow-sm animate-slide-in-up" style={{ animationDelay: "100ms" }}>
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-lg font-black text-gray-100">7-Day P/L</h2>
               <p className="text-xs text-gray-500 mt-0.5">Operator revenue</p>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-black text-emerald-600">{data?.pl7d ? `₹${fmt(data.pl7d.reduce((s, d) => s + d.pl, 0))}` : "–"}</p>
+              <p className="text-2xl font-black text-emerald-400">{data?.pl7d ? `₹${fmt(data.pl7d.reduce((s, d) => s + d.pl, 0))}` : "–"}</p>
               <p className="text-xs text-gray-500">Net</p>
             </div>
           </div>
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Key Metrics */}
-        <div className="bg-gray-800 rounded-xl border border-yellow-100 p-6 shadow-sm animate-slide-in-up space-y-4" style={{ animationDelay: "200ms" }}>
+        <div className="bg-gray-800 rounded-xl border border-yellow-500/20 p-6 shadow-sm animate-slide-in-up space-y-4" style={{ animationDelay: "200ms" }}>
           <h2 className="text-lg font-black text-gray-100">Key Metrics</h2>
           <div className="space-y-2">
             {isLoading ? (
@@ -104,11 +104,11 @@ export default function AdminDashboard() {
 
       {/* Alerts */}
       {((data?.pendingDeposits ?? 0) > 0 || (data?.pendingWithdrawals ?? 0) > 0) && (
-        <div className="bg-orange-50 rounded-xl border border-orange-200 p-4 flex items-start gap-3">
+        <div className="bg-orange-900/30 rounded-xl border border-orange-700 p-4 flex items-start gap-3">
           <AlertCircle size={18} className="text-orange-500 mt-0.5 shrink-0" />
           <div className="text-sm">
-            <p className="font-bold text-orange-700">Pending Actions Required</p>
-            <p className="text-orange-600 mt-0.5">
+            <p className="font-bold text-orange-300">Pending Actions Required</p>
+            <p className="text-orange-400 mt-0.5">
               {data?.pendingDeposits} deposit{data?.pendingDeposits !== 1 ? "s" : ""} and{" "}
               {data?.pendingWithdrawals} withdrawal{data?.pendingWithdrawals !== 1 ? "s" : ""} waiting for approval.
             </p>
@@ -122,9 +122,9 @@ export default function AdminDashboard() {
 function KPI({ label, value, Icon, tone, loading }: {
   label: string; value: any; Icon: any; tone?: "warn" | "bad"; loading?: boolean;
 }) {
-  const valueColor = tone === "warn" ? "text-yellow-600" : tone === "bad" ? "text-red-500" : "text-gray-100";
+  const valueColor = tone === "warn" ? "text-yellow-400" : tone === "bad" ? "text-red-500" : "text-gray-100";
   return (
-    <div className="bg-gray-800 rounded-xl border border-yellow-100 p-4 shadow-sm hover:border-yellow-300 transition-all duration-200">
+    <div className="bg-gray-800 rounded-xl border border-yellow-500/20 p-4 shadow-sm hover:border-yellow-400 transition-all duration-200">
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <p className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2">{label}</p>
@@ -135,7 +135,7 @@ function KPI({ label, value, Icon, tone, loading }: {
           )}
         </div>
         <div className={`p-2 rounded-lg shrink-0 ${
-          tone === "warn" ? "bg-gray-800" : tone === "bad" ? "bg-red-50" : "bg-gray-800"
+          tone === "warn" ? "bg-gray-800" : tone === "bad" ? "bg-red-900/20" : "bg-gray-800"
         }`}>
           <Icon size={16} className={tone === "warn" ? "text-yellow-500" : tone === "bad" ? "text-red-400" : "text-yellow-500"} />
         </div>
@@ -146,12 +146,12 @@ function KPI({ label, value, Icon, tone, loading }: {
 
 function MetricRow({ label, value, trend }: { label: string; value: string; trend?: number }) {
   return (
-    <div className="flex items-center justify-between p-3 rounded-xl bg-gray-800 border border-gray-100 hover:bg-gray-800/50 transition-colors">
+    <div className="flex items-center justify-between p-3 rounded-xl bg-gray-800 border border-gray-700 hover:bg-gray-800/50 transition-colors">
       <span className="text-sm text-gray-400 font-medium">{label}</span>
       <div className="flex items-center gap-2">
         <span className="font-bold tabular-nums text-gray-200">{value}</span>
         {trend !== undefined && (
-          <div className={`text-xs flex items-center gap-1 font-semibold ${trend > 0 ? "text-emerald-600" : "text-red-500"}`}>
+          <div className={`text-xs flex items-center gap-1 font-semibold ${trend > 0 ? "text-emerald-400" : "text-red-500"}`}>
             {trend > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
             {Math.abs(trend).toFixed(1)}%
           </div>

@@ -113,7 +113,7 @@ html, body {
   }
 
   .btn-danger {
-    @apply border border-red-500/50 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold rounded-lg px-4 py-2 transition-all duration-200;
+    @apply border border-red-500/50 bg-red-900/200/10 hover:bg-red-900/200/20 text-red-400 font-semibold rounded-lg px-4 py-2 transition-all duration-200;
   }
 
   .table-row {
@@ -129,7 +129,7 @@ html, body {
   }
 
   .badge-success {
-    @apply px-2 py-1 rounded-md bg-green-500/15 text-green-400 text-xs font-semibold;
+    @apply px-2 py-1 rounded-md bg-green-900/200/15 text-green-400 text-xs font-semibold;
   }
 
   .badge-warning {
@@ -137,11 +137,11 @@ html, body {
   }
 
   .badge-danger {
-    @apply px-2 py-1 rounded-md bg-red-500/15 text-red-400 text-xs font-semibold;
+    @apply px-2 py-1 rounded-md bg-red-900/200/15 text-red-400 text-xs font-semibold;
   }
 
   .badge-info {
-    @apply px-2 py-1 rounded-md bg-blue-500/15 text-blue-400 text-xs font-semibold;
+    @apply px-2 py-1 rounded-md bg-blue-900/200/15 text-blue-400 text-xs font-semibold;
   }
 
   .skeleton {

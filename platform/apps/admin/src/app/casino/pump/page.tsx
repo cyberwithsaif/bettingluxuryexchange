@@ -397,7 +397,7 @@ export default function PumpAdminPage() {
             <button
               onClick={applyForceLoss}
               disabled={busy}
-              className="flex-1 py-2.5 rounded-lg font-bold text-sm bg-red-600 hover:bg-red-500 disabled:opacity-40 transition text-white"
+              className="flex-1 py-2.5 rounded-lg font-bold text-sm bg-red-600 hover:bg-red-900/200 disabled:opacity-40 transition text-white"
             >
               Set Force Loss
             </button>

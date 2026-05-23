@@ -100,14 +100,14 @@ export default function NavSettingsPage() {
 
       {msg && (
         <div className={`text-sm px-4 py-2.5 rounded-lg border font-medium ${
-          msg.ok ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-600"
+          msg.ok ? "bg-emerald-50 border-emerald-200 text-emerald-300" : "bg-red-900/20 border-red-200 text-red-400"
         }`}>
           {msg.text}
         </div>
       )}
 
       {/* Items list */}
-      <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 space-y-2 shadow-sm">
+      <section className="rounded-xl border border-yellow-500/20 bg-gray-800 p-5 space-y-2 shadow-sm">
         {current.map((item, idx) => (
           <div
             key={idx}
@@ -116,7 +116,7 @@ export default function NavSettingsPage() {
             onDragOver={(e) => onDragOver(e, idx)}
             onDragEnd={onDragEnd}
             className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 transition ${
-              dragIdx === idx ? "border-yellow-400 bg-gray-800" : "border-gray-100 bg-gray-800 hover:border-yellow-200"
+              dragIdx === idx ? "border-yellow-400 bg-gray-800" : "border-gray-700 bg-gray-800 hover:border-yellow-500"
             }`}
           >
             <GripVertical size={16} className="text-gray-400 cursor-grab shrink-0" />
@@ -162,7 +162,7 @@ export default function NavSettingsPage() {
       </section>
 
       {/* Add new item */}
-      <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 shadow-sm">
+      <section className="rounded-xl border border-yellow-500/20 bg-gray-800 p-5 shadow-sm">
         <h2 className="text-base font-black text-gray-200 mb-3 flex items-center gap-2"><Plus size={16} /> Add Item</h2>
         <div className="flex items-center gap-3">
           <input

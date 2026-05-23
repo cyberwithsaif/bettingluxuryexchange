@@ -61,13 +61,13 @@ export default function PaymentMethodsPage() {
       </div>
 
       {/* UPI */}
-      <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 space-y-4 shadow-sm">
+      <section className="rounded-xl border border-yellow-500/20 bg-gray-800 p-5 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="font-black text-gray-200 flex items-center gap-2"><Wallet size={18} className="text-yellow-500" /> UPI</h2>
           <button
             onClick={() => setUpi(p => ({ ...p, enabled: !p.enabled }))}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-semibold transition ${
-              upi.enabled ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-gray-700 text-gray-500 hover:border-yellow-300"
+              upi.enabled ? "border-emerald-200 bg-emerald-50 text-emerald-300" : "border-gray-700 text-gray-500 hover:border-yellow-400"
             }`}
           >
             {upi.enabled ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
@@ -89,7 +89,7 @@ export default function PaymentMethodsPage() {
           <div className="flex gap-2">
             <input value={upi.qrCodeUrl ?? ""} onChange={e => setUpi(p => ({ ...p, qrCodeUrl: e.target.value }))} placeholder="https://..." className={`${inputCls} flex-1`} />
             <button type="button" onClick={() => upiFileInputRef.current?.click()}
-              className="px-3 rounded-lg bg-gray-800 border border-gray-700 text-gray-500 text-sm hover:border-yellow-300 transition" title="Upload QR code image">
+              className="px-3 rounded-lg bg-gray-800 border border-gray-700 text-gray-500 text-sm hover:border-yellow-400 transition" title="Upload QR code image">
               <Upload size={14} />
             </button>
             {upi.qrCodeUrl && (
@@ -100,19 +100,19 @@ export default function PaymentMethodsPage() {
           </div>
           <input ref={upiFileInputRef} type="file" accept="image/*" onChange={(e) => handleQrUpload(e, "upi")} className="hidden" />
           {showQr && upi.qrCodeUrl && (
-            <img src={upi.qrCodeUrl} alt="QR" className="mt-2 w-32 h-32 object-contain rounded-lg border border-yellow-100 bg-gray-800 p-1" />
+            <img src={upi.qrCodeUrl} alt="QR" className="mt-2 w-32 h-32 object-contain rounded-lg border border-yellow-500/20 bg-gray-800 p-1" />
           )}
         </div>
       </section>
 
       {/* Bank Transfer */}
-      <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 space-y-4 shadow-sm">
+      <section className="rounded-xl border border-yellow-500/20 bg-gray-800 p-5 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="font-black text-gray-200 flex items-center gap-2"><CreditCard size={18} className="text-blue-500" /> Bank Transfer</h2>
           <button
             onClick={() => setBank(p => ({ ...p, enabled: !p.enabled }))}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-semibold transition ${
-              bank.enabled ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-gray-700 text-gray-500 hover:border-yellow-300"
+              bank.enabled ? "border-emerald-200 bg-emerald-50 text-emerald-300" : "border-gray-700 text-gray-500 hover:border-yellow-400"
             }`}
           >
             {bank.enabled ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
@@ -132,13 +132,13 @@ export default function PaymentMethodsPage() {
       </section>
 
       {/* Crypto */}
-      <section className="rounded-xl border border-yellow-100 bg-gray-800 p-5 space-y-4 shadow-sm">
+      <section className="rounded-xl border border-yellow-500/20 bg-gray-800 p-5 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="font-black text-gray-200 flex items-center gap-2"><Bitcoin size={18} className="text-orange-500" /> Crypto</h2>
           <button
             onClick={() => setCrypto(p => ({ ...p, enabled: !p.enabled }))}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-semibold transition ${
-              crypto.enabled ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-gray-700 text-gray-500 hover:border-yellow-300"
+              crypto.enabled ? "border-emerald-200 bg-emerald-50 text-emerald-300" : "border-gray-700 text-gray-500 hover:border-yellow-400"
             }`}
           >
             {crypto.enabled ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
@@ -163,7 +163,7 @@ export default function PaymentMethodsPage() {
             <div className="flex gap-2">
               <input value={crypto.qrCodeUrl ?? ""} onChange={e => setCrypto(p => ({ ...p, qrCodeUrl: e.target.value }))} placeholder="https://..." className={`${inputCls} flex-1`} />
               <button type="button" onClick={() => cryptoFileInputRef.current?.click()}
-                className="px-3 rounded-lg bg-gray-800 border border-gray-700 text-gray-500 text-sm hover:border-yellow-300 transition" title="Upload QR code image">
+                className="px-3 rounded-lg bg-gray-800 border border-gray-700 text-gray-500 text-sm hover:border-yellow-400 transition" title="Upload QR code image">
                 <Upload size={14} />
               </button>
               {crypto.qrCodeUrl && (
@@ -174,7 +174,7 @@ export default function PaymentMethodsPage() {
             </div>
             <input ref={cryptoFileInputRef} type="file" accept="image/*" onChange={(e) => handleQrUpload(e, "crypto")} className="hidden" />
             {showQr && crypto.qrCodeUrl && (
-              <img src={crypto.qrCodeUrl} alt="QR" className="mt-2 w-32 h-32 object-contain rounded-lg border border-yellow-100 bg-gray-800 p-1" />
+              <img src={crypto.qrCodeUrl} alt="QR" className="mt-2 w-32 h-32 object-contain rounded-lg border border-yellow-500/20 bg-gray-800 p-1" />
             )}
           </div>
         </div>
@@ -190,7 +190,7 @@ export default function PaymentMethodsPage() {
           {busy ? "Saving…" : "Save & Apply"}
         </button>
         {msg && (
-          <p className={`text-sm flex items-center gap-1 font-medium ${msg.ok ? "text-emerald-600" : "text-red-500"}`}>
+          <p className={`text-sm flex items-center gap-1 font-medium ${msg.ok ? "text-emerald-400" : "text-red-500"}`}>
             {msg.ok && <CheckCircle2 size={14} />} {msg.text}
           </p>
         )}

@@ -133,7 +133,7 @@ export default function AdminLogin() {
 
             {/* Error */}
             {err && (
-              <div className="p-3 rounded-xl text-sm font-medium text-red-700 bg-red-50 border border-red-200 flex items-center gap-2">
+              <div className="p-3 rounded-xl text-sm font-medium text-red-300 bg-red-900/20 border border-red-200 flex items-center gap-2">
                 <span>âš </span> {err}
               </div>
             )}
