@@ -62,7 +62,7 @@ const TIERS = [
     Icon: Gem,
     perks: ["8% cashback", "Dedicated manager", "Custom bonuses", "Private tables", "Luxury rewards"],
   },
-] as const;
+];
 
 function getTier(totalDeposited: number) {
   const idx = TIERS.findIndex((t, i) => {
@@ -102,7 +102,7 @@ export default function AccountDashboard() {
   }, [ledger]);
 
   const tierIdx = getTier(totalDeposited);
-  const tier = TIERS[tierIdx];
+  const tier = TIERS[tierIdx] ?? TIERS[0];
   const nextTier = TIERS[tierIdx + 1] ?? null;
   const tierProgress = nextTier
     ? Math.min(100, Math.round(((totalDeposited - tier.min) / (nextTier.min - tier.min)) * 100))
