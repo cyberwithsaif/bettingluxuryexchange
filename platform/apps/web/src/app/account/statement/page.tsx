@@ -88,8 +88,7 @@ export default function StatementPage() {
 
   const uniqueKinds = useMemo(() => {
     if (!data?.items) return [];
-    const kinds = [...new Set(data.items.map((e: any) => e.kind))];
-    return kinds.filter((k) => k in KIND_CONFIG);
+    return [...new Set(data.items.map((e: any) => e.kind))];
   }, [data]);
 
   return (
