@@ -38,9 +38,9 @@ function Loader({ opacity }: { opacity: number }) {
 
       <style>{`
         @keyframes np-zoom {
-          0% { transform: scale(0.6); opacity: 0.8; }
-          50% { transform: scale(1.1); opacity: 1; }
-          100% { transform: scale(0.6); opacity: 0.8; }
+          0% { transform: scale(0.6); }
+          50% { transform: scale(1.1); }
+          100% { transform: scale(0.6); }
         }
         @media (max-width: 640px) {
           img {
