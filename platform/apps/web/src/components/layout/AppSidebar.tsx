@@ -59,7 +59,7 @@ function SidebarInner() {
     <div className="flex flex-col h-full overflow-hidden">
 
       {/* ── Header: Arrow ──────────────────────────────────────────── */}
-      <div className="shrink-0 h-[64px] flex items-end justify-center px-4 pb-5">
+      <div className="shrink-0 h-[64px] flex items-end justify-center px-4 pb-6">
         <button
           onClick={() => ctx?.setCollapsed(!collapsed)}
           className="flex items-center justify-center w-9 h-9 rounded-xl transition-all group"
