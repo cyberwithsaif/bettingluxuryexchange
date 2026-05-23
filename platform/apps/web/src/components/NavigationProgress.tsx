@@ -81,19 +81,24 @@ export function NavigationProgress() {
   const [visible, setVisible] = useState(true);
   const [opacity, setOpacity] = useState(1);
   const navPending  = useRef(false);
+  const safetyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirst     = useRef(true);
+
+  const hide = (delay = 350) => {
+    navPending.current = false;
+    if (safetyTimer.current) clearTimeout(safetyTimer.current);
+    setTimeout(() => setOpacity(0), delay);
+    setTimeout(() => setVisible(false), delay + 400);
+  };
 
   /* 1. Initial / refresh load */
   useEffect(() => {
-    const hide = () => {
-      setOpacity(0);
-      setTimeout(() => setVisible(false), 380);
-    };
+    const doHide = () => hide(0);
     if (document.readyState === "complete") {
-      const t = setTimeout(hide, 600);
+      const t = setTimeout(doHide, 600);
       return () => clearTimeout(t);
     }
-    window.addEventListener("load", () => setTimeout(hide, 400), { once: true });
+    window.addEventListener("load", () => setTimeout(doHide, 400), { once: true });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -106,22 +111,33 @@ export function NavigationProgress() {
       if (!href || href.startsWith("http") || href.startsWith("#")
         || href.startsWith("mailto") || href.startsWith("tel")
         || anchor.target === "_blank") return;
+
+      // Resolve href to just the pathname portion for comparison
+      const targetPath = href.split("?")[0];
+      const currentPath = window.location.pathname;
+
+      // Same page click — skip loader entirely
+      if (targetPath === currentPath) return;
+
       navPending.current = true;
       setVisible(true);
       requestAnimationFrame(() => requestAnimationFrame(() => setOpacity(1)));
+
+      // Safety timeout — if pathname never changes (edge case), hide after 4s
+      if (safetyTimer.current) clearTimeout(safetyTimer.current);
+      safetyTimer.current = setTimeout(() => hide(0), 4000);
     };
     document.addEventListener("click", handleClick, true);
     return () => document.removeEventListener("click", handleClick, true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* 3. Navigation done → hide */
   useEffect(() => {
     if (isFirst.current) { isFirst.current = false; return; }
     if (!navPending.current) return;
-    navPending.current = false;
-    const t1 = setTimeout(() => setOpacity(0), 350);
-    const t2 = setTimeout(() => setVisible(false), 750);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    hide(350);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, search]);
 
   if (!visible) return null;
