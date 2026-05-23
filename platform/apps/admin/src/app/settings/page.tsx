@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import useSWR, { mutate } from "swr";
 import { useState } from "react";
 import Link from "next/link";
@@ -47,9 +47,9 @@ export default function SettingsPage() {
     setSyncBusy(true); setMsg(null);
     try {
       const res = await api.post("/sports/cricket/sync/series");
-      setMsg({ text: `✓ Imported ${res.data.synced} series from Cricket API.`, ok: true });
+      setMsg({ text: `âœ“ Imported ${res.data.synced} series from Cricket API.`, ok: true });
     } catch (e: any) {
-      setMsg({ text: e?.response?.data?.message || "Sync failed — check your Cricket API key in API Keys.", ok: false });
+      setMsg({ text: e?.response?.data?.message || "Sync failed â€” check your Cricket API key in API Keys.", ok: false });
     } finally { setSyncBusy(false); }
   }
 
@@ -70,7 +70,7 @@ export default function SettingsPage() {
     <div className="space-y-6 max-w-3xl">
       <div>
         <h1 className="text-2xl font-black text-gray-900 flex items-center gap-3"><Settings2 size={24} /> Platform Settings</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Configure betting limits, features, and platform behaviour</p>
+        <p className="text-sm text-gray-500 mt-0.5">Configure betting limits, features, and platform behaviour</p>
       </div>
 
       {msg && (
@@ -84,15 +84,15 @@ export default function SettingsPage() {
       {/* Betting limits */}
       <Section title="Betting Limits" Icon={Shield}>
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Min Stake (₹)">
+          <Field label="Min Stake (â‚¹)">
             <input type="number" min={1} className={inputCls} value={current?.minStake ?? 100}
               onChange={(e) => set("minStake", Number(e.target.value))} />
           </Field>
-          <Field label="Max Stake (₹)">
+          <Field label="Max Stake (â‚¹)">
             <input type="number" min={100} className={inputCls} value={current?.maxStake ?? 100000}
               onChange={(e) => set("maxStake", Number(e.target.value))} />
           </Field>
-          <Field label="Max Market Exposure (₹)">
+          <Field label="Max Market Exposure (â‚¹)">
             <input type="number" min={1000} className={inputCls} value={current?.maxMarketExposure ?? 1000000}
               onChange={(e) => set("maxMarketExposure", Number(e.target.value))} />
           </Field>
@@ -107,10 +107,10 @@ export default function SettingsPage() {
       <Section title="Feature Toggles" Icon={Settings2}>
         <div className="grid grid-cols-2 gap-4">
           {([
-            ["maintenanceMode",     "🔴 Maintenance Mode (disables site)"],
-            ["registrationEnabled", "✅ New User Registration"],
-            ["depositEnabled",      "✅ Deposits"],
-            ["withdrawalEnabled",   "✅ Withdrawals"],
+            ["maintenanceMode",     "ðŸ”´ Maintenance Mode (disables site)"],
+            ["registrationEnabled", "âœ… New User Registration"],
+            ["depositEnabled",      "âœ… Deposits"],
+            ["withdrawalEnabled",   "âœ… Withdrawals"],
           ] as [keyof PlatformSettings, string][]).map(([key, label]) => (
             <label key={key} className="flex items-center justify-between rounded-lg border border-yellow-100 bg-yellow-50/50 px-4 py-3 cursor-pointer hover:border-yellow-300 hover:bg-yellow-50 transition">
               <span className="text-sm text-gray-700">{label}</span>
@@ -129,7 +129,7 @@ export default function SettingsPage() {
             <h2 className="text-base font-black text-gray-800 flex items-center gap-2">
               <Navigation size={18} className="text-yellow-500" /> Navigation Bar
             </h2>
-            <ChevronRight size={18} className="text-gray-400 group-hover:text-yellow-500 transition" />
+            <ChevronRight size={18} className="text-gray-500 group-hover:text-yellow-500 transition" />
           </div>
           <p className="text-sm text-gray-500 mt-1">Add, edit, delete, reorder and toggle visibility of top navigation tabs.</p>
         </section>
@@ -142,7 +142,7 @@ export default function SettingsPage() {
             <h2 className="text-base font-black text-gray-800 flex items-center gap-2">
               <CreditCard size={18} className="text-yellow-500" /> Payment Methods
             </h2>
-            <ChevronRight size={18} className="text-gray-400 group-hover:text-yellow-500 transition" />
+            <ChevronRight size={18} className="text-gray-500 group-hover:text-yellow-500 transition" />
           </div>
           <p className="text-sm text-gray-500 mt-1">Configure UPI, Bank Transfer, and Crypto deposit methods shown to users.</p>
         </section>
@@ -154,13 +154,13 @@ export default function SettingsPage() {
         disabled={busy || !form}
         className="rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-2.5 font-bold text-slate-900 shadow-sm disabled:opacity-40 hover:brightness-110 transition"
       >
-        {busy ? "Saving…" : "Save Settings"}
+        {busy ? "Savingâ€¦" : "Save Settings"}
       </button>
 
       {/* Cricket Sync */}
       <Section title="Data Sync" Icon={Database}>
         <p className="text-sm text-gray-500 mb-3">
-          Sync live cricket series from the Cricket API (requires an API key set under <span className="text-yellow-600 font-semibold">API Keys → Cricket API</span>).
+          Sync live cricket series from the Cricket API (requires an API key set under <span className="text-yellow-600 font-semibold">API Keys â†’ Cricket API</span>).
         </p>
         <button
           onClick={syncCricket}
@@ -168,7 +168,7 @@ export default function SettingsPage() {
           className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-2 font-bold text-slate-900 shadow-sm disabled:opacity-50 hover:brightness-110 transition"
         >
           <RefreshCw size={16} className={syncBusy ? "animate-spin" : ""} />
-          {syncBusy ? "Syncing…" : "Sync Cricket Series"}
+          {syncBusy ? "Syncingâ€¦" : "Sync Cricket Series"}
         </button>
       </Section>
 

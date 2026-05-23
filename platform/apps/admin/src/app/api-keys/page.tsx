@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import useSWR, { mutate } from "swr";
 import { useState } from "react";
 import { api } from "@/lib/api";
@@ -25,7 +25,7 @@ export default function ApiKeysPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-black text-gray-900">API Keys</h1>
-          <p className="text-sm text-gray-400 mt-0.5">All provider credentials. Encrypted at rest, last-4 shown.</p>
+          <p className="text-sm text-gray-500 mt-0.5">All provider credentials. Encrypted at rest, last-4 shown.</p>
         </div>
       </div>
 
@@ -55,24 +55,24 @@ export default function ApiKeysPage() {
                 <li key={c.key} className="px-4 py-3 grid grid-cols-12 gap-3 items-center hover:bg-yellow-50/30 transition">
                   <div className="col-span-12 md:col-span-4">
                     <div className="font-semibold text-gray-800">{c.label}</div>
-                    <div className="text-xs text-gray-400 font-mono">{c.key}</div>
+                    <div className="text-xs text-gray-500 font-mono">{c.key}</div>
                   </div>
                   <div className="col-span-12 md:col-span-5 text-xs">
                     {e ? (
                       <div className="flex flex-wrap gap-2">
                         {c.fields.map((f) => (
                           <span key={f} className="px-2 py-0.5 rounded-full bg-gray-50 border border-gray-200">
-                            <span className="text-gray-400">{f}:</span>
-                            <span className="font-mono text-gray-700 ml-1">{e.masked[f] ?? "—"}</span>
+                            <span className="text-gray-500">{f}:</span>
+                            <span className="font-mono text-gray-700 ml-1">{e.masked[f] ?? "â€”"}</span>
                           </span>
                         ))}
                       </div>
-                    ) : <span className="text-gray-400 italic">Not configured</span>}
+                    ) : <span className="text-gray-500 italic">Not configured</span>}
                   </div>
                   <div className="col-span-6 md:col-span-1 text-center">
                     {e?.enabled
                       ? <CheckCircle2 className="inline text-emerald-500" size={18} />
-                      : <XCircle className="inline text-gray-300" size={18} />}
+                      : <XCircle className="inline text-gray-400" size={18} />}
                   </div>
                   <div className="col-span-6 md:col-span-2 flex gap-1 justify-end">
                     <button
@@ -138,7 +138,7 @@ function EditModal({ cat, existing, onClose }: { cat: Cat; existing?: Existing; 
       <div className="w-full max-w-lg rounded-2xl border border-yellow-100 bg-white p-6 space-y-3 max-h-[90vh] overflow-y-auto shadow-xl">
         <div>
           <h2 className="text-xl font-black text-gray-900">{cat.label}</h2>
-          <p className="text-xs text-gray-400">{cat.key} · {cat.category}</p>
+          <p className="text-xs text-gray-500">{cat.key} Â· {cat.category}</p>
         </div>
 
         {cat.fields.map((f) => (
@@ -147,7 +147,7 @@ function EditModal({ cat, existing, onClose }: { cat: Cat; existing?: Existing; 
             <input
               type={f.toLowerCase().includes("secret") || f.toLowerCase().includes("password") ? "password" : "text"}
               className={inputCls}
-              placeholder={existing?.masked[f] ? `Current: ${existing.masked[f]} — enter to replace` : ""}
+              placeholder={existing?.masked[f] ? `Current: ${existing.masked[f]} â€” enter to replace` : ""}
               value={fields[f]}
               onChange={(e) => setFields({ ...fields, [f]: e.target.value })}
             />
@@ -173,7 +173,7 @@ function EditModal({ cat, existing, onClose }: { cat: Cat; existing?: Existing; 
             disabled={busy}
             className="px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900 font-bold shadow-sm disabled:opacity-50 hover:brightness-110 transition"
           >
-            {busy ? "Saving…" : "Save"}
+            {busy ? "Savingâ€¦" : "Save"}
           </button>
         </div>
       </div>

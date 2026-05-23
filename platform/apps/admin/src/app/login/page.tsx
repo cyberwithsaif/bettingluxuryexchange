@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import { Eye, EyeOff, Lock } from "lucide-react";
 import { api } from "@/lib/api";
@@ -32,7 +32,7 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen flex bg-gray-50">
-      {/* Left panel — branding */}
+      {/* Left panel â€” branding */}
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12"
         style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%)" }}>
         <div className="flex items-center gap-3">
@@ -50,10 +50,10 @@ export default function AdminLogin() {
           </p>
           <div className="mt-8 grid grid-cols-2 gap-4">
             {[
-              { label: "Users", icon: "👥" },
-              { label: "Live Markets", icon: "📊" },
-              { label: "Transactions", icon: "💳" },
-              { label: "Risk Monitor", icon: "⚡" },
+              { label: "Users", icon: "ðŸ‘¥" },
+              { label: "Live Markets", icon: "ðŸ“Š" },
+              { label: "Transactions", icon: "ðŸ’³" },
+              { label: "Risk Monitor", icon: "âš¡" },
             ].map(({ label, icon }) => (
               <div key={label} className="flex items-center gap-2 p-3 rounded-xl" style={{ background: "rgba(255,255,255,0.06)" }}>
                 <span className="text-xl">{icon}</span>
@@ -62,10 +62,10 @@ export default function AdminLogin() {
             ))}
           </div>
         </div>
-        <p className="text-slate-500 text-xs">DiamondPlay22 Admin v1.0 • Secure Access Only</p>
+        <p className="text-slate-500 text-xs">DiamondPlay22 Admin v1.0 â€¢ Secure Access Only</p>
       </div>
 
-      {/* Right panel — form */}
+      {/* Right panel â€” form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white">
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
@@ -76,7 +76,7 @@ export default function AdminLogin() {
 
           <div className="mb-8">
             <h1 className="text-3xl font-black text-gray-900 mb-1">Sign in</h1>
-            <p className="text-gray-400 text-sm">Authorized personnel only</p>
+            <p className="text-gray-500 text-sm">Authorized personnel only</p>
           </div>
 
           <form onSubmit={submit} className="space-y-5">
@@ -101,7 +101,7 @@ export default function AdminLogin() {
                   required
                   autoComplete="current-password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
+                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   className="w-full px-4 py-3 pr-12 rounded-xl border border-yellow-200 bg-white text-gray-800 placeholder-gray-300 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition-all"
@@ -109,7 +109,7 @@ export default function AdminLogin() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-600 transition"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -134,7 +134,7 @@ export default function AdminLogin() {
             {/* Error */}
             {err && (
               <div className="p-3 rounded-xl text-sm font-medium text-red-700 bg-red-50 border border-red-200 flex items-center gap-2">
-                <span>⚠</span> {err}
+                <span>âš </span> {err}
               </div>
             )}
 
@@ -151,12 +151,12 @@ export default function AdminLogin() {
               }}
             >
               <Lock size={16} />
-              {busy ? "Signing in…" : "Enter Admin Panel"}
+              {busy ? "Signing inâ€¦" : "Enter Admin Panel"}
             </button>
           </form>
 
-          <p className="text-center text-xs text-gray-300 mt-8">
-            Secure connection • diamondplay22.site
+          <p className="text-center text-xs text-gray-400 mt-8">
+            Secure connection â€¢ diamondplay22.site
           </p>
         </div>
       </div>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect } from "react";
 import useSWR, { mutate } from "swr";
 import { api } from "@/lib/api";
@@ -22,7 +22,7 @@ interface SiteSettings {
 const SETTINGS_KEY = "/admin/platform-settings";
 const DEFAULTS: SiteSettings = { siteName: "DiamondPlay22", siteTagline: "Bet & Win" };
 const EMPTY_CAT: Omit<CategoryBanner, "id" | "sortOrder"> = {
-  title: "", subtitle: "", href: "/casino", emoji: "🎰",
+  title: "", subtitle: "", href: "/casino", emoji: "ðŸŽ°",
   gradient: "linear-gradient(135deg,#3d0810 0%,#6b0e1a 40%,#1a0408 100%)",
 };
 
@@ -62,7 +62,7 @@ function CardForm({ value, onChange, onSubmit, label, saving }: {
         </div>
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Emoji</label>
-          <input value={value.emoji} onChange={e => onChange({ ...value, emoji: e.target.value })} placeholder="🎰" className={inputCls} />
+          <input value={value.emoji} onChange={e => onChange({ ...value, emoji: e.target.value })} placeholder="ðŸŽ°" className={inputCls} />
         </div>
       </div>
       <div>
@@ -86,7 +86,7 @@ function CardForm({ value, onChange, onSubmit, label, saving }: {
       <button type="button" onClick={onSubmit} disabled={saving}
         className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-2 rounded-lg font-bold text-slate-900 text-sm shadow-sm hover:brightness-110 disabled:opacity-50 transition">
         <Save size={14} />
-        {saving ? "Saving…" : label}
+        {saving ? "Savingâ€¦" : label}
       </button>
     </div>
   );
@@ -166,7 +166,7 @@ export default function BannerSettingsPage() {
           <Megaphone size={24} className="text-yellow-500" />
           Banner Settings
         </h1>
-        <p className="text-sm text-gray-400 mt-0.5">Manage homepage category cards and site identity.</p>
+        <p className="text-sm text-gray-500 mt-0.5">Manage homepage category cards and site identity.</p>
       </div>
 
       {/* Category Cards */}
@@ -176,32 +176,32 @@ export default function BannerSettingsPage() {
             <Layout size={16} className="text-yellow-500" />
             Category Cards (Homepage)
           </h2>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-gray-500 mt-1">
             The large Casino & Sports Betting cards shown at the top of the homepage.
-            Size: <span className="text-gray-600 font-semibold">~680 × 140 px</span> each.
+            Size: <span className="text-gray-600 font-semibold">~680 Ã— 140 px</span> each.
           </p>
         </div>
 
         <div className="space-y-2">
           {banners.length === 0 && (
-            <div className="text-xs text-gray-400 py-6 text-center border border-dashed border-gray-200 rounded-lg">
-              No cards saved — defaults (Casino & Sports Betting) are showing on homepage.
+            <div className="text-xs text-gray-500 py-6 text-center border border-dashed border-gray-200 rounded-lg">
+              No cards saved â€” defaults (Casino & Sports Betting) are showing on homepage.
             </div>
           )}
           {banners.map((cat, i) => (
             <div key={cat.id} className="border border-yellow-100 rounded-xl overflow-hidden">
               <div className="flex items-center gap-3 p-3 bg-gray-50">
-                <GripVertical size={16} className="text-gray-300 shrink-0" />
+                <GripVertical size={16} className="text-gray-400 shrink-0" />
                 <div className="w-20 h-9 rounded-lg overflow-hidden shrink-0 border border-gray-200" style={{ background: cat.gradient }} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800">{cat.emoji} {cat.title}</p>
-                  <p className="text-xs text-gray-400 truncate">{cat.subtitle} · <span className="text-gray-300">{cat.href}</span></p>
+                  <p className="text-xs text-gray-500 truncate">{cat.subtitle} Â· <span className="text-gray-400">{cat.href}</span></p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button disabled={i === 0} onClick={() => move(i, -1)}
-                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30 text-gray-500 text-xs">↑</button>
+                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30 text-gray-500 text-xs">â†‘</button>
                   <button disabled={i === banners.length - 1} onClick={() => move(i, 1)}
-                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30 text-gray-500 text-xs">↓</button>
+                    className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-30 text-gray-500 text-xs">â†“</button>
                   <button
                     onClick={() => {
                       if (editingId === cat.id) { setEditingId(null); }
@@ -215,7 +215,7 @@ export default function BannerSettingsPage() {
                   >
                     {editingId === cat.id ? "Cancel" : "Edit"}
                   </button>
-                  <button onClick={() => remove(cat.id)} className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition">
+                  <button onClick={() => remove(cat.id)} className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-50 text-gray-500 hover:text-red-500 transition">
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -247,7 +247,7 @@ export default function BannerSettingsPage() {
       <section className="rounded-xl border border-yellow-100 bg-white p-5 space-y-4 shadow-sm">
         <div>
           <h2 className="font-black text-gray-800 text-sm uppercase tracking-wider">Site Identity</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Used in the sidebar logo and browser tab title.</p>
+          <p className="text-xs text-gray-500 mt-0.5">Used in the sidebar logo and browser tab title.</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -266,7 +266,7 @@ export default function BannerSettingsPage() {
             className="flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-amber-500 px-5 py-2 rounded-lg font-bold text-slate-900 text-sm shadow-sm hover:brightness-110 disabled:opacity-50 transition"
           >
             <Save size={15} />
-            {siteBusy ? "Saving…" : "Save"}
+            {siteBusy ? "Savingâ€¦" : "Save"}
           </button>
           {siteMsg && (
             <p className={`text-sm flex items-center gap-1 font-medium ${siteMsg.ok ? "text-emerald-600" : "text-red-500"}`}>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import useSWR from "swr";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
@@ -16,11 +16,11 @@ interface CasinoBet {
 }
 
 const GAME_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
-  mines:    { label: "Mines",    emoji: "💣", color: "bg-red-50    text-red-600    border-red-200" },
-  plinko:   { label: "Plinko",   emoji: "🎯", color: "bg-purple-50 text-purple-700 border-purple-200" },
-  pump:     { label: "Pump",     emoji: "🎈", color: "bg-pink-50   text-pink-700   border-pink-200" },
-  dice:     { label: "Dice",     emoji: "🎲", color: "bg-blue-50   text-blue-700   border-blue-200" },
-  roulette: { label: "Roulette", emoji: "🎡", color: "bg-amber-50  text-amber-700  border-amber-200" },
+  mines:    { label: "Mines",    emoji: "ðŸ’£", color: "bg-red-50    text-red-600    border-red-200" },
+  plinko:   { label: "Plinko",   emoji: "ðŸŽ¯", color: "bg-purple-50 text-purple-700 border-purple-200" },
+  pump:     { label: "Pump",     emoji: "ðŸŽˆ", color: "bg-pink-50   text-pink-700   border-pink-200" },
+  dice:     { label: "Dice",     emoji: "ðŸŽ²", color: "bg-blue-50   text-blue-700   border-blue-200" },
+  roulette: { label: "Roulette", emoji: "ðŸŽ¡", color: "bg-amber-50  text-amber-700  border-amber-200" },
 };
 
 function buildKey(q: string, game: string, skip: number) {
@@ -49,7 +49,7 @@ export default function AdminCasinoBetsPage() {
         <input
           value={q}
           onChange={(e) => { setQ(e.target.value); setSkip(0); }}
-          placeholder="Search username…"
+          placeholder="Search usernameâ€¦"
           className="border border-yellow-200 bg-white rounded-lg px-3 py-2 text-sm w-56 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-yellow-400 shadow-sm"
         />
         <select
@@ -83,14 +83,14 @@ export default function AdminCasinoBetsPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={9} className="text-center py-8 text-gray-400">Loading…</td>
+                <td colSpan={9} className="text-center py-8 text-gray-500">Loadingâ€¦</td>
               </tr>
             )}
             {!isLoading && (!bets || bets.length === 0) && (
               <tr>
-                <td colSpan={9} className="text-center py-12 text-gray-400">
+                <td colSpan={9} className="text-center py-12 text-gray-500">
                   <p className="font-medium">No casino bets found.</p>
-                  <p className="text-xs mt-1 text-gray-300">Try clearing the filters or selecting a different game.</p>
+                  <p className="text-xs mt-1 text-gray-400">Try clearing the filters or selecting a different game.</p>
                 </td>
               </tr>
             )}
@@ -98,17 +98,17 @@ export default function AdminCasinoBetsPage() {
               const g = GAME_LABELS[bet.game];
               return (
                 <tr key={bet.id} className="border-t border-gray-100 hover:bg-yellow-50/30 transition">
-                  <Td className="font-mono text-xs text-gray-400">{bet.id.slice(0, 8)}</Td>
+                  <Td className="font-mono text-xs text-gray-500">{bet.id.slice(0, 8)}</Td>
                   <Td>
                     <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold border", g?.color ?? "")}>
                       {g?.emoji} {g?.label ?? bet.game}
                     </span>
                   </Td>
                   <Td className="font-semibold text-gray-800">{bet.user.username}</Td>
-                  <Td className="tabular-nums text-gray-700 font-semibold">₹{Number(bet.betAmount).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</Td>
-                  <Td className="tabular-nums text-gray-700">₹{Number(bet.payout).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</Td>
+                  <Td className="tabular-nums text-gray-700 font-semibold">â‚¹{Number(bet.betAmount).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</Td>
+                  <Td className="tabular-nums text-gray-700">â‚¹{Number(bet.payout).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</Td>
                   <Td className={cn("tabular-nums font-semibold", bet.profit >= 0 ? "text-emerald-600" : "text-red-500")}>
-                    {bet.profit >= 0 ? "+" : ""}₹{Number(bet.profit).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                    {bet.profit >= 0 ? "+" : ""}â‚¹{Number(bet.profit).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                   </Td>
                   <Td className="text-xs text-gray-500 max-w-[100px] truncate">{bet.extra}</Td>
                   <Td>
@@ -121,7 +121,7 @@ export default function AdminCasinoBetsPage() {
                       {bet.status}
                     </span>
                   </Td>
-                  <Td className="text-xs text-gray-400">
+                  <Td className="text-xs text-gray-500">
                     {new Date(bet.createdAt).toLocaleString("en-IN", { hour12: false, day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                   </Td>
                 </tr>
@@ -137,13 +137,13 @@ export default function AdminCasinoBetsPage() {
           disabled={skip === 0}
           onClick={() => setSkip(Math.max(0, skip - 50))}
           className="px-4 py-2 rounded-lg border border-yellow-200 text-sm text-gray-600 font-medium disabled:opacity-40 hover:border-yellow-400 hover:bg-yellow-50 transition"
-        >← Prev</button>
-        <span className="text-sm text-gray-400">Showing {skip + 1}–{skip + (bets?.length ?? 0)}</span>
+        >â† Prev</button>
+        <span className="text-sm text-gray-500">Showing {skip + 1}â€“{skip + (bets?.length ?? 0)}</span>
         <button
           disabled={(bets?.length ?? 0) < 50}
           onClick={() => setSkip(skip + 50)}
           className="px-4 py-2 rounded-lg border border-yellow-200 text-sm text-gray-600 font-medium disabled:opacity-40 hover:border-yellow-400 hover:bg-yellow-50 transition"
-        >Next →</button>
+        >Next â†’</button>
       </div>
     </div>
   );

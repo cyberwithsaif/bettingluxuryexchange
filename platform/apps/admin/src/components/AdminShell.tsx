@@ -71,7 +71,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   if (!user) return <Spinner />;
 
   return (
-    <div className="h-screen overflow-hidden flex bg-gray-50">
+    <div className="h-screen overflow-hidden flex bg-[#fef9f3]">
       <TopLoader />
 
       {/* ── Sidebar ── */}
@@ -151,9 +151,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       )}
 
       {/* ── Main Content ── */}
-      <main className="flex-1 md:ml-64 h-screen overflow-y-auto bg-white">
-        {/* Top bar */}
-        <div className="sticky top-0 z-20 h-14 bg-white border-b border-yellow-100 flex items-center px-4 md:px-6 gap-3 shadow-sm">
+      <main className="flex-1 md:ml-64 h-screen overflow-y-auto bg-[#fef9f3]">
+        {/* Top bar — slightly translucent cream so it blends but separates */}
+        <div className="sticky top-0 z-20 h-14 bg-[#fef9f3]/95 backdrop-blur-sm border-b border-amber-200/50 flex items-center px-4 md:px-6 gap-3 shadow-sm">
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600">
             <Menu size={18} />
           </button>

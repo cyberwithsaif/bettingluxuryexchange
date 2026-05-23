@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import useSWR, { mutate } from "swr";
 import { useState } from "react";
 import { api } from "@/lib/api";
@@ -37,9 +37,9 @@ export default function MarketsAdmin() {
       </div>
 
       {(!matches || (matches as any[]).length === 0) && (
-        <div className="rounded-xl border border-yellow-100 bg-white p-10 text-center text-gray-400 shadow-sm">
+        <div className="rounded-xl border border-yellow-100 bg-white p-10 text-center text-gray-500 shadow-sm">
           <p className="font-medium">No live matches</p>
-          <p className="text-xs mt-1 text-gray-300">No {sport} matches available right now.</p>
+          <p className="text-xs mt-1 text-gray-400">No {sport} matches available right now.</p>
         </div>
       )}
 
@@ -47,7 +47,7 @@ export default function MarketsAdmin() {
         <div key={m.id} className="rounded-xl border border-yellow-100 bg-white p-4 shadow-sm">
           <h3 className="font-bold text-gray-800">
             {m.name}
-            <span className="text-xs text-gray-400 ml-2">{new Date(m.startTime).toLocaleString("en-IN")}</span>
+            <span className="text-xs text-gray-500 ml-2">{new Date(m.startTime).toLocaleString("en-IN")}</span>
           </h3>
           {(m.markets ?? []).map((mk: any) => (
             <div key={mk.id} className="mt-3 rounded-lg border border-gray-100 p-3 bg-gray-50">

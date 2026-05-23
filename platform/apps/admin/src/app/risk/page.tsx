@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import useSWR from "swr";
 
 export default function RiskPage() {
@@ -7,7 +7,7 @@ export default function RiskPage() {
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-black text-gray-900">Live Risk</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Top users by current exposure. Auto-refreshes from real-time wallet stream.</p>
+        <p className="text-sm text-gray-500 mt-0.5">Top users by current exposure. Auto-refreshes from real-time wallet stream.</p>
       </div>
       <div className="rounded-xl border border-yellow-100 bg-white overflow-x-auto shadow-sm">
         <table className="w-full text-sm">
@@ -19,14 +19,14 @@ export default function RiskPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={5} className="text-center py-8 text-gray-400">Loading risk data…</td>
+                <td colSpan={5} className="text-center py-8 text-gray-500">Loading risk dataâ€¦</td>
               </tr>
             )}
             {!isLoading && (!data || (data as any[]).length === 0) && (
               <tr>
-                <td colSpan={5} className="text-center py-12 text-gray-400">
+                <td colSpan={5} className="text-center py-12 text-gray-500">
                   <p className="font-medium">No exposure data.</p>
-                  <p className="text-xs mt-1 text-gray-300">Users with open bets will appear here.</p>
+                  <p className="text-xs mt-1 text-gray-400">Users with open bets will appear here.</p>
                 </td>
               </tr>
             )}
@@ -38,9 +38,9 @@ export default function RiskPage() {
                     {w.user.role}
                   </span>
                 </Td>
-                <Td className="tabular-nums text-gray-700">₹{Number(w.balance).toLocaleString("en-IN")}</Td>
-                <Td className="tabular-nums text-red-600 font-semibold">₹{Number(w.exposure).toLocaleString("en-IN")}</Td>
-                <Td className="tabular-nums text-emerald-600 font-semibold">₹{(Number(w.balance) - Number(w.exposure)).toLocaleString("en-IN")}</Td>
+                <Td className="tabular-nums text-gray-700">â‚¹{Number(w.balance).toLocaleString("en-IN")}</Td>
+                <Td className="tabular-nums text-red-600 font-semibold">â‚¹{Number(w.exposure).toLocaleString("en-IN")}</Td>
+                <Td className="tabular-nums text-emerald-600 font-semibold">â‚¹{(Number(w.balance) - Number(w.exposure)).toLocaleString("en-IN")}</Td>
               </tr>
             ))}
           </tbody>

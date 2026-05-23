@@ -5,8 +5,11 @@
 :root { color-scheme: light; }
 
 html, body {
-  background: linear-gradient(180deg, #ffffff 0%, #f8f8f8 100%);
-  color: #1a1a1a;
+  /* Warm cream tint instead of harsh white — easier on the eyes for long
+     admin sessions while keeping a clean light feel. White cards/inputs
+     now pop against this slightly toned background. */
+  background: linear-gradient(180deg, #fef9f3 0%, #faf3e8 100%);
+  color: #1f2937; /* slate-800 — strong readable text on cream */
   font-family: theme(fontFamily.sans);
   min-height: 100vh;
 }

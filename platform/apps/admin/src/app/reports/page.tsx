@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import useSWR from "swr";
 import { useState } from "react";
 import { TrendingUp, TrendingDown, Activity, BarChart3 } from "lucide-react";
@@ -36,7 +36,7 @@ export default function AdminReportsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-black text-gray-900">Platform Reports</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Bet volume and operator P/L over time</p>
+          <p className="text-sm text-gray-500 mt-0.5">Bet volume and operator P/L over time</p>
         </div>
         <div className="flex gap-1.5">
           {QUICK_RANGES.map(({ label, days: d }) => (
@@ -57,12 +57,12 @@ export default function AdminReportsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KPI label="Total Bets"         value={data ? fmt(data.totalBets) : "—"}            Icon={Activity}    />
-        <KPI label="Open Bets"          value={data ? fmt(data.openBets)  : "—"}            Icon={BarChart3}   />
-        <KPI label="Total User Wins"    value={data ? `₹${fmt(data.totalUserWin)}` : "—"}  Icon={TrendingUp}   tone="bad" />
+        <KPI label="Total Bets"         value={data ? fmt(data.totalBets) : "â€”"}            Icon={Activity}    />
+        <KPI label="Open Bets"          value={data ? fmt(data.openBets)  : "â€”"}            Icon={BarChart3}   />
+        <KPI label="Total User Wins"    value={data ? `â‚¹${fmt(data.totalUserWin)}` : "â€”"}  Icon={TrendingUp}   tone="bad" />
         <KPI
           label="Operator P/L"
-          value={data ? `₹${fmt(data.totalOperatorPL)}` : "—"}
+          value={data ? `â‚¹${fmt(data.totalOperatorPL)}` : "â€”"}
           Icon={data && data.totalOperatorPL >= 0 ? TrendingUp : TrendingDown}
           tone={data && data.totalOperatorPL >= 0 ? "ok" : "bad"}
         />
@@ -71,12 +71,12 @@ export default function AdminReportsPage() {
       {/* Volume chart */}
       <div className="rounded-xl bg-white border border-yellow-100 p-5 shadow-sm">
         <h2 className="text-lg font-black text-gray-900 mb-1">Daily Bet Volume</h2>
-        <p className="text-xs text-gray-400 mb-4">Last {days} day{days > 1 ? "s" : ""}</p>
+        <p className="text-xs text-gray-500 mb-4">Last {days} day{days > 1 ? "s" : ""}</p>
         {isLoading && <div className="h-32 animate-pulse bg-gray-100 rounded-lg" />}
         {!isLoading && data && (
           <div className="flex items-end gap-1 h-36 overflow-x-auto">
             {data.series.length === 0 && (
-              <p className="text-gray-400 text-sm m-auto">No activity in this period.</p>
+              <p className="text-gray-500 text-sm m-auto">No activity in this period.</p>
             )}
             {data.series.map((s) => {
               const h = Math.max(4, (s.volume / maxVol) * 100);
@@ -85,10 +85,10 @@ export default function AdminReportsPage() {
                   <div
                     style={{ height: `${h}%` }}
                     className="w-full rounded-t bg-yellow-400 hover:bg-yellow-500 transition cursor-pointer"
-                    title={`${s.date}: ₹${fmt(s.volume)}`}
+                    title={`${s.date}: â‚¹${fmt(s.volume)}`}
                   />
                   {data.series.length <= 14 && (
-                    <span className="text-[9px] text-gray-400 group-hover:text-gray-600 transition-colors">{s.date.slice(5)}</span>
+                    <span className="text-[9px] text-gray-500 group-hover:text-gray-600 transition-colors">{s.date.slice(5)}</span>
                   )}
                 </div>
               );
@@ -100,12 +100,12 @@ export default function AdminReportsPage() {
       {/* P/L Chart */}
       <div className="rounded-xl bg-white border border-yellow-100 p-5 shadow-sm">
         <h2 className="text-lg font-black text-gray-900 mb-1">Daily Operator P/L</h2>
-        <p className="text-xs text-gray-400 mb-4">Positive = operator profit</p>
+        <p className="text-xs text-gray-500 mb-4">Positive = operator profit</p>
         {isLoading && <div className="h-32 animate-pulse bg-gray-100 rounded-lg" />}
         {!isLoading && data && (
           <div className="flex items-end gap-1 h-36 overflow-x-auto">
             {data.series.length === 0 && (
-              <p className="text-gray-400 text-sm m-auto">No settlement activity yet.</p>
+              <p className="text-gray-500 text-sm m-auto">No settlement activity yet.</p>
             )}
             {data.series.map((s) => {
               const h = Math.max(4, (Math.abs(s.pl) / maxPL) * 100);
@@ -114,10 +114,10 @@ export default function AdminReportsPage() {
                   <div
                     style={{ height: `${h}%` }}
                     className={`w-full rounded-t transition cursor-pointer ${s.pl >= 0 ? "bg-emerald-400 hover:bg-emerald-500" : "bg-red-400 hover:bg-red-500"}`}
-                    title={`${s.date}: ₹${fmt(s.pl)}`}
+                    title={`${s.date}: â‚¹${fmt(s.pl)}`}
                   />
                   {data.series.length <= 14 && (
-                    <span className="text-[9px] text-gray-400 group-hover:text-gray-600 transition-colors">{s.date.slice(5)}</span>
+                    <span className="text-[9px] text-gray-500 group-hover:text-gray-600 transition-colors">{s.date.slice(5)}</span>
                   )}
                 </div>
               );
@@ -141,9 +141,9 @@ export default function AdminReportsPage() {
               {[...data.series].reverse().map((s) => (
                 <tr key={s.date} className="border-t border-gray-100 hover:bg-yellow-50/30 transition">
                   <td className="px-4 py-2.5 text-gray-600">{s.date}</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-gray-700 font-semibold">₹{fmt(s.volume)}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-gray-700 font-semibold">â‚¹{fmt(s.volume)}</td>
                   <td className={`px-4 py-2.5 text-right tabular-nums font-bold ${s.pl >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                    {s.pl >= 0 ? "+" : ""}₹{fmt(s.pl)}
+                    {s.pl >= 0 ? "+" : ""}â‚¹{fmt(s.pl)}
                   </td>
                 </tr>
               ))}
@@ -168,7 +168,7 @@ function KPI({ label, value, Icon, tone }: {
         <Icon size={16} />
       </div>
       <div>
-        <p className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">{label}</p>
+        <p className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">{label}</p>
         <p className="text-2xl font-black text-gray-900 mt-0.5 tabular-nums">{value}</p>
       </div>
     </div>

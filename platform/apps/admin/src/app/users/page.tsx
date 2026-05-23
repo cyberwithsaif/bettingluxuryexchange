@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import useSWR, { mutate } from "swr";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -64,7 +64,7 @@ export default function UsersPage() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search username…"
+          placeholder="Search usernameâ€¦"
           className="border border-yellow-200 bg-white rounded-lg px-3 py-2 text-sm w-64 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-yellow-400 shadow-sm"
         />
         <select
@@ -94,7 +94,7 @@ export default function UsersPage() {
           </thead>
           <tbody>
             {isLoading && (
-              <tr><td colSpan={8} className="text-center py-10 text-gray-400">Loading…</td></tr>
+              <tr><td colSpan={8} className="text-center py-10 text-gray-500">Loadingâ€¦</td></tr>
             )}
             {!isLoading && (users ?? []).map((u) => (
               <tr
@@ -113,10 +113,10 @@ export default function UsersPage() {
                     {u.status}
                   </span>
                 </Td>
-                <Td className="tabular-nums text-emerald-700 font-semibold">₹{Number(u.wallet?.balance ?? 0).toLocaleString("en-IN")}</Td>
-                <Td className="tabular-nums text-red-500 font-semibold">₹{Number(u.wallet?.exposure ?? 0).toLocaleString("en-IN")}</Td>
+                <Td className="tabular-nums text-emerald-700 font-semibold">â‚¹{Number(u.wallet?.balance ?? 0).toLocaleString("en-IN")}</Td>
+                <Td className="tabular-nums text-red-500 font-semibold">â‚¹{Number(u.wallet?.exposure ?? 0).toLocaleString("en-IN")}</Td>
                 <Td className="text-gray-600">{(u.partnershipBps / 100).toFixed(2)}%</Td>
-                <Td className="tabular-nums text-gray-700">₹{Number(u.creditReference ?? 0).toLocaleString("en-IN")}</Td>
+                <Td className="tabular-nums text-gray-700">â‚¹{Number(u.creditReference ?? 0).toLocaleString("en-IN")}</Td>
                 <Td>
                   <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     <ActionBtn title="Edit user" icon={<Edit2 size={13} />}
@@ -151,7 +151,7 @@ export default function UsersPage() {
               </tr>
             ))}
             {!isLoading && (!users || users.length === 0) && (
-              <tr><td colSpan={8} className="text-center py-12 text-gray-400">No users found.</td></tr>
+              <tr><td colSpan={8} className="text-center py-12 text-gray-500">No users found.</td></tr>
             )}
           </tbody>
         </table>
@@ -163,7 +163,7 @@ export default function UsersPage() {
   );
 }
 
-// ─── Edit User Modal ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Edit User Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function EditUserModal({ user, onClose }: { user: UserRecord; onClose: (saved?: boolean) => void }) {
   const [tab, setTab] = useState<"profile" | "limits">("profile");
@@ -209,7 +209,7 @@ function EditUserModal({ user, onClose }: { user: UserRecord; onClose: (saved?: 
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
             <h2 className="text-xl font-black text-gray-900">Edit User</h2>
-            <p className="text-xs text-gray-500 mt-0.5">{user.username} · <span className="text-yellow-600 font-semibold">{user.role}</span></p>
+            <p className="text-xs text-gray-500 mt-0.5">{user.username} Â· <span className="text-yellow-600 font-semibold">{user.role}</span></p>
           </div>
           <button onClick={() => onClose()} className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition"><X size={18} /></button>
         </div>
@@ -219,7 +219,7 @@ function EditUserModal({ user, onClose }: { user: UserRecord; onClose: (saved?: 
             <button key={t} onClick={() => { setTab(t); setErr(null); setOk(null); }}
               className={cn(
                 "flex-1 py-2.5 text-sm font-semibold capitalize transition border-b-2",
-                tab === t ? "border-yellow-400 text-yellow-700" : "border-transparent text-gray-400 hover:text-gray-700"
+                tab === t ? "border-yellow-400 text-yellow-700" : "border-transparent text-gray-500 hover:text-gray-700"
               )}>{t}</button>
           ))}
         </div>
@@ -235,18 +235,18 @@ function EditUserModal({ user, onClose }: { user: UserRecord; onClose: (saved?: 
                   {ROLES.map((r) => <option key={r}>{r}</option>)}
                 </select>
               </Field>
-              <Field label="Partnership % (basis pts — 100 = 1%)">
+              <Field label="Partnership % (basis pts â€” 100 = 1%)">
                 <input type="number" min={0} max={10000} className="modal-input"
                   value={profile.partnershipBps}
                   onChange={(e) => setProfile({ ...profile, partnershipBps: Number(e.target.value) })} />
               </Field>
-              <Field label="Credit Reference (₹)">
+              <Field label="Credit Reference (â‚¹)">
                 <input type="number" min={0} className="modal-input"
                   value={profile.creditReference}
                   onChange={(e) => setProfile({ ...profile, creditReference: Number(e.target.value) })} />
               </Field>
               <button onClick={saveProfile} disabled={busy} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
-                <Save size={15} /> {busy ? "Saving…" : "Save Profile"}
+                <Save size={15} /> {busy ? "Savingâ€¦" : "Save Profile"}
               </button>
             </div>
           )}
@@ -254,19 +254,19 @@ function EditUserModal({ user, onClose }: { user: UserRecord; onClose: (saved?: 
           {tab === "limits" && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Min Stake (₹)">
+                <Field label="Min Stake (â‚¹)">
                   <input type="number" min={1} className="modal-input" value={limits.minStake}
                     onChange={(e) => setLimits({ ...limits, minStake: Number(e.target.value) })} />
                 </Field>
-                <Field label="Max Stake (₹)">
+                <Field label="Max Stake (â‚¹)">
                   <input type="number" min={100} className="modal-input" value={limits.maxStake}
                     onChange={(e) => setLimits({ ...limits, maxStake: Number(e.target.value) })} />
                 </Field>
-                <Field label="Max Market Exposure (₹)">
+                <Field label="Max Market Exposure (â‚¹)">
                   <input type="number" min={1000} className="modal-input" value={limits.maxMarketExposure}
                     onChange={(e) => setLimits({ ...limits, maxMarketExposure: Number(e.target.value) })} />
                 </Field>
-                <Field label="Max Daily Loss (₹)">
+                <Field label="Max Daily Loss (â‚¹)">
                   <input type="number" min={1000} className="modal-input" value={limits.maxDailyLoss}
                     onChange={(e) => setLimits({ ...limits, maxDailyLoss: Number(e.target.value) })} />
                 </Field>
@@ -286,7 +286,7 @@ function EditUserModal({ user, onClose }: { user: UserRecord; onClose: (saved?: 
                 ))}
               </div>
               <button onClick={saveLimits} disabled={busy} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
-                <Save size={15} /> {busy ? "Saving…" : "Save Limits"}
+                <Save size={15} /> {busy ? "Savingâ€¦" : "Save Limits"}
               </button>
             </div>
           )}
@@ -296,7 +296,7 @@ function EditUserModal({ user, onClose }: { user: UserRecord; onClose: (saved?: 
   );
 }
 
-// ─── Create User Modal ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Create User Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function CreateUserModal({ onClose }: { onClose: (saved?: boolean) => void }) {
   const [form, setForm] = useState({ username: "", password: "", role: "USER", partnershipBps: 0, creditReference: 0 });
@@ -323,7 +323,7 @@ function CreateUserModal({ onClose }: { onClose: (saved?: boolean) => void }) {
             <input type="number" min={0} max={10000} className="modal-input" value={form.partnershipBps}
               onChange={(e) => setForm({ ...form, partnershipBps: Number(e.target.value) })} />
           </Field>
-          <Field label="Credit Reference (₹)">
+          <Field label="Credit Reference (â‚¹)">
             <input type="number" min={0} className="modal-input" value={form.creditReference}
               onChange={(e) => setForm({ ...form, creditReference: Number(e.target.value) })} />
           </Field>
@@ -340,7 +340,7 @@ function CreateUserModal({ onClose }: { onClose: (saved?: boolean) => void }) {
             catch (e: any) { setErr(e?.response?.data?.message || "Failed"); }
             finally { setBusy(false); }
           }} className="btn-primary flex-1 text-sm disabled:opacity-50">
-            {busy ? "Creating…" : "Create User"}
+            {busy ? "Creatingâ€¦" : "Create User"}
           </button>
         </div>
       </div>
@@ -348,7 +348,7 @@ function CreateUserModal({ onClose }: { onClose: (saved?: boolean) => void }) {
   );
 }
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ActionBtn({ title, icon, className, onClick }: { title: string; icon: React.ReactNode; className?: string; onClick: () => void }) {
   return (

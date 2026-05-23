@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import useSWR, { mutate as globalMutate } from "swr";
 import { useState } from "react";
 import { api } from "@/lib/api";
@@ -38,7 +38,7 @@ export default function AdminNotificationsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-black text-gray-900">Announcements</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Manage site-wide banners and notifications</p>
+          <p className="text-sm text-gray-500 mt-0.5">Manage site-wide banners and notifications</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
@@ -62,7 +62,7 @@ export default function AdminNotificationsPage() {
       {!isLoading && (!announcements || announcements.length === 0) && (
         <div className="rounded-xl border border-yellow-100 bg-white p-10 text-center shadow-sm">
           <Bell size={40} className="mx-auto mb-3 text-gray-200" />
-          <p className="text-gray-400 text-sm">No announcements yet. Create one above.</p>
+          <p className="text-gray-500 text-sm">No announcements yet. Create one above.</p>
         </div>
       )}
 
@@ -92,19 +92,19 @@ export default function AdminNotificationsPage() {
                     "text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded border",
                     ann.active
                       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : "bg-gray-50 text-gray-400 border-gray-200",
+                      : "bg-gray-50 text-gray-500 border-gray-200",
                   )}>
                     {ann.active ? "Active" : "Inactive"}
                   </span>
-                  <span className="text-[11px] text-gray-400">
+                  <span className="text-[11px] text-gray-500">
                     {new Date(ann.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                   </span>
                 </div>
                 <p className="text-sm text-gray-800 leading-relaxed">{ann.text}</p>
                 {(ann.startsAt || ann.endsAt) && (
-                  <p className="text-[11px] text-gray-400 mt-1.5">
+                  <p className="text-[11px] text-gray-500 mt-1.5">
                     {ann.startsAt && <>From {new Date(ann.startsAt).toLocaleDateString("en-IN")}</>}
-                    {ann.endsAt && <> · Until {new Date(ann.endsAt).toLocaleDateString("en-IN")}</>}
+                    {ann.endsAt && <> Â· Until {new Date(ann.endsAt).toLocaleDateString("en-IN")}</>}
                   </p>
                 )}
               </div>
@@ -120,7 +120,7 @@ export default function AdminNotificationsPage() {
                 >
                   {ann.active
                     ? <ToggleRight size={16} className="text-emerald-600" />
-                    : <ToggleLeft size={16} className="text-gray-400" />}
+                    : <ToggleLeft size={16} className="text-gray-500" />}
                 </button>
                 <button
                   title="Delete"
@@ -129,7 +129,7 @@ export default function AdminNotificationsPage() {
                     await api.delete(`/announcements/${ann.id}`);
                     globalMutate(SWR_KEY);
                   }}
-                  className="p-2 rounded-md border border-gray-200 hover:border-red-300 hover:text-red-500 text-gray-400 transition"
+                  className="p-2 rounded-md border border-gray-200 hover:border-red-300 hover:text-red-500 text-gray-500 transition"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -184,7 +184,7 @@ function CreateAnnouncementModal({ onClose }: { onClose: (saved?: boolean) => vo
             className="modal-input resize-none"
             value={form.text}
             onChange={(e) => setForm({ ...form, text: e.target.value })}
-            placeholder="Enter announcement text…"
+            placeholder="Enter announcement textâ€¦"
           />
         </Field>
 
@@ -224,7 +224,7 @@ function CreateAnnouncementModal({ onClose }: { onClose: (saved?: boolean) => vo
             onClick={submit}
             className="px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 font-bold text-slate-900 shadow-sm disabled:opacity-50 text-sm hover:brightness-110 transition"
           >
-            {busy ? "Creating…" : "Create"}
+            {busy ? "Creatingâ€¦" : "Create"}
           </button>
         </div>
       </div>
