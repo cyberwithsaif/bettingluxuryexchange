@@ -312,40 +312,65 @@ function ProfileMenu({ username, onLogout }: { username: string; onLogout: () =>
 
       {open && (
         <>
-          {/* Backdrop for mobile */}
-          <div className="fixed inset-0 z-40 md:hidden" onClick={() => setOpen(false)} />
+          {/* Backdrop */}
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
-            className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 p-1.5 shadow-2xl z-50"
-            style={{ background: "#1a1330" }}
+            className="absolute right-0 mt-2 w-60 rounded-2xl shadow-2xl z-50 p-2"
+            style={{ background: "#191938", border: "1px solid rgba(139,92,246,0.2)" }}
           >
-            {([
-              ["Dashboard",         "/account"],
-              ["My Bets",           "/account/bets"],
-              ["Account Statement", "/account/statement"],
-              ["Profit / Loss",     "/account/pl"],
-              ["Notifications",     "/account/notifications"],
-              ["Deposit",           "/account/deposit"],
-              ["Withdraw",          "/account/withdraw"],
-              ["Security & 2FA",    "/account/security"],
-            ] as const).map(([l, h]) => (
-              <Link
-                key={h} href={h}
-                className="block px-3 py-2 text-[13px] rounded-lg text-white/70 hover:text-white font-medium transition"
-                style={{ background: "transparent" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                onClick={() => setOpen(false)}
+            {/* Single card for all items */}
+            <div className="rounded-xl overflow-hidden" style={{ background: "#2c2852" }}>
+              {([
+                ["Notifications",     "/account/notifications"],
+                ["Cashier",           "/account/deposit"],
+                ["Rewards",           "/rewards"],
+                ["Account Settings",  "/account/security"],
+                ["Profile",           "/account"],
+                ["History",           "/account/statement"],
+                ["Refer & Earn",      "/refer-earn"],
+              ] as const).map(([l, h], i, arr) => (
+                <Link
+                  key={h} href={h}
+                  className="flex items-center gap-2.5 px-4 py-3 text-[13px] font-semibold text-white/80 hover:text-white hover:bg-white/5 transition-colors"
+                  style={{ borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}
+                  onClick={() => setOpen(false)}
+                >
+                  {l}
+                </Link>
+              ))}
+            </div>
+
+            <div className="my-2 h-px" style={{ background: "rgba(139,92,246,0.15)" }} />
+
+            {/* Second card */}
+            <div className="rounded-xl overflow-hidden" style={{ background: "#2c2852" }}>
+              {([
+                ["Help Center",      "/contact"],
+                ["Roo Responsibly",  "/responsible"],
+                ["Live Support",     "/contact"],
+              ] as const).map(([l, h], i, arr) => (
+                <Link
+                  key={l} href={h}
+                  className="flex items-center gap-2.5 px-4 py-3 text-[13px] font-semibold text-white/80 hover:text-white hover:bg-white/5 transition-colors"
+                  style={{ borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}
+                  onClick={() => setOpen(false)}
+                >
+                  {l}
+                </Link>
+              ))}
+            </div>
+
+            <div className="my-2 h-px" style={{ background: "rgba(139,92,246,0.15)" }} />
+
+            {/* Logout card */}
+            <div className="rounded-xl overflow-hidden" style={{ background: "#2c2852" }}>
+              <button
+                onClick={onLogout}
+                className="flex w-full items-center gap-2.5 px-4 py-3 text-[13px] font-semibold text-red-400 hover:text-red-300 hover:bg-white/5 transition-colors"
               >
-                {l}
-              </Link>
-            ))}
-            <div className="h-px my-1" style={{ background: "rgba(255,255,255,0.08)" }} />
-            <button
-              onClick={onLogout}
-              className="flex w-full items-center gap-2 px-3 py-2 text-[13px] rounded-lg text-red-400 font-medium transition hover:bg-red-900/20"
-            >
-              <LogOut size={13} /> Sign out
-            </button>
+                <LogOut size={14} /> Logout
+              </button>
+            </div>
           </div>
         </>
       )}
