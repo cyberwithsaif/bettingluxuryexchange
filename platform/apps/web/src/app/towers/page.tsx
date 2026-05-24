@@ -45,6 +45,7 @@ interface PickResult {
   serverSeed?: string;
 }
 
+type TileKind = "idle" | "active" | "loading" | "safe" | "bomb_self" | "bomb_other" | "missed_safe";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -56,6 +57,24 @@ const DIFF_CONFIG: Record<Difficulty, { columns: number; safeTiles: number; bomb
 };
 
 const LEVELS = 8;
+const BROKEN_CLIPS = [
+  "polygon(8% 0%,92% 0%,100% 8%,100% 92%,92% 100%,8% 100%,0% 92%,0% 8%)",
+  "polygon(10% 1%,90% 0%,100% 10%,99% 91%,90% 100%,10% 99%,0% 90%,1% 10%)",
+  "polygon(7% 2%,93% 0%,100% 7%,98% 93%,93% 100%,7% 98%,0% 93%,2% 7%)",
+  "polygon(9% 0%,91% 2%,100% 9%,99% 90%,90% 99%,10% 100%,1% 91%,0% 10%)",
+  "polygon(6% 1%,94% 0%,100% 6%,100% 94%,94% 99%,6% 100%,0% 94%,0% 6%)",
+  "polygon(11% 0%,89% 1%,100% 11%,98% 89%,89% 100%,11% 99%,0% 89%,2% 11%)",
+];
+
+const TILE_STYLE: Record<TileKind, { bg: string; glow: string; textColor: string }> = {
+  idle:        { bg: "linear-gradient(145deg,#1e1854,#150f3a)",        glow: "none",                              textColor: "rgba(160,140,220,0.55)" },
+  active:      { bg: "linear-gradient(145deg,#7c3aed,#5b21b6)",        glow: "0 0 22px rgba(124,58,237,0.65)",   textColor: "#e9d5ff" },
+  loading:     { bg: "linear-gradient(145deg,#6d28d9,#4c1d95)",        glow: "0 0 22px rgba(109,40,217,0.6)",    textColor: "#c4b5fd" },
+  safe:        { bg: "linear-gradient(145deg,#166534,#14532d)",        glow: "0 0 24px rgba(34,197,94,0.55)",    textColor: "#86efac" },
+  bomb_self:   { bg: "linear-gradient(145deg,#991b1b,#7f1d1d)",        glow: "0 0 28px rgba(239,68,68,0.7)",     textColor: "#fca5a5" },
+  bomb_other:  { bg: "linear-gradient(145deg,#3b0000,#1c0a0a)",        glow: "none",                              textColor: "rgba(252,165,165,0.35)" },
+  missed_safe: { bg: "linear-gradient(145deg,#052e16,#022c22)",        glow: "none",                              textColor: "rgba(134,239,172,0.3)" },
+};
 
 function calcMultiplierTable(difficulty: Difficulty, houseEdge = 0.02): number[] {
   const { columns, safeTiles } = DIFF_CONFIG[difficulty];
@@ -64,8 +83,6 @@ function calcMultiplierTable(difficulty: Difficulty, houseEdge = 0.02): number[]
     return Math.floor(fair * (1 - houseEdge) * 100) / 100;
   });
 }
-
-// ─── Sounds ───────────────────────────────────────────────────────────────────
 
 function useSounds(enabled: boolean) {
   const ctx = useRef<AudioContext | null>(null);
@@ -90,20 +107,17 @@ function useSounds(enabled: boolean) {
       gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + delay + dur);
       osc.start(c.currentTime + delay);
       osc.stop(c.currentTime + delay + dur);
-    } catch { /* ignore AudioContext errors */ }
+    } catch { }
   }, [enabled]);
 
   return {
     safe:    () => { tone(440, 0.08); tone(660, 0.12, "sine", 0.2, 0.07); },
     bomb:    () => { tone(80, 0.6, "sawtooth", 0.5); tone(55, 0.4, "square", 0.3, 0.05); },
     cashout: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, "sine", 0.2, i * 0.07)),
-    bigwin:  () => [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.25, "sine", 0.25, i * 0.09)),
     hover:   () => tone(1200, 0.03, "sine", 0.05),
     start:   () => tone(330, 0.15, "sine", 0.2),
   };
 }
-
-// ─── Particle Burst ──────────────────────────────────────────────────────────
 
 function ParticleBurst({ trigger, color }: { trigger: number; color: string }) {
   const particles = Array.from({ length: 12 }, (_, i) => ({
@@ -136,30 +150,6 @@ function ParticleBurst({ trigger, color }: { trigger: number; color: string }) {
     </AnimatePresence>
   );
 }
-
-// ─── Tile ─────────────────────────────────────────────────────────────────────
-
-type TileKind = "idle" | "active" | "loading" | "safe" | "bomb_self" | "bomb_other" | "missed_safe";
-
-// Broken-crystal clip-path variants — vary by position for organic look
-const BROKEN_CLIPS = [
-  "polygon(8% 0%,92% 0%,100% 8%,100% 92%,92% 100%,8% 100%,0% 92%,0% 8%)",
-  "polygon(10% 1%,90% 0%,100% 10%,99% 91%,90% 100%,10% 99%,0% 90%,1% 10%)",
-  "polygon(7% 2%,93% 0%,100% 7%,98% 93%,93% 100%,7% 98%,0% 93%,2% 7%)",
-  "polygon(9% 0%,91% 2%,100% 9%,99% 90%,90% 99%,10% 100%,1% 91%,0% 10%)",
-  "polygon(6% 1%,94% 0%,100% 6%,100% 94%,94% 99%,6% 100%,0% 94%,0% 6%)",
-  "polygon(11% 0%,89% 1%,100% 11%,98% 89%,89% 100%,11% 99%,0% 89%,2% 11%)",
-];
-
-const TILE_STYLE: Record<TileKind, { bg: string; glow: string; textColor: string; overlay: string }> = {
-  idle:        { bg: "linear-gradient(145deg,#1e1854,#150f3a)",        glow: "none",                              textColor: "rgba(160,140,220,0.55)", overlay: "none" },
-  active:      { bg: "linear-gradient(145deg,#7c3aed,#5b21b6)",        glow: "0 0 22px rgba(124,58,237,0.65)",   textColor: "#e9d5ff",               overlay: "rgba(255,255,255,0.06)" },
-  loading:     { bg: "linear-gradient(145deg,#6d28d9,#4c1d95)",        glow: "0 0 22px rgba(109,40,217,0.6)",    textColor: "#c4b5fd",               overlay: "none" },
-  safe:        { bg: "linear-gradient(145deg,#166534,#14532d)",        glow: "0 0 24px rgba(34,197,94,0.55)",    textColor: "#86efac",               overlay: "rgba(34,197,94,0.08)" },
-  bomb_self:   { bg: "linear-gradient(145deg,#991b1b,#7f1d1d)",        glow: "0 0 28px rgba(239,68,68,0.7)",     textColor: "#fca5a5",               overlay: "rgba(239,68,68,0.1)" },
-  bomb_other:  { bg: "linear-gradient(145deg,#3b0000,#1c0a0a)",        glow: "none",                              textColor: "rgba(252,165,165,0.35)", overlay: "none" },
-  missed_safe: { bg: "linear-gradient(145deg,#052e16,#022c22)",        glow: "none",                              textColor: "rgba(134,239,172,0.3)", overlay: "none" },
-};
 
 function Tile({
   kind, col, row, active, onPick, sound, multiplier,
@@ -209,12 +199,6 @@ function Tile({
         cursor:    active ? "pointer" : "default",
       }}
     >
-      {/* Inner shine overlay */}
-      {s.overlay !== "none" && (
-        <div className="absolute inset-0 pointer-events-none"
-          style={{ background: `linear-gradient(160deg, ${s.overlay} 0%, transparent 60%)`, clipPath }} />
-      )}
-      {/* Multiplier text or icon */}
       {icon ? (
         <span style={{ color: s.textColor, position: "relative", zIndex: 1 }}>{icon}</span>
       ) : (
@@ -224,15 +208,11 @@ function Tile({
             color: s.textColor,
             fontSize: "clamp(9px, 1.5vw, 12px)",
             letterSpacing: "-0.02em",
-            textShadow: active ? "0 0 12px rgba(233,213,255,0.6)" : "none",
           }}
         >
-          {multiplier >= 1000
-            ? `${(multiplier / 1000).toFixed(1)}k×`
-            : `${multiplier.toFixed(2)}×`}
+          {multiplier >= 1000 ? `${(multiplier / 1000).toFixed(1)}k×` : `${multiplier.toFixed(2)}×`}
         </span>
       )}
-      {/* Particle burst on pick */}
       <div className="absolute inset-0 pointer-events-none overflow-visible">
         <ParticleBurst trigger={burst} color={kind === "safe" ? "#22c55e" : "#a78bfa"} />
       </div>
@@ -240,47 +220,12 @@ function Tile({
   );
 }
 
-// ─── Multiplier Counter ───────────────────────────────────────────────────────
-
-function MultiplierCounter({ value, prev }: { value: number; prev: number }) {
-  const [display, setDisplay] = useState(value);
-  useEffect(() => {
-    if (value === prev) return;
-    let start = prev;
-    const step = (value - prev) / 20;
-    const id = setInterval(() => {
-      start += step;
-      if ((step > 0 && start >= value) || (step < 0 && start <= value)) {
-        setDisplay(value);
-        clearInterval(id);
-      } else {
-        setDisplay(parseFloat(start.toFixed(2)));
-      }
-    }, 25);
-    return () => clearInterval(id);
-  }, [value]);
-  return <span>{display.toFixed(2)}x</span>;
-}
-
-// ─── Provably Fair Modal ──────────────────────────────────────────────────────
-
 function ProvablyFairModal({ session, result, onClose }: {
   session: Session | null;
   result: { serverSeed?: string; bombPositions?: number[][] } | null;
   onClose: () => void;
 }) {
   const [verifyResult, setVerifyResult] = useState<string | null>(null);
-
-  const verify = async () => {
-    if (!session || !result?.serverSeed) return;
-    const crypto = await import("crypto").catch(() => null);
-    if (!crypto) {
-      setVerifyResult("Verification available server-side only");
-      return;
-    }
-    const hash = crypto.createHash("sha256").update(result.serverSeed).digest("hex");
-    setVerifyResult(hash === session.serverSeedHash ? "✅ Verified — seed matches hash" : "❌ Mismatch");
-  };
 
   return (
     <motion.div
@@ -306,52 +251,25 @@ function ProvablyFairModal({ session, result, onClose }: {
 
         {session ? (
           <div className="space-y-3 text-sm">
-            <Field label="Server Seed Hash" value={session.serverSeedHash} mono />
-            <Field label="Client Seed"      value={session.clientSeed}      mono />
-            <Field label="Nonce"            value={String(session.nonce)} />
-            {result?.serverSeed && <Field label="Server Seed (revealed)" value={result.serverSeed} mono />}
-            <button
-              onClick={verify}
-              className="w-full py-2 rounded-lg text-white font-semibold text-sm"
-              style={{ background: "linear-gradient(135deg,#4f46e5,#7c3aed)" }}
-            >
-              Verify Seed
+            <div>
+              <p className="text-white/50 text-xs mb-1">Server Seed Hash</p>
+              <p className="text-white/80 text-xs break-all rounded-lg px-3 py-2 font-mono" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                {session.serverSeedHash}
+              </p>
+            </div>
+            <button onClick={onClose} className="w-full py-2 text-white/50 hover:text-white text-sm transition">
+              Close
             </button>
-            {verifyResult && (
-              <p className="text-center text-sm font-semibold text-indigo-300">{verifyResult}</p>
-            )}
-            <p className="text-white/40 text-xs leading-relaxed">
-              The server seed is hashed before the game starts. After it ends, the real seed is revealed so
-              you can independently verify the outcome using SHA-256.
-            </p>
           </div>
         ) : (
           <p className="text-white/50 text-sm">Start a game to see provably-fair details.</p>
         )}
-
-        <button onClick={onClose} className="w-full py-2 text-white/50 hover:text-white text-sm transition">
-          Close
-        </button>
       </motion.div>
     </motion.div>
   );
 }
 
-function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div>
-      <p className="text-white/50 text-xs mb-1">{label}</p>
-      <p
-        className={`text-white/80 text-xs break-all rounded-lg px-3 py-2 ${mono ? "font-mono" : ""}`}
-        style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function TowersPage() {
   const { user }   = useAuthStore();
@@ -365,7 +283,6 @@ export default function TowersPage() {
   const [error, setError]             = useState<string | null>(null);
   const [cashoutAmt, setCashoutAmt]   = useState<number | null>(null);
   const [loading, setLoading]         = useState(false);
-  const [prevMult, setPrevMult]       = useState(1);
   const errorTimer                    = useRef<NodeJS.Timeout | null>(null);
 
   // Controls
@@ -376,14 +293,12 @@ export default function TowersPage() {
     typeof crypto !== "undefined" ? crypto.randomUUID().replace(/-/g, "").slice(0, 16) : "random123"
   );
   const [showFair, setShowFair]       = useState(false);
+  const [liveBalance, setLiveBalance] = useState<number | null>(null);
 
   const sounds  = useSounds(soundEnabled);
   const multTable = useMemo(() => calcMultiplierTable(difficulty), [difficulty]);
   const cfg     = DIFF_CONFIG[difficulty];
-  const activeMult = session?.multiplierTable[session.currentLevel] ?? multTable[0];
 
-
-  // Init tile states
   const initTiles = useCallback((cols: number, currentLevel: number, pickedCols: number[]) => {
     const tiles: TileKind[][] = Array.from({ length: LEVELS }, (_, row) =>
       Array.from({ length: cols }, () => {
@@ -392,14 +307,12 @@ export default function TowersPage() {
         return "idle" as TileKind;
       }),
     );
-    // Mark previously picked safe tiles
     pickedCols.forEach((col, row) => {
       if (tiles[row]) tiles[row]![col] = "safe";
     });
     return tiles;
   }, []);
 
-  // Recover active session on mount
   useEffect(() => {
     if (!user) return;
     fetch("/api/casino/towers/active")
@@ -413,7 +326,6 @@ export default function TowersPage() {
       .catch(() => {});
   }, [user, initTiles]);
 
-  // Socket listeners
   useEffect(() => {
     const s = socket.current;
     if (!s) return;
@@ -424,13 +336,11 @@ export default function TowersPage() {
         showError(data.message ?? "Failed to start");
         return;
       }
-      const sess = data.session;
-      setSession(sess);
+      setSession(data.session);
       setPhase("playing");
-      setPrevMult(1);
       setResult(null);
       setCashoutAmt(null);
-      setTileStates(initTiles(sess.columns, 0, []));
+      setTileStates(initTiles(data.session.columns, 0, []));
       sounds.start();
     };
 
@@ -440,7 +350,6 @@ export default function TowersPage() {
       const r = data.result;
 
       if (r.isBomb) {
-        // Reveal bombs
         setTileStates(prev => {
           const next = prev.map(row => [...row]);
           if (session) {
@@ -450,7 +359,6 @@ export default function TowersPage() {
                 if (next[row]) next[row]![bc] = "bomb_other";
               });
             });
-            // Override the actual clicked bomb
             if (next[r.row]) next[r.row]![r.col] = "bomb_self";
           }
           return next;
@@ -459,7 +367,6 @@ export default function TowersPage() {
         setResult({ serverSeed: r.serverSeed, bombPositions: r.bombPositions });
         sounds.bomb();
       } else if (r.status === "CASHED_OUT") {
-        // Auto win (completed all levels)
         setTileStates(prev => {
           const next = prev.map(row => [...row]);
           if (next[r.row]) next[r.row]![r.col] = "safe";
@@ -468,9 +375,8 @@ export default function TowersPage() {
         setPhase("won");
         setCashoutAmt(r.payout ?? 0);
         setResult({ serverSeed: r.serverSeed, bombPositions: r.bombPositions });
-        sounds.bigwin();
+        sounds.cashout();
       } else {
-        // Safe pick — advance
         setTileStates(prev => {
           const next = prev.map(row => [...row]);
           if (next[r.row]) next[r.row]![r.col] = "safe";
@@ -485,7 +391,6 @@ export default function TowersPage() {
           multiplier:    r.multiplier   ?? prev.multiplier,
           pickedCols:    r.pickedCols   ?? prev.pickedCols,
         } : prev);
-        setPrevMult(session?.multiplier ?? 1);
         sounds.safe();
       }
     };
@@ -495,7 +400,6 @@ export default function TowersPage() {
       if (!data.ok || !data.result) { showError(data.message ?? "Cashout failed"); return; }
       const r = data.result;
 
-      // Reveal bombs
       setTileStates(prev => {
         const next = prev.map(row => [...row]);
         (r.bombPositions ?? []).forEach((rowBombs, row) => {
@@ -516,16 +420,22 @@ export default function TowersPage() {
       showError(data.message);
     };
 
+    const onBalance = (data: { available: number }) => {
+      setLiveBalance(data.available);
+    };
+
     s.on("towers:startResponse",   onStart);
     s.on("towers:pickResponse",    onPick);
     s.on("towers:cashoutResponse", onCashout);
     s.on("towers:error",           onError);
+    s.on("wallet:balance",         onBalance);
 
     return () => {
       s.off("towers:startResponse",   onStart);
       s.off("towers:pickResponse",    onPick);
       s.off("towers:cashoutResponse", onCashout);
       s.off("towers:error",           onError);
+      s.off("wallet:balance",         onBalance);
     };
   }, [session, sounds, initTiles]);
 
@@ -574,287 +484,264 @@ export default function TowersPage() {
   const adjustBet = (factor: number) => setBetAmount(prev => Math.max(10, Math.round(prev * factor)));
   const quickBet  = (amt: number)    => setBetAmount(amt);
 
-  const currentMultiplier = session
-    ? (phase === "playing" ? (session.multiplierTable[session.currentLevel] ?? 1) : session.multiplier)
-    : multTable[0] ?? 1;
-  const currentPotential = session ? session.betAmount * currentMultiplier : betAmount * (multTable[0] ?? 1);
-
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <>
-      {/* Mobile back bar */}
-      <div className="md:hidden flex items-center gap-3 px-4 py-3 sticky top-0 z-20"
-        style={{ background: "rgba(6,7,13,0.95)", borderBottom: "1px solid rgba(255,255,255,0.07)", backdropFilter: "blur(12px)" }}>
-        <Link href="/" className="flex items-center gap-1.5 text-white/50 hover:text-white text-sm font-medium transition">
-          <ArrowLeft size={15} /> Back
+    <div className="h-[100dvh] bg-[#0F1923] text-white flex flex-col font-sans w-full">
+      {/* Header */}
+      <header className="px-3 md:px-6 py-2 md:py-2.5 flex items-center justify-between gap-2 border-b border-gray-800 bg-[#0f212e] w-full shrink-0">
+        <Link href="/" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition font-bold text-sm shrink-0">
+          <ArrowLeft size={16} />
+          <span className="hidden sm:inline">Back to Lobby</span>
         </Link>
-        <span className="flex-1 text-center text-white font-bold tracking-widest text-sm uppercase">Towers</span>
-        <button onClick={() => setSoundEnabled(v => !v)} className="text-white/50 hover:text-white transition">
-          {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-        </button>
-      </div>
-
-      <div
-        className="min-h-screen text-white relative overflow-hidden"
-        style={{
-          background: "radial-gradient(ellipse at 20% 0%,rgba(99,102,241,0.12) 0%,transparent 60%), radial-gradient(ellipse at 80% 100%,rgba(139,92,246,0.08) 0%,transparent 60%), #06070d",
-        }}
-      >
-        {/* Floating orbs */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-1/4 left-1/6 w-64 h-64 rounded-full opacity-10 blur-3xl"
-            style={{ background: "radial-gradient(circle,#6366f1,transparent)" }} />
-          <div className="absolute bottom-1/4 right-1/6 w-96 h-96 rounded-full opacity-8 blur-3xl"
-            style={{ background: "radial-gradient(circle,#7c3aed,transparent)" }} />
+        <div className="font-bold tracking-widest text-xs sm:text-sm text-indigo-400 uppercase whitespace-nowrap">
+          🗼 Towers
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowFair(true)}
+            className="hidden sm:flex items-center gap-1.5 bg-[#1a2c38] px-3 py-1.5 rounded-lg border border-gray-700 text-xs font-semibold text-gray-400 hover:text-white transition"
+          >
+            <Shield size={13} /> Fairness
+          </button>
+          <button
+            onClick={() => setSoundEnabled(v => !v)}
+            className="p-1.5 bg-[#1a2c38] rounded-lg border border-gray-700 text-gray-400 hover:text-white transition"
+          >
+            {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+          </button>
+          <div className="bg-[#1a2c38] px-3 py-1.5 rounded-lg border border-gray-700 shrink-0">
+            <span className="text-xs text-gray-400 font-semibold hidden sm:inline">Balance:</span>
+            <span className="text-xs sm:text-sm font-bold text-white ml-1 whitespace-nowrap">
+              ₹{(liveBalance ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+        </div>
+      </header>
 
-        <div className="relative max-w-[1400px] mx-auto px-3 md:px-6 py-4 md:py-6">
-
-          {/* 2-column layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4 lg:gap-6">
-
-            {/* ── LEFT: Compact Controls ─────────────────────────── */}
-            <div className="space-y-2 order-2 lg:order-1">
-
-              {/* Difficulty — compact 2x2 grid */}
-              <div className="rounded-xl p-3"
-                style={{ background: "rgba(13,14,25,0.9)", border: "1px solid rgba(99,102,241,0.2)", backdropFilter: "blur(12px)" }}>
-                <p className="text-xs font-bold tracking-widest text-white/40 uppercase mb-2">Difficulty</p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {(["EASY", "MEDIUM", "HARD", "EXPERT"] as Difficulty[]).map(d => (
-                    <button
-                      key={d}
-                      onClick={() => { if (phase === "idle") setDifficulty(d); }}
-                      disabled={phase !== "idle"}
-                      className="py-2 rounded-lg text-xs font-bold transition-all"
-                      style={{
-                        background: difficulty === d
-                          ? `linear-gradient(135deg, ${DIFF_CONFIG[d].color}44, ${DIFF_CONFIG[d].color}22)`
-                          : "rgba(255,255,255,0.04)",
-                        border: `1.5px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.06)"}`,
-                        color: difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.4)",
-                        boxShadow: difficulty === d ? `0 0 12px ${DIFF_CONFIG[d].color}25` : "none",
-                      }}
-                    >
-                      {DIFF_CONFIG[d].label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Bet Amount — compact */}
-              <div className="rounded-xl p-3"
-                style={{ background: "rgba(13,14,25,0.9)", border: "1px solid rgba(99,102,241,0.2)", backdropFilter: "blur(12px)" }}>
-                <p className="text-xs font-bold tracking-widest text-white/40 uppercase mb-2">Bet</p>
-                <div className="relative mb-2">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/40 font-bold text-xs">₹</span>
-                  <input
-                    type="number"
-                    value={betAmount}
-                    onChange={e => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
+      {/* Main Game Container */}
+      <div className="flex-1 overflow-y-auto md:overflow-hidden md:flex md:items-center md:justify-center p-2 md:p-6 w-full max-w-7xl mx-auto">
+        <div className="w-full flex flex-col-reverse md:flex-row bg-[#0f212e] rounded-xl overflow-hidden shadow-2xl border border-gray-800">
+          {/* Controls — sidebar on desktop, bottom on mobile */}
+          <div className="w-full md:w-72 bg-[#213743] p-3 md:p-4 flex flex-col gap-3">
+            {/* Difficulty */}
+            <div>
+              <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-2">Difficulty</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {(["EASY", "MEDIUM", "HARD", "EXPERT"] as Difficulty[]).map(d => (
+                  <button
+                    key={d}
+                    onClick={() => { if (phase === "idle") setDifficulty(d); }}
                     disabled={phase !== "idle"}
-                    className="w-full pl-6 pr-3 py-2 rounded-lg text-white font-bold text-sm focus:outline-none disabled:opacity-50"
+                    className="py-2 rounded-lg text-xs font-bold transition-all"
                     style={{
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(99,102,241,0.2)",
+                      background: difficulty === d ? `${DIFF_CONFIG[d].color}22` : "rgba(255,255,255,0.04)",
+                      border: `1px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.08)"}`,
+                      color: difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.4)",
                     }}
-                  />
-                </div>
-                <div className="grid grid-cols-4 gap-1">
-                  {[10, 100, 500, 1000].map(v => (
-                    <button key={v} onClick={() => quickBet(v)} disabled={phase !== "idle"}
-                      className="py-1 rounded text-xs font-bold text-white/50 hover:text-white/70 transition disabled:opacity-40"
-                      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
-                    >
-                      {v >= 1000 ? `${v / 1000}k` : v}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-1 mt-2">
-                  <button onClick={() => adjustBet(0.5)} disabled={phase !== "idle"}
-                    className="flex-1 py-1.5 rounded text-xs font-bold text-white/50 hover:text-white/70 transition disabled:opacity-40"
-                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
                   >
-                    ½
+                    {DIFF_CONFIG[d].label}
                   </button>
-                  <button onClick={() => adjustBet(2)} disabled={phase !== "idle"}
-                    className="flex-1 py-1.5 rounded text-xs font-bold text-white/50 hover:text-white/70 transition disabled:opacity-40"
-                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
-                  >
-                    2×
-                  </button>
-                </div>
+                ))}
               </div>
-
-              {/* Provably Fair (mobile) */}
-              <button
-                onClick={() => setShowFair(true)}
-                className="lg:hidden w-full flex items-center justify-center gap-2 py-2 rounded-lg text-white/50 hover:text-white text-xs font-medium transition"
-                style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}
-              >
-                <Shield size={12} /> Provably Fair
-              </button>
             </div>
 
-            {/* ── CENTER: Tower Grid ──────────────────────────────────────── */}
-            <div className="order-1 lg:order-2 flex flex-col items-center gap-4">
+            {/* Bet Amount */}
+            <div>
+              <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-2">Bet Amount</p>
+              <div className="relative mb-2">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">₹</span>
+                <input
+                  type="number"
+                  value={betAmount}
+                  onChange={e => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
+                  disabled={phase !== "idle"}
+                  className="w-full pl-6 pr-3 py-2 rounded-lg text-white font-bold text-sm focus:outline-none disabled:opacity-50 bg-[#0f212e] border border-gray-700"
+                />
+              </div>
+              <div className="grid grid-cols-4 gap-1 mb-2">
+                {[10, 100, 500, 1000].map(v => (
+                  <button key={v} onClick={() => quickBet(v)} disabled={phase !== "idle"}
+                    className="py-1 rounded text-xs font-bold text-gray-400 hover:text-white transition disabled:opacity-40 bg-gray-800 hover:bg-gray-700"
+                  >
+                    {v >= 1000 ? `${v / 1000}k` : v}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-1">
+                <button onClick={() => adjustBet(0.5)} disabled={phase !== "idle"}
+                  className="flex-1 py-1.5 rounded text-xs font-bold text-gray-400 hover:text-white transition disabled:opacity-40 bg-gray-800 hover:bg-gray-700"
+                >
+                  ½
+                </button>
+                <button onClick={() => adjustBet(2)} disabled={phase !== "idle"}
+                  className="flex-1 py-1.5 rounded text-xs font-bold text-gray-400 hover:text-white transition disabled:opacity-40 bg-gray-800 hover:bg-gray-700"
+                >
+                  2×
+                </button>
+              </div>
+            </div>
 
-              {/* Tower Grid */}
-              <div
-                className="w-full rounded-2xl p-3 md:p-5"
-                style={{ background: "rgba(10,8,22,0.92)", border: "1px solid rgba(124,58,237,0.2)", backdropFilter: "blur(12px)" }}
+            {/* Buttons */}
+            <div className="space-y-2 mt-auto">
+              {(phase === "idle" || phase === "won" || phase === "busted") && (
+                <motion.button
+                  onClick={phase === "idle" ? handleStart : handleReset}
+                  whileTap={{ scale: 0.97 }}
+                  disabled={loading}
+                  className="w-full py-3 rounded-lg font-bold text-sm uppercase tracking-widest text-white transition disabled:opacity-50"
+                  style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)", boxShadow: "0 4px 15px rgba(34,197,94,0.3)" }}
+                >
+                  {loading ? "Starting…" : phase === "idle" ? `Play ₹${betAmount}` : "Play Again"}
+                </motion.button>
+              )}
+
+              {phase === "playing" && (
+                <motion.button
+                  onClick={handleCashout}
+                  whileTap={{ scale: 0.97 }}
+                  disabled={loading || (session?.currentLevel ?? 0) === 0}
+                  className="w-full py-3 rounded-lg font-bold text-sm uppercase tracking-widest text-white transition disabled:opacity-40"
+                  style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 4px 15px rgba(245,158,11,0.3)" }}
+                >
+                  {loading ? "…" : `Cash Out ₹${(session ? session.betAmount * session.multiplier : 0).toFixed(0)}`}
+                </motion.button>
+              )}
+
+              <button
+                onClick={() => setShowFair(true)}
+                className="md:hidden w-full py-2 rounded-lg text-xs font-bold text-gray-400 bg-gray-800 hover:bg-gray-700 transition flex items-center justify-center gap-2"
               >
-                <div className="flex flex-col-reverse gap-1.5 items-center">
-                  {Array.from({ length: LEVELS }, (_, row) => {
-                    const cols      = session?.columns ?? cfg.columns;
-                    const rowPhase  = tileStates[row];
-                    const isCurrentRow = session?.currentLevel === row && phase === "playing";
-                    const isPastRow    = session ? row < session.currentLevel : false;
-                    const rowMult      = session?.multiplierTable[row] ?? multTable[row] ?? 1;
+                <Shield size={12} /> Fairness
+              </button>
+            </div>
+          </div>
 
-                    return (
-                      <motion.div
-                        key={row}
-                        initial={{ opacity: 0, x: -16 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: row * 0.035 }}
-                        className="flex items-center gap-2 w-full justify-center"
-                      >
-                        {/* Level dot */}
-                        <div className="hidden sm:flex items-center justify-center w-5 shrink-0">
-                          <div className="w-1.5 h-1.5 rounded-full"
-                            style={{ background: isPastRow ? "#22c55e" : isCurrentRow ? "#818cf8" : "rgba(255,255,255,0.12)" }} />
-                        </div>
-
-                        {/* Tiles */}
-                        <div className="flex gap-1.5">
-                          {Array.from({ length: cols }, (_, col) => {
-                            let kind: TileKind = "idle";
-                            if (rowPhase && rowPhase[col]) {
-                              kind = rowPhase[col] as TileKind;
-                            } else if (phase === "playing" && isCurrentRow) {
-                              kind = "active";
-                            } else if (phase === "idle" && row === 0) {
-                              kind = "active";
-                            }
-
-                            return (
-                              <Tile
-                                key={col}
-                                kind={kind}
-                                col={col}
-                                row={row}
-                                active={kind === "active" && phase === "playing" && !loading}
-                                onPick={handlePick}
-                                sound={sounds.hover}
-                                multiplier={rowMult}
-                              />
-                            );
-                          })}
-                        </div>
-
-                        {/* Multiplier label right */}
-                        <div className="hidden sm:flex items-center w-14 shrink-0">
-                          <span className="text-xs font-bold tabular-nums"
-                            style={{ color: isPastRow ? "#4ade80" : isCurrentRow ? "#a78bfa" : "rgba(255,255,255,0.18)" }}>
-                            {rowMult >= 1000 ? `${(rowMult/1000).toFixed(1)}k×` : `${rowMult.toFixed(2)}×`}
-                          </span>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+          {/* Game Grid — main area */}
+          <div className="flex-1 bg-[#0f212e] p-3 md:p-6 relative flex flex-col items-center justify-center min-h-[350px]">
+            {/* Stats overlay during play */}
+            {phase === "playing" && session && (
+              <div className="w-full flex flex-wrap justify-center gap-1.5 md:gap-3 mb-3 md:mb-0 md:absolute md:top-4 md:left-4 md:right-4 text-[10px] md:text-xs font-semibold z-10 pointer-events-none">
+                <div className="bg-[#1a2c38] px-2 md:px-3 py-1 md:py-1.5 rounded text-indigo-400 border border-indigo-500/20">
+                  {session.multiplier.toFixed(2)}×
+                </div>
+                <div className="bg-[#1a2c38] px-2 md:px-3 py-1 md:py-1.5 rounded text-yellow-400 border border-yellow-500/20">
+                  Lv {session.currentLevel + 1}
+                </div>
+                <div className="bg-[#1a2c38] px-2 md:px-3 py-1 md:py-1.5 rounded text-green-400 border border-green-500/20">
+                  ₹{session.betAmount}
                 </div>
               </div>
+            )}
 
-              {/* Result banner */}
+            {/* Tower Grid */}
+            <div className={`w-full max-w-[500px] ${phase === "playing" ? "md:mt-12" : ""}`}>
+              <div className="flex flex-col-reverse gap-1.5 items-center">
+                {Array.from({ length: LEVELS }, (_, row) => {
+                  const cols      = session?.columns ?? cfg.columns;
+                  const rowPhase  = tileStates[row];
+                  const isCurrentRow = session?.currentLevel === row && phase === "playing";
+                  const rowMult      = session?.multiplierTable[row] ?? multTable[row] ?? 1;
+
+                  return (
+                    <motion.div
+                      key={row}
+                      initial={{ opacity: 0, x: -16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: row * 0.035 }}
+                      className="flex items-center gap-2 w-full justify-center"
+                    >
+                      <div className="hidden sm:flex items-center justify-center w-5 shrink-0">
+                        <div className="w-1.5 h-1.5 rounded-full"
+                          style={{ background: isCurrentRow ? "#818cf8" : "rgba(255,255,255,0.12)" }} />
+                      </div>
+
+                      <div className="flex gap-1.5">
+                        {Array.from({ length: cols }, (_, col) => {
+                          let kind: TileKind = "idle";
+                          if (rowPhase && rowPhase[col]) {
+                            kind = rowPhase[col] as TileKind;
+                          } else if (phase === "playing" && isCurrentRow) {
+                            kind = "active";
+                          } else if (phase === "idle" && row === 0) {
+                            kind = "active";
+                          }
+
+                          return (
+                            <Tile
+                              key={col}
+                              kind={kind}
+                              col={col}
+                              row={row}
+                              active={kind === "active" && phase === "playing" && !loading}
+                              onPick={handlePick}
+                              sound={sounds.hover}
+                              multiplier={rowMult}
+                            />
+                          );
+                        })}
+                      </div>
+
+                      <div className="hidden sm:flex items-center w-14 shrink-0">
+                        <span className="text-xs font-bold tabular-nums text-gray-400">
+                          {rowMult >= 1000 ? `${(rowMult/1000).toFixed(1)}k×` : `${rowMult.toFixed(2)}×`}
+                        </span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* Result Overlay */}
               <AnimatePresence>
-                {phase === "won" && cashoutAmt !== null && (
+                {(phase === "won" || phase === "busted") && cashoutAmt !== null && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0 }}
-                    className="w-full rounded-2xl p-5 text-center"
-                    style={{
-                      background: "linear-gradient(135deg,rgba(34,197,94,0.15),rgba(16,185,129,0.1))",
-                      border: "1.5px solid rgba(34,197,94,0.5)",
-                    }}
+                    onClick={() => handleReset()}
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur z-20 rounded-lg cursor-pointer"
                   >
-                    <div className="text-3xl mb-1">🎉</div>
-                    <p className="text-green-300 font-black text-2xl">₹{cashoutAmt.toFixed(2)}</p>
-                    <p className="text-green-400/70 text-sm mt-1">
-                      {session?.multiplier?.toFixed(2) ?? "?"}x · Level {session?.currentLevel ?? 0}
-                    </p>
-                  </motion.div>
-                )}
-                {phase === "busted" && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="w-full rounded-2xl p-5 text-center"
-                    style={{
-                      background: "linear-gradient(135deg,rgba(239,68,68,0.15),rgba(220,38,38,0.1))",
-                      border: "1.5px solid rgba(239,68,68,0.5)",
-                    }}
-                  >
-                    <div className="text-3xl mb-1">💣</div>
-                    <p className="text-red-300 font-black text-xl">Hit a Bomb!</p>
-                    <p className="text-red-400/70 text-sm mt-1">Better luck next time</p>
-                  </motion.div>
-                )}
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="w-full rounded-xl px-4 py-3 text-center text-sm font-semibold text-red-300"
-                    style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)" }}
-                  >
-                    {error}
+                    <div className={`w-56 md:w-64 text-center p-5 md:p-6 rounded-2xl shadow-2xl border-2 transition ${
+                      phase === "won"
+                        ? "bg-[#0f212e]/90 border-green-500 text-green-400 shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+                        : "bg-[#0f212e]/90 border-red-500 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.3)]"
+                    }`}>
+                      <div className="text-lg md:text-xl font-bold uppercase tracking-wider mb-2">
+                        {phase === "won" ? "Victory!" : "Busted!"}
+                      </div>
+                      {phase === "won" && (
+                        <div className="text-2xl md:text-3xl font-black text-white">
+                          ₹{cashoutAmt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </div>
+                      )}
+                      <div className="text-[10px] text-gray-500 mt-3 uppercase tracking-widest font-semibold">
+                        Tap to Dismiss
+                      </div>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
-
-              {/* Action buttons */}
-              <div className="w-full flex gap-3">
-                {(phase === "idle" || phase === "won" || phase === "busted") && (
-                  <motion.button
-                    onClick={phase === "idle" ? handleStart : handleReset}
-                    whileTap={{ scale: 0.97 }}
-                    disabled={loading}
-                    className="flex-1 py-4 rounded-2xl font-black text-lg uppercase tracking-widest text-white transition disabled:opacity-50"
-                    style={{
-                      background: "linear-gradient(135deg,#4f46e5,#7c3aed)",
-                      boxShadow: "0 4px 30px rgba(99,102,241,0.4)",
-                    }}
-                  >
-                    {loading ? "Starting…" : phase === "idle" ? `Play ₹${betAmount}` : "Play Again"}
-                  </motion.button>
-                )}
-
-                {phase === "playing" && (
-                  <>
-                    <motion.button
-                      onClick={handleCashout}
-                      whileTap={{ scale: 0.97 }}
-                      disabled={loading || (session?.currentLevel ?? 0) === 0}
-                      className="flex-1 py-4 rounded-2xl font-black text-base uppercase tracking-widest text-white transition disabled:opacity-40"
-                      style={{
-                        background: "linear-gradient(135deg,#16a34a,#15803d)",
-                        boxShadow: "0 4px 25px rgba(34,197,94,0.3)",
-                      }}
-                    >
-                      {loading ? "…" : `Cash Out ₹${currentPotential.toFixed(0)}`}
-                    </motion.button>
-                  </>
-                )}
-              </div>
             </div>
-
           </div>
         </div>
       </div>
+
+      {/* Error Toast */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4"
+          >
+            <div className="bg-red-900/90 border border-red-500/50 backdrop-blur px-4 py-3 rounded-lg text-sm font-semibold text-red-200">
+              {error}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Provably Fair Modal */}
       <AnimatePresence>
@@ -862,6 +749,6 @@ export default function TowersPage() {
           <ProvablyFairModal session={session} result={result} onClose={() => setShowFair(false)} />
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 }
