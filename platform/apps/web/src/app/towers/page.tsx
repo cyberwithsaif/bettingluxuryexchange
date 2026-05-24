@@ -485,7 +485,7 @@ export default function TowersPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#0F1923] text-white flex flex-col font-sans w-full">
+    <div className="h-screen bg-[#0F1923] text-white flex flex-col font-sans w-full overflow-hidden">
       {/* Mobile-only header */}
       <header className="md:hidden px-3 py-2 flex items-center justify-between gap-2 border-b border-gray-800 bg-[#0f212e] w-full shrink-0">
         <Link href="/" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition font-bold text-sm">
@@ -504,10 +504,10 @@ export default function TowersPage() {
       </header>
 
       {/* Main Game Container */}
-      <div className="flex-1 overflow-y-auto md:overflow-hidden md:flex md:items-center md:justify-center p-2 md:p-6 w-full max-w-7xl mx-auto pb-8">
-        <div className="w-full flex flex-col-reverse md:flex-row bg-[#0f212e] rounded-xl overflow-hidden shadow-2xl border border-gray-800">
+      <div className="flex-1 overflow-y-auto md:overflow-hidden md:flex md:items-stretch p-2 md:p-4 w-full max-w-7xl mx-auto">
+        <div className="w-full flex flex-col-reverse md:flex-row bg-[#0f212e] rounded-xl overflow-hidden shadow-2xl border border-gray-800 md:h-full">
           {/* Controls — sidebar on desktop, bottom on mobile */}
-          <div className="w-full md:w-72 bg-[#213743] p-3 md:p-4 flex flex-col gap-3">
+          <div className="w-full md:w-72 bg-[#213743] p-3 md:p-4 flex flex-col gap-3 md:h-full md:overflow-y-auto">
             {/* Difficulty */}
             <div>
               <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-2">Difficulty</p>
@@ -602,7 +602,7 @@ export default function TowersPage() {
           </div>
 
           {/* Game Grid — main area */}
-          <div className="flex-1 bg-[#0f212e] px-3 md:px-6 pt-2 md:pt-3 pb-3 md:pb-6 relative flex flex-col items-center justify-start min-h-[350px]">
+          <div className="flex-1 bg-[#0f212e] px-3 md:px-6 pt-2 md:pt-3 pb-3 md:pb-4 relative flex flex-col items-center justify-start min-h-[350px] md:overflow-y-auto">
             {/* Stats overlay during play */}
             {phase === "playing" && session && (
               <div className="w-full flex flex-wrap justify-center gap-1.5 md:gap-3 mb-3 md:mb-0 md:absolute md:top-4 md:left-4 md:right-4 text-[10px] md:text-xs font-semibold z-10 pointer-events-none">
