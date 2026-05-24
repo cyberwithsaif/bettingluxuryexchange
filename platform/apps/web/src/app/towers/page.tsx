@@ -609,36 +609,7 @@ export default function TowersPage() {
             style={{ background: "radial-gradient(circle,#7c3aed,transparent)" }} />
         </div>
 
-        <div className="relative max-w-[1400px] mx-auto px-3 md:px-6 py-4 md:py-8">
-
-          {/* Desktop header */}
-          <div className="hidden md:flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <Link href="/" className="flex items-center gap-1.5 text-white/50 hover:text-white text-sm transition">
-                <ArrowLeft size={15} /> Back
-              </Link>
-              <div className="w-px h-4 bg-white/20" />
-              <h1 className="text-2xl font-black tracking-tight text-white">
-                TOWERS
-                <span className="ml-2 text-xs font-normal text-indigo-400 tracking-widest">PROVABLY FAIR</span>
-              </h1>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowFair(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white/60 hover:text-white text-xs font-medium transition"
-                style={{ border: "1px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)" }}
-              >
-                <Shield size={13} /> Provably Fair
-              </button>
-              <button onClick={() => setSoundEnabled(v => !v)}
-                className="p-2 rounded-lg text-white/50 hover:text-white transition"
-                style={{ border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)" }}
-              >
-                {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-              </button>
-            </div>
-          </div>
+        <div className="relative max-w-[1400px] mx-auto px-3 md:px-6 py-4 md:py-6">
 
           {/* 2-column layout */}
           <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4 lg:gap-6">
