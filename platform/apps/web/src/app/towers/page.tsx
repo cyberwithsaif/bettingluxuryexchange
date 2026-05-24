@@ -485,7 +485,7 @@ export default function TowersPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-screen bg-[#0F1923] text-white flex flex-col font-sans w-full overflow-hidden">
+    <div className="flex-1 bg-[#0F1923] text-white flex flex-col font-sans w-full overflow-hidden" style={{ height: "calc(100vh - 64px)" }}>
       {/* Mobile-only header */}
       <header className="md:hidden px-3 py-2 flex items-center justify-between gap-2 border-b border-gray-800 bg-[#0f212e] w-full shrink-0">
         <Link href="/" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition font-bold text-sm">
@@ -504,8 +504,8 @@ export default function TowersPage() {
       </header>
 
       {/* Main Game Container */}
-      <div className="flex-1 overflow-y-auto md:overflow-hidden md:flex md:items-stretch p-2 md:p-4 w-full max-w-7xl mx-auto">
-        <div className="w-full flex flex-col-reverse md:flex-row bg-[#0f212e] rounded-xl overflow-hidden shadow-2xl border border-gray-800 md:h-full">
+      <div className="flex-1 overflow-hidden flex p-2 md:p-3 w-full max-w-7xl mx-auto">
+        <div className="w-full flex flex-col-reverse md:flex-row bg-[#0f212e] rounded-xl overflow-hidden shadow-2xl border border-gray-800 h-full">
           {/* Controls — sidebar on desktop, bottom on mobile */}
           <div className="w-full md:w-72 bg-[#213743] p-3 md:p-4 flex flex-col gap-3 md:h-full md:overflow-y-auto">
             {/* Difficulty */}
