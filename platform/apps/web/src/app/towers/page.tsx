@@ -729,32 +729,6 @@ export default function TowersPage() {
             {/* ── CENTER: Tower Grid ──────────────────────────────────────── */}
             <div className="order-1 lg:order-2 flex flex-col items-center gap-4">
 
-              {/* Multiplier display */}
-              <div className="w-full rounded-2xl p-4 text-center"
-                style={{ background: "rgba(13,14,25,0.8)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)" }}>
-                <p className="text-xs font-bold tracking-widest text-white/40 uppercase mb-1">
-                  {phase === "playing" ? "Next Level Payout" : "Max Payout"}
-                </p>
-                <motion.div
-                  key={String(currentMultiplier)}
-                  initial={{ scale: 0.9, opacity: 0.5 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="text-4xl md:text-5xl font-black"
-                  style={{
-                    background: "linear-gradient(135deg,#818cf8,#a78bfa,#c4b5fd)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}
-                >
-                  <MultiplierCounter value={currentMultiplier} prev={prevMult} />
-                </motion.div>
-                {phase === "playing" && session && (
-                  <p className="text-sm text-white/50 mt-1">
-                    Potential: <span className="text-white font-bold">₹{currentPotential.toFixed(2)}</span>
-                  </p>
-                )}
-              </div>
-
               {/* Tower Grid */}
               <div
                 className="w-full rounded-2xl p-3 md:p-5"
