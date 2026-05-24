@@ -191,8 +191,8 @@ function Tile({
       transition={{ duration: 0.3 }}
       className="relative flex flex-col items-center justify-center font-bold select-none"
       style={{
-        width:    "clamp(48px, 9vw, 68px)",
-        height:   "clamp(38px, 7vw, 54px)",
+        width:    "clamp(40px, 7vw, 56px)",
+        height:   "clamp(32px, 5.5vw, 44px)",
         background: s.bg,
         clipPath,
         boxShadow: s.glow,
@@ -206,7 +206,7 @@ function Tile({
           className="relative z-10 font-black leading-none text-center"
           style={{
             color: s.textColor,
-            fontSize: "clamp(8px, 1.3vw, 11px)",
+            fontSize: "clamp(7px, 1.1vw, 9px)",
             letterSpacing: "-0.02em",
           }}
         >
