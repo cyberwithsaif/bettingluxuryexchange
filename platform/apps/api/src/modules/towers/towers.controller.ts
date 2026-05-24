@@ -6,7 +6,7 @@ import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { UserRole } from "@prisma/client";
 
-@Controller("towers")
+@Controller("api/casino/towers")
 export class TowersController {
   constructor(
     private readonly towersService: TowersService,
