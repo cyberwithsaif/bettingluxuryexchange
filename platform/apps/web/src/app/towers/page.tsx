@@ -487,7 +487,7 @@ export default function TowersPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-[100dvh] bg-[#0F1923] text-white flex flex-col font-sans w-full">
+    <div className="min-h-screen bg-[#0F1923] text-white flex flex-col font-sans w-full">
       {/* Header */}
       <header className="px-3 md:px-6 py-2 md:py-2.5 flex items-center justify-between gap-2 border-b border-gray-800 bg-[#0f212e] w-full shrink-0">
         <Link href="/" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition font-bold text-sm shrink-0">
@@ -520,7 +520,7 @@ export default function TowersPage() {
       </header>
 
       {/* Main Game Container */}
-      <div className="flex-1 overflow-y-auto md:overflow-hidden md:flex md:items-center md:justify-center p-2 md:p-6 w-full max-w-7xl mx-auto">
+      <div className="flex-1 overflow-y-auto md:overflow-hidden md:flex md:items-center md:justify-center p-2 md:p-6 w-full max-w-7xl mx-auto pb-8">
         <div className="w-full flex flex-col-reverse md:flex-row bg-[#0f212e] rounded-xl overflow-hidden shadow-2xl border border-gray-800">
           {/* Controls — sidebar on desktop, bottom on mobile */}
           <div className="w-full md:w-72 bg-[#213743] p-3 md:p-4 flex flex-col gap-3">
@@ -694,7 +694,7 @@ export default function TowersPage() {
 
               {/* Result Overlay */}
               <AnimatePresence>
-                {(phase === "won" || phase === "busted") && cashoutAmt !== null && (
+                {(phase === "busted" || (phase === "won" && cashoutAmt !== null)) && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -712,7 +712,7 @@ export default function TowersPage() {
                       </div>
                       {phase === "won" && (
                         <div className="text-2xl md:text-3xl font-black text-white">
-                          ₹{cashoutAmt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                          ₹{cashoutAmt?.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                         </div>
                       )}
                       <div className="text-[10px] text-gray-500 mt-3 uppercase tracking-widest font-semibold">
