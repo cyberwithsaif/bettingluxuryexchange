@@ -220,12 +220,10 @@ function Tile({
   );
 }
 
-function ProvablyFairModal({ session, result, onClose }: {
+function ProvablyFairModal({ session, onClose }: {
   session: Session | null;
-  result: { serverSeed?: string; bombPositions?: number[][] } | null;
   onClose: () => void;
 }) {
-  const [verifyResult, setVerifyResult] = useState<string | null>(null);
 
   return (
     <motion.div
@@ -279,7 +277,7 @@ export default function TowersPage() {
   const [phase, setPhase]             = useState<Phase>("idle");
   const [session, setSession]         = useState<Session | null>(null);
   const [tileStates, setTileStates]   = useState<TileKind[][]>([]);
-  const [result, setResult]           = useState<{ serverSeed?: string; bombPositions?: number[][] } | null>(null);
+  const [, setResult]                  = useState<{ serverSeed?: string; bombPositions?: number[][] } | null>(null);
   const [error, setError]             = useState<string | null>(null);
   const [cashoutAmt, setCashoutAmt]   = useState<number | null>(null);
   const [loading, setLoading]         = useState(false);
@@ -488,34 +486,20 @@ export default function TowersPage() {
 
   return (
     <div className="min-h-screen bg-[#0F1923] text-white flex flex-col font-sans w-full">
-      {/* Header */}
-      <header className="px-3 md:px-6 py-2 md:py-2.5 flex items-center justify-between gap-2 border-b border-gray-800 bg-[#0f212e] w-full shrink-0">
-        <Link href="/" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition font-bold text-sm shrink-0">
+      {/* Mobile-only header */}
+      <header className="md:hidden px-3 py-2 flex items-center justify-between gap-2 border-b border-gray-800 bg-[#0f212e] w-full shrink-0">
+        <Link href="/" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition font-bold text-sm">
           <ArrowLeft size={16} />
-          <span className="hidden sm:inline">Back to Lobby</span>
+          Back
         </Link>
-        <div className="font-bold tracking-widest text-xs sm:text-sm text-indigo-400 uppercase whitespace-nowrap">
-          🗼 Towers
-        </div>
+        <div className="font-bold tracking-widest text-xs text-indigo-400 uppercase">🗼 Towers</div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowFair(true)}
-            className="hidden sm:flex items-center gap-1.5 bg-[#1a2c38] px-3 py-1.5 rounded-lg border border-gray-700 text-xs font-semibold text-gray-400 hover:text-white transition"
-          >
-            <Shield size={13} /> Fairness
-          </button>
-          <button
-            onClick={() => setSoundEnabled(v => !v)}
-            className="p-1.5 bg-[#1a2c38] rounded-lg border border-gray-700 text-gray-400 hover:text-white transition"
-          >
+          <button onClick={() => setSoundEnabled(v => !v)} className="p-1.5 bg-[#1a2c38] rounded-lg border border-gray-700 text-gray-400 hover:text-white transition">
             {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </button>
-          <div className="bg-[#1a2c38] px-3 py-1.5 rounded-lg border border-gray-700 shrink-0">
-            <span className="text-xs text-gray-400 font-semibold hidden sm:inline">Balance:</span>
-            <span className="text-xs sm:text-sm font-bold text-white ml-1 whitespace-nowrap">
-              ₹{(liveBalance ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-          </div>
+          <span className="text-xs font-bold text-white bg-[#1a2c38] px-2 py-1 rounded-lg border border-gray-700">
+            ₹{(liveBalance ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
         </div>
       </header>
 
@@ -746,7 +730,7 @@ export default function TowersPage() {
       {/* Provably Fair Modal */}
       <AnimatePresence>
         {showFair && (
-          <ProvablyFairModal session={session} result={result} onClose={() => setShowFair(false)} />
+          <ProvablyFairModal session={session} onClose={() => setShowFair(false)} />
         )}
       </AnimatePresence>
     </div>

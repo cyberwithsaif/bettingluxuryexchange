@@ -24,13 +24,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     localStorage.setItem("sidebar-collapsed", String(v));
   }, []);
 
-  const isFullScreen =
-    pathname === "/mines" ||
-    pathname === "/roulette" ||
-    pathname === "/plinko" ||
-    pathname === "/crash" ||
-    pathname === "/coinflip" ||
-    pathname === "/pump";
+  const isFullScreen = pathname === "/roulette";
 
   if (isFullScreen) {
     return (

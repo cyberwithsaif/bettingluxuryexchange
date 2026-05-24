@@ -572,11 +572,11 @@ export function PumpGame() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="h-[100dvh] w-full flex flex-col overflow-hidden"
+    <div className="min-h-screen w-full flex flex-col"
       style={{ background: "linear-gradient(135deg, #07111d, #0b1c2a)", fontFamily: "Inter, sans-serif" }}>
 
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+      {/* Mobile-only Header */}
+      <div className="md:hidden flex items-center justify-between px-4 py-3 flex-shrink-0"
         style={{ background: "#081420", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
         <Link href="/" className="flex items-center gap-1.5 text-white/60 hover:text-white transition">
           <ArrowLeft size={16} />

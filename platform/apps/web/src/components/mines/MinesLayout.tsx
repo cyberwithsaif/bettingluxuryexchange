@@ -279,21 +279,16 @@ export default function MinesLayout() {
   const profit = (gameState.multiplier - 1) * gameState.betAmount;
 
   return (
-    <div className="h-[100dvh] bg-[#0F1923] text-white flex flex-col font-sans w-full">
-      {/* Header */}
-      <header className="px-3 md:px-6 py-2 md:py-2.5 flex items-center justify-between gap-2 border-b border-gray-800 bg-[#0f212e] w-full shrink-0">
-        <Link href="/" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition font-bold text-sm shrink-0">
+    <div className="min-h-screen bg-[#0F1923] text-white flex flex-col font-sans w-full">
+      {/* Mobile-only back header */}
+      <header className="md:hidden px-3 py-2 flex items-center justify-between gap-2 border-b border-gray-800 bg-[#0f212e] w-full shrink-0">
+        <Link href="/" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition font-bold text-sm">
           <ArrowLeft size={16} />
-          <span className="hidden sm:inline">Back to Lobby</span>
+          Back
         </Link>
-        <div className="font-bold tracking-widest text-xs sm:text-sm text-green-400 uppercase whitespace-nowrap">
-          💣 Mines
-        </div>
-        <div className="flex items-center gap-1.5 bg-[#1a2c38] px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-gray-700 shrink-0">
-          <span className="text-xs text-gray-400 font-semibold hidden sm:inline">Balance:</span>
-          <span className="text-xs sm:text-sm font-bold text-white whitespace-nowrap">
-            ₹{(liveBalance ?? (walletData ? Number(walletData.available) : null))?.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? "0.00"}
-          </span>
+        <div className="font-bold tracking-widest text-xs text-green-400 uppercase">💣 Mines</div>
+        <div className="bg-[#1a2c38] px-2 py-1 rounded-lg border border-gray-700 text-xs font-bold text-white">
+          ₹{(liveBalance ?? (walletData ? Number(walletData.available) : null))?.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? "0.00"}
         </div>
       </header>
 

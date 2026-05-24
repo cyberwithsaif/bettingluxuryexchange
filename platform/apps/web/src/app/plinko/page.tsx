@@ -334,7 +334,7 @@ export default function PlinkoPage() {
   const dbl  = () => setBetAmount(a => Math.min(config?.maxBet ?? 100000, a * 2));
 
   return (
-    <div className="h-[100dvh] bg-[#0b0c12] text-white flex flex-col md:flex-row overflow-hidden">
+    <div className="min-h-screen bg-[#0b0c12] text-white flex flex-col md:flex-row">
 
       {/* Toasts */}
       <div className="fixed top-4 right-3 z-50 flex flex-col gap-1 pointer-events-none">
