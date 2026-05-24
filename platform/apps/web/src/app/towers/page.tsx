@@ -191,8 +191,8 @@ function Tile({
       transition={{ duration: 0.3 }}
       className="relative flex flex-col items-center justify-center font-bold select-none"
       style={{
-        width:    "clamp(56px, 11vw, 80px)",
-        height:   "clamp(44px, 8.5vw, 64px)",
+        width:    "clamp(48px, 9vw, 68px)",
+        height:   "clamp(38px, 7vw, 54px)",
         background: s.bg,
         clipPath,
         boxShadow: s.glow,
@@ -206,7 +206,7 @@ function Tile({
           className="relative z-10 font-black leading-none text-center"
           style={{
             color: s.textColor,
-            fontSize: "clamp(9px, 1.5vw, 12px)",
+            fontSize: "clamp(8px, 1.3vw, 11px)",
             letterSpacing: "-0.02em",
           }}
         >
@@ -640,7 +640,7 @@ export default function TowersPage() {
                           style={{ background: isCurrentRow ? "#818cf8" : "rgba(255,255,255,0.12)" }} />
                       </div>
 
-                      <div className="flex gap-1.5">
+                      <div className="flex gap-1">
                         {Array.from({ length: cols }, (_, col) => {
                           let kind: TileKind = "idle";
                           if (rowPhase && rowPhase[col]) {
