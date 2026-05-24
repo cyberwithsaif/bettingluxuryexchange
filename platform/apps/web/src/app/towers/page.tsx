@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { motion, AnimatePresence, useAnimation } from "framer-motion";
-import useSWR from "swr";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
 import {
-  ArrowLeft, Volume2, VolumeX, Shield, TrendingUp,
-  Zap, ChevronUp, Trophy, Clock, Bomb, Star,
+  ArrowLeft, Volume2, VolumeX, Shield,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -47,17 +45,6 @@ interface PickResult {
   serverSeed?: string;
 }
 
-interface RecentGame {
-  id: string;
-  username: string;
-  betAmount: number;
-  multiplier: number;
-  payout: number;
-  difficulty: Difficulty;
-  level: number;
-  status: string;
-  createdAt: string;
-}
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -154,8 +141,28 @@ function ParticleBurst({ trigger, color }: { trigger: number; color: string }) {
 
 type TileKind = "idle" | "active" | "loading" | "safe" | "bomb_self" | "bomb_other" | "missed_safe";
 
+// Broken-crystal clip-path variants — vary by position for organic look
+const BROKEN_CLIPS = [
+  "polygon(8% 0%,92% 0%,100% 8%,100% 92%,92% 100%,8% 100%,0% 92%,0% 8%)",
+  "polygon(10% 1%,90% 0%,100% 10%,99% 91%,90% 100%,10% 99%,0% 90%,1% 10%)",
+  "polygon(7% 2%,93% 0%,100% 7%,98% 93%,93% 100%,7% 98%,0% 93%,2% 7%)",
+  "polygon(9% 0%,91% 2%,100% 9%,99% 90%,90% 99%,10% 100%,1% 91%,0% 10%)",
+  "polygon(6% 1%,94% 0%,100% 6%,100% 94%,94% 99%,6% 100%,0% 94%,0% 6%)",
+  "polygon(11% 0%,89% 1%,100% 11%,98% 89%,89% 100%,11% 99%,0% 89%,2% 11%)",
+];
+
+const TILE_STYLE: Record<TileKind, { bg: string; glow: string; textColor: string; overlay: string }> = {
+  idle:        { bg: "linear-gradient(145deg,#1e1854,#150f3a)",        glow: "none",                              textColor: "rgba(160,140,220,0.55)", overlay: "none" },
+  active:      { bg: "linear-gradient(145deg,#7c3aed,#5b21b6)",        glow: "0 0 22px rgba(124,58,237,0.65)",   textColor: "#e9d5ff",               overlay: "rgba(255,255,255,0.06)" },
+  loading:     { bg: "linear-gradient(145deg,#6d28d9,#4c1d95)",        glow: "0 0 22px rgba(109,40,217,0.6)",    textColor: "#c4b5fd",               overlay: "none" },
+  safe:        { bg: "linear-gradient(145deg,#166534,#14532d)",        glow: "0 0 24px rgba(34,197,94,0.55)",    textColor: "#86efac",               overlay: "rgba(34,197,94,0.08)" },
+  bomb_self:   { bg: "linear-gradient(145deg,#991b1b,#7f1d1d)",        glow: "0 0 28px rgba(239,68,68,0.7)",     textColor: "#fca5a5",               overlay: "rgba(239,68,68,0.1)" },
+  bomb_other:  { bg: "linear-gradient(145deg,#3b0000,#1c0a0a)",        glow: "none",                              textColor: "rgba(252,165,165,0.35)", overlay: "none" },
+  missed_safe: { bg: "linear-gradient(145deg,#052e16,#022c22)",        glow: "none",                              textColor: "rgba(134,239,172,0.3)", overlay: "none" },
+};
+
 function Tile({
-  kind, col, row, active, onPick, sound,
+  kind, col, row, active, onPick, sound, multiplier,
 }: {
   kind: TileKind;
   col: number;
@@ -163,8 +170,11 @@ function Tile({
   active: boolean;
   onPick: (col: number, row: number) => void;
   sound: () => void;
+  multiplier: number;
 }) {
   const [burst, setBurst] = useState(0);
+  const clipPath = BROKEN_CLIPS[(col * 2 + row * 3) % BROKEN_CLIPS.length]!;
+  const s = TILE_STYLE[kind];
 
   const handleClick = () => {
     if (!active) return;
@@ -172,40 +182,59 @@ function Tile({
     onPick(col, row);
   };
 
-  const styles: Record<TileKind, { bg: string; border: string; glow: string; icon: React.ReactNode }> = {
-    idle:         { bg: "rgba(255,255,255,0.04)", border: "rgba(255,255,255,0.08)", glow: "none",           icon: null },
-    active:       { bg: "rgba(99,102,241,0.15)",  border: "rgba(99,102,241,0.5)",  glow: "0 0 20px rgba(99,102,241,0.3)", icon: <span className="text-indigo-400 text-xl">?</span> },
-    loading:      { bg: "rgba(99,102,241,0.2)",   border: "rgba(99,102,241,0.6)",  glow: "0 0 20px rgba(99,102,241,0.4)", icon: <span className="animate-spin text-white text-xl">⟳</span> },
-    safe:         { bg: "rgba(34,197,94,0.2)",    border: "rgba(34,197,94,0.7)",   glow: "0 0 25px rgba(34,197,94,0.5)", icon: <span className="text-2xl">✓</span> },
-    bomb_self:    { bg: "rgba(239,68,68,0.25)",   border: "rgba(239,68,68,0.8)",   glow: "0 0 25px rgba(239,68,68,0.6)", icon: <span className="text-2xl">💣</span> },
-    bomb_other:   { bg: "rgba(239,68,68,0.12)",   border: "rgba(239,68,68,0.4)",   glow: "0 0 12px rgba(239,68,68,0.3)", icon: <span className="text-xl opacity-70">💣</span> },
-    missed_safe:  { bg: "rgba(34,197,94,0.08)",   border: "rgba(34,197,94,0.3)",   glow: "none",           icon: <span className="text-green-500 text-lg opacity-50">✓</span> },
-  };
-
-  const s = styles[kind];
+  const icon = kind === "safe"
+    ? <span className="text-base leading-none">✓</span>
+    : kind === "bomb_self" || kind === "bomb_other"
+    ? <span className="text-base leading-none">💣</span>
+    : kind === "loading"
+    ? <span className="animate-spin text-base leading-none">⟳</span>
+    : null;
 
   return (
     <motion.button
       onClick={handleClick}
       onHoverStart={() => active && sound()}
       disabled={!active}
-      whileHover={active ? { scale: 1.08, y: -3 } : {}}
-      whileTap={active ? { scale: 0.95 } : {}}
-      animate={kind === "bomb_self" ? { x: [0, -6, 6, -4, 4, 0] } : {}}
-      transition={{ duration: 0.35 }}
-      className="relative flex items-center justify-center rounded-xl font-bold transition-colors duration-200"
+      whileHover={active ? { scale: 1.1, y: -2 } : {}}
+      whileTap={active ? { scale: 0.93 } : {}}
+      animate={kind === "bomb_self" ? { x: [0, -5, 5, -3, 3, 0] } : {}}
+      transition={{ duration: 0.3 }}
+      className="relative flex flex-col items-center justify-center font-bold select-none"
       style={{
-        width: "clamp(52px, 10vw, 80px)",
-        height: "clamp(52px, 10vw, 80px)",
-        background:    s.bg,
-        border:        `1.5px solid ${s.border}`,
-        boxShadow:     s.glow,
-        cursor:        active ? "pointer" : "default",
+        width:    "clamp(56px, 11vw, 80px)",
+        height:   "clamp(44px, 8.5vw, 64px)",
+        background: s.bg,
+        clipPath,
+        boxShadow: s.glow,
+        cursor:    active ? "pointer" : "default",
       }}
     >
-      <span className="relative z-10 select-none">{s.icon}</span>
-      <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
-        <ParticleBurst trigger={burst} color={kind === "safe" ? "#22c55e" : "#6366f1"} />
+      {/* Inner shine overlay */}
+      {s.overlay !== "none" && (
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: `linear-gradient(160deg, ${s.overlay} 0%, transparent 60%)`, clipPath }} />
+      )}
+      {/* Multiplier text or icon */}
+      {icon ? (
+        <span style={{ color: s.textColor, position: "relative", zIndex: 1 }}>{icon}</span>
+      ) : (
+        <span
+          className="relative z-10 font-black leading-none text-center"
+          style={{
+            color: s.textColor,
+            fontSize: "clamp(9px, 1.5vw, 12px)",
+            letterSpacing: "-0.02em",
+            textShadow: active ? "0 0 12px rgba(233,213,255,0.6)" : "none",
+          }}
+        >
+          {multiplier >= 1000
+            ? `${(multiplier / 1000).toFixed(1)}k×`
+            : `${multiplier.toFixed(2)}×`}
+        </span>
+      )}
+      {/* Particle burst on pick */}
+      <div className="absolute inset-0 pointer-events-none overflow-visible">
+        <ParticleBurst trigger={burst} color={kind === "safe" ? "#22c55e" : "#a78bfa"} />
       </div>
     </motion.button>
   );
@@ -353,12 +382,6 @@ export default function TowersPage() {
   const cfg     = DIFF_CONFIG[difficulty];
   const activeMult = session?.multiplierTable[session.currentLevel] ?? multTable[0];
 
-  // Fetch recent games
-  const { data: recentGames, mutate: refreshGames } = useSWR<RecentGame[]>(
-    "/api/casino/towers/history",
-    (url: string) => fetch(url).then(r => r.ok ? r.json() : []),
-    { refreshInterval: 10_000 },
-  );
 
   // Init tile states
   const initTiles = useCallback((cols: number, currentLevel: number, pickedCols: number[]) => {
@@ -435,7 +458,6 @@ export default function TowersPage() {
         setPhase("busted");
         setResult({ serverSeed: r.serverSeed, bombPositions: r.bombPositions });
         sounds.bomb();
-        refreshGames();
       } else if (r.status === "CASHED_OUT") {
         // Auto win (completed all levels)
         setTileStates(prev => {
@@ -447,7 +469,6 @@ export default function TowersPage() {
         setCashoutAmt(r.payout ?? 0);
         setResult({ serverSeed: r.serverSeed, bombPositions: r.bombPositions });
         sounds.bigwin();
-        refreshGames();
       } else {
         // Safe pick — advance
         setTileStates(prev => {
@@ -488,7 +509,6 @@ export default function TowersPage() {
       setCashoutAmt(r.payout ?? 0);
       setResult({ serverSeed: r.serverSeed, bombPositions: r.bombPositions });
       sounds.cashout();
-      refreshGames();
     };
 
     const onError = (data: { message: string }) => {
@@ -507,7 +527,7 @@ export default function TowersPage() {
       s.off("towers:cashoutResponse", onCashout);
       s.off("towers:error",           onError);
     };
-  }, [session, sounds, initTiles, refreshGames]);
+  }, [session, sounds, initTiles]);
 
   const showError = (msg: string) => {
     setError(msg);
@@ -620,125 +640,89 @@ export default function TowersPage() {
             </div>
           </div>
 
-          {/* 3-column layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr_260px] gap-4 lg:gap-6">
+          {/* 2-column layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4 lg:gap-6">
 
-            {/* ── LEFT: Controls ─────────────────────────────────────────── */}
-            <div className="space-y-3 order-2 lg:order-1">
+            {/* ── LEFT: Compact Controls ─────────────────────────── */}
+            <div className="space-y-2 order-2 lg:order-1">
 
-              {/* Difficulty */}
-              <div className="rounded-2xl p-4 space-y-3"
-                style={{ background: "rgba(13,14,25,0.8)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)" }}>
-                <p className="text-xs font-bold tracking-widest text-white/50 uppercase">Difficulty</p>
-                <div className="grid grid-cols-2 gap-2">
+              {/* Difficulty — compact 2x2 grid */}
+              <div className="rounded-xl p-3"
+                style={{ background: "rgba(13,14,25,0.9)", border: "1px solid rgba(99,102,241,0.2)", backdropFilter: "blur(12px)" }}>
+                <p className="text-xs font-bold tracking-widest text-white/40 uppercase mb-2">Difficulty</p>
+                <div className="grid grid-cols-2 gap-1.5">
                   {(["EASY", "MEDIUM", "HARD", "EXPERT"] as Difficulty[]).map(d => (
                     <button
                       key={d}
                       onClick={() => { if (phase === "idle") setDifficulty(d); }}
                       disabled={phase !== "idle"}
-                      className="py-2.5 rounded-xl text-sm font-bold transition-all"
+                      className="py-2 rounded-lg text-xs font-bold transition-all"
                       style={{
                         background: difficulty === d
-                          ? `linear-gradient(135deg, ${DIFF_CONFIG[d].color}33, ${DIFF_CONFIG[d].color}22)`
+                          ? `linear-gradient(135deg, ${DIFF_CONFIG[d].color}44, ${DIFF_CONFIG[d].color}22)`
                           : "rgba(255,255,255,0.04)",
-                        border: `1.5px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.08)"}`,
-                        color: difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.5)",
-                        boxShadow: difficulty === d ? `0 0 15px ${DIFF_CONFIG[d].color}30` : "none",
+                        border: `1.5px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.06)"}`,
+                        color: difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.4)",
+                        boxShadow: difficulty === d ? `0 0 12px ${DIFF_CONFIG[d].color}25` : "none",
                       }}
                     >
                       {DIFF_CONFIG[d].label}
                     </button>
                   ))}
                 </div>
-                <div className="flex gap-3 text-xs text-white/40 pt-1">
-                  <span>{cfg.columns} tiles</span>
-                  <span>·</span>
-                  <span>{cfg.bombCount} bomb{cfg.bombCount > 1 ? "s" : ""}</span>
-                  <span>·</span>
-                  <span>{cfg.safeTiles} safe</span>
-                </div>
               </div>
 
-              {/* Bet Amount */}
-              <div className="rounded-2xl p-4 space-y-3"
-                style={{ background: "rgba(13,14,25,0.8)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)" }}>
-                <p className="text-xs font-bold tracking-widest text-white/50 uppercase">Bet Amount</p>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 font-bold text-sm">₹</span>
+              {/* Bet Amount — compact */}
+              <div className="rounded-xl p-3"
+                style={{ background: "rgba(13,14,25,0.9)", border: "1px solid rgba(99,102,241,0.2)", backdropFilter: "blur(12px)" }}>
+                <p className="text-xs font-bold tracking-widest text-white/40 uppercase mb-2">Bet</p>
+                <div className="relative mb-2">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/40 font-bold text-xs">₹</span>
                   <input
                     type="number"
                     value={betAmount}
                     onChange={e => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
                     disabled={phase !== "idle"}
-                    className="w-full pl-7 pr-4 py-3 rounded-xl text-white font-bold text-lg focus:outline-none disabled:opacity-50"
+                    className="w-full pl-6 pr-3 py-2 rounded-lg text-white font-bold text-sm focus:outline-none disabled:opacity-50"
                     style={{
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1.5px solid rgba(99,102,241,0.3)",
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(99,102,241,0.2)",
                     }}
                   />
                 </div>
-                <div className="grid grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-4 gap-1">
                   {[10, 100, 500, 1000].map(v => (
                     <button key={v} onClick={() => quickBet(v)} disabled={phase !== "idle"}
-                      className="py-1.5 rounded-lg text-xs font-bold text-white/60 hover:text-white transition disabled:opacity-40"
-                      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+                      className="py-1 rounded text-xs font-bold text-white/50 hover:text-white/70 transition disabled:opacity-40"
+                      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
                     >
-                      ₹{v >= 1000 ? `${v / 1000}k` : v}
+                      {v >= 1000 ? `${v / 1000}k` : v}
                     </button>
                   ))}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1 mt-2">
                   <button onClick={() => adjustBet(0.5)} disabled={phase !== "idle"}
-                    className="flex-1 py-2 rounded-lg text-white/60 hover:text-white text-sm font-bold transition disabled:opacity-40"
-                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+                    className="flex-1 py-1.5 rounded text-xs font-bold text-white/50 hover:text-white/70 transition disabled:opacity-40"
+                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
                   >
                     ½
                   </button>
                   <button onClick={() => adjustBet(2)} disabled={phase !== "idle"}
-                    className="flex-1 py-2 rounded-lg text-white/60 hover:text-white text-sm font-bold transition disabled:opacity-40"
-                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+                    className="flex-1 py-1.5 rounded text-xs font-bold text-white/50 hover:text-white/70 transition disabled:opacity-40"
+                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
                   >
                     2×
                   </button>
                 </div>
               </div>
 
-              {/* Multiplier Table */}
-              <div className="rounded-2xl p-4"
-                style={{ background: "rgba(13,14,25,0.8)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)" }}>
-                <p className="text-xs font-bold tracking-widest text-white/50 uppercase mb-3">Payout Table</p>
-                <div className="space-y-1.5">
-                  {multTable.map((m, i) => {
-                    const isActive  = session?.currentLevel === i && phase === "playing";
-                    const isPassed  = session ? i < session.currentLevel : false;
-                    return (
-                      <div key={i}
-                        className="flex items-center justify-between px-3 py-1.5 rounded-lg text-sm transition-all"
-                        style={{
-                          background: isActive ? "rgba(99,102,241,0.2)" : isPassed ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.03)",
-                          border: `1px solid ${isActive ? "rgba(99,102,241,0.5)" : isPassed ? "rgba(34,197,94,0.3)" : "rgba(255,255,255,0.06)"}`,
-                        }}
-                      >
-                        <span className="text-white/50 flex items-center gap-1.5">
-                          <ChevronUp size={12} className={isPassed ? "text-green-400" : "text-white/30"} />
-                          Level {i + 1}
-                        </span>
-                        <span className="font-bold" style={{ color: isPassed ? "#22c55e" : isActive ? "#818cf8" : "#a3a3a3" }}>
-                          {m.toFixed(2)}x
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* Provably Fair (mobile) */}
               <button
                 onClick={() => setShowFair(true)}
-                className="lg:hidden w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white/60 hover:text-white text-sm font-medium transition"
-                style={{ border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
+                className="lg:hidden w-full flex items-center justify-center gap-2 py-2 rounded-lg text-white/50 hover:text-white text-xs font-medium transition"
+                style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}
               >
-                <Shield size={14} /> Provably Fair
+                <Shield size={12} /> Provably Fair
               </button>
             </div>
 
@@ -773,39 +757,33 @@ export default function TowersPage() {
 
               {/* Tower Grid */}
               <div
-                className="w-full rounded-2xl p-4 md:p-6"
-                style={{ background: "rgba(13,14,25,0.8)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)" }}
+                className="w-full rounded-2xl p-3 md:p-5"
+                style={{ background: "rgba(10,8,22,0.92)", border: "1px solid rgba(124,58,237,0.2)", backdropFilter: "blur(12px)" }}
               >
-                <div className="flex flex-col-reverse gap-2 items-center">
+                <div className="flex flex-col-reverse gap-1.5 items-center">
                   {Array.from({ length: LEVELS }, (_, row) => {
-                    const cols = session?.columns ?? cfg.columns;
-                    const rowPhase = tileStates[row];
+                    const cols      = session?.columns ?? cfg.columns;
+                    const rowPhase  = tileStates[row];
                     const isCurrentRow = session?.currentLevel === row && phase === "playing";
                     const isPastRow    = session ? row < session.currentLevel : false;
-                    const isFutureRow  = !isPastRow && !isCurrentRow;
+                    const rowMult      = session?.multiplierTable[row] ?? multTable[row] ?? 1;
 
                     return (
                       <motion.div
                         key={row}
-                        initial={{ opacity: 0, x: -20 }}
+                        initial={{ opacity: 0, x: -16 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: row * 0.04 }}
-                        className="flex items-center gap-2 md:gap-3 w-full justify-center"
+                        transition={{ delay: row * 0.035 }}
+                        className="flex items-center gap-2 w-full justify-center"
                       >
-                        {/* Level indicator */}
-                        <div className="hidden sm:flex items-center justify-center w-8 shrink-0">
-                          <span
-                            className="text-xs font-bold"
-                            style={{
-                              color: isPastRow ? "#22c55e" : isCurrentRow ? "#818cf8" : "rgba(255,255,255,0.2)",
-                            }}
-                          >
-                            {row + 1}
-                          </span>
+                        {/* Level dot */}
+                        <div className="hidden sm:flex items-center justify-center w-5 shrink-0">
+                          <div className="w-1.5 h-1.5 rounded-full"
+                            style={{ background: isPastRow ? "#22c55e" : isCurrentRow ? "#818cf8" : "rgba(255,255,255,0.12)" }} />
                         </div>
 
                         {/* Tiles */}
-                        <div className="flex gap-2 md:gap-3">
+                        <div className="flex gap-1.5">
                           {Array.from({ length: cols }, (_, col) => {
                             let kind: TileKind = "idle";
                             if (rowPhase && rowPhase[col]) {
@@ -825,18 +803,17 @@ export default function TowersPage() {
                                 active={kind === "active" && phase === "playing" && !loading}
                                 onPick={handlePick}
                                 sound={sounds.hover}
+                                multiplier={rowMult}
                               />
                             );
                           })}
                         </div>
 
-                        {/* Multiplier badge */}
-                        <div className="hidden sm:flex items-center justify-end w-16 shrink-0">
-                          <span
-                            className="text-xs font-bold"
-                            style={{ color: isPastRow ? "#22c55e" : isCurrentRow ? "#818cf8" : "rgba(255,255,255,0.2)" }}
-                          >
-                            {(session?.multiplierTable[row] ?? multTable[row] ?? 1).toFixed(2)}x
+                        {/* Multiplier label right */}
+                        <div className="hidden sm:flex items-center w-14 shrink-0">
+                          <span className="text-xs font-bold tabular-nums"
+                            style={{ color: isPastRow ? "#4ade80" : isCurrentRow ? "#a78bfa" : "rgba(255,255,255,0.18)" }}>
+                            {rowMult >= 1000 ? `${(rowMult/1000).toFixed(1)}k×` : `${rowMult.toFixed(2)}×`}
                           </span>
                         </div>
                       </motion.div>
@@ -930,79 +907,6 @@ export default function TowersPage() {
               </div>
             </div>
 
-            {/* ── RIGHT: Feed ─────────────────────────────────────────────── */}
-            <div className="space-y-3 order-3">
-
-              {/* Live stats */}
-              <div className="rounded-2xl p-4"
-                style={{ background: "rgba(13,14,25,0.8)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)" }}>
-                <p className="text-xs font-bold tracking-widest text-white/50 uppercase mb-3">Game Stats</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { label: "Min Bet", value: "₹10",  icon: <Zap size={14} /> },
-                    { label: "Levels",  value: "8",    icon: <TrendingUp size={14} /> },
-                    { label: "Max Win", value: multTable[LEVELS - 1]?.toFixed(1) + "x", icon: <Trophy size={14} /> },
-                    { label: "RTP",     value: "98%",  icon: <Star size={14} /> },
-                  ].map(item => (
-                    <div key={item.label} className="rounded-xl p-3 text-center"
-                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                      <div className="flex justify-center mb-1 text-indigo-400">{item.icon}</div>
-                      <p className="text-white font-bold text-sm">{item.value}</p>
-                      <p className="text-white/40 text-xs">{item.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Recent Games */}
-              <div className="rounded-2xl p-4"
-                style={{ background: "rgba(13,14,25,0.8)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(12px)", maxHeight: "420px", overflowY: "auto" }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <Clock size={13} className="text-white/40" />
-                  <p className="text-xs font-bold tracking-widest text-white/50 uppercase">Recent Games</p>
-                </div>
-                <div className="space-y-2">
-                  {recentGames && recentGames.length > 0 ? (
-                    recentGames.slice(0, 15).map(game => (
-                      <motion.div
-                        key={game.id}
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="flex items-center justify-between px-3 py-2 rounded-xl"
-                        style={{
-                          background: game.status === "CASHED_OUT" ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)",
-                          border: `1px solid ${game.status === "CASHED_OUT" ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}`,
-                        }}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="text-white/70 text-xs font-medium truncate">{game.username}</p>
-                          <p className="text-white/40 text-xs">
-                            {DIFF_CONFIG[game.difficulty]?.label ?? game.difficulty} · Lv{game.level}
-                          </p>
-                        </div>
-                        <div className="text-right ml-2 shrink-0">
-                          {game.status === "CASHED_OUT" ? (
-                            <>
-                              <p className="text-green-400 font-bold text-sm">{game.multiplier.toFixed(2)}x</p>
-                              <p className="text-green-400/60 text-xs">+₹{(game.payout - game.betAmount).toFixed(0)}</p>
-                            </>
-                          ) : (
-                            <>
-                              <p className="text-red-400 font-bold text-sm flex items-center gap-1 justify-end">
-                                <Bomb size={11} /> Lost
-                              </p>
-                              <p className="text-red-400/60 text-xs">₹{game.betAmount.toFixed(0)}</p>
-                            </>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))
-                  ) : (
-                    <p className="text-white/30 text-sm text-center py-6">No recent games</p>
-                  )}
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
