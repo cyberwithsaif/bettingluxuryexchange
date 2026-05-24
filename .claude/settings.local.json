@@ -38,7 +38,12 @@
       "Bash(grep -o \".\\\\{2\\\\}₹.\\\\{0,3\\\\}\" platform/apps/admin/src/app/users/page.tsx)",
       "Bash(grep -o \"emoji.*\\\\\".\\\\{1,5\\\\}\\\\\"\" platform/apps/admin/src/app/casino-bets/page.tsx)",
       "Bash(curl -s http://localhost:3000)",
-      "PowerShell(Get-ChildItem \"$env:USERPROFILE\\\\.ssh\\\\\" -Force | Select-Object Name)"
+      "PowerShell(Get-ChildItem \"$env:USERPROFILE\\\\.ssh\\\\\" -Force | Select-Object Name)",
+      "Bash(scp -i \"E:/illweb/diamond exc/id_rsa\" -o StrictHostKeyChecking=no \"d:/DEVELOPMENTS/casino betting website exch/platform/apps/web/src/app/towers/page.tsx\" root@51.222.84.91:/var/www/exch/platform/apps/web/src/app/towers/page.tsx)",
+      "Bash(Get-ChildItem \"E:\\\\illweb\\\\diamond exc\\\\\" -Filter \"*idrsa*\" -Force)",
+      "Bash(scp -i \"E:\\\\illweb\\\\diamond exc\\\\id_rsa\" -r \"d:\\\\DEVELOPMENTS\\\\casino betting website exch\\\\platform\\\\apps\\\\web\\\\.next\" root@51.222.84.91:/var/www/exch/platform/apps/web/)",
+      "Bash(scp -i \"E:\\\\illweb\\\\diamond exc\\\\id_rsa\" -r \"d:\\\\DEVELOPMENTS\\\\casino betting website exch\\\\platform\\\\apps\\\\api\\\\dist\" root@51.222.84.91:/var/www/exch/platform/apps/api/)",
+      "Bash(Test-Path \"d:\\\\DEVELOPMENTS\\\\casino betting website exch\\\\platform\\\\apps\\\\api\\\\node_modules\\\\@socket.io\\\\redis-adapter\")"
     ],
     "additionalDirectories": [
       "d:\\DEVELOPMENTS\\casino betting website exch\\platform\\images"

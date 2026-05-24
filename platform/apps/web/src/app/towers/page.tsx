@@ -191,8 +191,8 @@ function Tile({
       transition={{ duration: 0.3 }}
       className="relative flex flex-col items-center justify-center font-bold select-none"
       style={{
-        width:    "clamp(40px, 7vw, 56px)",
-        height:   "clamp(32px, 5.5vw, 44px)",
+        width:    "clamp(48px, 8.8vw, 66px)",
+        height:   "clamp(38px, 6.8vw, 53px)",
         background: s.bg,
         clipPath,
         boxShadow: s.glow,
@@ -206,7 +206,7 @@ function Tile({
           className="relative z-10 font-black leading-none text-center"
           style={{
             color: s.textColor,
-            fontSize: "clamp(7px, 1.1vw, 9px)",
+            fontSize: "clamp(8px, 1.3vw, 10.8px)",
             letterSpacing: "-0.02em",
           }}
         >
@@ -602,7 +602,7 @@ export default function TowersPage() {
           </div>
 
           {/* Game Grid — main area */}
-          <div className="flex-1 bg-[#0f212e] p-3 md:p-6 relative flex flex-col items-center justify-center min-h-[350px]">
+          <div className="flex-1 bg-[#0f212e] px-3 md:px-6 pt-1 md:pt-2 pb-3 md:pb-6 relative flex flex-col items-center justify-center min-h-[350px]">
             {/* Stats overlay during play */}
             {phase === "playing" && session && (
               <div className="w-full flex flex-wrap justify-center gap-1.5 md:gap-3 mb-3 md:mb-0 md:absolute md:top-4 md:left-4 md:right-4 text-[10px] md:text-xs font-semibold z-10 pointer-events-none">
