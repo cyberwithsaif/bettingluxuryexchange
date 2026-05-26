@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from "@nestjs/common";
-import { BetStatus, LedgerKind, Prisma } from "@prisma/client";
+import { BetStatus, LedgerKind, Prisma, TransactionStatus } from "@prisma/client";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { RedisService } from "../../common/redis/redis.service";
 
@@ -14,40 +14,140 @@ export class AdminService {
   ) {}
 
   async dashboard() {
-    const [users, openBets, activeMarkets, pendingDeposits, pendingWithdrawals, totals] =
-      await Promise.all([
-        this.prisma.user.count(),
-        this.prisma.bet.count({ where: { status: "OPEN" } }),
-        this.prisma.market.count({ where: { status: { in: ["OPEN", "SUSPENDED"] } } }),
-        this.prisma.transaction.count({ where: { kind: "DEPOSIT",    status: "PENDING" } }),
-        this.prisma.transaction.count({ where: { kind: "WITHDRAWAL", status: "PENDING" } }),
-        this.prisma.wallet.aggregate({ _sum: { balance: true, exposure: true } }),
-      ]);
+    const now = Date.now();
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const online15 = new Date(now - 15 * 60_000);
+    const active24h = new Date(now - 24 * 60 * 60_000);
+    const WINDOW_DAYS = 14;
+    const windowStart = new Date(now - (WINDOW_DAYS - 1) * 24 * 60 * 60_000);
+    windowStart.setHours(0, 0, 0, 0);
 
-    // 7-day P/L per day from settlement entries.
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60_000);
-    const recent = await this.prisma.ledgerEntry.findMany({
-      where: { kind: { in: ["BET_SETTLE_WIN", "BET_SETTLE_LOSS"] }, createdAt: { gte: sevenDaysAgo } },
-      select: { amount: true, createdAt: true },
-    });
-    const buckets: Record<string, number> = {};
-    for (const e of recent) {
-      const day = e.createdAt.toISOString().slice(0, 10);
-      // Operator P/L is the negative of user P/L (zero-sum exchange minus commission).
-      buckets[day] = (buckets[day] ?? 0) - Number(e.amount.toString());
+    // All ledger kinds that contribute to operator P/L. Operator P/L per entry is
+    // the negative of the player's balance delta (zero-sum exchange + casino edge).
+    const PL_KINDS: LedgerKind[] = [
+      LedgerKind.BET_SETTLE_WIN, LedgerKind.BET_SETTLE_LOSS,
+      LedgerKind.CASINO_BET, LedgerKind.CASINO_WIN, LedgerKind.CASINO_REFUND,
+    ];
+    const CASINO_PL_KINDS = ["CASINO_BET", "CASINO_WIN", "CASINO_REFUND"];
+    const APPROVED = [TransactionStatus.APPROVED, TransactionStatus.COMPLETED];
+
+    const [
+      users, openBets, activeMarkets, pendingDeposits, pendingWithdrawals, totals,
+      onlineUsers, activeUsers24h, newRegistrationsToday,
+      depositAgg, withdrawalAgg, pendingWithdrawalAgg,
+      sportsBetsCount, sportsWon, sportsLost, casinoBetCount, casinoWinCount,
+      plAllTime, plToday, commissionAgg,
+      recentLedger, recentBets, recentUsers, recentTx,
+    ] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.bet.count({ where: { status: "OPEN" } }),
+      this.prisma.market.count({ where: { status: { in: ["OPEN", "SUSPENDED"] } } }),
+      this.prisma.transaction.count({ where: { kind: "DEPOSIT",    status: "PENDING" } }),
+      this.prisma.transaction.count({ where: { kind: "WITHDRAWAL", status: "PENDING" } }),
+      this.prisma.wallet.aggregate({ _sum: { balance: true, exposure: true } }),
+      this.prisma.user.count({ where: { lastLoginAt: { gte: online15 } } }),
+      this.prisma.user.count({ where: { lastLoginAt: { gte: active24h } } }),
+      this.prisma.user.count({ where: { createdAt: { gte: startOfToday } } }),
+      this.prisma.transaction.aggregate({ _sum: { amount: true }, where: { kind: "DEPOSIT",    status: { in: APPROVED } } }),
+      this.prisma.transaction.aggregate({ _sum: { amount: true }, where: { kind: "WITHDRAWAL", status: { in: APPROVED } } }),
+      this.prisma.transaction.aggregate({ _sum: { amount: true }, where: { kind: "WITHDRAWAL", status: "PENDING" } }),
+      this.prisma.bet.count(),
+      this.prisma.bet.count({ where: { status: "SETTLED_WON" } }),
+      this.prisma.bet.count({ where: { status: "SETTLED_LOST" } }),
+      this.prisma.ledgerEntry.count({ where: { kind: "CASINO_BET" } }),
+      this.prisma.ledgerEntry.count({ where: { kind: "CASINO_WIN", amount: { gt: 0 } } }),
+      this.prisma.ledgerEntry.groupBy({ by: ["kind"], _sum: { amount: true }, where: { kind: { in: PL_KINDS } } }),
+      this.prisma.ledgerEntry.groupBy({ by: ["kind"], _sum: { amount: true }, where: { kind: { in: PL_KINDS }, createdAt: { gte: startOfToday } } }),
+      this.prisma.ledgerEntry.aggregate({ _sum: { amount: true }, where: { kind: "COMMISSION_PAYOUT" } }),
+      this.prisma.ledgerEntry.findMany({ where: { createdAt: { gte: windowStart }, kind: { in: PL_KINDS } }, select: { amount: true, kind: true, createdAt: true } }),
+      this.prisma.bet.findMany({ where: { createdAt: { gte: windowStart } }, select: { createdAt: true } }),
+      this.prisma.user.findMany({ where: { createdAt: { gte: windowStart } }, select: { createdAt: true } }),
+      this.prisma.transaction.findMany({ where: { createdAt: { gte: windowStart }, status: { in: APPROVED } }, select: { amount: true, kind: true, createdAt: true } }),
+    ]);
+
+    const num = (d: Prisma.Decimal | null | undefined) => Number((d ?? new Prisma.Decimal(0)).toString());
+    const round2 = (n: number) => Math.round(n * 100) / 100;
+
+    // Fold groupBy rows into a { kind: amount } map.
+    const foldKinds = (rows: Array<{ kind: LedgerKind; _sum: { amount: Prisma.Decimal | null } }>) => {
+      const m: Record<string, number> = {};
+      for (const r of rows) m[r.kind] = num(r._sum.amount);
+      return m;
+    };
+    const allTime = foldKinds(plAllTime);
+    const today = foldKinds(plToday);
+
+    // Operator P/L = negation of net player balance delta across the PL kinds.
+    const operatorPL = (m: Record<string, number>) =>
+      round2(-PL_KINDS.reduce((s, k) => s + (m[k] ?? 0), 0));
+    const gameRevenue = round2(-CASINO_PL_KINDS.reduce((s, k) => s + (allTime[k] ?? 0), 0));
+
+    // ── Build 14-day daily buckets so charts always show the full window ──
+    const dayKeys: string[] = [];
+    for (let i = WINDOW_DAYS - 1; i >= 0; i--) {
+      dayKeys.push(new Date(now - i * 24 * 60 * 60_000).toISOString().slice(0, 10));
     }
-    const series = Object.entries(buckets).sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, pl]) => ({ date, pl: Math.round(pl * 100) / 100 }));
+    const inWindow = (day: string) => dayKeys.includes(day);
+    const dayOf = (d: Date) => d.toISOString().slice(0, 10);
+
+    const revenue: Record<string, number> = Object.fromEntries(dayKeys.map(k => [k, 0]));
+    const betSports: Record<string, number> = Object.fromEntries(dayKeys.map(k => [k, 0]));
+    const betCasino: Record<string, number> = Object.fromEntries(dayKeys.map(k => [k, 0]));
+    const growth: Record<string, number> = Object.fromEntries(dayKeys.map(k => [k, 0]));
+    const dep: Record<string, number> = Object.fromEntries(dayKeys.map(k => [k, 0]));
+    const wd: Record<string, number> = Object.fromEntries(dayKeys.map(k => [k, 0]));
+
+    for (const e of recentLedger) {
+      const day = dayOf(e.createdAt);
+      if (!inWindow(day)) continue;
+      revenue[day] -= num(e.amount);           // operator PL per entry = -player delta
+      if (e.kind === "CASINO_BET") betCasino[day] += 1;
+    }
+    for (const b of recentBets) { const day = dayOf(b.createdAt); if (inWindow(day)) betSports[day] += 1; }
+    for (const u of recentUsers) { const day = dayOf(u.createdAt); if (inWindow(day)) growth[day] += 1; }
+    for (const t of recentTx) {
+      const day = dayOf(t.createdAt);
+      if (!inWindow(day)) continue;
+      if (t.kind === "DEPOSIT") dep[day] += num(t.amount);
+      else wd[day] += num(t.amount);
+    }
 
     return {
+      // ── Headline counts ──
       users,
+      onlineUsers,
+      activeUsers24h,
+      newRegistrationsToday,
       openBets,
       activeMarkets,
       pendingDeposits,
       pendingWithdrawals,
-      totalBalance:  Number((totals._sum.balance  ?? new Prisma.Decimal(0)).toString()),
-      totalExposure: Number((totals._sum.exposure ?? new Prisma.Decimal(0)).toString()),
-      pl7d: series,
+      pendingWithdrawalAmount: round2(num(pendingWithdrawalAgg._sum.amount)),
+
+      // ── Money ──
+      totalDeposits:  round2(num(depositAgg._sum.amount)),
+      totalWithdrawals: round2(num(withdrawalAgg._sum.amount)),
+      totalProfit: operatorPL(allTime),
+      todayPL: operatorPL(today),
+      gameRevenue,
+      affiliateRevenue: round2(Math.abs(num(commissionAgg._sum.amount))),
+      totalBalance:  round2(num(totals._sum.balance)),
+      totalExposure: round2(num(totals._sum.exposure)),
+
+      // ── Bets ──
+      totalBets: sportsBetsCount + casinoBetCount,
+      betsWon: sportsWon + casinoWinCount,
+      betsLost: sportsLost + Math.max(0, casinoBetCount - casinoWinCount),
+
+      // ── Charts (14-day daily series) ──
+      revenueSeries:  dayKeys.map(d => ({ date: d, pl: round2(revenue[d]) })),
+      betActivitySeries: dayKeys.map(d => ({ date: d, sports: betSports[d], casino: betCasino[d], total: betSports[d] + betCasino[d] })),
+      userGrowthSeries: dayKeys.map(d => ({ date: d, count: growth[d] })),
+      depositWithdrawalSeries: dayKeys.map(d => ({ date: d, deposits: round2(dep[d]), withdrawals: round2(wd[d]) })),
+
+      // ── Back-compat: existing 7-day P/L slice ──
+      pl7d: dayKeys.slice(-7).map(d => ({ date: d, pl: round2(revenue[d]) })),
     };
   }
 
