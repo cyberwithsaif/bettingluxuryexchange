@@ -1,13 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
-import {
-  ArrowLeft, Volume2, VolumeX, Shield,
-} from "lucide-react";
+import { Shield } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -57,6 +54,16 @@ const DIFF_CONFIG: Record<Difficulty, { columns: number; safeTiles: number; bomb
 };
 
 const LEVELS = 8;
+
+const CRACK_LINES = [
+  "M48,6 L35,34 L43,34 L26,62 L34,62 L20,90 M54,8 L68,26 L60,36 L76,64",
+  "M24,10 L40,38 L32,42 L48,74 M68,4 L56,28 L68,36 L54,74",
+  "M50,6 L34,32 M50,6 L66,32 M40,52 L52,82 M58,52 L44,84",
+  "M16,28 L38,52 L30,58 L52,82 M74,12 L62,40 L72,46 L56,80",
+  "M50,8 L30,36 L38,36 M50,8 L70,36 L62,42 M44,58 L38,82 M56,60 L64,84",
+  "M22,18 L40,46 L32,46 M70,10 L58,34 L66,40 L52,78",
+];
+
 const BROKEN_CLIPS = [
   "polygon(8% 0%,92% 0%,100% 8%,100% 92%,92% 100%,8% 100%,0% 92%,0% 8%)",
   "polygon(10% 1%,90% 0%,100% 10%,99% 91%,90% 100%,10% 99%,0% 90%,1% 10%)",
@@ -163,8 +170,16 @@ function Tile({
   multiplier: number;
 }) {
   const [burst, setBurst] = useState(0);
-  const clipPath = BROKEN_CLIPS[(col * 2 + row * 3) % BROKEN_CLIPS.length]!;
+  const clipPath  = BROKEN_CLIPS[(col * 2 + row * 3) % BROKEN_CLIPS.length]!;
+  const crackPath = CRACK_LINES[(col * 3 + row * 5) % CRACK_LINES.length]!;
   const s = TILE_STYLE[kind];
+
+  const isRevealed = kind === "safe" || kind === "bomb_self" || kind === "bomb_other" || kind === "missed_safe";
+  const crackColor = kind === "bomb_self"
+    ? "rgba(252,165,165,0.55)"
+    : kind === "safe"
+    ? "rgba(134,239,172,0.45)"
+    : "rgba(255,255,255,0.22)";
 
   const handleClick = () => {
     if (!active) return;
@@ -185,35 +200,64 @@ function Tile({
       onClick={handleClick}
       onHoverStart={() => active && sound()}
       disabled={!active}
-      whileHover={active ? { scale: 1.1, y: -2 } : {}}
+      whileHover={active ? { scale: 1.08, y: -2 } : {}}
       whileTap={active ? { scale: 0.93 } : {}}
       animate={kind === "bomb_self" ? { x: [0, -5, 5, -3, 3, 0] } : {}}
       transition={{ duration: 0.3 }}
-      className="relative flex flex-col items-center justify-center font-bold select-none"
+      className="relative flex flex-col items-center justify-center font-bold select-none overflow-hidden"
       style={{
-        width:    "clamp(48px, 8.8vw, 66px)",
-        height:   "clamp(38px, 6.8vw, 53px)",
+        width:      "clamp(52px, 19vw, 70px)",
+        height:     "clamp(40px, 7.2vw, 54px)",
         background: s.bg,
         clipPath,
-        boxShadow: s.glow,
-        cursor:    active ? "pointer" : "default",
+        boxShadow:  s.glow,
+        cursor:     active ? "pointer" : "default",
       }}
     >
+      {/* Crack lines — animate in when tile is revealed */}
+      <AnimatePresence>
+        {isRevealed && (
+          <motion.div
+            key="crack"
+            className="absolute inset-0 pointer-events-none"
+            style={{ zIndex: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.15 }}
+          >
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
+              <motion.path
+                d={crackPath}
+                stroke={crackColor}
+                strokeWidth="2.5"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              />
+            </svg>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {icon ? (
-        <span style={{ color: s.textColor, position: "relative", zIndex: 1 }}>{icon}</span>
+        <span style={{ color: s.textColor, position: "relative", zIndex: 2 }}>{icon}</span>
       ) : (
         <span
-          className="relative z-10 font-black leading-none text-center"
+          className="relative font-black leading-none text-center"
           style={{
-            color: s.textColor,
-            fontSize: "clamp(8px, 1.3vw, 10.8px)",
+            color:      s.textColor,
+            fontSize:   "clamp(8px, 1.5vw, 11px)",
             letterSpacing: "-0.02em",
+            zIndex:     2,
           }}
         >
           {multiplier >= 1000 ? `${(multiplier / 1000).toFixed(1)}k×` : `${multiplier.toFixed(2)}×`}
         </span>
       )}
-      <div className="absolute inset-0 pointer-events-none overflow-visible">
+      <div className="absolute inset-0 pointer-events-none overflow-visible" style={{ zIndex: 3 }}>
         <ParticleBurst trigger={burst} color={kind === "safe" ? "#22c55e" : "#a78bfa"} />
       </div>
     </motion.button>
@@ -286,7 +330,7 @@ export default function TowersPage() {
   // Controls
   const [betAmount, setBetAmount]     = useState(100);
   const [difficulty, setDifficulty]   = useState<Difficulty>("EASY");
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled] = useState(true);
   const [clientSeed, setClientSeed]   = useState(() =>
     typeof crypto !== "undefined" ? crypto.randomUUID().replace(/-/g, "").slice(0, 16) : "random123"
   );
@@ -485,228 +529,244 @@ export default function TowersPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="bg-[#0F1923] text-white flex flex-col font-sans w-full min-h-screen md:min-h-0 md:overflow-hidden md:h-[calc(100vh-74px)]">
-      {/* Mobile-only header */}
-      <header className="md:hidden px-3 py-2 flex items-center justify-between gap-2 border-b border-gray-800 bg-[#0f212e] w-full shrink-0">
-        <Link href="/" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition font-bold text-sm">
-          <ArrowLeft size={16} />
-          Back
-        </Link>
-        <div className="font-bold tracking-widest text-xs text-indigo-400 uppercase">🗼 Towers</div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setSoundEnabled(v => !v)} className="p-1.5 bg-[#1a2c38] rounded-lg border border-gray-700 text-gray-400 hover:text-white transition">
-            {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-          </button>
-          <span className="text-xs font-bold text-white bg-[#1a2c38] px-2 py-1 rounded-lg border border-gray-700">
-            ₹{(liveBalance ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-        </div>
-      </header>
+    <div className="bg-[#0a0b12] text-white flex flex-col font-sans w-full min-h-screen md:min-h-0 md:overflow-hidden md:h-[calc(100vh-74px)]">
 
-      {/* Main Game Container */}
-      <div className="flex-1 overflow-y-auto md:overflow-hidden flex p-2 md:p-3 w-full max-w-7xl mx-auto">
-        <div className="w-full flex flex-col-reverse md:flex-row bg-[#0f212e] rounded-xl overflow-hidden shadow-2xl border border-gray-800 md:h-full">
-          {/* Controls — sidebar on desktop, bottom on mobile */}
-          <div className="w-full md:w-72 bg-[#213743] p-3 md:p-4 flex flex-col gap-3 md:h-full md:overflow-y-auto">
-            {/* Difficulty */}
-            <div>
-              <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-2">Difficulty</p>
-              <div className="grid grid-cols-2 gap-1.5">
-                {(["EASY", "MEDIUM", "HARD", "EXPERT"] as Difficulty[]).map(d => (
-                  <button
-                    key={d}
-                    onClick={() => { if (phase === "idle") setDifficulty(d); }}
-                    disabled={phase !== "idle"}
-                    className="py-2 rounded-lg text-xs font-bold transition-all"
-                    style={{
-                      background: difficulty === d ? `${DIFF_CONFIG[d].color}22` : "rgba(255,255,255,0.04)",
-                      border: `1px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.08)"}`,
-                      color: difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.4)",
-                    }}
-                  >
-                    {DIFF_CONFIG[d].label}
-                  </button>
-                ))}
-              </div>
-            </div>
+      {/* ── Desktop + Mobile: main flex container ─────────────────────────── */}
+      <div className="flex-1 md:overflow-hidden flex flex-col md:flex-row md:p-3 w-full max-w-7xl mx-auto md:gap-3 min-h-0">
 
-            {/* Bet Amount */}
-            <div>
-              <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-2">Bet Amount</p>
-              <div className="relative mb-2">
-                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">₹</span>
-                <input
-                  type="number"
-                  value={betAmount}
-                  onChange={e => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
+        {/* Desktop sidebar — hidden on mobile */}
+        <div className="hidden md:flex md:w-72 shrink-0 bg-[#213743] rounded-xl p-4 flex-col gap-3 md:h-full md:overflow-y-auto">
+          {/* Difficulty */}
+          <div>
+            <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-2">Difficulty</p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {(["EASY", "MEDIUM", "HARD", "EXPERT"] as Difficulty[]).map(d => (
+                <button
+                  key={d}
+                  onClick={() => { if (phase === "idle") setDifficulty(d); }}
                   disabled={phase !== "idle"}
-                  className="w-full pl-6 pr-3 py-2 rounded-lg text-white font-bold text-sm focus:outline-none disabled:opacity-50 bg-[#0f212e] border border-gray-700"
-                />
-              </div>
-              <div className="grid grid-cols-4 gap-1 mb-2">
-                {[10, 100, 500, 1000].map(v => (
-                  <button key={v} onClick={() => quickBet(v)} disabled={phase !== "idle"}
-                    className="py-1 rounded text-xs font-bold text-gray-400 hover:text-white transition disabled:opacity-40 bg-gray-800 hover:bg-gray-700"
-                  >
-                    {v >= 1000 ? `${v / 1000}k` : v}
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-1">
-                <button onClick={() => adjustBet(0.5)} disabled={phase !== "idle"}
-                  className="flex-1 py-1.5 rounded text-xs font-bold text-gray-400 hover:text-white transition disabled:opacity-40 bg-gray-800 hover:bg-gray-700"
+                  className="py-2 rounded-lg text-xs font-bold transition-all"
+                  style={{
+                    background: difficulty === d ? `${DIFF_CONFIG[d].color}22` : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.08)"}`,
+                    color: difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.4)",
+                  }}
                 >
-                  ½
+                  {DIFF_CONFIG[d].label}
                 </button>
-                <button onClick={() => adjustBet(2)} disabled={phase !== "idle"}
-                  className="flex-1 py-1.5 rounded text-xs font-bold text-gray-400 hover:text-white transition disabled:opacity-40 bg-gray-800 hover:bg-gray-700"
-                >
-                  2×
-                </button>
-              </div>
-            </div>
-
-            {/* Buttons */}
-            <div className="space-y-2 mt-auto">
-              {(phase === "idle" || phase === "won" || phase === "busted") && (
-                <motion.button
-                  onClick={phase === "idle" ? handleStart : handleReset}
-                  whileTap={{ scale: 0.97 }}
-                  disabled={loading}
-                  className="w-full py-3 rounded-lg font-bold text-sm uppercase tracking-widest text-white transition disabled:opacity-50"
-                  style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)", boxShadow: "0 4px 15px rgba(34,197,94,0.3)" }}
-                >
-                  {loading ? "Starting…" : phase === "idle" ? `Play ₹${betAmount}` : "Play Again"}
-                </motion.button>
-              )}
-
-              {phase === "playing" && (
-                <motion.button
-                  onClick={handleCashout}
-                  whileTap={{ scale: 0.97 }}
-                  disabled={loading || (session?.currentLevel ?? 0) === 0}
-                  className="w-full py-3 rounded-lg font-bold text-sm uppercase tracking-widest text-white transition disabled:opacity-40"
-                  style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 4px 15px rgba(245,158,11,0.3)" }}
-                >
-                  {loading ? "…" : `Cash Out ₹${(session ? session.betAmount * session.multiplier : 0).toFixed(0)}`}
-                </motion.button>
-              )}
-
-              <button
-                onClick={() => setShowFair(true)}
-                className="md:hidden w-full py-2 rounded-lg text-xs font-bold text-gray-400 bg-gray-800 hover:bg-gray-700 transition flex items-center justify-center gap-2"
-              >
-                <Shield size={12} /> Fairness
-              </button>
+              ))}
             </div>
           </div>
 
-          {/* Game Grid — main area */}
-          <div className="flex-1 bg-[#0f212e] px-3 md:px-6 pt-2 md:pt-3 pb-3 md:pb-4 relative flex flex-col items-center justify-start min-h-[350px] md:overflow-y-auto">
-            {/* Stats overlay during play */}
-            {phase === "playing" && session && (
-              <div className="w-full flex flex-wrap justify-center gap-1.5 md:gap-3 mb-3 md:mb-0 md:absolute md:top-4 md:left-4 md:right-4 text-[10px] md:text-xs font-semibold z-10 pointer-events-none">
-                <div className="bg-[#1a2c38] px-2 md:px-3 py-1 md:py-1.5 rounded text-indigo-400 border border-indigo-500/20">
-                  {session.multiplier.toFixed(2)}×
-                </div>
-                <div className="bg-[#1a2c38] px-2 md:px-3 py-1 md:py-1.5 rounded text-yellow-400 border border-yellow-500/20">
-                  Lv {session.currentLevel + 1}
-                </div>
-                <div className="bg-[#1a2c38] px-2 md:px-3 py-1 md:py-1.5 rounded text-green-400 border border-green-500/20">
-                  ₹{session.betAmount}
-                </div>
-              </div>
+          {/* Bet Amount */}
+          <div>
+            <p className="text-xs font-bold tracking-widest text-gray-400 uppercase mb-2">Bet Amount</p>
+            <div className="relative mb-2">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">₹</span>
+              <input
+                type="number" value={betAmount}
+                onChange={e => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
+                disabled={phase !== "idle"}
+                className="w-full pl-6 pr-3 py-2 rounded-lg text-white font-bold text-sm focus:outline-none disabled:opacity-50 bg-[#0f212e] border border-gray-700"
+              />
+            </div>
+            <div className="grid grid-cols-4 gap-1 mb-2">
+              {[10, 100, 500, 1000].map(v => (
+                <button key={v} onClick={() => quickBet(v)} disabled={phase !== "idle"}
+                  className="py-1 rounded text-xs font-bold text-gray-400 hover:text-white transition disabled:opacity-40 bg-gray-800 hover:bg-gray-700">
+                  {v >= 1000 ? `${v / 1000}k` : v}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-1">
+              <button onClick={() => adjustBet(0.5)} disabled={phase !== "idle"}
+                className="flex-1 py-1.5 rounded text-xs font-bold text-gray-400 hover:text-white transition disabled:opacity-40 bg-gray-800 hover:bg-gray-700">½</button>
+              <button onClick={() => adjustBet(2)} disabled={phase !== "idle"}
+                className="flex-1 py-1.5 rounded text-xs font-bold text-gray-400 hover:text-white transition disabled:opacity-40 bg-gray-800 hover:bg-gray-700">2×</button>
+            </div>
+          </div>
+
+          {/* Desktop action buttons */}
+          <div className="space-y-2 mt-auto">
+            {(phase === "idle" || phase === "won" || phase === "busted") && (
+              <motion.button onClick={phase === "idle" ? handleStart : handleReset}
+                whileTap={{ scale: 0.97 }} disabled={loading}
+                className="w-full py-3 rounded-lg font-bold text-sm uppercase tracking-widest text-white transition disabled:opacity-50"
+                style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)", boxShadow: "0 4px 15px rgba(34,197,94,0.3)" }}>
+                {loading ? "Starting…" : phase === "idle" ? `Play ₹${betAmount}` : "Play Again"}
+              </motion.button>
             )}
+            {phase === "playing" && (
+              <motion.button onClick={handleCashout} whileTap={{ scale: 0.97 }}
+                disabled={loading || (session?.currentLevel ?? 0) === 0}
+                className="w-full py-3 rounded-lg font-bold text-sm uppercase tracking-widest text-white transition disabled:opacity-40"
+                style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 4px 15px rgba(245,158,11,0.3)" }}>
+                {loading ? "…" : `Cash Out ₹${(session ? session.betAmount * session.multiplier : 0).toFixed(0)}`}
+              </motion.button>
+            )}
+            <button onClick={() => setShowFair(true)}
+              className="w-full py-2 rounded-lg text-xs font-bold text-gray-400 bg-gray-800 hover:bg-gray-700 transition flex items-center justify-center gap-2">
+              <Shield size={12} /> Fairness
+            </button>
+          </div>
+        </div>
 
-            {/* Tower Grid */}
-            <div className="w-full max-w-[500px]">
-              <div className="flex flex-col-reverse gap-1.5 items-center">
-                {Array.from({ length: LEVELS }, (_, row) => {
-                  const cols      = session?.columns ?? cfg.columns;
-                  const rowPhase  = tileStates[row];
-                  const isCurrentRow = session?.currentLevel === row && phase === "playing";
-                  const rowMult      = session?.multiplierTable[row] ?? multTable[row] ?? 1;
+        {/* Game Grid */}
+        <div className="flex-1 bg-[#0f0a1e] md:rounded-xl px-3 md:px-6 pt-3 md:pt-4 pb-2 md:pb-4 relative flex flex-col items-center justify-start md:overflow-y-auto min-h-0">
+          {/* Stats overlay (desktop) */}
+          {phase === "playing" && session && (
+            <div className="hidden md:flex w-full flex-wrap justify-center gap-3 mb-0 absolute top-4 left-4 right-4 text-xs font-semibold z-10 pointer-events-none">
+              <div className="bg-[#1a2c38] px-3 py-1.5 rounded text-indigo-400 border border-indigo-500/20">{session.multiplier.toFixed(2)}×</div>
+              <div className="bg-[#1a2c38] px-3 py-1.5 rounded text-yellow-400 border border-yellow-500/20">Lv {session.currentLevel + 1}</div>
+              <div className="bg-[#1a2c38] px-3 py-1.5 rounded text-green-400 border border-green-500/20">₹{session.betAmount}</div>
+            </div>
+          )}
 
-                  return (
-                    <motion.div
-                      key={row}
-                      initial={{ opacity: 0, x: -16 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: row * 0.035 }}
-                      className="flex items-center gap-2 w-full justify-center"
-                    >
-                      <div className="hidden sm:flex items-center justify-center w-5 shrink-0">
-                        <div className="w-1.5 h-1.5 rounded-full"
-                          style={{ background: isCurrentRow ? "#818cf8" : "rgba(255,255,255,0.12)" }} />
-                      </div>
+          {/* Tower Grid */}
+          <div className="w-full max-w-[480px]">
+            <div className="flex flex-col-reverse gap-1.5 items-center">
+              {Array.from({ length: LEVELS }, (_, row) => {
+                const cols         = session?.columns ?? cfg.columns;
+                const rowPhase     = tileStates[row];
+                const isCurrentRow = session?.currentLevel === row && phase === "playing";
+                const rowMult      = session?.multiplierTable[row] ?? multTable[row] ?? 1;
 
-                      <div className="flex gap-1">
-                        {Array.from({ length: cols }, (_, col) => {
-                          let kind: TileKind = "idle";
-                          if (rowPhase && rowPhase[col]) {
-                            kind = rowPhase[col] as TileKind;
-                          } else if (phase === "playing" && isCurrentRow) {
-                            kind = "active";
-                          } else if (phase === "idle" && row === 0) {
-                            kind = "active";
-                          }
-
-                          return (
-                            <Tile
-                              key={col}
-                              kind={kind}
-                              col={col}
-                              row={row}
-                              active={kind === "active" && phase === "playing" && !loading}
-                              onPick={handlePick}
-                              sound={sounds.hover}
-                              multiplier={rowMult}
-                            />
-                          );
-                        })}
-                      </div>
-
-                      <div className="hidden sm:flex items-center w-14 shrink-0">
-                        <span className="text-xs font-bold tabular-nums text-gray-400">
-                          {rowMult >= 1000 ? `${(rowMult/1000).toFixed(1)}k×` : `${rowMult.toFixed(2)}×`}
-                        </span>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-
-              {/* Result Overlay */}
-              <AnimatePresence>
-                {(phase === "busted" || (phase === "won" && cashoutAmt !== null)) && (
+                return (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={() => handleReset()}
-                    className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur z-20 rounded-lg cursor-pointer"
+                    key={row}
+                    initial={{ opacity: 0, x: -16 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: row * 0.035 }}
+                    className="flex items-center gap-2 w-full justify-center"
                   >
-                    <div className={`w-56 md:w-64 text-center p-5 md:p-6 rounded-2xl shadow-2xl border-2 transition ${
-                      phase === "won"
-                        ? "bg-[#0f212e]/90 border-green-500 text-green-400 shadow-[0_0_20px_rgba(34,197,94,0.3)]"
-                        : "bg-[#0f212e]/90 border-red-500 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.3)]"
-                    }`}>
-                      <div className="text-lg md:text-xl font-bold uppercase tracking-wider mb-2">
-                        {phase === "won" ? "Victory!" : "Busted!"}
-                      </div>
-                      {phase === "won" && (
-                        <div className="text-2xl md:text-3xl font-black text-white">
-                          ₹{cashoutAmt?.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                        </div>
-                      )}
-                      <div className="text-[10px] text-gray-500 mt-3 uppercase tracking-widest font-semibold">
-                        Tap to Dismiss
-                      </div>
+                    <div className="hidden sm:flex items-center justify-center w-5 shrink-0">
+                      <div className="w-1.5 h-1.5 rounded-full"
+                        style={{ background: isCurrentRow ? "#818cf8" : "rgba(255,255,255,0.12)" }} />
+                    </div>
+
+                    <div className="flex gap-1.5">
+                      {Array.from({ length: cols }, (_, col) => {
+                        let kind: TileKind = "idle";
+                        if (rowPhase && rowPhase[col]) {
+                          kind = rowPhase[col] as TileKind;
+                        } else if (phase === "playing" && isCurrentRow) {
+                          kind = "active";
+                        } else if (phase === "idle" && row === 0) {
+                          kind = "active";
+                        }
+                        return (
+                          <Tile key={col} kind={kind} col={col} row={row}
+                            active={kind === "active" && phase === "playing" && !loading}
+                            onPick={handlePick} sound={sounds.hover} multiplier={rowMult} />
+                        );
+                      })}
+                    </div>
+
+                    <div className="hidden sm:flex items-center w-14 shrink-0">
+                      <span className="text-xs font-bold tabular-nums text-gray-400">
+                        {rowMult >= 1000 ? `${(rowMult/1000).toFixed(1)}k×` : `${rowMult.toFixed(2)}×`}
+                      </span>
                     </div>
                   </motion.div>
-                )}
-              </AnimatePresence>
+                );
+              })}
             </div>
+
+            {/* Result Overlay */}
+            <AnimatePresence>
+              {(phase === "busted" || (phase === "won" && cashoutAmt !== null)) && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+                  onClick={handleReset}
+                  className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur z-20 rounded-lg cursor-pointer"
+                >
+                  <div className={`w-56 md:w-64 text-center p-5 md:p-6 rounded-2xl shadow-2xl border-2 ${
+                    phase === "won"
+                      ? "bg-[#0f212e]/90 border-green-500 text-green-400 shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+                      : "bg-[#0f212e]/90 border-red-500 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.3)]"
+                  }`}>
+                    <div className="text-xl font-bold uppercase tracking-wider mb-2">
+                      {phase === "won" ? "Victory!" : "Busted!"}
+                    </div>
+                    {phase === "won" && (
+                      <div className="text-3xl font-black text-white">
+                        ₹{cashoutAmt?.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </div>
+                    )}
+                    <div className="text-[10px] text-gray-500 mt-3 uppercase tracking-widest font-semibold">Tap to Dismiss</div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Mobile Bottom Panel ───────────────────────────────────────────────── */}
+      <div className="md:hidden shrink-0 px-3 pt-3 pb-4 space-y-2.5" style={{ background: "#0f0a1e", borderTop: "1px solid rgba(99,60,180,0.25)" }}>
+
+        {/* Cash Out / Play button */}
+        {phase === "playing" ? (
+          <motion.button onClick={handleCashout} whileTap={{ scale: 0.97 }}
+            disabled={loading || (session?.currentLevel ?? 0) === 0}
+            className="w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-widest text-white transition disabled:opacity-40"
+            style={{ background: "#3b1a6e", border: "1px solid rgba(139,92,246,0.4)" }}>
+            {loading ? "…" : `Cash Out  ₹${(session ? session.betAmount * session.multiplier : 0).toFixed(0)}`}
+          </motion.button>
+        ) : (
+          <motion.button onClick={phase === "idle" ? handleStart : handleReset} whileTap={{ scale: 0.97 }}
+            disabled={loading}
+            className="w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-widest text-white transition disabled:opacity-50"
+            style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)", boxShadow: "0 4px 15px rgba(34,197,94,0.3)" }}>
+            {loading ? "Starting…" : phase === "idle" ? `Play  ₹${betAmount}` : "Play Again"}
+          </motion.button>
+        )}
+
+        {/* Demo mode note */}
+        <div className="text-xs text-center py-1.5 px-3 rounded-lg font-medium"
+          style={{ background: "rgba(99,102,241,0.12)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.2)" }}>
+          Betting less than ₹0.01 will enter demo mode
+        </div>
+
+        {/* Bet Amount */}
+        <div>
+          <label className="text-xs text-white/50 mb-1.5 flex items-center gap-1 font-semibold">
+            Bet Amount <span className="text-white/30">↓</span>
+          </label>
+          <div className="flex items-stretch gap-1.5">
+            <div className="flex-1 flex items-center rounded-xl px-3 py-2 bg-black/30 border border-white/10">
+              <span className="text-white/40 text-sm mr-1 shrink-0">₹</span>
+              <input type="number" value={betAmount}
+                onChange={e => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
+                disabled={phase !== "idle"}
+                className="bg-transparent flex-1 min-w-0 text-sm font-semibold text-white outline-none disabled:opacity-60" />
+            </div>
+            <button onClick={() => adjustBet(0.5)} disabled={phase !== "idle"}
+              className="px-3 py-2 rounded-xl text-xs font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">1/2</button>
+            <button onClick={() => adjustBet(2)} disabled={phase !== "idle"}
+              className="px-3 py-2 rounded-xl text-xs font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">2X</button>
+            <button onClick={() => quickBet(Math.floor(liveBalance ?? betAmount))} disabled={phase !== "idle"}
+              className="px-3 py-2 rounded-xl text-xs font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">Max</button>
+          </div>
+        </div>
+
+        {/* Difficulty */}
+        <div>
+          <label className="text-xs text-white/50 mb-1.5 block font-semibold">Difficulty</label>
+          <div className="flex gap-1.5">
+            {(["EASY", "MEDIUM", "HARD", "EXPERT"] as Difficulty[]).map(d => (
+              <button key={d}
+                onClick={() => { if (phase === "idle") setDifficulty(d); }}
+                disabled={phase !== "idle"}
+                className="flex-1 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                style={{
+                  background: difficulty === d ? `${DIFF_CONFIG[d].color}22` : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.08)"}`,
+                  color: difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.4)",
+                }}>
+                {DIFF_CONFIG[d].label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
