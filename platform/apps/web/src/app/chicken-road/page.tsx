@@ -645,8 +645,68 @@ export default function ChickenRoadPage() {
       </div>
 
       {/* ── Bottom control panel ──────────────────────────────────────────────── */}
-      <div className="shrink-0 px-4 md:px-6 py-3 md:py-4" style={{ background: "#13112a", borderTop: "1px solid rgba(139,92,246,0.15)" }}>
-        <div className="w-full max-w-6xl mx-auto flex flex-col md:flex-row gap-3 md:gap-5">
+      <div className="shrink-0" style={{ background: "#13112a", borderTop: "1px solid rgba(139,92,246,0.15)" }}>
+
+        {/* ── Mobile layout ── */}
+        <div className="md:hidden px-3 pt-3 pb-4 flex flex-col gap-2">
+
+          {/* Row 1: Bet Amount */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-white/50 shrink-0 w-20">Bet Amount</span>
+            <div className="flex items-center rounded-xl px-2.5 py-2 bg-[#0c0a20] border border-white/[0.08] flex-1 min-w-0">
+              <span className="text-white/40 text-sm mr-1 shrink-0">₹</span>
+              <input type="number" value={betAmount}
+                onChange={e => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
+                disabled={phase === "running"}
+                className="bg-transparent flex-1 min-w-0 text-sm font-bold text-white outline-none disabled:opacity-60" />
+            </div>
+            {([["1/2", () => adjustBet(0.5)], ["2X", () => adjustBet(2)], ["Max", () => quickBet(Math.floor(liveBalance ?? betAmount))]] as [string, () => void][]).map(([label, fn]) => (
+              <button key={label} onClick={fn} disabled={phase === "running"}
+                className="px-2.5 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-40 shrink-0"
+                style={{ background: "#1e1b3a", border: "1px solid rgba(139,92,246,0.2)", color: "rgba(255,255,255,0.7)" }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Row 2: Difficulty */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-white/50 shrink-0 w-20">Difficulty</span>
+            {(["EASY", "MEDIUM", "HARD", "DAREDEVIL"] as Difficulty[]).map(d => (
+              <button key={d}
+                onClick={() => { if (phase !== "running") setDifficulty(d); }}
+                disabled={phase === "running"}
+                className="flex-1 py-2 rounded-xl text-[11px] font-bold transition-all disabled:opacity-50"
+                style={{
+                  background: difficulty === d ? `${DIFF_CONFIG[d].color}1a` : "#1e1b3a",
+                  border: `1px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(139,92,246,0.15)"}`,
+                  color: difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.5)",
+                }}>
+                {DIFF_CONFIG[d].label}
+              </button>
+            ))}
+          </div>
+
+          {/* Row 3: Action */}
+          {phase === "running" ? (
+            <motion.button onClick={handleCashout} whileTap={{ scale: 0.97 }}
+              disabled={loading || currentLane === 0}
+              className="w-full py-3 rounded-xl font-bold text-sm uppercase tracking-widest text-white transition disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 4px 12px rgba(245,158,11,0.3)" }}>
+              {loading ? "…" : `Cash Out  ₹${(session ? session.betAmount * multiplier : 0).toFixed(2)}`}
+            </motion.button>
+          ) : (
+            <motion.button onClick={isOver ? handleReset : handleStart} whileTap={{ scale: 0.97 }}
+              disabled={loading}
+              className="w-full py-3 rounded-xl font-bold text-sm uppercase tracking-widest text-[#0a0b16] transition disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", boxShadow: "0 4px 12px rgba(251,191,36,0.3)" }}>
+              {loading ? "Starting…" : isOver ? "Play Again" : "Start Game"}
+            </motion.button>
+          )}
+        </div>
+
+        {/* ── Desktop layout ── */}
+        <div className="hidden md:flex px-6 py-4 w-full max-w-6xl mx-auto gap-5">
 
           {/* Bet Amount */}
           <div className="flex flex-col gap-1.5 flex-shrink-0">
@@ -662,11 +722,11 @@ export default function ChickenRoadPage() {
                   disabled={phase === "running"}
                   className="bg-transparent flex-1 min-w-0 w-16 text-sm font-bold text-white outline-none disabled:opacity-60" />
               </div>
-              {[["1/2", () => adjustBet(0.5)], ["2X", () => adjustBet(2)], ["Max", () => quickBet(Math.floor(liveBalance ?? betAmount))]] .map(([label, fn]) => (
-                <button key={label as string} onClick={fn as () => void} disabled={phase === "running"}
+              {([["1/2", () => adjustBet(0.5)], ["2X", () => adjustBet(2)], ["Max", () => quickBet(Math.floor(liveBalance ?? betAmount))]] as [string, () => void][]).map(([label, fn]) => (
+                <button key={label} onClick={fn} disabled={phase === "running"}
                   className="px-3 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-40"
                   style={{ background: "#1e1b3a", border: "1px solid rgba(139,92,246,0.2)", color: "rgba(255,255,255,0.65)" }}>
-                  {label as string}
+                  {label}
                 </button>
               ))}
             </div>
@@ -678,7 +738,7 @@ export default function ChickenRoadPage() {
               Difficulty
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="opacity-60"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/><path d="M12 8v4m0 4h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
             </label>
-            <div className="grid grid-cols-4 gap-1.5 flex-1">
+            <div className="grid grid-cols-4 gap-1.5">
               {(["EASY", "MEDIUM", "HARD", "DAREDEVIL"] as Difficulty[]).map(d => (
                 <button key={d}
                   onClick={() => { if (phase !== "running") setDifficulty(d); }}
@@ -696,7 +756,7 @@ export default function ChickenRoadPage() {
           </div>
 
           {/* Action */}
-          <div className="flex flex-col gap-1.5 flex-shrink-0 md:w-56">
+          <div className="flex flex-col gap-1.5 flex-shrink-0 w-56">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold"
               style={{ background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.25)", color: "#c4b5fd" }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
