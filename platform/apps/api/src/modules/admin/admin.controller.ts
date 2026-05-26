@@ -469,7 +469,11 @@ export class AdminController {
       { id: "roulette", name: "Roulette", description: "European Roulette",     href: "/roulette", thumbnail: "/game-thumbs/roulette.webp", emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
       { id: "mines",    name: "Mines",    description: "Mines Game",             href: "/mines",    thumbnail: "/game-thumbs/mines.webp",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
       { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko",   href: "/plinko",   thumbnail: "/game-thumbs/plinko.webp",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", sortOrder: 2 },
-      { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",     href: "/balloon",  thumbnail: "/game-thumbs/balloon.webp",  emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", sortOrder: 3 },
+      { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",     href: "/pump",     thumbnail: "/game-thumbs/balloon.webp",  emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", sortOrder: 3 },
+      { id: "chicken-road", name: "Chicken Road", description: "Cross & Cash Out", href: "/chicken-road", thumbnail: "/game-thumbs/chicken.png", emoji: "🐔", bg: "linear-gradient(135deg,#3a1c00 0%,#d97706 50%,#1a0e00 100%)", sortOrder: 7 },
+      { id: "crash",    name: "Crash",    description: "Crash Games",            href: "/crash",    thumbnail: null, emoji: "🚀", bg: "linear-gradient(135deg,#0a0a2e 0%,#3b0a6e 50%,#08081a 100%)", sortOrder: 8 },
+      { id: "slots",    name: "Slots",    description: "Slot Games",             href: "/slots",    thumbnail: null, emoji: "🎰", bg: "linear-gradient(135deg,#2a0040 0%,#9333ea 50%,#15001f 100%)", sortOrder: 9 },
+      { id: "lottery",  name: "Lottery",  description: "Lottery Games",          href: "/lottery",  thumbnail: null, emoji: "🎟️", bg: "linear-gradient(135deg,#003322 0%,#059669 50%,#001a11 100%)", sortOrder: 10 },
     ];
     const storedGames: any[] = settings.inhouseGames ?? [];
     if (!storedGames.length) return { ...settings, inhouseGames: defaultInhouseGames };
@@ -622,7 +626,11 @@ export class PublicPlatformController {
       { id: "roulette", name: "Roulette", description: "European Roulette",   href: "/roulette", thumbnail: "/game-thumbs/roulette.webp", emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", sortOrder: 0 },
       { id: "mines",    name: "Mines",    description: "Mines Game",           href: "/mines",    thumbnail: "/game-thumbs/mines.webp",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", sortOrder: 1 },
       { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko", href: "/plinko",   thumbnail: "/game-thumbs/plinko.webp",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", sortOrder: 2 },
-      { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",   href: "/balloon",  thumbnail: "/game-thumbs/balloon.webp",  emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", sortOrder: 3 },
+      { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",   href: "/pump",     thumbnail: "/game-thumbs/balloon.webp",  emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", sortOrder: 3 },
+      { id: "chicken-road", name: "Chicken Road", description: "Cross & Cash Out", href: "/chicken-road", thumbnail: "/game-thumbs/chicken.png", emoji: "🐔", bg: "linear-gradient(135deg,#3a1c00 0%,#d97706 50%,#1a0e00 100%)", sortOrder: 7 },
+      { id: "crash",    name: "Crash",    description: "Crash Games",          href: "/crash",    thumbnail: null, emoji: "🚀", bg: "linear-gradient(135deg,#0a0a2e 0%,#3b0a6e 50%,#08081a 100%)", sortOrder: 8 },
+      { id: "slots",    name: "Slots",    description: "Slot Games",           href: "/slots",    thumbnail: null, emoji: "🎰", bg: "linear-gradient(135deg,#2a0040 0%,#9333ea 50%,#15001f 100%)", sortOrder: 9 },
+      { id: "lottery",  name: "Lottery",  description: "Lottery Games",        href: "/lottery",  thumbnail: null, emoji: "🎟️", bg: "linear-gradient(135deg,#003322 0%,#059669 50%,#001a11 100%)", sortOrder: 10 },
     ];
     const defaultNavItems = [
       { href: "/exchange",   label: "EXCHANGE",    emoji: "🎰", enabled: true },

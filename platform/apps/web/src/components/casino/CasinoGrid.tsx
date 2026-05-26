@@ -166,9 +166,9 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
                 name={g.name}
                 publisher="Our Originals"
                 thumbnail={g.thumbnail}
-                fallbackBg={fallback(idx)}
+                fallbackBg={g.bg || fallback(idx)}
                 fallbackEmoji={g.emoji}
-                clean
+                clean={!!g.thumbnail}
                 isLive={false}
               />
               <PlayingBadge count={counts[idx]} />
