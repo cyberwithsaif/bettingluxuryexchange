@@ -572,7 +572,7 @@ export function PumpGame() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="w-full flex flex-col"
+    <div className="w-full min-h-full flex flex-col"
       style={{ background: "linear-gradient(135deg, #07111d, #0b1c2a)", fontFamily: "Inter, sans-serif" }}>
 
       {/* Mobile-only Header */}
@@ -613,7 +613,7 @@ export function PumpGame() {
       </AnimatePresence>
 
       {/* Body */}
-      <div className="flex flex-col lg:flex-1 lg:flex-row lg:min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
 
         {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
         <div className="hidden lg:flex w-[360px] flex-shrink-0 flex-col p-6 overflow-y-auto"
@@ -763,11 +763,11 @@ export function PumpGame() {
         </div>
 
         {/* ── Game area ──────────────────────────────────────────────────── */}
-        <div className="flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-0">
 
           {/* Balloon stage */}
           <div
-            className="h-[42vw] min-h-[160px] max-h-[230px] lg:flex-1 lg:min-h-0 lg:max-h-none relative transition-all duration-300"
+            className="flex-1 min-h-0 relative transition-all duration-300"
             style={betFlash ? { boxShadow: "inset 0 0 60px 12px rgba(34,197,94,0.12)" } : undefined}
           >
             <GameVisual

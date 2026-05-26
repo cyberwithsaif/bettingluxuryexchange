@@ -106,11 +106,11 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone, o
     // Active ball positions for peg glow
     const bpos = balls.filter(b => !b.settled).map(b => ({ x: b.ballX, y: b.ballY }));
 
-    // Pegs — skip apex rows 0 and 1 (the 3-peg tip)
+    // Pegs — skip apex rows 0 and 1, shift remaining rows to fill top
     const pegR = rows <= 8 ? 7 : rows <= 12 ? 6 : rows <= 16 ? 5 : 4;
     for (let row = 2; row < rows; row++) {
       const numPegs = row + 1;
-      const pegY    = padTop + row * rowH + rowH / 2;
+      const pegY    = padTop + (row - 2) * rowH + rowH / 2;
       for (let p = 0; p < numPegs; p++) {
         const pegX = centerX + slotW * (p - (numPegs - 1) / 2);
         const near = bpos.some(b => Math.hypot(pegX - b.x, pegY - b.y) < slotW * 0.8);
@@ -140,8 +140,8 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone, o
       }
     }
 
-    // Slots
-    const slotTop = padTop + rows * rowH + rowH / 2;
+    // Slots — positioned after (rows-2) visible rows
+    const slotTop = padTop + (rows - 2) * rowH + rowH / 2;
     const slotH   = padBot - 10;
     for (let i = 0; i <= rows; i++) {
       const slotX  = padX + i * slotW;
