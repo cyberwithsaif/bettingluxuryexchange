@@ -590,11 +590,11 @@ export default function ChickenRoadPage() {
       </div>
 
       {/* ── Bottom control panel ──────────────────────────────────────────────── */}
-      <div className="shrink-0 px-3 md:px-5 pt-3 pb-4 md:py-4" style={{ background: "#0f0d1e", borderTop: "1px solid rgba(99,60,180,0.25)" }}>
-        <div className="w-full max-w-5xl mx-auto flex flex-col md:flex-row md:items-end gap-3">
+      <div className="shrink-0 px-3 md:px-6 pt-3 pb-4 md:py-4" style={{ background: "#0f0d1e", borderTop: "1px solid rgba(99,60,180,0.25)" }}>
+        <div className="w-full max-w-5xl mx-auto flex flex-col md:flex-row md:items-stretch gap-4 md:gap-0">
 
           {/* Bet Amount */}
-          <div className="md:w-72 shrink-0">
+          <div className="md:w-64 shrink-0 md:pr-6">
             <label className="text-xs text-white/50 mb-1.5 flex items-center gap-1 font-semibold">
               Bet Amount <span className="text-white/30">↓</span>
             </label>
@@ -615,8 +615,11 @@ export default function ChickenRoadPage() {
             </div>
           </div>
 
+          {/* Divider */}
+          <div className="hidden md:block w-px self-stretch" style={{ background: "rgba(99,60,180,0.25)" }} />
+
           {/* Difficulty */}
-          <div className="flex-1">
+          <div className="flex-1 md:px-6">
             <label className="text-xs text-white/50 mb-1.5 flex items-center gap-1 font-semibold">Difficulty</label>
             <div className="grid grid-cols-4 gap-1.5">
               {(["EASY", "MEDIUM", "HARD", "DAREDEVIL"] as Difficulty[]).map(d => (
@@ -635,8 +638,11 @@ export default function ChickenRoadPage() {
             </div>
           </div>
 
+          {/* Divider */}
+          <div className="hidden md:block w-px self-stretch" style={{ background: "rgba(99,60,180,0.25)" }} />
+
           {/* Action button */}
-          <div className="md:w-72 shrink-0 flex flex-col gap-2">
+          <div className="md:w-64 shrink-0 md:pl-6 flex flex-col gap-2">
             {phase === "running" ? (
               <motion.button onClick={handleCashout} whileTap={{ scale: 0.97 }}
                 disabled={loading || currentLane === 0}
