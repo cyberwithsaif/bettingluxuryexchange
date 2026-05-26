@@ -613,7 +613,7 @@ export function PumpGame() {
       </AnimatePresence>
 
       {/* Body */}
-      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
+      <div className="flex flex-col lg:flex-1 lg:flex-row lg:min-h-0">
 
         {/* ── Desktop sidebar ─────────────────────────────────────────────── */}
         <div className="hidden lg:flex w-[360px] flex-shrink-0 flex-col p-6 overflow-y-auto"
@@ -763,7 +763,7 @@ export function PumpGame() {
         </div>
 
         {/* ── Game area ──────────────────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="flex flex-col lg:flex-1 lg:min-h-0 lg:overflow-hidden">
 
           {/* Balloon stage */}
           <div

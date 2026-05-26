@@ -652,74 +652,75 @@ export default function PlinkoPage() {
       </aside>
 
       {/* ── Mobile Bottom Controls ─────────────────────────────────────────────── */}
-      <div className="md:hidden shrink-0 bg-[#0f1018] border-t border-white/[0.07] px-3 pt-2 pb-3 space-y-2">
+      <div className="md:hidden shrink-0 bg-[#0f1018] border-t border-white/[0.07] px-3 pt-3 pb-4 space-y-2.5">
 
-        {/* Bet amount row */}
-        <div className="flex items-center gap-2">
-          <div className="relative w-24 shrink-0">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/40 text-xs">₹</span>
-            <input type="number" min={config?.minBet ?? 1} max={config?.maxBet ?? 100000}
-              value={betAmount} onChange={e => setBetAmount(Math.max(1, Number(e.target.value)))}
-              className="w-full bg-[#0b0c12] border border-white/10 rounded-lg pl-6 pr-2 py-1.5 text-xs focus:outline-none focus:border-violet-500 transition" />
-          </div>
-          <div className="flex gap-0.5 overflow-x-auto no-scrollbar flex-1">
-            {[10, 50, 100, 500, 1000].map(v => (
-              <button key={v} onClick={() => setBetAmount(v)}
-                className="shrink-0 px-2 py-1.5 rounded text-[10px] bg-white/[0.06] hover:bg-white/[0.13] transition font-medium">
-                {v >= 1000 ? "1k" : v}
-              </button>
-            ))}
+        {/* Drop Ball button */}
+        <button onClick={() => drop()} disabled={!user}
+          className="w-full py-3.5 rounded-xl font-bold text-sm tracking-wide disabled:opacity-40 active:scale-95 transition relative flex items-center justify-center gap-2 text-black"
+          style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", boxShadow: "0 4px 16px rgba(245,158,11,0.35)" }}>
+          {!user ? "Login to Play" : "Drop Ball"}
+          <RotateCcw size={14} className="absolute right-4 opacity-60" />
+          {activeBalls > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-violet-500 text-white text-[9px] font-black flex items-center justify-center">
+              {activeBalls}
+            </span>
+          )}
+        </button>
+
+        {/* Demo mode note */}
+        <div className="text-xs text-center py-1.5 px-3 rounded-lg font-medium"
+          style={{ background: "rgba(99,102,241,0.12)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.2)" }}>
+          Betting less than ₹0.01 will enter demo mode
+        </div>
+
+        {/* Bet Amount */}
+        <div>
+          <label className="text-xs text-white/50 mb-1.5 flex items-center gap-1 font-semibold">
+            Bet Amount <span className="text-white/30">↓</span>
+          </label>
+          <div className="flex items-stretch gap-1.5">
+            <div className="flex-1 flex items-center rounded-xl px-3 py-2 bg-[#0b0c12] border border-white/10">
+              <span className="text-white/40 text-sm mr-1 shrink-0">₹</span>
+              <input type="number" min={config?.minBet ?? 1} max={config?.maxBet ?? 100000}
+                value={betAmount} onChange={e => setBetAmount(Math.max(1, Number(e.target.value)))}
+                className="bg-transparent flex-1 min-w-0 text-sm font-semibold text-white outline-none" />
+            </div>
+            <button onClick={half} className="px-3 py-2 rounded-xl text-xs font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70">½</button>
+            <button onClick={dbl}  className="px-3 py-2 rounded-xl text-xs font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70">2X</button>
             <button onClick={() => setBetAmount(Math.floor(balance ?? 100))}
-              className="shrink-0 px-2 py-1.5 rounded text-[10px] bg-white/[0.06] hover:bg-white/[0.13] transition">Max</button>
+              className="px-3 py-2 rounded-xl text-xs font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70">Max</button>
           </div>
         </div>
 
-        {/* Risk + Rows + Turbo row */}
-        <div className="flex items-center gap-2">
-          {/* Risk */}
-          <div className={`flex gap-0.5 transition-opacity ${isDropping ? "opacity-40 pointer-events-none" : ""}`}>
+        {/* Game Mode (risk) */}
+        <div className={isDropping ? "opacity-40 pointer-events-none" : ""}>
+          <label className="text-xs text-white/50 mb-1.5 block font-semibold">Game Mode</label>
+          <div className="flex gap-1.5">
             {RISK_OPTIONS.map(r => (
               <button key={r} onClick={() => setRisk(r)}
-                className={`px-2.5 py-1 rounded text-[10px] font-bold capitalize border transition ${
+                className={`flex-1 py-2 rounded-xl text-xs font-bold capitalize border transition ${
                   risk === r ? RISK_ACTIVE[r] : "bg-transparent border-white/10 text-white/40 hover:border-white/25"
                 }`}>
-                {r}
+                {r === "low" ? "Low" : r === "medium" ? "Medium" : "High"}
               </button>
             ))}
           </div>
-          <div className="w-px h-5 bg-white/[0.07] shrink-0" />
-          {/* Rows */}
-          <div className={`flex gap-0.5 transition-opacity ${isDropping ? "opacity-40 pointer-events-none" : ""}`}>
+        </div>
+
+        {/* Lines (rows) */}
+        <div className={isDropping ? "opacity-40 pointer-events-none" : ""}>
+          <label className="text-xs text-white/50 mb-1.5 block font-semibold">Lines</label>
+          <div className="flex gap-1.5">
             {ROWS_OPTIONS.map(r => (
               <button key={r} onClick={() => setRows(r)}
-                className={`px-2 py-1 rounded text-[10px] font-bold border transition ${
+                className={`flex-1 py-2 rounded-xl text-xs font-bold border transition ${
                   rows === r ? "bg-violet-600/25 border-violet-500/60 text-violet-300" : "bg-transparent border-white/10 text-white/40 hover:border-white/25"
                 }`}>
                 {r}
               </button>
             ))}
           </div>
-          <div className="w-px h-5 bg-white/[0.07] shrink-0" />
-          {/* Turbo */}
-          <label className="flex items-center gap-1.5 cursor-pointer select-none shrink-0">
-            <div onClick={() => setTurbo(v => !v)}
-              className={`w-6 h-3 rounded-full transition relative shrink-0 ${turbo ? "bg-violet-600" : "bg-white/10"}`}>
-              <div className={`absolute top-0.5 w-2 h-2 rounded-full bg-white shadow transition-all ${turbo ? "left-[13px]" : "left-0.5"}`} />
-            </div>
-            <Zap size={10} className={turbo ? "text-yellow-400" : "text-white/30"} />
-          </label>
         </div>
-
-        {/* Drop Ball button */}
-        <button onClick={() => drop()} disabled={!user}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 font-bold text-sm tracking-wide disabled:opacity-40 hover:brightness-110 active:scale-95 transition shadow-lg shadow-violet-900/30 relative">
-          {!user ? "Login to Play" : "Drop Ball"}
-          {activeBalls > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-yellow-400 text-black text-[9px] font-black flex items-center justify-center">
-              {activeBalls}
-            </span>
-          )}
-        </button>
       </div>
     </div>
   );
