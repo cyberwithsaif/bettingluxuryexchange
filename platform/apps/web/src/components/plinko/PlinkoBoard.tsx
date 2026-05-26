@@ -71,23 +71,28 @@ export function PlinkoBoard({ rows, multiplierTable, turbo, queue, onBallDone, o
   }, [rows]);
 
   const buildWaypoints = useCallback((canvas: HTMLCanvasElement, path: number[]) => {
-    const { padTop, rowH, slotW, centerX } = getLayout(canvas);
+    const { padTop, padBot, rowH, slotW, centerX, padX } = getLayout(canvas);
+    const n = path.length;
+    // Slots are drawn after (rows-2) visible peg rows (the two apex rows are skipped).
+    const slotTop     = padTop + (rows - 2) * rowH + rowH / 2;
+    const slotCenterY = slotTop + 4 + (padBot - 10) / 2;
+    // Spread the descent so the last bounce reaches the slot row — keeps the ball
+    // landing inside the multiplier slot instead of dropping below it.
+    const stepY = (slotTop - padTop) / n;
     const wps: { x: number; y: number }[] = [];
     wps.push({ x: centerX, y: padTop - rowH * 0.4 });
     let rights = 0;
-    for (let i = 0; i < path.length; i++) {
+    for (let i = 0; i < n; i++) {
       rights += path[i] ?? 0;
       wps.push({
         x: centerX + slotW * (rights - (i + 1) / 2),
-        y: padTop + (i + 1) * rowH,
+        y: padTop + (i + 1) * stepY,
       });
     }
-    wps.push({
-      x: 10 + slotW * (rights + 0.5),
-      y: padTop + (path.length + 0.5) * rowH + 10,
-    });
+    // Final hop: straight down into the centre of the target slot.
+    wps.push({ x: padX + slotW * (rights + 0.5), y: slotCenterY });
     return wps;
-  }, [getLayout]);
+  }, [getLayout, rows]);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
