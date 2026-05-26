@@ -249,6 +249,7 @@ export default function ChickenRoadPage() {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [laneW, setLaneW] = useState(150);
   const [boardH, setBoardH] = useState(420);
+  const [containerW, setContainerW] = useState(375);
 
   useLayoutEffect(() => {
     const el = viewportRef.current;
@@ -257,7 +258,8 @@ export default function ChickenRoadPage() {
       const w = el.clientWidth;
       const h = el.clientHeight;
       const mobile = w < 640;
-      setLaneW(Math.max(mobile ? 130 : 112, Math.min(mobile ? 200 : 196, (w - SIDEWALK_W) / (mobile ? 2.0 : 3.2))));
+      setContainerW(w);
+      setLaneW(Math.max(mobile ? 150 : 112, Math.min(mobile ? 185 : 196, (w - SIDEWALK_W) / (mobile ? 1.7 : 3.2))));
       setBoardH(h);
     });
     ro.observe(el);
@@ -437,9 +439,13 @@ export default function ChickenRoadPage() {
     touchStart.current = null;
   };
 
-  // Camera offset keeps the chicken anchored near the left
-  const cameraX = -currentLane * laneW;
-  const chickenSize = Math.min(laneW * 0.46, 74);
+  // Camera: anchor the chicken toward the middle on mobile (more zoomed-in feel),
+  // clamped so the start sidewalk never detaches from the left edge.
+  const isMobile = containerW < 640;
+  const anchorX = isMobile ? containerW * 0.40 : SIDEWALK_W;
+  const cameraX = Math.min(0, anchorX - (SIDEWALK_W + currentLane * laneW));
+  const chickenSize = Math.min(laneW * (isMobile ? 0.6 : 0.46), isMobile ? 100 : 74);
+  const coinSize = Math.round(laneW * (isMobile ? 0.52 : 0.42));
   const isOver = phase === "crashed" || phase === "cashed";
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -573,7 +579,7 @@ export default function ChickenRoadPage() {
                 <div className="absolute top-0 bottom-0 left-0" style={{ width: 4, background: "repeating-linear-gradient(180deg,rgba(255,255,255,0.85),rgba(255,255,255,0.85) 22px,transparent 22px,transparent 44px)" }} />
 
                 {/* multiplier circle */}
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center" style={{ width: 58, height: 58 }}>
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center" style={{ width: coinSize, height: coinSize }}>
                   <motion.div
                     animate={isNext ? { scale: [1, 1.1, 1], boxShadow: ["0 0 0px rgba(250,204,21,0)", "0 0 22px rgba(250,204,21,0.7)", "0 0 0px rgba(250,204,21,0)"] } : {}}
                     transition={isNext ? { duration: 1.4, repeat: Infinity } : {}}
@@ -585,7 +591,7 @@ export default function ChickenRoadPage() {
                     }}
                   >
                     <span className="font-black tabular-nums text-center leading-none px-1"
-                      style={{ fontSize: "clamp(8px,10px,12px)", color: reached ? "#fff" : isNext ? "#0a0b16" : "rgba(200,195,230,0.6)" }}>
+                      style={{ fontSize: `clamp(9px, ${coinSize * 0.2}px, 15px)`, color: reached ? "#fff" : isNext ? "#0a0b16" : "rgba(200,195,230,0.6)" }}>
                       {fmtMult(laneMult)}
                     </span>
                   </motion.div>
