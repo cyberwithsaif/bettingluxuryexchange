@@ -619,6 +619,12 @@ export default function ChickenRoadPage() {
             animate={{ left: chickenCenterTrack - laneW / 2 }}
             transition={{ type: "spring", stiffness: 260, damping: 22 }}
           >
+            {/* stone barrier on the arrived lane, above the chicken */}
+            {currentLane >= 1 && (
+              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: chickenSize * 0.12 }}>
+                <StoneObstacle width={Math.min(laneW * 0.55, 118)} />
+              </motion.div>
+            )}
             <motion.div
               animate={
                 phase === "crashed"
@@ -884,6 +890,44 @@ function Coin({ size, variant, label }: { size: number; variant: keyof typeof CO
         position: "absolute", top: size * 0.13, left: size * 0.17, width: size * 0.28, height: size * 0.1,
         borderRadius: "50%", background: "rgba(255,255,255,.1)", transform: "rotate(-20deg)", filter: "blur(2px)",
       }} />
+    </div>
+  );
+}
+
+// ─── Stone obstacle (shown above the chicken on an arrived lane) ─────────────────
+
+function StoneObstacle({ width }: { width: number }) {
+  const s = width / 95;
+  const p = (n: number) => n * s;
+  return (
+    <div style={{ position: "relative", width: p(95), height: p(58) }}>
+      {/* shadow */}
+      <div style={{ position: "absolute", bottom: p(-4), left: p(18), width: p(58), height: p(10), background: "rgba(0,0,0,.35)", borderRadius: "50%", filter: `blur(${p(3)}px)` }} />
+      {/* legs */}
+      <div style={{ position: "absolute", bottom: p(-8), width: "100%", height: p(20) }}>
+        <div style={{ position: "absolute", left: p(2), width: p(24), height: p(5), background: "#1d2152", borderRadius: p(20), transform: "rotate(25deg)" }}>
+          <div style={{ position: "absolute", left: p(-5), top: p(-3), width: p(10), height: p(5), background: "#1d2152", borderRadius: p(20), transform: "rotate(-40deg)" }} />
+        </div>
+        <div style={{ position: "absolute", left: p(35), bottom: p(-3), width: p(24), height: p(5), background: "#1d2152", borderRadius: p(20), transform: "rotate(-5deg)" }}>
+          <div style={{ position: "absolute", right: p(-6), top: p(2), width: p(10), height: p(5), background: "#1d2152", borderRadius: p(20), transform: "rotate(40deg)" }} />
+        </div>
+        <div style={{ position: "absolute", right: 0, width: p(24), height: p(5), background: "#1d2152", borderRadius: p(20), transform: "rotate(-25deg)" }}>
+          <div style={{ position: "absolute", right: p(-5), top: p(-3), width: p(10), height: p(5), background: "#1d2152", borderRadius: p(20), transform: "rotate(40deg)" }} />
+        </div>
+      </div>
+      {/* stone body */}
+      <div style={{
+        position: "absolute", inset: 0, borderRadius: p(8),
+        background: "linear-gradient(180deg,#8d8fb2 0%,#74789c 100%)",
+        border: `${p(4)}px solid #30356e`,
+        boxShadow: `inset 0 ${p(3)}px 0 rgba(255,255,255,.15), inset 0 ${p(-4)}px 0 rgba(0,0,0,.2), 0 ${p(6)}px ${p(10)}px rgba(0,0,0,.25)`,
+      }}>
+        <div style={{ position: "absolute", inset: p(12), display: "flex", justifyContent: "space-between" }}>
+          {[18, 22, 16, 20, 14].map((lh, i) => (
+            <div key={i} style={{ width: p(5), height: p(lh), borderRadius: p(10), background: "#62678f", boxShadow: `inset 0 ${p(2)}px 0 rgba(255,255,255,.15)` }} />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
