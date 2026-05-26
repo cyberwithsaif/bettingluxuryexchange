@@ -24,11 +24,11 @@ interface UserRecord {
 const ROLES = ["USER", "AGENT", "MASTER", "SUPER_MASTER", "ADMIN"];
 
 const STATUS_BG: Record<string, string> = {
-  ACTIVE:    "bg-emerald-50 text-emerald-300 border-emerald-200",
-  SUSPENDED: "bg-gray-800  text-yellow-300  border-yellow-200",
-  LOCKED:    "bg-red-900/20     text-red-400     border-red-200",
-  CLOSED:    "bg-gray-700   text-gray-500    border-gray-700",
-  BANNED:    "bg-red-100    text-red-300     border-red-300",
+  ACTIVE:    "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
+  SUSPENDED: "bg-yellow-500/10  text-yellow-300  border-yellow-500/30",
+  LOCKED:    "bg-red-500/20     text-red-400     border-red-500/30",
+  CLOSED:    "bg-gray-700       text-gray-400    border-gray-600",
+  BANNED:    "bg-red-500/20     text-red-300     border-red-500/30",
 };
 
 function buildKey(q: string, role: string) {
@@ -113,10 +113,10 @@ export default function UsersPage() {
                     {u.status}
                   </span>
                 </Td>
-                <Td className="tabular-nums text-emerald-300 font-semibold">₹{Number(u.wallet?.balance ?? 0).toLocaleString("en-IN")}</Td>
-                <Td className="tabular-nums text-red-500 font-semibold">₹{Number(u.wallet?.exposure ?? 0).toLocaleString("en-IN")}</Td>
+                <Td className="tabular-nums text-emerald-300 font-semibold">₹{Number(u.wallet?.balance ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Td>
+                <Td className="tabular-nums text-red-500 font-semibold">₹{Number(u.wallet?.exposure ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Td>
                 <Td className="text-gray-400">{(u.partnershipBps / 100).toFixed(2)}%</Td>
-                <Td className="tabular-nums text-gray-300">₹{Number(u.creditReference ?? 0).toLocaleString("en-IN")}</Td>
+                <Td className="tabular-nums text-gray-300">₹{Number(u.creditReference ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Td>
                 <Td>
                   <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     <ActionBtn title="Edit user" icon={<Edit2 size={13} />}
