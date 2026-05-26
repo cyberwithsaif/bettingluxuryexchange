@@ -677,9 +677,27 @@ export default function ChickenRoadPage() {
                   </motion.div>
                 )}
 
-                {/* ── cracked landing coin on crossed lanes after game over ──
-                    Skip the lane the dead chicken occupies so they don't overlap. */}
-                {reached && isOver && !(phase === "crashed" && underChicken) && (
+                {/* ── after cashout: plain logo (same as during running) ── */}
+                {reached && phase === "cashed" && !underChicken && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.6 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.25, type: "spring", stiffness: 280, damping: 22 }}
+                    style={{
+                      position: "absolute",
+                      left: Math.round((laneW - coinSize * 1.35) / 2),
+                      top: Math.round((boardH - coinSize * 1.35) / 2),
+                      width: Math.round(coinSize * 1.35),
+                      height: Math.round(coinSize * 1.35),
+                    }}
+                  >
+                    <img src="/logo.png" alt="" draggable={false}
+                      style={{ width: "100%", height: "100%", objectFit: "contain", filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.4))" }} />
+                  </motion.div>
+                )}
+
+                {/* ── after crash: cracked coin on crossed lanes (not on the dead-chicken lane) ── */}
+                {reached && phase === "crashed" && !underChicken && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.5 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -691,9 +709,7 @@ export default function ChickenRoadPage() {
                       width: coinPx, height: coinPx,
                     }}
                   >
-                    {/* asphalt impact shadow */}
                     <div style={{ position: "absolute", width: coinPx * 1.5, height: coinPx * 0.28, left: -coinPx * 0.25, bottom: -coinPx * 0.06, borderRadius: "50%", background: "rgba(0,0,0,0.28)", filter: "blur(5px)" }} />
-                    {/* crack lines radiating from base */}
                     {[18, 72, 130, 198, 265, 320].map((angle) => (
                       <div key={angle} style={{
                         position: "absolute", width: 2, height: Math.round(coinPx * 0.28),
