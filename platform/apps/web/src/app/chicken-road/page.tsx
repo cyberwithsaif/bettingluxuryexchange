@@ -147,7 +147,7 @@ function shade(hex: string, percent: number): string {
 
 // ─── Chicken ─────────────────────────────────────────────────────────────────
 
-function Chicken({ size }: { size: number }) {
+function Chicken({ size, dead = false }: { size: number; dead?: boolean }) {
   const s = size / 120;
   const p = (n: number) => n * s;
   const featherBorder = `${p(2)}px solid #d5daf5`;
@@ -175,9 +175,24 @@ function Chicken({ size }: { size: number }) {
           <span style={{ width: p(10), height: p(16), background: "#ff5b5b", borderRadius: "50%", transform: "rotate(-25deg)", border: `${p(2)}px solid #e04040` }} />
           <span style={{ width: p(10), height: p(18), background: "#ff5b5b", borderRadius: "50%", transform: "rotate(-25deg)", border: `${p(2)}px solid #e04040` }} />
         </div>
-        {/* eyes */}
-        <div style={{ position: "absolute", width: p(7), height: p(7), background: "#1f2758", borderRadius: "50%", top: p(24), left: p(14) }} />
-        <div style={{ position: "absolute", width: p(7), height: p(7), background: "#1f2758", borderRadius: "50%", top: p(24), right: p(14) }} />
+        {/* eyes — X marks when dead, dots when alive */}
+        {dead ? (
+          <>
+            <div style={{ position: "absolute", top: p(20), left: p(8), width: p(11), height: p(11) }}>
+              <div style={{ position: "absolute", width: "100%", height: p(2.5), background: "#e04040", top: "40%", borderRadius: p(2), transform: "rotate(45deg)", transformOrigin: "center" }} />
+              <div style={{ position: "absolute", width: "100%", height: p(2.5), background: "#e04040", top: "40%", borderRadius: p(2), transform: "rotate(-45deg)", transformOrigin: "center" }} />
+            </div>
+            <div style={{ position: "absolute", top: p(20), right: p(8), width: p(11), height: p(11) }}>
+              <div style={{ position: "absolute", width: "100%", height: p(2.5), background: "#e04040", top: "40%", borderRadius: p(2), transform: "rotate(45deg)", transformOrigin: "center" }} />
+              <div style={{ position: "absolute", width: "100%", height: p(2.5), background: "#e04040", top: "40%", borderRadius: p(2), transform: "rotate(-45deg)", transformOrigin: "center" }} />
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ position: "absolute", width: p(7), height: p(7), background: "#1f2758", borderRadius: "50%", top: p(24), left: p(14) }} />
+            <div style={{ position: "absolute", width: p(7), height: p(7), background: "#1f2758", borderRadius: "50%", top: p(24), right: p(14) }} />
+          </>
+        )}
         {/* beak */}
         <div style={{ position: "absolute", width: p(16), height: p(12), background: "#f5a623", top: p(28), left: p(20), clipPath: "polygon(0 50%,100% 0,100% 100%)" }} />
       </div>
@@ -354,7 +369,7 @@ export default function ChickenRoadPage() {
         return;
       }
       if (r.status === "CASHED_OUT") {
-        setSession(prev => (prev ? { ...prev, currentLane: prev.lanes, multiplier: r.multiplier ?? prev.multiplier } : prev));
+        setSession(prev => (prev ? { ...prev, multiplier: r.multiplier ?? prev.multiplier } : prev));
         setCashoutAmt(r.payout ?? 0);
         setPhase("cashed");
         sounds.cashout();
@@ -599,42 +614,52 @@ export default function ChickenRoadPage() {
           {/* Lanes */}
           {Array.from({ length: lanes }, (_, i) => {
             const left = SIDEWALK_W + i * laneW;
-            const reached = i < currentLane;       // already crossed
+            const reached = i < currentLane;
             const isNext = i === currentLane && phase === "running";
-            const underChicken = reached && i === currentLane - 1; // chicken currently stands here
+            const underChicken = reached && i === currentLane - 1;
             const laneMult = multTable[i] ?? 1;
             const showVehicle = phase !== "idle" && i >= currentLane && i !== crashLane;
+            const isCrashLane = phase === "crashed" && i === crashLane;
+            const isCashoutLane = phase === "cashed" && i === currentLane - 1;
+            // future lanes past the end-game point: show dimmed multiplier text only
+            const isPostGame = isOver && !reached && !isCrashLane;
+            const coinPx = Math.round(coinSize * 1.1);
+
             return (
               <div key={i} className="absolute top-0 bottom-0" style={{ left, width: laneW }}>
-                {/* asphalt — on mobile keep crossed lanes the same shade as plain road */}
+                {/* asphalt */}
                 <div className="absolute inset-0" style={{ background: reached && !isMobile ? "#3a3d70" : "#313463" }} />
-                {/* left lane divider (dashed) */}
+                {/* dashed lane divider */}
                 <div className="absolute top-0 bottom-0 left-0" style={{ width: 4, background: "repeating-linear-gradient(180deg,rgba(255,255,255,0.85),rgba(255,255,255,0.85) 22px,transparent 22px,transparent 44px)" }} />
 
-                {/* multiplier coin — only on lanes not yet crossed. The NEXT coin is
-                    the only way to advance: tap it (after the 1s lock) to move. */}
-                {!reached && (
-                <div
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
-                  style={{ width: coinSize, height: coinSize, zIndex: isNext ? 25 : 1, cursor: isNext && nextCoinReady ? "pointer" : "default" }}
-                  onClick={isNext ? (e) => {
-                    e.stopPropagation();
-                    if (draggingRef.current || !nextCoinReady) return;
-                    handleMove();
-                  } : undefined}
-                >
-                  <motion.div
-                    animate={isNext && nextCoinReady ? { scale: [1, 1.08, 1] } : { scale: 1 }}
-                    transition={isNext && nextCoinReady ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
-                    className="w-full h-full"
-                    style={{ opacity: isNext && !nextCoinReady ? 0.45 : 1 }}
+                {/* ── multiplier coin on uncrossed lanes ── */}
+                {!reached && !isCrashLane && !isPostGame && (
+                  <div
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
+                    style={{ width: coinSize, height: coinSize, zIndex: isNext ? 25 : 1, cursor: isNext && nextCoinReady ? "pointer" : "default" }}
+                    onClick={isNext ? (e) => { e.stopPropagation(); if (draggingRef.current || !nextCoinReady) return; handleMove(); } : undefined}
                   >
-                    <Coin size={coinSize} variant={isNext ? "next" : "future"} label={fmtMult(laneMult)} />
-                  </motion.div>
-                </div>
+                    <motion.div
+                      animate={isNext && nextCoinReady ? { scale: [1, 1.08, 1] } : { scale: 1 }}
+                      transition={isNext && nextCoinReady ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
+                      className="w-full h-full"
+                      style={{ opacity: isNext && !nextCoinReady ? 0.45 : 1 }}
+                    >
+                      <Coin size={coinSize} variant={isNext ? "next" : "future"} label={fmtMult(laneMult)} />
+                    </motion.div>
+                  </div>
                 )}
 
-                {/* stone barrier — fixed on each arrived lane, fades in 0.5s after crossing */}
+                {/* ── dimmed multiplier text on future lanes after game ends ── */}
+                {isPostGame && (
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
+                    <span className="tabular-nums font-bold text-white/25" style={{ fontSize: Math.max(10, coinSize * 0.22) }}>
+                      {fmtMult(laneMult)}
+                    </span>
+                  </div>
+                )}
+
+                {/* ── stone barrier on crossed lanes ── */}
                 {reached && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.6, y: -8 }}
@@ -647,8 +672,39 @@ export default function ChickenRoadPage() {
                   </motion.div>
                 )}
 
-                {/* website logo on crossed lanes (desktop only), pixel-exact center */}
-                {reached && !underChicken && !isMobile && (
+                {/* ── cracked landing coin on crossed lanes after game over ── */}
+                {reached && isOver && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.25, type: "spring", stiffness: 280, damping: 22 }}
+                    style={{
+                      position: "absolute",
+                      left: Math.round((laneW - coinPx) / 2),
+                      top: Math.round((boardH - coinPx) / 2),
+                      width: coinPx, height: coinPx,
+                    }}
+                  >
+                    {/* asphalt impact shadow */}
+                    <div style={{ position: "absolute", width: coinPx * 1.5, height: coinPx * 0.28, left: -coinPx * 0.25, bottom: -coinPx * 0.06, borderRadius: "50%", background: "rgba(0,0,0,0.28)", filter: "blur(5px)" }} />
+                    {/* crack lines radiating from base */}
+                    {[18, 72, 130, 198, 265, 320].map((angle) => (
+                      <div key={angle} style={{
+                        position: "absolute", width: 2, height: Math.round(coinPx * 0.28),
+                        background: "rgba(0,0,0,0.28)", borderRadius: 1,
+                        bottom: 0, left: "50%",
+                        transformOrigin: "bottom center",
+                        transform: `translateX(-50%) rotate(${angle}deg)`,
+                      }} />
+                    ))}
+                    <div style={{ position: "relative", zIndex: 1 }}>
+                      <Coin size={coinPx} variant="collected" label="" logoSrc="/logo.png" />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* ── desktop logo on crossed lanes during running ── */}
+                {reached && !underChicken && !isMobile && !isOver && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.6 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -666,6 +722,50 @@ export default function ChickenRoadPage() {
                   </motion.div>
                 )}
 
+                {/* ── skull badge on crash lane ── */}
+                {isCrashLane && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.4, y: -12 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ delay: 0.15, type: "spring", stiffness: 340, damping: 20 }}
+                    className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-2xl font-black tabular-nums"
+                    style={{
+                      top: Math.round(boardH * 0.3),
+                      background: "rgba(220,38,38,0.92)",
+                      border: "1.5px solid rgba(248,113,113,0.6)",
+                      boxShadow: "0 0 18px rgba(220,38,38,0.5)",
+                      color: "#fff",
+                      fontSize: Math.max(11, Math.min(coinSize * 0.25, 17)),
+                      zIndex: 28,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <span>💀</span> {fmtMult(multTable[i] ?? 1)}
+                  </motion.div>
+                )}
+
+                {/* ── checkmark badge on cashout lane ── */}
+                {isCashoutLane && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.4, y: -12 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ delay: 0.15, type: "spring", stiffness: 340, damping: 20 }}
+                    className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-2xl font-black tabular-nums"
+                    style={{
+                      top: Math.round(boardH * 0.22),
+                      background: "rgba(16,185,129,0.92)",
+                      border: "1.5px solid rgba(52,211,153,0.6)",
+                      boxShadow: "0 0 18px rgba(16,185,129,0.5)",
+                      color: "#fff",
+                      fontSize: Math.max(11, Math.min(coinSize * 0.25, 17)),
+                      zIndex: 28,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <span>✓</span> {fmtMult(multiplier)}
+                  </motion.div>
+                )}
+
                 {/* ambient vehicle */}
                 {showVehicle && (
                   <AmbientVehicle laneIndex={i} laneW={laneW} boardH={boardH} difficulty={session?.difficulty ?? difficulty} />
@@ -680,7 +780,7 @@ export default function ChickenRoadPage() {
             <div className="absolute top-0 bottom-0 left-0" style={{ width: laneW * 0.4, background: "repeating-linear-gradient(180deg,#d7d3e4,#d7d3e4 26px,#c8c3da 26px,#c8c3da 52px)" }} />
           </div>
 
-          {/* Chicken */}
+          {/* Chicken — hidden on cashout (badge on lane), flattened on crash */}
           <motion.div
             className="absolute z-20 flex flex-col items-center justify-center gap-2"
             style={{ width: laneW, top: 0, bottom: 0, paddingTop: Math.round(boardH * 0.08) }}
@@ -690,24 +790,31 @@ export default function ChickenRoadPage() {
             <motion.div
               animate={
                 phase === "crashed"
-                  ? { scale: 0.5, rotate: 90, opacity: 0.35, y: 0 }
+                  ? { scaleY: 0.22, scaleX: 1.2, y: Math.round(chickenSize * 0.2), opacity: 1 }
+                  : phase === "cashed"
+                  ? { opacity: 0, y: -Math.round(chickenSize * 0.6), scale: 1.1 }
                   : loading
-                  ? { y: [0, -boardH * 0.06, 0] }
-                  : { y: 0 }
+                  ? { y: [0, -boardH * 0.06, 0], scaleY: 1, scaleX: 1, opacity: 1 }
+                  : { y: 0, scaleY: 1, scaleX: 1, opacity: 1 }
               }
-              transition={phase === "crashed" ? { duration: 0.3 } : { duration: 0.3, repeat: loading ? Infinity : 0 }}
+              transition={
+                phase === "crashed" ? { duration: 0.25, ease: "easeOut" }
+                  : phase === "cashed" ? { duration: 0.3, ease: "easeIn" }
+                  : { duration: 0.3, repeat: loading ? Infinity : 0 }
+              }
             >
-              <Chicken size={chickenSize} />
+              <Chicken size={chickenSize} dead={phase === "crashed"} />
             </motion.div>
-            {(phase === "running" || phase === "crashed" || phase === "cashed") && (
+            {/* running multiplier badge — only during active play */}
+            {phase === "running" && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.7 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="px-2.5 py-1 rounded-lg text-xs font-black tabular-nums"
                 style={{
-                  background: phase === "crashed" ? "rgba(239,68,68,0.9)" : "rgba(10,11,22,0.92)",
-                  border: `1px solid ${phase === "crashed" ? "rgba(239,68,68,0.5)" : "rgba(139,92,246,0.5)"}`,
-                  color: phase === "crashed" ? "#fff" : "#c4b5fd",
+                  background: "rgba(10,11,22,0.92)",
+                  border: "1px solid rgba(139,92,246,0.5)",
+                  color: "#c4b5fd",
                   backdropFilter: "blur(4px)",
                 }}>
                 {fmtMult(multiplier)}
@@ -723,36 +830,17 @@ export default function ChickenRoadPage() {
           </AnimatePresence>
         </motion.div>
 
-        {/* Result overlay */}
+        {/* Tap-to-play-again hint — floats at bottom when game ends */}
         <AnimatePresence>
           {isOver && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-              onClick={(e) => { e.stopPropagation(); handleReset(); }}
-              className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur cursor-pointer"
+            <motion.button
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              onClick={handleReset}
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-5 py-2 rounded-full font-bold uppercase tracking-widest text-xs cursor-pointer"
+              style={{ background: "rgba(20,18,40,0.92)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)", backdropFilter: "blur(6px)" }}
             >
-              <div className={`w-60 md:w-72 text-center p-6 rounded-2xl shadow-2xl border-2 ${
-                phase === "cashed"
-                  ? "bg-[#0f1226]/90 border-green-500 text-green-400 shadow-[0_0_20px_rgba(34,197,94,0.3)]"
-                  : "bg-[#0f1226]/90 border-red-500 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.3)]"
-              }`}>
-                <div className="text-xl font-bold uppercase tracking-wider mb-2">
-                  {phase === "cashed" ? "Cashed Out!" : "Splat!"}
-                </div>
-                {phase === "cashed" && (
-                  <>
-                    <div className="text-3xl font-black text-white">
-                      ₹{cashoutAmt?.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                    </div>
-                    <div className="text-sm text-green-400/80 mt-1 font-bold">{fmtMult(multiplier)}</div>
-                  </>
-                )}
-                {phase === "crashed" && (
-                  <div className="text-sm text-red-300/80 mt-1">The chicken got hit. Bet lost.</div>
-                )}
-                <div className="text-[10px] text-gray-500 mt-3 uppercase tracking-widest font-semibold">Tap to Play Again</div>
-              </div>
-            </motion.div>
+              Tap to Play Again
+            </motion.button>
           )}
         </AnimatePresence>
       </div>
