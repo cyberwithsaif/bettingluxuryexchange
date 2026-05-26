@@ -644,7 +644,7 @@ export default function ChickenRoadPage() {
                   </motion.div>
                 )}
 
-                {/* collected gold logo coin on crossed lanes the chicken has left */}
+                {/* website logo on crossed lanes the chicken has left */}
                 {reached && !underChicken && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.6 }}
@@ -653,7 +653,8 @@ export default function ChickenRoadPage() {
                     className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
                     style={{ width: coinSize, height: coinSize }}
                   >
-                    <Coin size={coinSize} variant="collected" label="" logoSrc="/logo.png" />
+                    <img src="/logo.png" alt="" draggable={false}
+                      style={{ width: coinSize, height: coinSize, objectFit: "contain", filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.4))" }} />
                   </motion.div>
                 )}
 
