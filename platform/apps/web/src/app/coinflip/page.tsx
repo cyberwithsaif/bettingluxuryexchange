@@ -105,16 +105,16 @@ export default function CoinflipPage() {
       </div>
 
       <div className="min-h-screen bg-gradient-to-b from-[#0f111a] via-[#0f111a] to-[#0a0c14] text-white">
-        <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="max-w-6xl mx-auto px-3 md:px-4 py-4 md:py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
             {/* Main Game */}
             <div className="lg:col-span-2">
-              <div className="rounded-2xl border border-blue-900/40 bg-gradient-to-br from-blue-950/20 via-[#0c1520] to-[#0f0603] p-8">
-                <h2 className="text-3xl font-black uppercase tracking-tight mb-2">Coinflip</h2>
-                <p className="text-white/50 text-sm mb-8">Pick Heads or Tails and watch the coin flip in real-time!</p>
+              <div className="rounded-2xl border border-blue-900/40 bg-gradient-to-br from-blue-950/20 via-[#0c1520] to-[#0f0603] p-4 md:p-8">
+                <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-2">Coinflip</h2>
+                <p className="text-white/50 text-sm mb-6 md:mb-8">Pick Heads or Tails and watch the coin flip in real-time!</p>
 
                 {/* Coin Display */}
-                <div className="flex justify-center mb-12">
+                <div className="flex justify-center mb-8 md:mb-12">
                   <motion.div
                     animate={{ rotateY: isFlipping ? 1080 : 0 }}
                     transition={{ duration: isFlipping ? 1.5 : 0, ease: "easeOut" }}
