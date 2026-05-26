@@ -334,7 +334,7 @@ export default function PlinkoPage() {
   const dbl  = () => setBetAmount(a => Math.min(config?.maxBet ?? 100000, a * 2));
 
   return (
-    <div className="bg-[#0b0c12] text-white flex flex-col md:flex-row min-h-full md:min-h-0 md:h-[calc(100vh-74px)] md:overflow-hidden">
+    <div className="bg-[#0b0c12] text-white flex flex-col md:flex-row h-[calc(100dvh-124px)] md:h-[calc(100vh-74px)] overflow-hidden">
 
       {/* Toasts */}
       <div className="fixed top-4 right-3 z-50 flex flex-col gap-1 pointer-events-none">
@@ -544,7 +544,7 @@ export default function PlinkoPage() {
       </aside>
 
       {/* ── Center: stats column + board ─────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col md:flex-row items-stretch overflow-hidden min-w-0 bg-[#0b0c12]">
+      <div className="flex-1 flex flex-col md:flex-row items-stretch overflow-hidden min-w-0 min-h-0 bg-[#0b0c12]">
 
         {/* Stats card — desktop only */}
         <div className="hidden md:flex w-[260px] shrink-0 p-3 flex-col">
@@ -585,7 +585,7 @@ export default function PlinkoPage() {
         </div>
 
         {/* Board canvas — constrained width on desktop, full width on mobile */}
-        <div className="flex-1 flex items-stretch justify-center overflow-hidden min-w-0">
+        <div className="flex-1 flex items-stretch justify-center overflow-hidden min-w-0 min-h-0">
           <div className="relative h-full w-full md:max-w-[600px]">
           <PlinkoBoard
             rows={rows} riskLevel={risk} multiplierTable={multTable}
