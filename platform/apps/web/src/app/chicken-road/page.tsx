@@ -439,22 +439,28 @@ export default function ChickenRoadPage() {
     touchStart.current = null;
   };
 
+  // Chicken geometry. At the start (lane 0) it stands on the sidewalk edge; once
+  // moving it sits in the CENTER of the lane cell it just entered (between the two
+  // dashed dividers), not on top of a divider line.
+  const isMobile = containerW < 640;
+  const chickenShift = currentLane === 0 ? 0 : -laneW / 2;
+  const chickenCenterTrack = SIDEWALK_W + currentLane * laneW + chickenShift;
+
   // Camera: anchor the chicken toward the middle on mobile (more zoomed-in feel),
   // clamped so the start sidewalk never detaches from the left edge.
-  const isMobile = containerW < 640;
-  const anchorX = isMobile ? containerW * 0.40 : SIDEWALK_W;
-  const cameraX = Math.min(0, anchorX - (SIDEWALK_W + currentLane * laneW));
-  const chickenSize = Math.min(laneW * (isMobile ? 0.6 : 0.46), isMobile ? 100 : 74);
+  const anchorX = isMobile ? containerW * 0.42 : SIDEWALK_W;
+  const cameraX = Math.min(0, anchorX - chickenCenterTrack);
+  const chickenSize = Math.min(laneW * (isMobile ? 0.62 : 0.46), isMobile ? 110 : 74);
   const coinSize = Math.round(laneW * (isMobile ? 0.52 : 0.42));
   const isOver = phase === "crashed" || phase === "cashed";
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="bg-[#0a0b16] text-white flex flex-col font-sans w-full min-h-full md:min-h-0 md:overflow-hidden md:h-[calc(100vh-74px)] md:p-3">
+    <div className="bg-[#0a0b16] text-white flex flex-col font-sans w-full min-h-full md:min-h-0 md:overflow-hidden md:h-[calc(100vh-74px)] p-2 md:p-3">
 
       {/* ── Card wrapper ─────────────────────────────────────────────────────── */}
-      <div className="flex flex-col flex-1 min-h-0 md:rounded-2xl md:overflow-hidden"
+      <div className="flex flex-col flex-none md:flex-1 min-h-0 rounded-2xl overflow-hidden"
         style={{ border: "1px solid rgba(139,92,246,0.18)", boxShadow: "0 0 0 1px rgba(0,0,0,0.4), 0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)" }}>
 
       {/* ── Game viewport ─────────────────────────────────────────────────────── */}
@@ -463,7 +469,7 @@ export default function ChickenRoadPage() {
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         onClick={() => phase === "running" && handleMove()}
-        className="relative flex-1 overflow-hidden select-none min-h-[340px] md:min-h-0"
+        className="relative h-[46vh] flex-none md:flex-1 md:h-auto overflow-hidden select-none"
         style={{ background: "linear-gradient(180deg,#161527,#0d0c18)", cursor: phase === "running" ? "pointer" : "default" }}
       >
         {/* Top HUD */}
@@ -569,6 +575,7 @@ export default function ChickenRoadPage() {
             const left = SIDEWALK_W + i * laneW;
             const reached = i < currentLane;       // already crossed
             const isNext = i === currentLane && phase === "running";
+            const underChicken = currentLane >= 1 && i === currentLane - 1; // chicken stands here
             const laneMult = multTable[i] ?? 1;
             const showVehicle = phase !== "idle" && i >= currentLane && i !== crashLane;
             return (
@@ -578,7 +585,8 @@ export default function ChickenRoadPage() {
                 {/* left lane divider (dashed) */}
                 <div className="absolute top-0 bottom-0 left-0" style={{ width: 4, background: "repeating-linear-gradient(180deg,rgba(255,255,255,0.85),rgba(255,255,255,0.85) 22px,transparent 22px,transparent 44px)" }} />
 
-                {/* multiplier circle */}
+                {/* multiplier circle (hidden in the cell the chicken occupies) */}
+                {!underChicken && (
                 <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center" style={{ width: coinSize, height: coinSize }}>
                   <motion.div
                     animate={isNext ? { scale: [1, 1.1, 1], boxShadow: ["0 0 0px rgba(250,204,21,0)", "0 0 22px rgba(250,204,21,0.7)", "0 0 0px rgba(250,204,21,0)"] } : {}}
@@ -596,6 +604,7 @@ export default function ChickenRoadPage() {
                     </span>
                   </motion.div>
                 </div>
+                )}
 
                 {/* ambient vehicle */}
                 {showVehicle && (
@@ -615,7 +624,7 @@ export default function ChickenRoadPage() {
           <motion.div
             className="absolute z-20 flex flex-col items-center justify-center gap-2"
             style={{ width: laneW, top: 0, bottom: 0 }}
-            animate={{ left: SIDEWALK_W + currentLane * laneW - laneW / 2 }}
+            animate={{ left: chickenCenterTrack - laneW / 2 }}
             transition={{ type: "spring", stiffness: 260, damping: 22 }}
           >
             <motion.div
