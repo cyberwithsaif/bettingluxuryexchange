@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo, useLayoutEffect } fr
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
+import { api } from "@/lib/api";
 import { Shield } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -274,14 +275,13 @@ export default function ChickenRoadPage() {
   const currentLane = session?.currentLane ?? 0;
   const multiplier = session?.multiplier ?? 1.0;
 
-  // Fetch the server's active session and restore it (position, multiplier, table)
+  // Fetch the server's active session and restore it (position, multiplier, table).
+  // Uses the shared api client so the JWT is attached and 401s auto-refresh.
   const restoreActiveSession = useCallback(async () => {
     try {
-      const r = await fetch("/api/casino/chicken-road/active");
-      if (!r.ok) return false;
-      const s: Session | null = await r.json();
-      if (!s) return false;
-      setSession(s);
+      const { data } = await api.get<Session | null>("/casino/chicken-road/active");
+      if (!data) return false;
+      setSession(data);
       setCrashLane(null);
       setCashoutAmt(null);
       setPhase("running");
