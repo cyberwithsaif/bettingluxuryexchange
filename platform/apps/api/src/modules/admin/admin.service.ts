@@ -849,5 +849,67 @@ export class AdminService {
   setSupportStatus(id: string, status: string) {
     return this.prisma.supportTicket.update({ where: { id }, data: { status: status as Prisma.SupportTicketUpdateInput["status"] } });
   }
+
+  // ── Security Center ────────────────────────────────────────────────────────────
+  async getSecurityOverview() {
+    const now = new Date();
+    const last24h = new Date(Date.now() - 24 * 60 * 60_000);
+    const [staffTotal, staff2fa, activeSessions, adminActions24h, distinctIps, settings] = await Promise.all([
+      this.prisma.user.count({ where: { role: { not: UserRole.USER } } }),
+      this.prisma.user.count({ where: { role: { not: UserRole.USER }, twoFactorEnabled: true } }),
+      this.prisma.refreshToken.count({ where: { revokedAt: null, expiresAt: { gt: now } } }),
+      this.prisma.adminLog.count({ where: { createdAt: { gte: last24h } } }),
+      this.prisma.refreshToken.findMany({ where: { createdAt: { gte: last24h } }, select: { ip: true }, distinct: ["ip"] }),
+      this.getPlatformSettings() as Promise<Record<string, unknown>>,
+    ]);
+    return {
+      staffTotal,
+      staff2fa,
+      activeSessions,
+      adminActions24h,
+      uniqueIps24h: distinctIps.filter((d) => d.ip).length,
+      ipAllowlist: (settings.securityIpAllowlist as string[]) ?? [],
+      antiDdosEnabled: (settings.antiDdosEnabled as boolean) ?? false,
+    };
+  }
+
+  async listActiveSessions(limit = 100) {
+    const now = new Date();
+    const sessions = await this.prisma.refreshToken.findMany({
+      where: { revokedAt: null, expiresAt: { gt: now } },
+      orderBy: { createdAt: "desc" },
+      take: Math.min(limit, 300),
+      include: { user: { select: { id: true, username: true, role: true } } },
+    });
+    return sessions.map((s) => ({
+      id: s.id, userId: s.userId, username: s.user.username, role: s.user.role,
+      ip: s.ip, userAgent: s.userAgent, createdAt: s.createdAt, expiresAt: s.expiresAt,
+    }));
+  }
+
+  async revokeSession(tokenId: string) {
+    await this.prisma.refreshToken.update({ where: { id: tokenId }, data: { revokedAt: new Date() } }).catch(() => undefined);
+    return { ok: true };
+  }
+
+  async revokeUserSessions(userId: string) {
+    const r = await this.prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
+    return { ok: true, revoked: r.count };
+  }
+
+  list2faStatus() {
+    return this.prisma.user.findMany({
+      where: { role: { not: UserRole.USER } },
+      orderBy: { username: "asc" },
+      select: { id: true, username: true, role: true, twoFactorEnabled: true, lastLoginAt: true, lastLoginIp: true },
+    });
+  }
+
+  saveSecurityConfig(dto: { ipAllowlist?: string[]; antiDdosEnabled?: boolean }) {
+    const patch: Record<string, unknown> = {};
+    if (dto.ipAllowlist !== undefined) patch.securityIpAllowlist = dto.ipAllowlist;
+    if (dto.antiDdosEnabled !== undefined) patch.antiDdosEnabled = dto.antiDdosEnabled;
+    return this.savePlatformSettings(patch);
+  }
 }
 

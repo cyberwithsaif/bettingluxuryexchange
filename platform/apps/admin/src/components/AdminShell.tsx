@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpToLine,
   Settings, Key, ListChecks, ShieldAlert, LogOut, Trophy,
   Ticket, BarChart3, Bell, Menu, X, CreditCard, Gamepad2,
-  ShieldCheck, Activity, Share2, UserCog, Crown, Gift, LifeBuoy,
+  ShieldCheck, Activity, Share2, UserCog, Crown, Gift, LifeBuoy, Lock,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -32,6 +32,7 @@ const NAV = [
   { href: "/settings/payment-methods", label: "Payment Methods", Icon: CreditCard },
   { href: "/api-keys",                 label: "API Keys",        Icon: Key },
   { href: "/roles",                    label: "Admin Roles",     Icon: UserCog },
+  { href: "/security",                 label: "Security",        Icon: Lock },
   { href: "/logs",                     label: "Audit Logs",      Icon: ListChecks },
   { href: "/settings",                 label: "Settings",        Icon: Settings },
 ] as const;

@@ -83,6 +83,15 @@ class TicketStatusDto {
   @IsIn(["OPEN", "PENDING", "RESOLVED", "CLOSED"]) status!: string;
 }
 
+class RevokeUserDto {
+  @IsString() userId!: string;
+}
+
+class SecurityConfigDto {
+  @IsOptional() @IsString({ each: true }) ipAllowlist?: string[];
+  @IsOptional() @IsBoolean() antiDdosEnabled?: boolean;
+}
+
 class PlatformSettingsDto {
   @IsOptional() @IsNumber() @Min(1) minStake?: number;
   @IsOptional() @IsNumber() @Min(100) maxStake?: number;
@@ -389,6 +398,38 @@ export class AdminController {
   async ticketStatus(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Body() dto: TicketStatusDto, @Req() req: Request) {
     const r = await this.admin.setSupportStatus(id, dto.status);
     await this.admin.writeAudit(actor.id, "support.status", { type: "ticket", id }, dto, req.ip);
+    return r;
+  }
+
+  // -- Security center --
+
+  @Get("security/overview")
+  securityOverview() { return this.admin.getSecurityOverview(); }
+
+  @Get("security/sessions")
+  securitySessions(@Query("limit") limit?: string) { return this.admin.listActiveSessions(limit ? Number(limit) : undefined); }
+
+  @Get("security/2fa")
+  security2fa() { return this.admin.list2faStatus(); }
+
+  @Delete("security/sessions/:id")
+  async revokeSession(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Req() req: Request) {
+    const r = await this.admin.revokeSession(id);
+    await this.admin.writeAudit(actor.id, "security.session.revoke", { type: "session", id }, {}, req.ip);
+    return r;
+  }
+
+  @Post("security/sessions/revoke-user")
+  async forceLogout(@CurrentUser() actor: AuthUser, @Body() dto: RevokeUserDto, @Req() req: Request) {
+    const r = await this.admin.revokeUserSessions(dto.userId);
+    await this.admin.writeAudit(actor.id, "security.force_logout", { type: "user", id: dto.userId }, r, req.ip);
+    return r;
+  }
+
+  @Post("security/config")
+  async saveSecurityConfig(@CurrentUser() actor: AuthUser, @Body() dto: SecurityConfigDto, @Req() req: Request) {
+    const r = await this.admin.saveSecurityConfig(dto);
+    await this.admin.writeAudit(actor.id, "security.config.update", undefined, dto, req.ip);
     return r;
   }
 
