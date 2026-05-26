@@ -7,8 +7,9 @@ import { LedgerKind, Prisma } from "@prisma/client";
 import * as crypto from "crypto";
 
 // ── Multiplier tables ──────────────────────────────────────────────────────
-// rows+1 slots per row count. Symmetric around center.
-// Base expected value ≈ 99%. Admin RTP setting scales these proportionally.
+// rows+1 slots per row count. Symmetric around center. These values are FIXED
+// and shown to the player. The admin RTP biases which slot the ball lands in
+// (not the payout values), so the visible multipliers never change.
 const MULTIPLIERS: Record<number, Record<string, number[]>> = {
   8: {
     low:    [5.6, 2.1, 1.1, 1.0, 0.5, 1.0, 1.1, 2.1, 5.6],
@@ -41,7 +42,7 @@ interface PlinkoConfig {
   minBet: number;
   maxBet: number;
   maxPayout: number;
-  rtpPercent: number;  // 80–100 — scales all multipliers
+  rtpPercent: number;  // target RTP — biases slot odds (1–200), payouts stay fixed
 }
 
 const DEFAULT_CONFIG: PlinkoConfig = {
@@ -93,42 +94,76 @@ export class PlinkoService implements OnModuleInit {
     return next;
   }
 
-  // ── Provably Fair ─────────────────────────────────────────────────────────
+  // ── Outcome engine (fixed payouts, RTP biases slot odds) ──────────────────
 
-  /** HMAC-SHA256(serverSeed, clientSeed:nonce) → N bits = left/right per row */
-  private computePath(serverSeed: string, clientSeed: string, nonce: number, rows: number): number[] {
-    const hmac = crypto
-      .createHmac("sha256", serverSeed)
-      .update(`${clientSeed}:${nonce}`)
-      .digest();
-
-    const path: number[] = [];
-    for (let i = 0; i < rows; i++) {
-      const byteIdx = Math.floor(i / 8);
-      const bitIdx  = i % 8;
-      path.push((hmac[byteIdx] >> bitIdx) & 1);
-    }
-    return path;
+  private hmac(serverSeed: string, clientSeed: string, nonce: number): Buffer {
+    return crypto.createHmac("sha256", serverSeed).update(`${clientSeed}:${nonce}`).digest();
   }
 
-  /** Get raw (unscaled) multiplier for a given slot. */
+  /** Fixed multiplier table — NEVER scaled. The admin RTP biases WHERE the ball
+   *  lands, not the payout values, so the visible bottom-row never changes. */
+  getMultiplierTable(rows: number, risk: string): number[] {
+    return MULTIPLIERS[rows]?.[risk] ?? [];
+  }
   private rawMultiplier(rows: number, risk: RiskLevel, slot: number): number {
     return MULTIPLIERS[rows]?.[risk]?.[slot] ?? 0;
   }
 
-  /** Apply RTP scaling: multiplier * (rtpPercent / 99). 99 = base table RTP. */
-  private scaledMultiplier(rows: number, risk: RiskLevel, slot: number): number {
-    const raw = this.rawMultiplier(rows, risk, slot);
-    const scale = this.config.rtpPercent / 99;
-    return Math.round(raw * scale * 100) / 100;
+  /** Natural binomial slot probabilities (a fair drop), normalized. */
+  private slotWeights(rows: number): number[] {
+    const w: number[] = [];
+    let c = 1;
+    for (let k = 0; k <= rows; k++) { w.push(c); c = (c * (rows - k)) / (k + 1); }
+    const sum = w.reduce((a, b) => a + b, 0);
+    return w.map(x => x / sum);
+  }
+  private ev(P: number[], M: number[]): number {
+    let e = 0; for (let s = 0; s < M.length; s++) e += P[s] * (M[s] ?? 0); return e;
   }
 
-  /** Return full multiplier table for a rows+risk combination (scaled). */
-  getMultiplierTable(rows: number, risk: string): number[] {
-    const table = MULTIPLIERS[rows]?.[risk];
-    if (!table) return [];
-    const scale = this.config.rtpPercent / 99;
-    return table.map(m => Math.round(m * scale * 100) / 100);
+  /**
+   * Slot probability distribution that yields target RTP `T` (a fraction) while
+   * keeping the multiplier table fixed — purely by biasing the landing slot:
+   *  T < fair  → more weight on losing center slots (house profit)
+   *  T > fair  → more weight on winning / jackpot edge slots (players win)
+   */
+  private targetDistribution(rows: number, risk: RiskLevel, T: number): number[] {
+    const M = MULTIPLIERS[rows]?.[risk] ?? [];
+    const N = this.slotWeights(rows);
+    const idxOf = (pred: (m: number) => boolean) => M.map((m, i) => (pred(m) ? i : -1)).filter(i => i >= 0);
+    const restrict = (idx: number[]) => {
+      const P = new Array(M.length).fill(0);
+      const sum = idx.reduce((a, i) => a + N[i], 0) || 1;
+      idx.forEach(i => { P[i] = N[i] / sum; });
+      return P;
+    };
+    const maxM = Math.max(...M);
+    const L = restrict(idxOf(m => m < 1));      // losing cluster
+    const H = restrict(idxOf(m => m >= 1));     // winning cluster
+    const E = restrict(idxOf(m => m === maxM)); // jackpot edges
+    const evN = this.ev(N, M), evL = this.ev(L, M), evH = this.ev(H, M), evE = maxM;
+    const t = Math.min(evE - 1e-6, Math.max(evL + 1e-6, T));
+    const mix = (A: number[], B: number[], f: number) => A.map((p, i) => p * (1 - f) + B[i] * f);
+    if (t <= evN) return mix(N, L, (evN - t) / Math.max(1e-9, evN - evL));
+    if (t <= evH) return mix(N, H, (t - evN) / Math.max(1e-9, evH - evN));
+    return mix(H, E, (t - evH) / Math.max(1e-9, evE - evH));
+  }
+
+  /** Deterministic biased outcome from the seed + RTP. */
+  private computeOutcome(serverSeed: string, clientSeed: string, nonce: number, rows: number, risk: RiskLevel, rtpPercent: number): { path: number[]; slot: number } {
+    const h = this.hmac(serverSeed, clientSeed, nonce);
+    let u = 0; for (let i = 0; i < 6; i++) u = u * 256 + h[i]; u /= 2 ** 48; // uniform [0,1)
+    const P = this.targetDistribution(rows, risk, rtpPercent / 100);
+    let acc = 0, slot = P.length - 1;
+    for (let s = 0; s < P.length; s++) { acc += P[s]; if (u < acc) { slot = s; break; } }
+    // Arrange `slot` right-moves across `rows` pegs, shuffled deterministically (visual only).
+    const order = Array.from({ length: rows }, (_, i) => i);
+    let bi = 8;
+    const rnd = () => { const b = h[bi % 32]; bi++; return b / 256; };
+    for (let i = rows - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+    const path = new Array(rows).fill(0);
+    for (let k = 0; k < slot; k++) path[order[k]] = 1;
+    return { path, slot };
   }
 
   // ── Core Bet Logic ────────────────────────────────────────────────────────
@@ -163,10 +198,9 @@ export class PlinkoService implements OnModuleInit {
     const serverSeedHash = crypto.createHash("sha256").update(serverSeed).digest("hex");
     const nonce          = await this.prisma.plinkoBet.count({ where: { userId } }) + 1;
 
-    // Compute path and outcome
-    const path       = this.computePath(serverSeed, input.clientSeed, nonce, input.rows);
-    const slot       = path.reduce((a, b) => a + b, 0); // count of rights = final slot
-    const multiplier = this.scaledMultiplier(input.rows, input.riskLevel as RiskLevel, slot);
+    // Biased outcome — RTP steers the slot, payouts stay fixed
+    const { path, slot } = this.computeOutcome(serverSeed, input.clientSeed, nonce, input.rows, input.riskLevel as RiskLevel, config.rtpPercent);
+    const multiplier = this.rawMultiplier(input.rows, input.riskLevel as RiskLevel, slot);
     const payout     = Math.min(
       Math.round(input.betAmount * multiplier * 100) / 100,
       config.maxPayout,
@@ -243,8 +277,8 @@ export class PlinkoService implements OnModuleInit {
     const bet = await this.prisma.plinkoBet.findUnique({ where: { id: betId } });
     if (!bet) throw new BadRequestException("Bet not found");
 
-    const recomputedPath = this.computePath(bet.serverSeed, bet.clientSeed, bet.nonce, bet.rows);
-    const recomputedSlot = recomputedPath.reduce((a, b) => a + b, 0);
+    const { path: recomputedPath, slot: recomputedSlot } =
+      this.computeOutcome(bet.serverSeed, bet.clientSeed, bet.nonce, bet.rows, bet.riskLevel as RiskLevel, Number(bet.rtpAtPlay ?? 100));
     const seedHash       = crypto.createHash("sha256").update(bet.serverSeed).digest("hex");
 
     return {
