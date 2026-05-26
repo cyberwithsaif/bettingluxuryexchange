@@ -476,11 +476,16 @@ export default function ChickenRoadPage() {
   const chickenShift = currentLane === 0 ? 0 : -laneW / 2;
   const chickenCenterTrack = SIDEWALK_W + currentLane * laneW + chickenShift;
 
-  // Camera: on mobile anchor the chicken near the middle (zoomed feel); on desktop
-  // keep ~2 crossed lanes visible behind it. Clamped so the start sidewalk never
-  // detaches from the left edge.
-  const anchorX = isMobile ? containerW * 0.42 : SIDEWALK_W + 2 * laneW;
-  const cameraX = Math.min(0, anchorX - chickenCenterTrack);
+  // Camera: on mobile anchor the chicken near the middle; on desktop keep ~2 crossed
+  // lanes visible behind it. After crash, slide right to reveal the crash lane and the
+  // full death-path (future lanes with their multipliers).
+  const cameraTarget = phase === "crashed" && crashLane !== null
+    ? SIDEWALK_W + crashLane * laneW + laneW * 0.5   // centre of crash lane
+    : chickenCenterTrack;
+  const anchorX = phase === "crashed" && crashLane !== null
+    ? (isMobile ? containerW * 0.48 : containerW * 0.38)
+    : (isMobile ? containerW * 0.42 : SIDEWALK_W + 2 * laneW);
+  const cameraX = Math.min(0, anchorX - cameraTarget);
   const chickenSize = Math.min(laneW * (isMobile ? 0.42 : 0.46), isMobile ? 76 : 74);
   const coinSize = Math.round(laneW * (isMobile ? 0.52 : 0.42));
   const isOver = phase === "crashed" || phase === "cashed";
@@ -672,8 +677,9 @@ export default function ChickenRoadPage() {
                   </motion.div>
                 )}
 
-                {/* ── cracked landing coin on crossed lanes after game over ── */}
-                {reached && isOver && (
+                {/* ── cracked landing coin on crossed lanes after game over ──
+                    Skip the lane the dead chicken occupies so they don't overlap. */}
+                {reached && isOver && !(phase === "crashed" && underChicken) && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.5 }}
                     animate={{ opacity: 1, scale: 1 }}
