@@ -1,7 +1,7 @@
-import { Body, Controller, Post, Req, UseGuards, Get } from "@nestjs/common";
+import { Body, Controller, Post, Req, UseGuards, Get, Delete, Param } from "@nestjs/common";
 import type { Request } from "express";
 import { AuthService } from "./auth.service";
-import { EnableTwoFaDto, LoginDto, RefreshDto, RegisterDto } from "./dto";
+import { ChangePasswordDto, DisableTwoFaDto, EnableTwoFaDto, LoginDto, RefreshDto, RegisterDto } from "./dto";
 import { JwtAuthGuard } from "./jwt-auth.guard";
 import { CurrentUser, AuthUser } from "../../common/decorators/current-user.decorator";
 
@@ -45,5 +45,41 @@ export class AuthController {
   @Post("2fa/enable")
   enable2fa(@CurrentUser() user: AuthUser, @Body() dto: EnableTwoFaDto) {
     return this.auth.enable2fa(user.id, dto.otp);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("2fa/disable")
+  disable2fa(@CurrentUser() user: AuthUser, @Body() dto: DisableTwoFaDto) {
+    return this.auth.disable2fa(user.id, dto.otp);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("security/overview")
+  securityOverview(@CurrentUser() user: AuthUser) {
+    return this.auth.getSecurityOverview(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("change-password")
+  changePassword(@CurrentUser() user: AuthUser, @Body() dto: ChangePasswordDto, @Req() req: Request) {
+    return this.auth.changePassword(user.id, dto.currentPassword, dto.newPassword, req.ip, req.headers["user-agent"]);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("sessions")
+  listSessions(@CurrentUser() user: AuthUser) {
+    return this.auth.listSessions(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete("sessions/:id")
+  revokeSession(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.auth.revokeSession(user.id, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("sessions/revoke-all")
+  revokeAllSessions(@CurrentUser() user: AuthUser, @Req() req: Request) {
+    return this.auth.revokeAllSessions(user.id, req.ip, req.headers["user-agent"]);
   }
 }

@@ -28,3 +28,14 @@ export class RefreshDto {
 export class EnableTwoFaDto {
   @IsString() otp!: string;
 }
+
+export class DisableTwoFaDto {
+  @IsString() otp!: string;
+}
+
+export class ChangePasswordDto {
+  @IsString() currentPassword!: string;
+
+  @IsString() @MinLength(8) @MaxLength(64)
+  newPassword!: string;
+}

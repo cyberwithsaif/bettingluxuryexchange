@@ -107,6 +107,68 @@ export class AuthService {
     return { ok: true };
   }
 
+  async disable2fa(userId: string, otp: string) {
+    const u = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!u?.twoFactorEnabled || !u.twoFactorSecret) throw new BadRequestException("2FA is not enabled");
+    const ok = speakeasy.totp.verify({ secret: u.twoFactorSecret, encoding: "base32", token: otp, window: 1 });
+    if (!ok) throw new UnauthorizedException("Invalid OTP");
+    await this.prisma.user.update({ where: { id: userId }, data: { twoFactorEnabled: false, twoFactorSecret: null } });
+    return { ok: true };
+  }
+
+  // -- Security overview --
+  async getSecurityOverview(userId: string) {
+    const u = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true, email: true, phone: true, twoFactorEnabled: true, lastLoginAt: true, lastLoginIp: true, createdAt: true },
+    });
+    if (!u) throw new UnauthorizedException();
+    const activeSessions = await this.prisma.refreshToken.count({
+      where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
+    });
+    return { ...u, activeSessions };
+  }
+
+  // -- Password --
+  async changePassword(userId: string, currentPassword: string, newPassword: string, ip?: string, ua?: string) {
+    const u = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!u) throw new UnauthorizedException();
+    const ok = await bcrypt.compare(currentPassword, u.passwordHash);
+    if (!ok) throw new UnauthorizedException("Current password is incorrect");
+    if (await bcrypt.compare(newPassword, u.passwordHash)) {
+      throw new BadRequestException("New password must be different from the current one");
+    }
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+    // Revoke all existing sessions for safety, then re-issue for this device.
+    await this.prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
+    return this.issueTokens(u.id, u.username, u.role, ip, ua);
+  }
+
+  // -- Sessions --
+  async listSessions(userId: string) {
+    return this.prisma.refreshToken.findMany({
+      where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, ip: true, userAgent: true, createdAt: true, expiresAt: true },
+    });
+  }
+
+  async revokeSession(userId: string, sessionId: string) {
+    const s = await this.prisma.refreshToken.findFirst({ where: { id: sessionId, userId } });
+    if (!s) throw new BadRequestException("Session not found");
+    await this.prisma.refreshToken.update({ where: { id: sessionId }, data: { revokedAt: new Date() } });
+    return { ok: true };
+  }
+
+  async revokeAllSessions(userId: string, ip?: string, ua?: string) {
+    const u = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!u) throw new UnauthorizedException();
+    const r = await this.prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
+    const tokens = await this.issueTokens(u.id, u.username, u.role, ip, ua);
+    return { ...tokens, revoked: r.count };
+  }
+
   private async issueTokens(userId: string, username: string, role: string, ip?: string, ua?: string) {
     const accessToken = this.jwt.sign({ sub: userId, username, role });
     const refreshToken = crypto.randomBytes(48).toString("base64url");
