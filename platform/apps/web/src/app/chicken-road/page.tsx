@@ -516,12 +516,19 @@ export default function ChickenRoadPage() {
     socket.current?.emit("chickenRoad:cashout", { sessionId: session.id });
   };
 
-  const handleReset = () => {
+  // After a round ends (crash/cashout), one tap of "Start Game" should clear the
+  // finished board AND immediately deal a fresh round — no second click needed.
+  const handlePlayAgain = () => {
+    if (!user) { showError("Please log in to play"); return; }
+    if (loading) return;
+    const newSeed = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
     setPhase("idle");
     setSession(null);
     setCrashLane(null);
     setCashoutAmt(null);
-    setClientSeed(crypto.randomUUID().replace(/-/g, "").slice(0, 16));
+    setClientSeed(newSeed);
+    setLoading(true);
+    socket.current?.emit("chickenRoad:start", { betAmount, difficulty, clientSeed: newSeed });
   };
 
   const adjustBet = (factor: number) => setBetAmount(prev => Math.max(10, Math.round(prev * factor)));
@@ -704,7 +711,6 @@ export default function ChickenRoadPage() {
             const isCashoutLane = phase === "cashed" && i === currentLane - 1;
             // future lanes past the end-game point: show dimmed multiplier text only
             const isPostGame = isOver && !reached && !isCrashLane;
-            const coinPx = Math.round(coinSize * 1.1);
 
             return (
               <div key={i} className="absolute top-0 bottom-0" style={{ left, width: laneW }}>
@@ -753,60 +759,16 @@ export default function ChickenRoadPage() {
                   </motion.div>
                 )}
 
-                {/* ── after cashout: plain logo (same as during running) ── */}
-                {reached && phase === "cashed" && !underChicken && (
+                {/* ── logo on crossed lanes (running, cashed, AND crash) ──
+                    On crash the chicken moves onto the crash lane, so every
+                    crossed lane — including the one it was just standing on —
+                    shows the logo. While running/cashed, the lane under the
+                    chicken is excluded (chicken / checkmark badge sits there). */}
+                {reached && (phase === "crashed" || !underChicken) && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.6 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.25, type: "spring", stiffness: 280, damping: 22 }}
-                    style={{
-                      position: "absolute",
-                      left: Math.round((laneW - coinSize * 1.35) / 2),
-                      top: Math.round((boardH - coinSize * 1.35) / 2),
-                      width: Math.round(coinSize * 1.35),
-                      height: Math.round(coinSize * 1.35),
-                    }}
-                  >
-                    <img src="/logo.png" alt="" draggable={false}
-                      style={{ width: "100%", height: "100%", objectFit: "contain", filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.4))" }} />
-                  </motion.div>
-                )}
-
-                {/* ── after crash: cracked coin on crossed lanes (not on the dead-chicken lane) ── */}
-                {reached && phase === "crashed" && !underChicken && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.25, type: "spring", stiffness: 280, damping: 22 }}
-                    style={{
-                      position: "absolute",
-                      left: Math.round((laneW - coinPx) / 2),
-                      top: Math.round((boardH - coinPx) / 2),
-                      width: coinPx, height: coinPx,
-                    }}
-                  >
-                    <div style={{ position: "absolute", width: coinPx * 1.5, height: coinPx * 0.28, left: -coinPx * 0.25, bottom: -coinPx * 0.06, borderRadius: "50%", background: "rgba(0,0,0,0.28)", filter: "blur(5px)" }} />
-                    {[18, 72, 130, 198, 265, 320].map((angle) => (
-                      <div key={angle} style={{
-                        position: "absolute", width: 2, height: Math.round(coinPx * 0.28),
-                        background: "rgba(0,0,0,0.28)", borderRadius: 1,
-                        bottom: 0, left: "50%",
-                        transformOrigin: "bottom center",
-                        transform: `translateX(-50%) rotate(${angle}deg)`,
-                      }} />
-                    ))}
-                    <div style={{ position: "relative", zIndex: 1 }}>
-                      <Coin size={coinPx} variant="collected" label="" logoSrc="/logo.png" />
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* ── logo on crossed lanes during running (mobile + desktop) ── */}
-                {reached && !underChicken && !isOver && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.6 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.5, type: "spring", stiffness: 320, damping: 20 }}
+                    transition={{ delay: phase === "running" ? 0.5 : 0.2, type: "spring", stiffness: 320, damping: 20 }}
                     style={{
                       position: "absolute",
                       left: Math.round((laneW - coinSize * 1.35) / 2),
@@ -1005,7 +967,7 @@ export default function ChickenRoadPage() {
               {loading ? "…" : `Cash Out  ₹${(session ? session.betAmount * multiplier : 0).toFixed(2)}`}
             </motion.button>
           ) : (
-            <motion.button onClick={isOver ? handleReset : handleStart} whileTap={{ scale: 0.97 }}
+            <motion.button onClick={isOver ? handlePlayAgain : handleStart} whileTap={{ scale: 0.97 }}
               disabled={loading}
               className="w-full py-3 rounded-xl font-bold text-sm uppercase tracking-widest text-[#0a0b16] transition disabled:opacity-50"
               style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", boxShadow: "0 4px 12px rgba(251,191,36,0.3)" }}>
@@ -1074,7 +1036,7 @@ export default function ChickenRoadPage() {
                 {loading ? "…" : `Cash Out ₹${(session ? session.betAmount * multiplier : 0).toFixed(2)}`}
               </motion.button>
             ) : (
-              <motion.button onClick={isOver ? handleReset : handleStart} whileTap={{ scale: 0.97 }}
+              <motion.button onClick={isOver ? handlePlayAgain : handleStart} whileTap={{ scale: 0.97 }}
                 disabled={loading}
                 className="w-full py-2.5 rounded-xl font-bold text-sm uppercase tracking-widest text-[#0a0b16] transition disabled:opacity-50"
                 style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", boxShadow: "0 4px 12px rgba(251,191,36,0.3)" }}>
