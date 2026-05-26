@@ -598,20 +598,22 @@ export default function ChickenRoadPage() {
             <label className="text-xs text-white/50 mb-1.5 flex items-center gap-1 font-semibold">
               Bet Amount <span className="text-white/30">↓</span>
             </label>
-            <div className="flex items-stretch gap-1.5">
-              <div className="flex-1 flex items-center rounded-xl px-3 py-2.5 bg-black/30 border border-white/10">
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center rounded-xl px-3 py-2.5 bg-black/30 border border-white/10">
                 <span className="text-white/40 text-sm mr-1 shrink-0">₹</span>
                 <input type="number" value={betAmount}
                   onChange={e => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
                   disabled={phase === "running"}
                   className="bg-transparent flex-1 min-w-0 text-sm font-semibold text-white outline-none disabled:opacity-60" />
               </div>
-              <button onClick={() => adjustBet(0.5)} disabled={phase === "running"}
-                className="px-3 rounded-xl text-xs font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">1/2</button>
-              <button onClick={() => adjustBet(2)} disabled={phase === "running"}
-                className="px-3 rounded-xl text-xs font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">2X</button>
-              <button onClick={() => quickBet(Math.floor(liveBalance ?? betAmount))} disabled={phase === "running"}
-                className="px-3 rounded-xl text-xs font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">Max</button>
+              <div className="grid grid-cols-3 gap-1.5">
+                <button onClick={() => adjustBet(0.5)} disabled={phase === "running"}
+                  className="py-2 rounded-xl text-xs font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">1/2</button>
+                <button onClick={() => adjustBet(2)} disabled={phase === "running"}
+                  className="py-2 rounded-xl text-xs font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">2X</button>
+                <button onClick={() => quickBet(Math.floor(liveBalance ?? betAmount))} disabled={phase === "running"}
+                  className="py-2 rounded-xl text-xs font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">Max</button>
+              </div>
             </div>
           </div>
 
@@ -619,9 +621,9 @@ export default function ChickenRoadPage() {
           <div className="hidden md:block w-px self-stretch" style={{ background: "rgba(99,60,180,0.25)" }} />
 
           {/* Difficulty */}
-          <div className="flex-1 md:px-6">
+          <div className="flex-1 md:px-6 flex flex-col">
             <label className="text-xs text-white/50 mb-1.5 flex items-center gap-1 font-semibold">Difficulty</label>
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-4 gap-1.5 flex-1">
               {(["EASY", "MEDIUM", "HARD", "DAREDEVIL"] as Difficulty[]).map(d => (
                 <button key={d}
                   onClick={() => { if (phase !== "running") setDifficulty(d); }}
@@ -642,7 +644,7 @@ export default function ChickenRoadPage() {
           <div className="hidden md:block w-px self-stretch" style={{ background: "rgba(99,60,180,0.25)" }} />
 
           {/* Action button */}
-          <div className="md:w-64 shrink-0 md:pl-6 flex flex-col gap-2">
+          <div className="md:w-64 shrink-0 md:pl-6 flex flex-col justify-end gap-2">
             {phase === "running" ? (
               <motion.button onClick={handleCashout} whileTap={{ scale: 0.97 }}
                 disabled={loading || currentLane === 0}
