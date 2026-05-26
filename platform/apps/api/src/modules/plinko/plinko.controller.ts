@@ -27,7 +27,7 @@ class SaveConfigDto {
   @IsOptional() @IsNumber() @Min(1)   minBet?: number;
   @IsOptional() @IsNumber() @Min(100) maxBet?: number;
   @IsOptional() @IsNumber() @Min(1000) maxPayout?: number;
-  @IsOptional() @IsNumber() @Min(50) @Max(100) rtpPercent?: number;
+  @IsOptional() @IsNumber() @Min(1) @Max(200) rtpPercent?: number;
 }
 
 @SkipThrottle()
