@@ -31,7 +31,7 @@ export class AuthService {
       },
       select: { id: true, username: true, role: true },
     });
-    return this.issueTokens(user.id, user.username, user.role);
+    return this.issueTokens(user.id, user.username, user.role, 0);
   }
 
   async login(dto: LoginDto, ip?: string, ua?: string) {
@@ -58,7 +58,7 @@ export class AuthService {
       data: { lastLoginAt: new Date(), lastLoginIp: ip ?? null },
     });
 
-    return this.issueTokens(user.id, user.username, user.role, ip, ua);
+    return this.issueTokens(user.id, user.username, user.role, user.tokenVersion, ip, ua);
   }
 
   async refresh(refreshToken: string) {
@@ -75,7 +75,7 @@ export class AuthService {
       where: { tokenHash },
       data: { revokedAt: new Date() },
     });
-    return this.issueTokens(user.id, user.username, user.role);
+    return this.issueTokens(user.id, user.username, user.role, user.tokenVersion);
   }
 
   async logout(refreshToken: string) {
@@ -139,10 +139,14 @@ export class AuthService {
       throw new BadRequestException("New password must be different from the current one");
     }
     const passwordHash = await bcrypt.hash(newPassword, 10);
-    await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
-    // Revoke all existing sessions for safety, then re-issue for this device.
+    // Bump tokenVersion so every existing access token is invalidated immediately.
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash, tokenVersion: { increment: 1 } },
+      select: { tokenVersion: true },
+    });
     await this.prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
-    return this.issueTokens(u.id, u.username, u.role, ip, ua);
+    return this.issueTokens(u.id, u.username, u.role, updated.tokenVersion, ip, ua);
   }
 
   // -- Sessions --
@@ -164,13 +168,20 @@ export class AuthService {
   async revokeAllSessions(userId: string, ip?: string, ua?: string) {
     const u = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!u) throw new UnauthorizedException();
+    // Bump tokenVersion: instantly invalidates every access token on every other
+    // device. Refresh tokens are revoked too so they can't silently re-auth.
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { tokenVersion: { increment: 1 } },
+      select: { tokenVersion: true },
+    });
     const r = await this.prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
-    const tokens = await this.issueTokens(u.id, u.username, u.role, ip, ua);
+    const tokens = await this.issueTokens(u.id, u.username, u.role, updated.tokenVersion, ip, ua);
     return { ...tokens, revoked: r.count };
   }
 
-  private async issueTokens(userId: string, username: string, role: string, ip?: string, ua?: string) {
-    const accessToken = this.jwt.sign({ sub: userId, username, role });
+  private async issueTokens(userId: string, username: string, role: string, tokenVersion: number, ip?: string, ua?: string) {
+    const accessToken = this.jwt.sign({ sub: userId, username, role, tv: tokenVersion });
     const refreshToken = crypto.randomBytes(48).toString("base64url");
     const refreshTtl = Number(process.env.JWT_REFRESH_TTL ?? 2_592_000);
     await this.prisma.refreshToken.create({
