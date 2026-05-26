@@ -585,23 +585,15 @@ export default function ChickenRoadPage() {
                 {/* left lane divider (dashed) */}
                 <div className="absolute top-0 bottom-0 left-0" style={{ width: 4, background: "repeating-linear-gradient(180deg,rgba(255,255,255,0.85),rgba(255,255,255,0.85) 22px,transparent 22px,transparent 44px)" }} />
 
-                {/* multiplier circle (hidden in the cell the chicken occupies) */}
+                {/* multiplier coin (hidden in the cell the chicken occupies) */}
                 {!underChicken && (
                 <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center" style={{ width: coinSize, height: coinSize }}>
                   <motion.div
-                    animate={isNext ? { scale: [1, 1.1, 1], boxShadow: ["0 0 0px rgba(250,204,21,0)", "0 0 22px rgba(250,204,21,0.7)", "0 0 0px rgba(250,204,21,0)"] } : {}}
-                    transition={isNext ? { duration: 1.4, repeat: Infinity } : {}}
-                    className="w-full h-full rounded-full flex items-center justify-center"
-                    style={{
-                      background: reached ? "#22c55e" : isNext ? "#f59e0b" : "#2a2745",
-                      border: `2px solid ${reached ? "#16a34a" : isNext ? "#d97706" : "rgba(255,255,255,0.07)"}`,
-                      boxShadow: reached ? "0 0 0 3px rgba(34,197,94,0.2)" : "none",
-                    }}
+                    animate={isNext ? { scale: [1, 1.08, 1] } : {}}
+                    transition={isNext ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" } : {}}
+                    className="w-full h-full"
                   >
-                    <span className="font-black tabular-nums text-center leading-none px-1"
-                      style={{ fontSize: `clamp(9px, ${coinSize * 0.2}px, 15px)`, color: reached ? "#fff" : isNext ? "#0a0b16" : "rgba(200,195,230,0.6)" }}>
-                      {fmtMult(laneMult)}
-                    </span>
+                    <Coin size={coinSize} variant={reached ? "reached" : isNext ? "next" : "future"} label={fmtMult(laneMult)} />
                   </motion.div>
                 </div>
                 )}
@@ -853,6 +845,45 @@ export default function ChickenRoadPage() {
       <AnimatePresence>
         {showFair && <ProvablyFairModal session={session} onClose={() => setShowFair(false)} />}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Multiplier coin (textured manhole) ─────────────────────────────────────────
+
+const COIN_PALETTE = {
+  future:  { b1: "#474a8e", b2: "#2b2f67", b3: "#202552", ring1: "#4e5395", ring2: "#232858", sA: "#252a5c", sB: "#353b77", inner: "#1b1f48", text: "#aeb7ff", glow: "rgba(135,145,255,.4)" },
+  next:    { b1: "#fcd34d", b2: "#f59e0b", b3: "#b45309", ring1: "#fde68a", ring2: "#92400e", sA: "#b45309", sB: "#f59e0b", inner: "#78350f", text: "#fffbeb", glow: "rgba(251,191,36,.55)" },
+  reached: { b1: "#4ade80", b2: "#16a34a", b3: "#15803d", ring1: "#86efac", ring2: "#166534", sA: "#15803d", sB: "#22c55e", inner: "#14532d", text: "#f0fdf4", glow: "rgba(34,197,94,.5)" },
+} as const;
+
+function Coin({ size, variant, label }: { size: number; variant: keyof typeof COIN_PALETTE; label: string }) {
+  const p = COIN_PALETTE[variant];
+  const inner = size * 0.63;
+  const stripe = Math.max(4, inner * 0.07);
+  const fontSize = Math.max(9, Math.min(size * 0.155, 18));
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%", position: "relative",
+      background: `radial-gradient(circle at top left, ${p.b1} 0%, ${p.b2} 45%, ${p.b3} 100%)`,
+      boxShadow: `inset 0 0 0 ${size * 0.028}px ${p.ring1}, inset 0 0 0 ${size * 0.07}px ${p.ring2}, 0 ${size * 0.07}px ${size * 0.14}px rgba(0,0,0,.35)`,
+      display: "flex", justifyContent: "center", alignItems: "center",
+    }}>
+      <div style={{
+        width: inner, height: inner, borderRadius: "50%", position: "relative",
+        background: `repeating-linear-gradient(90deg, ${p.sA} 0px, ${p.sA} ${stripe}px, ${p.sB} ${stripe}px, ${p.sB} ${stripe * 2}px)`,
+        boxShadow: `inset 0 0 0 ${size * 0.028}px ${p.inner}, inset 0 ${size * 0.07}px ${size * 0.1}px rgba(255,255,255,.05), inset 0 -${size * 0.07}px ${size * 0.1}px rgba(0,0,0,.35)`,
+        display: "flex", justifyContent: "center", alignItems: "center",
+      }}>
+        <span className="tabular-nums" style={{
+          position: "relative", zIndex: 2, fontSize, fontWeight: 900, color: p.text,
+          letterSpacing: "-0.5px", textShadow: `0 2px 0 ${p.inner}, 0 0 10px ${p.glow}`,
+        }}>{label}</span>
+      </div>
+      <div style={{
+        position: "absolute", top: size * 0.13, left: size * 0.17, width: size * 0.28, height: size * 0.1,
+        borderRadius: "50%", background: "rgba(255,255,255,.1)", transform: "rotate(-20deg)", filter: "blur(2px)",
+      }} />
     </div>
   );
 }
