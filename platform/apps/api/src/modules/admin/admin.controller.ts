@@ -182,6 +182,13 @@ export class AdminController {
   @Get("pl-control")
   plControl() { return this.admin.getPlControl(); }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  @Post("pl-control")
+  savePlControl(@CurrentUser() actor: AuthUser, @Body() dto: any, @Req() req: Request) {
+    void this.admin.writeAudit(actor.id, "pl.control.update", undefined, dto, req.ip);
+    return this.admin.savePlatformSettings(dto);
+  }
+
   @Get("risk")
   risk(@Query("limit") limit?: string) { return this.admin.liveRisk(limit ? Number(limit) : 25); }
 

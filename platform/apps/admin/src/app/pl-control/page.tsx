@@ -95,7 +95,7 @@ function GameControl({ game }: { game: Game }) {
         };
         if (game.keys.houseEdge) body[game.keys.houseEdge] = edge;
         if (game.keys.hardness) body[game.keys.hardness] = hardness;
-        await api.post("/admin/platform-settings", body);
+        await api.post("/admin/pl-control", body);
       } else if (game.target === "endpoint" && game.endpoint) {
         const body: Record<string, unknown> = { rtpPercent: rtp, maxPayout, minBet, maxBet, enabled };
         if (game.hasForce) {
