@@ -470,7 +470,7 @@ export default function ChickenRoadPage() {
         onTouchEnd={onTouchEnd}
         onClick={() => phase === "running" && handleMove()}
         className="relative h-[46vh] flex-none md:flex-1 md:h-auto overflow-hidden select-none"
-        style={{ background: "linear-gradient(180deg,#161527,#0d0c18)", cursor: phase === "running" ? "pointer" : "default" }}
+        style={{ background: "#313463", cursor: phase === "running" ? "pointer" : "default" }}
       >
         {/* Top HUD */}
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 pointer-events-none">
@@ -581,7 +581,7 @@ export default function ChickenRoadPage() {
             return (
               <div key={i} className="absolute top-0 bottom-0" style={{ left, width: laneW }}>
                 {/* asphalt */}
-                <div className="absolute inset-0" style={{ background: reached ? "linear-gradient(180deg,#3a3357,#2b2747)" : "linear-gradient(180deg,#2a2742,#211e38)" }} />
+                <div className="absolute inset-0" style={{ background: reached ? "#3a3d70" : "#313463" }} />
                 {/* left lane divider (dashed) */}
                 <div className="absolute top-0 bottom-0 left-0" style={{ width: 4, background: "repeating-linear-gradient(180deg,rgba(255,255,255,0.85),rgba(255,255,255,0.85) 22px,transparent 22px,transparent 44px)" }} />
 
