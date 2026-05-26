@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from "@nestjs/common";
-import { BetStatus, LedgerKind, Prisma, TransactionStatus } from "@prisma/client";
+import { BetStatus, LedgerKind, Prisma, TransactionStatus, UserRole } from "@prisma/client";
+import * as os from "os";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { RedisService } from "../../common/redis/redis.service";
 
@@ -552,6 +553,162 @@ export class AdminService {
   async addUserNote(actorId: string, targetUserId: string, note: string) {
     await this.writeAudit(actorId, "admin.note", { type: "user", id: targetUserId }, { note });
     return { ok: true };
+  }
+
+  // ── Provably Fair ───────────────────────────────────────────────────────────
+  /** Seed records across all in-house games. The server seed is only exposed once
+   *  a round has settled (live rounds keep it hidden — only the hash is published). */
+  async listProvablyFair(opts: { game?: string; username?: string; limit?: number } = {}) {
+    const take = Math.min(opts.limit ?? 60, 200);
+    const userFilter = opts.username
+      ? { user: { username: { contains: opts.username, mode: "insensitive" as const } } }
+      : {};
+    const g = opts.game;
+    const withUser = { user: { select: { username: true } } };
+    const seedSel = { id: true, serverSeed: true, serverSeedHash: true, clientSeed: true, nonce: true, createdAt: true, ...withUser };
+
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const [mines, plinko, pump, dice, towers, chicken] = await Promise.all([
+      (!g || g === "mines")        ? this.prisma.minesSession.findMany({ where: userFilter, orderBy: { createdAt: "desc" }, take, select: { ...seedSel, status: true } }) : [],
+      (!g || g === "plinko")       ? this.prisma.plinkoBet.findMany({ where: userFilter, orderBy: { createdAt: "desc" }, take, select: seedSel }) : [],
+      (!g || g === "pump")         ? this.prisma.pumpBet.findMany({ where: userFilter, orderBy: { createdAt: "desc" }, take, select: { ...seedSel, status: true } }) : [],
+      (!g || g === "dice")         ? this.prisma.diceBet.findMany({ where: userFilter, orderBy: { createdAt: "desc" }, take, select: seedSel }) : [],
+      (!g || g === "towers")       ? this.prisma.towersSession.findMany({ where: userFilter, orderBy: { createdAt: "desc" }, take, select: { ...seedSel, status: true } }) : [],
+      (!g || g === "chicken-road") ? this.prisma.chickenRoadSession.findMany({ where: userFilter, orderBy: { createdAt: "desc" }, take, select: { ...seedSel, status: true } }) : [],
+    ]);
+
+    const map = (rows: any[], game: string) => rows.map((r) => {
+      const live = r.status === "IN_PROGRESS" || r.status === "ACTIVE";
+      return {
+        id: r.id, game, username: r.user?.username ?? "—",
+        serverSeed: live ? null : r.serverSeed,   // unrevealed while the round is live
+        serverSeedHash: r.serverSeedHash, clientSeed: r.clientSeed, nonce: r.nonce,
+        status: r.status ?? "SETTLED", createdAt: r.createdAt,
+      };
+    });
+    /* eslint-enable @typescript-eslint/no-explicit-any */
+
+    const all = [
+      ...map(mines, "mines"), ...map(plinko, "plinko"), ...map(pump, "pump"),
+      ...map(dice, "dice"), ...map(towers, "towers"), ...map(chicken, "chicken-road"),
+    ];
+    all.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return all.slice(0, take);
+  }
+
+  // ── Real-time Monitoring ─────────────────────────────────────────────────────
+  async getMonitoring() {
+    const now = Date.now();
+    const online5 = new Date(now - 5 * 60_000);
+    const lastHour = new Date(now - 60 * 60_000);
+
+    const dbStart = Date.now();
+    const [
+      onlineUsers, openBets,
+      minesActive, towersActive, chickenActive, pumpActive,
+      depHour, wdHour, bigWins,
+    ] = await Promise.all([
+      this.prisma.user.count({ where: { lastLoginAt: { gte: online5 } } }),
+      this.prisma.bet.count({ where: { status: "OPEN" } }),
+      this.prisma.minesSession.count({ where: { status: "IN_PROGRESS" } }),
+      this.prisma.towersSession.count({ where: { status: "IN_PROGRESS" } }),
+      this.prisma.chickenRoadSession.count({ where: { status: "IN_PROGRESS" } }),
+      this.prisma.pumpBet.count({ where: { status: "ACTIVE" } }),
+      this.prisma.transaction.aggregate({ _count: { _all: true }, _sum: { amount: true }, where: { kind: "DEPOSIT", createdAt: { gte: lastHour } } }),
+      this.prisma.transaction.aggregate({ _count: { _all: true }, _sum: { amount: true }, where: { kind: "WITHDRAWAL", createdAt: { gte: lastHour } } }),
+      this.prisma.ledgerEntry.findMany({ where: { kind: "CASINO_WIN", amount: { gt: 0 }, createdAt: { gte: lastHour } }, orderBy: { amount: "desc" }, take: 8, include: { user: { select: { username: true } } } }),
+    ]);
+    const dbLatencyMs = Date.now() - dbStart;
+
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const load = os.loadavg();
+    const cpuCount = os.cpus().length || 1;
+    const mem = process.memoryUsage();
+
+    return {
+      online: {
+        users: onlineUsers,
+        openBets,
+        activeSessions: minesActive + towersActive + chickenActive + pumpActive,
+        sessionsByGame: { mines: minesActive, towers: towersActive, "chicken-road": chickenActive, pump: pumpActive },
+      },
+      flow: {
+        depositsHour:    { count: depHour._count._all, amount: Number(depHour._sum.amount ?? 0) },
+        withdrawalsHour: { count: wdHour._count._all,  amount: Number(wdHour._sum.amount ?? 0) },
+      },
+      bigWins: bigWins.map((w) => ({ username: w.user?.username ?? "—", amount: Number(w.amount.toString()), at: w.createdAt })),
+      system: {
+        cpuCount,
+        load1: Math.round(load[0] * 100) / 100,
+        loadPct: Math.min(100, Math.round((load[0] / cpuCount) * 100)),
+        memTotalMB: Math.round(totalMem / 1048576),
+        memUsedMB: Math.round((totalMem - freeMem) / 1048576),
+        memUsedPct: Math.round(((totalMem - freeMem) / totalMem) * 100),
+        heapUsedMB: Math.round(mem.heapUsed / 1048576),
+        rssMB: Math.round(mem.rss / 1048576),
+        uptimeSec: Math.round(process.uptime()),
+        dbLatencyMs,
+      },
+    };
+  }
+
+  // ── Affiliates / Referrals ────────────────────────────────────────────────────
+  async listAffiliates(opts: { limit?: number } = {}) {
+    const take = Math.min(opts.limit ?? 100, 500);
+    // An affiliate is any user that has at least one referral (child) in the hierarchy.
+    const agents = await this.prisma.user.findMany({
+      where: { children: { some: {} } },
+      take,
+      select: {
+        id: true, username: true, role: true, partnershipBps: true, createdAt: true,
+        _count: { select: { children: true } },
+      },
+    });
+    const ids = agents.map((a) => a.id);
+    const commissions = ids.length
+      ? await this.prisma.ledgerEntry.groupBy({ by: ["userId"], where: { userId: { in: ids }, kind: "COMMISSION_PAYOUT" }, _sum: { amount: true } })
+      : [];
+    const cm: Record<string, number> = {};
+    for (const c of commissions) cm[c.userId] = Math.abs(Number((c._sum.amount ?? new Prisma.Decimal(0)).toString()));
+
+    const totalReferrals = agents.reduce((s, a) => s + a._count.children, 0);
+    const totalCommission = Object.values(cm).reduce((s, v) => s + v, 0);
+
+    return {
+      summary: {
+        affiliates: agents.length,
+        totalReferrals,
+        totalCommission: Math.round(totalCommission * 100) / 100,
+      },
+      rows: agents
+        .map((a) => ({
+          id: a.id, username: a.username, role: a.role,
+          referrals: a._count.children,
+          partnershipBps: a.partnershipBps,
+          commissionEarned: cm[a.id] ?? 0,
+          createdAt: a.createdAt,
+        }))
+        .sort((x, y) => y.referrals - x.referrals),
+    };
+  }
+
+  // ── Admin / Staff role management ──────────────────────────────────────────────
+  listStaff() {
+    return this.prisma.user.findMany({
+      where: { role: { not: UserRole.USER } },
+      orderBy: [{ role: "asc" }, { createdAt: "asc" }],
+      select: { id: true, username: true, email: true, role: true, status: true, lastLoginAt: true, lastLoginIp: true, createdAt: true },
+    });
+  }
+
+  async setUserRole(targetUserId: string, role: UserRole, actorRole: UserRole) {
+    const target = await this.prisma.user.findUniqueOrThrow({ where: { id: targetUserId }, select: { id: true, role: true } });
+    // Only a Super Admin may grant or revoke the Super Admin role.
+    if ((target.role === UserRole.SUPER_ADMIN || role === UserRole.SUPER_ADMIN) && actorRole !== UserRole.SUPER_ADMIN) {
+      throw new BadRequestException("Only a Super Admin can manage Super Admin roles");
+    }
+    return this.prisma.user.update({ where: { id: targetUserId }, data: { role }, select: { id: true, username: true, role: true } });
   }
 }
 

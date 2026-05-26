@@ -44,6 +44,10 @@ class BetActionDto {
   @IsIn(["void", "cancel"]) action!: "void" | "cancel";
 }
 
+class SetRoleDto {
+  @IsEnum(UserRole) role!: UserRole;
+}
+
 class PlatformSettingsDto {
   @IsOptional() @IsNumber() @Min(1) minStake?: number;
   @IsOptional() @IsNumber() @Min(100) maxStake?: number;
@@ -230,6 +234,44 @@ export class AdminController {
   @Get("reports")
   reports(@Query("days") days?: string) {
     return this.admin.getReports({ days: days ? Number(days) : undefined });
+  }
+
+  // -- Provably fair seed viewer --
+
+  @Get("provably-fair")
+  provablyFair(
+    @Query("game") game?: string,
+    @Query("username") username?: string,
+    @Query("limit") limit?: string,
+  ) {
+    return this.admin.listProvablyFair({ game, username, limit: limit ? Number(limit) : undefined });
+  }
+
+  // -- Real-time monitoring --
+
+  @Get("monitoring")
+  monitoring() { return this.admin.getMonitoring(); }
+
+  // -- Affiliates / referrals --
+
+  @Get("affiliates")
+  affiliates(@Query("limit") limit?: string) {
+    return this.admin.listAffiliates({ limit: limit ? Number(limit) : undefined });
+  }
+
+  // -- Admin / staff role management --
+
+  @Get("staff")
+  staff() { return this.admin.listStaff(); }
+
+  @Patch("users/:id/role")
+  async setRole(
+    @CurrentUser() actor: AuthUser, @Param("id") id: string,
+    @Body() dto: SetRoleDto, @Req() req: Request,
+  ) {
+    const result = await this.admin.setUserRole(id, dto.role, actor.role as UserRole);
+    await this.admin.writeAudit(actor.id, "user.role.set", { type: "user", id }, dto, req.ip);
+    return result;
   }
 
   // -- Bet void / cancel --

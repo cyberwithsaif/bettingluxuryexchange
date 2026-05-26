@@ -5,7 +5,8 @@ import { useEffect, useState, useCallback } from "react";
 import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpToLine,
   Settings, Key, ListChecks, ShieldAlert, LogOut, Trophy,
-  Ticket, BarChart3, Bell, Menu, X, CreditCard, Megaphone, Gamepad2,
+  Ticket, BarChart3, Bell, Menu, X, CreditCard, Gamepad2,
+  ShieldCheck, Activity, Share2, UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -19,11 +20,15 @@ const NAV = [
   { href: "/deposits",                 label: "Deposits",        Icon: ArrowDownToLine },
   { href: "/withdrawals",              label: "Withdrawals",     Icon: ArrowUpToLine },
   { href: "/markets",                  label: "Markets",         Icon: Trophy },
+  { href: "/affiliates",               label: "Affiliates",      Icon: Share2 },
   { href: "/risk",                     label: "Live Risk",       Icon: ShieldAlert },
+  { href: "/monitoring",               label: "Monitoring",      Icon: Activity },
+  { href: "/provably-fair",            label: "Provably Fair",   Icon: ShieldCheck },
   { href: "/reports",                  label: "Reports",         Icon: BarChart3 },
   { href: "/notifications",            label: "Announcements",   Icon: Bell },
   { href: "/settings/payment-methods", label: "Payment Methods", Icon: CreditCard },
   { href: "/api-keys",                 label: "API Keys",        Icon: Key },
+  { href: "/roles",                    label: "Admin Roles",     Icon: UserCog },
   { href: "/logs",                     label: "Audit Logs",      Icon: ListChecks },
   { href: "/settings",                 label: "Settings",        Icon: Settings },
 ] as const;
