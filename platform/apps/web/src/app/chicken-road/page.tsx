@@ -207,6 +207,82 @@ function Chicken({ size, dead = false }: { size: number; dead?: boolean }) {
   );
 }
 
+// ─── Dead Chicken (CSS replica of the reference design) ──────────────────────
+
+function DeadChicken({ size }: { size: number }) {
+  // All coordinates reference a 175×140 viewport
+  const s = size / 175;
+  const p = (n: number) => Math.round(n * s);
+
+  const featherShape = (left?: number, top?: number, right?: number, rotate?: number): React.CSSProperties => ({
+    position: "absolute",
+    width: p(44), height: p(20),
+    background: "#dfe4ff",
+    border: `${Math.max(1, p(3))}px solid #21265d`,
+    borderRadius: "60% 60% 60% 10%",
+    ...(left !== undefined ? { left: p(left) } : {}),
+    ...(right !== undefined ? { right: p(right) } : {}),
+    ...(top !== undefined ? { top: p(top) } : {}),
+    transform: `rotate(${rotate ?? 0}deg)`,
+    boxShadow: `0 ${p(4)}px 0 rgba(0,0,0,.15)`,
+  });
+
+  const xEye = (left: number, top: number) => (
+    <div style={{ position: "absolute", width: p(14), height: p(14), left: p(left), top: p(top) }}>
+      <div style={{ position: "absolute", width: "100%", height: p(3.5), background: "#22285d", borderRadius: p(3), top: "38%", transformOrigin: "center", transform: "rotate(45deg)" }} />
+      <div style={{ position: "absolute", width: "100%", height: p(3.5), background: "#22285d", borderRadius: p(3), top: "38%", transformOrigin: "center", transform: "rotate(-45deg)" }} />
+    </div>
+  );
+
+  return (
+    <div style={{ position: "relative", width: p(175), height: p(140) }}>
+
+      {/* Feathers */}
+      <div style={featherShape(0, 4, undefined, 10)} />
+      <div style={featherShape(undefined, 2, 0, -12)} />
+      <div style={featherShape(undefined, 26, 6, 8)} />
+
+      {/* Shadow */}
+      <div style={{ position: "absolute", width: p(90), height: p(18), background: "rgba(0,0,0,.2)", borderRadius: "50%", left: p(42), bottom: p(6), filter: `blur(${p(3)}px)` }} />
+
+      {/* Body */}
+      <div style={{
+        position: "absolute", width: p(104), height: p(80),
+        background: "#f6f7ff", border: `${Math.max(1, p(4))}px solid #1f255c`,
+        borderRadius: "50% 50% 45% 45%",
+        left: p(35), top: p(38),
+        transform: "rotate(-6deg)",
+        boxShadow: `inset 0 ${p(-8)}px 0 rgba(0,0,0,.04), 0 ${p(7)}px 0 rgba(0,0,0,.15)`,
+      }} />
+
+      {/* Comb */}
+      <div style={{ position: "absolute", top: p(26), left: p(82), display: "flex", gap: p(2) }}>
+        <span style={{ display: "block", width: p(10), height: p(14), background: "#ff5b5b", borderRadius: "50%", border: `${Math.max(1, p(2))}px solid #e54848` }} />
+        <span style={{ display: "block", width: p(10), height: p(12), background: "#ff5b5b", borderRadius: "50%", border: `${Math.max(1, p(2))}px solid #e54848`, transform: "translateY(2px)" }} />
+      </div>
+
+      {/* X eyes */}
+      {xEye(52, 70)}
+      {xEye(72, 66)}
+
+      {/* Beak */}
+      <div style={{ position: "absolute", left: p(103), top: p(80), width: p(16), height: p(14), background: "#f2ad1d", clipPath: "polygon(0 50%,100% 0,100% 100%)", borderRadius: p(2) }} />
+
+      {/* Left leg */}
+      <div style={{ position: "absolute", width: p(26), height: p(8), background: "#f0a600", borderRadius: p(10), bottom: p(12), left: p(46), transform: "rotate(-20deg)", boxShadow: `0 ${p(4)}px 0 rgba(0,0,0,.2)` }}>
+        <div style={{ position: "absolute", width: p(16), height: p(6), background: "#f0a600", borderRadius: p(10), left: p(-6), top: p(-4), transform: "rotate(-35deg)" }} />
+        <div style={{ position: "absolute", width: p(16), height: p(6), background: "#f0a600", borderRadius: p(10), right: p(-6), top: p(4), transform: "rotate(35deg)" }} />
+      </div>
+
+      {/* Right leg */}
+      <div style={{ position: "absolute", width: p(26), height: p(8), background: "#f0a600", borderRadius: p(10), bottom: p(12), right: p(40), transform: "rotate(18deg)", boxShadow: `0 ${p(4)}px 0 rgba(0,0,0,.2)` }}>
+        <div style={{ position: "absolute", width: p(16), height: p(6), background: "#f0a600", borderRadius: p(10), left: p(-6), top: p(4), transform: "rotate(-35deg)" }} />
+        <div style={{ position: "absolute", width: p(16), height: p(6), background: "#f0a600", borderRadius: p(10), right: p(-6), top: p(-4), transform: "rotate(35deg)" }} />
+      </div>
+    </div>
+  );
+}
+
 // ─── Provably Fair Modal ───────────────────────────────────────────────────────
 
 function ProvablyFairModal({ session, onClose }: { session: Session | null; onClose: () => void }) {
@@ -802,50 +878,69 @@ export default function ChickenRoadPage() {
             <div className="absolute top-0 bottom-0 left-0" style={{ width: laneW * 0.4, background: "repeating-linear-gradient(180deg,#d7d3e4,#d7d3e4 26px,#c8c3da 26px,#c8c3da 52px)" }} />
           </div>
 
-          {/* Chicken — hidden on cashout (badge on lane), flattened on crash */}
+          {/* Chicken — hidden on cashout, replaced with dead sprite on crash */}
           <motion.div
-            className="absolute z-20 flex flex-col items-center justify-center gap-2"
-            style={{ width: laneW, top: 0, bottom: 0, paddingTop: Math.round(boardH * 0.08) }}
+            className="absolute z-20"
+            style={{ width: laneW, top: 0, bottom: 0 }}
             animate={{
               left: phase === "crashed" && crashLane !== null
-                ? SIDEWALK_W + crashLane * laneW          // centre of crash lane
+                ? SIDEWALK_W + crashLane * laneW
                 : chickenCenterTrack - laneW / 2,
             }}
             transition={{ type: "spring", stiffness: 260, damping: 22 }}
           >
-            <motion.div
-              animate={
-                phase === "crashed"
-                  ? { scaleY: 0.22, scaleX: 1.2, y: Math.round(chickenSize * 0.2), opacity: 1 }
-                  : phase === "cashed"
-                  ? { opacity: 0, y: -Math.round(chickenSize * 0.6), scale: 1.1 }
-                  : loading
-                  ? { y: [0, -boardH * 0.06, 0], scaleY: 1, scaleX: 1, opacity: 1 }
-                  : { y: 0, scaleY: 1, scaleX: 1, opacity: 1 }
-              }
-              transition={
-                phase === "crashed" ? { duration: 0.25, ease: "easeOut" }
-                  : phase === "cashed" ? { duration: 0.3, ease: "easeIn" }
-                  : { duration: 0.3, repeat: loading ? Infinity : 0 }
-              }
-            >
-              <Chicken size={chickenSize} dead={phase === "crashed"} />
-            </motion.div>
-            {/* running multiplier badge — only during active play */}
-            {phase === "running" && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="px-2.5 py-1 rounded-lg text-xs font-black tabular-nums"
-                style={{
-                  background: "rgba(10,11,22,0.92)",
-                  border: "1px solid rgba(139,92,246,0.5)",
-                  color: "#c4b5fd",
-                  backdropFilter: "blur(4px)",
-                }}>
-                {fmtMult(multiplier)}
-              </motion.div>
-            )}
+            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: Math.round(boardH * 0.08), gap: 8 }}>
+
+              {/* Alive chicken — hidden instantly on crash, flies off on cashout */}
+              {phase !== "crashed" && (
+                <motion.div
+                  animate={
+                    phase === "cashed"
+                      ? { opacity: 0, y: -Math.round(chickenSize * 0.6), scale: 1.1 }
+                      : loading
+                      ? { y: [0, -boardH * 0.06, 0], opacity: 1 }
+                      : { y: 0, opacity: 1 }
+                  }
+                  transition={
+                    phase === "cashed" ? { duration: 0.3, ease: "easeIn" }
+                      : { duration: 0.3, repeat: loading ? Infinity : 0 }
+                  }
+                >
+                  <Chicken size={chickenSize} />
+                </motion.div>
+              )}
+
+              {/* Dead chicken sprite — pops in after crash */}
+              <AnimatePresence>
+                {phase === "crashed" && (
+                  <motion.div
+                    key="dead"
+                    style={{ position: "absolute", left: "50%", top: "50%", x: "-50%", y: "-50%", marginTop: Math.round(boardH * 0.04) }}
+                    initial={{ opacity: 0, scale: 0.6, rotate: -18 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 22, delay: 0.08 }}
+                  >
+                    <DeadChicken size={Math.min(laneW * 0.9, isMobile ? 130 : 140)} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Running multiplier badge */}
+              {phase === "running" && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="px-2.5 py-1 rounded-lg text-xs font-black tabular-nums"
+                  style={{
+                    background: "rgba(10,11,22,0.92)",
+                    border: "1px solid rgba(139,92,246,0.5)",
+                    color: "#c4b5fd",
+                    backdropFilter: "blur(4px)",
+                  }}>
+                  {fmtMult(multiplier)}
+                </motion.div>
+              )}
+            </div>
           </motion.div>
 
           {/* Crash burst */}
@@ -856,19 +951,6 @@ export default function ChickenRoadPage() {
           </AnimatePresence>
         </motion.div>
 
-        {/* Tap-to-play-again hint — floats at bottom when game ends */}
-        <AnimatePresence>
-          {isOver && (
-            <motion.button
-              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              onClick={handleReset}
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 px-5 py-2 rounded-full font-bold uppercase tracking-widest text-xs cursor-pointer"
-              style={{ background: "rgba(20,18,40,0.92)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.5)", backdropFilter: "blur(6px)" }}
-            >
-              Tap to Play Again
-            </motion.button>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* ── Bottom control panel ──────────────────────────────────────────────── */}
@@ -927,7 +1009,7 @@ export default function ChickenRoadPage() {
               disabled={loading}
               className="w-full py-3 rounded-xl font-bold text-sm uppercase tracking-widest text-[#0a0b16] transition disabled:opacity-50"
               style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", boxShadow: "0 4px 12px rgba(251,191,36,0.3)" }}>
-              {loading ? "Starting…" : isOver ? "Play Again" : "Start Game"}
+              {loading ? "Starting…" : "Start Game"}
             </motion.button>
           )}
         </div>
@@ -996,7 +1078,7 @@ export default function ChickenRoadPage() {
                 disabled={loading}
                 className="w-full py-2.5 rounded-xl font-bold text-sm uppercase tracking-widest text-[#0a0b16] transition disabled:opacity-50"
                 style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", boxShadow: "0 4px 12px rgba(251,191,36,0.3)" }}>
-                {loading ? "Starting…" : isOver ? "Play Again" : "Start Game"}
+                {loading ? "Starting…" : "Start Game"}
               </motion.button>
             )}
           </div>
