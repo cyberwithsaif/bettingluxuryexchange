@@ -806,7 +806,11 @@ export default function ChickenRoadPage() {
           <motion.div
             className="absolute z-20 flex flex-col items-center justify-center gap-2"
             style={{ width: laneW, top: 0, bottom: 0, paddingTop: Math.round(boardH * 0.08) }}
-            animate={{ left: chickenCenterTrack - laneW / 2 }}
+            animate={{
+              left: phase === "crashed" && crashLane !== null
+                ? SIDEWALK_W + crashLane * laneW          // centre of crash lane
+                : chickenCenterTrack - laneW / 2,
+            }}
             transition={{ type: "spring", stiffness: 260, damping: 22 }}
           >
             <motion.div
@@ -1141,13 +1145,13 @@ function CrashBurst({ laneIndex, laneW, boardH }: { laneIndex: number; laneW: nu
   const sparks = Array.from({ length: 14 }, (_, i) => ({ a: (i / 14) * 360, d: 40 + Math.random() * 50, id: i }));
   return (
     <>
-      {/* slamming vehicle */}
+      {/* crash vehicle — rushes in from top and keeps driving through */}
       <motion.div
         className="absolute z-30"
         style={{ left: cx - laneW * 0.28, top: 0 }}
-        initial={{ y: -laneW }}
-        animate={{ y: cy - laneW * 0.4 }}
-        transition={{ duration: 0.22, ease: "easeIn" }}
+        initial={{ y: -laneW * 1.5 }}
+        animate={{ y: boardH + laneW * 1.5 }}
+        transition={{ duration: 0.85, ease: "linear" }}
       >
         <Vehicle w={laneW} color="#dc2626" length={laneW * 1.2} />
       </motion.div>
