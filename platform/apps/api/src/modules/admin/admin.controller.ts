@@ -179,6 +179,9 @@ export class AdminController {
   @Get("dashboard")
   dashboard() { return this.admin.dashboard(); }
 
+  @Get("pl-control")
+  plControl() { return this.admin.getPlControl(); }
+
   @Get("risk")
   risk(@Query("limit") limit?: string) { return this.admin.liveRisk(limit ? Number(limit) : 25); }
 

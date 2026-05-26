@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpToLine,
   Settings, Key, ListChecks, ShieldAlert, LogOut, Trophy,
   Ticket, BarChart3, Bell, Menu, X, CreditCard, Gamepad2,
-  ShieldCheck, Activity, Share2, UserCog, Crown, Gift, LifeBuoy, Lock,
+  ShieldCheck, Activity, Share2, UserCog, Crown, Gift, LifeBuoy, Lock, Gauge,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -17,6 +17,7 @@ const NAV = [
   { href: "/users",                    label: "Users",           Icon: Users },
   { href: "/bets",                     label: "All Bets",        Icon: Ticket },
   { href: "/casino-bets",             label: "Casino Bets",     Icon: Gamepad2 },
+  { href: "/pl-control",               label: "P/L Control",     Icon: Gauge, danger: true },
   { href: "/deposits",                 label: "Deposits",        Icon: ArrowDownToLine },
   { href: "/withdrawals",              label: "Withdrawals",     Icon: ArrowUpToLine },
   { href: "/markets",                  label: "Markets",         Icon: Trophy },
@@ -108,7 +109,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         {/* Nav */}
         <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          {NAV.map(({ href, label, Icon }) => {
+          {NAV.map((item) => {
+            const { href, label, Icon } = item;
+            const danger = "danger" in item && item.danger;
             const active =
               href === "/"
                 ? path === "/"
@@ -120,8 +123,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
-                  active
+                  active && danger
+                    ? "bg-gradient-to-r from-red-500 to-red-600 text-white font-bold shadow-[0_2px_12px_rgba(239,68,68,0.4)]"
+                    : active
                     ? "bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-100 font-bold shadow-[0_2px_12px_rgba(255,204,0,0.35)]"
+                    : danger
+                    ? "text-red-400 font-semibold hover:text-red-300 hover:bg-red-900/20"
                     : "text-slate-300 hover:text-white hover:bg-gray-800/8",
                 )}
               >

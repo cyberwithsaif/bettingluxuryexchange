@@ -369,6 +369,66 @@ export class AdminService {
   // ── Platform Settings ──────────────────────────────────────────────────────
   // Stored as a single row in the SystemConfig table (key = 'platform').
 
+  // ── P/L Control: per-game win/loss & difficulty config + live P/L ──────────
+  async getPlControl() {
+    const s = (await this.getPlatformSettings()) as Record<string, unknown>;
+    const [plinkoRow, pumpRow] = await Promise.all([
+      this.prisma.systemConfig.findUnique({ where: { key: "plinko_config" } }),
+      this.prisma.systemConfig.findUnique({ where: { key: "pump_config" } }),
+    ]);
+    const plinkoCfg = (plinkoRow?.value as Record<string, unknown>) ?? {};
+    const pumpCfg = (pumpRow?.value as Record<string, unknown>) ?? {};
+    const n = (v: unknown, d = 0) => (v == null ? d : Number(v));
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stat = async (model: any, where: any, winWhere: any, amountField = "betAmount") => {
+      const sumSel: Record<string, boolean> = { payout: true, [amountField]: true };
+      const [agg, wins] = await Promise.all([
+        model.aggregate({ _sum: sumSel, _count: true, where }),
+        model.count({ where: { ...where, ...winWhere } }),
+      ]);
+      const wagered = n(agg._sum[amountField]);
+      const payout = n(agg._sum.payout);
+      const bets = agg._count as number;
+      return { wagered, payout, pl: +(wagered - payout).toFixed(2), bets, wins, winRate: bets ? +((wins / bets) * 100).toFixed(1) : 0 };
+    };
+
+    const p = this.prisma;
+    const [dice, mines, towers, chicken, plinko, pump, roulette] = await Promise.all([
+      stat(p.diceBet, {}, { won: true }),
+      stat(p.minesSession, { status: { not: "IN_PROGRESS" } }, { status: "CASHED_OUT" }),
+      stat(p.towersSession, { status: { not: "IN_PROGRESS" } }, { status: "CASHED_OUT" }),
+      stat(p.chickenRoadSession, { status: { not: "IN_PROGRESS" } }, { status: "CASHED_OUT" }),
+      stat(p.plinkoBet, {}, { profit: { gte: 0 } }),
+      stat(p.pumpBet, { status: { not: "ACTIVE" } }, { status: "CASHED" }),
+      stat(p.rouletteBet, { settledAt: { not: null } }, { isWin: true }, "amount"),
+    ]);
+
+    const games = [
+      { id: "dice", name: "Dice", emoji: "🎲", controlType: "edge", target: "platform",
+        config: { houseEdge: n(s.diceHouseEdge, 0.01), minBet: n(s.diceMinBet, 10), maxBet: n(s.diceMaxBet, 1_000_000), enabled: s.diceEnabled !== false },
+        keys: { houseEdge: "diceHouseEdge", minBet: "diceMinBet", maxBet: "diceMaxBet", enabled: "diceEnabled" }, stats: dice },
+      { id: "mines", name: "Mines", emoji: "💣", controlType: "edge", target: "platform", hasHardness: true,
+        config: { houseEdge: n(s.minesHouseEdge, 0.01), hardness: n(s.minesHardness, 0), minBet: n(s.minesMinBet, 10), maxBet: n(s.minesMaxBet, 100_000), enabled: s.minesEnabled !== false },
+        keys: { houseEdge: "minesHouseEdge", hardness: "minesHardness", minBet: "minesMinBet", maxBet: "minesMaxBet", enabled: "minesEnabled" }, stats: mines },
+      { id: "towers", name: "Towers", emoji: "🗼", controlType: "edge", target: "platform",
+        config: { houseEdge: n(s.towersHouseEdge, 0.02), minBet: n(s.towersMinBet, 10), maxBet: n(s.towersMaxBet, 100_000), enabled: s.towersEnabled !== false },
+        keys: { houseEdge: "towersHouseEdge", minBet: "towersMinBet", maxBet: "towersMaxBet", enabled: "towersEnabled" }, stats: towers },
+      { id: "chicken-road", name: "Chicken Road", emoji: "🐔", controlType: "edge", target: "platform",
+        config: { houseEdge: n(s.chickenRoadHouseEdge, 0.03), minBet: n(s.chickenRoadMinBet, 10), maxBet: n(s.chickenRoadMaxBet, 100_000), enabled: s.chickenRoadEnabled !== false },
+        keys: { houseEdge: "chickenRoadHouseEdge", minBet: "chickenRoadMinBet", maxBet: "chickenRoadMaxBet", enabled: "chickenRoadEnabled" }, stats: chicken },
+      { id: "plinko", name: "Plinko", emoji: "🔻", controlType: "rtp", target: "endpoint", endpoint: "/plinko/admin/config",
+        config: { rtpPercent: n(plinkoCfg.rtpPercent, 97), maxPayout: n(plinkoCfg.maxPayout, 1000), minBet: n(plinkoCfg.minBet, 10), maxBet: n(plinkoCfg.maxBet, 100_000), enabled: plinkoCfg.enabled !== false }, stats: plinko },
+      { id: "pump", name: "Pump", emoji: "🎈", controlType: "rtp", target: "endpoint", endpoint: "/casino/pump/admin/config", hasForce: true,
+        config: { rtpPercent: n(pumpCfg.rtpPercent, 97), maxPayout: n(pumpCfg.maxPayout, 1000), minBet: n(pumpCfg.minBet, 10), maxBet: n(pumpCfg.maxBet, 100_000), enabled: pumpCfg.enabled !== false }, stats: pump },
+      { id: "roulette", name: "Roulette", emoji: "🎡", controlType: "fixed", target: "none",
+        config: { houseEdge: 0.027 }, stats: roulette },
+    ];
+
+    const sum = (k: "wagered" | "payout" | "pl" | "bets") => games.reduce((a, g) => a + ((g.stats as Record<string, number>)[k] ?? 0), 0);
+    return { games, summary: { wagered: sum("wagered"), payout: sum("payout"), pl: +sum("pl").toFixed(2), bets: sum("bets") } };
+  }
+
   async getPlatformSettings() {
     // Read from Redis cache first — settings change infrequently but are read on every page load.
     // Cache hit = ~0.2ms vs ~3-5ms for a PG roundtrip. Multiplied across all SSR + client requests this is huge.
