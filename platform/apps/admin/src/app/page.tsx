@@ -260,27 +260,31 @@ const Loading = () => <div className="h-44 w-full bg-gray-700/50 rounded-lg anim
 interface Pt1 { label: string; full: string; value: number; }
 interface Pt2 { label: string; full: string; a: number; b: number; }
 
+const BARS_H = 158;
+
 function SignedBarChart({ data, loading, unit = "" }: { data: Pt1[]; loading?: boolean; unit?: string }) {
   if (loading) return <Loading />;
   if (!data.length) return <Empty />;
   const max = Math.max(1, ...data.map(d => Math.abs(d.value)));
   return (
-    <div className="h-44 flex items-end gap-1">
-      {data.map(d => {
-        const h = Math.max(3, (Math.abs(d.value) / max) * 100);
-        return (
-          <div key={d.full} className="flex-1 flex flex-col items-center gap-1 group">
-            <div className="w-full flex items-end justify-center" style={{ height: "100%" }}>
+    <div>
+      <div className="flex items-end gap-1" style={{ height: BARS_H }}>
+        {data.map(d => {
+          const h = Math.max(2, (Math.abs(d.value) / max) * 100);
+          return (
+            <div key={d.full} className="flex-1 h-full flex items-end group"
+              title={`${d.full}: ${unit}${Math.round(d.value).toLocaleString("en-IN")}`}>
               <div
                 style={{ height: `${h}%` }}
                 className={`w-full rounded-t-md transition-all group-hover:brightness-125 cursor-pointer ${d.value >= 0 ? "bg-emerald-400" : "bg-red-400"}`}
-                title={`${d.full}: ${unit}${Math.round(d.value).toLocaleString("en-IN")}`}
               />
             </div>
-            <span className="text-[9px] text-gray-600 group-hover:text-gray-400">{d.label}</span>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+      <div className="flex gap-1 mt-1">
+        {data.map(d => <span key={d.full} className="flex-1 text-center text-[9px] text-gray-600">{d.label}</span>)}
+      </div>
     </div>
   );
 }
@@ -292,21 +296,23 @@ function StackedBarChart({ data, loading, colorA, colorB, nameA, nameB }: {
   if (!data.length || data.every(d => d.a + d.b === 0)) return <Empty />;
   const max = Math.max(1, ...data.map(d => d.a + d.b));
   return (
-    <div className="h-44 flex items-end gap-1">
-      {data.map(d => {
-        const ha = (d.a / max) * 100;
-        const hb = (d.b / max) * 100;
-        return (
-          <div key={d.full} className="flex-1 flex flex-col items-center gap-1 group">
-            <div className="w-full flex flex-col justify-end" style={{ height: "100%" }}
+    <div>
+      <div className="flex items-end gap-1" style={{ height: BARS_H }}>
+        {data.map(d => {
+          const ha = (d.a / max) * 100;
+          const hb = (d.b / max) * 100;
+          return (
+            <div key={d.full} className="flex-1 h-full flex flex-col justify-end group"
               title={`${d.full}\n${nameA}: ${d.a}\n${nameB}: ${d.b}`}>
               <div style={{ height: `${hb}%`, background: colorB }} className="w-full rounded-t-md transition-all group-hover:brightness-125" />
               <div style={{ height: `${ha}%`, background: colorA }} className="w-full transition-all group-hover:brightness-125" />
             </div>
-            <span className="text-[9px] text-gray-600 group-hover:text-gray-400">{d.label}</span>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
+      <div className="flex gap-1 mt-1">
+        {data.map(d => <span key={d.full} className="flex-1 text-center text-[9px] text-gray-600">{d.label}</span>)}
+      </div>
     </div>
   );
 }
@@ -318,17 +324,19 @@ function GroupedBarChart({ data, loading, colorA, colorB, nameA, nameB, unit = "
   if (!data.length || data.every(d => d.a + d.b === 0)) return <Empty />;
   const max = Math.max(1, ...data.map(d => Math.max(d.a, d.b)));
   return (
-    <div className="h-44 flex items-end gap-1.5">
-      {data.map(d => (
-        <div key={d.full} className="flex-1 flex flex-col items-center gap-1 group">
-          <div className="w-full flex items-end justify-center gap-0.5" style={{ height: "100%" }}
+    <div>
+      <div className="flex items-end gap-1.5" style={{ height: BARS_H }}>
+        {data.map(d => (
+          <div key={d.full} className="flex-1 h-full flex items-end justify-center gap-0.5 group"
             title={`${d.full}\n${nameA}: ${unit}${Math.round(d.a).toLocaleString("en-IN")}\n${nameB}: ${unit}${Math.round(d.b).toLocaleString("en-IN")}`}>
             <div style={{ height: `${Math.max(2, (d.a / max) * 100)}%`, background: colorA }} className="w-1/2 rounded-t-md transition-all group-hover:brightness-125" />
             <div style={{ height: `${Math.max(2, (d.b / max) * 100)}%`, background: colorB }} className="w-1/2 rounded-t-md transition-all group-hover:brightness-125" />
           </div>
-          <span className="text-[9px] text-gray-600 group-hover:text-gray-400">{d.label}</span>
-        </div>
-      ))}
+        ))}
+      </div>
+      <div className="flex gap-1.5 mt-1">
+        {data.map(d => <span key={d.full} className="flex-1 text-center text-[9px] text-gray-600">{d.label}</span>)}
+      </div>
     </div>
   );
 }
