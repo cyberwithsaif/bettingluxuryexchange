@@ -647,16 +647,17 @@ export default function ChickenRoadPage() {
                   </motion.div>
                 )}
 
-                {/* collected coin with logo on crossed lanes (desktop only) */}
+                {/* website logo on crossed lanes (desktop only), centered in the lane */}
                 {reached && !underChicken && !isMobile && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.6 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.5, type: "spring", stiffness: 320, damping: 20 }}
-                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
                     style={{ width: coinSize * 1.35, height: coinSize * 1.35 }}
                   >
-                    <Coin size={coinSize * 1.35} variant="collected" label="" logoSrc="/logo.png" />
+                    <img src="/logo.png" alt="" draggable={false}
+                      style={{ width: coinSize * 1.35, height: coinSize * 1.35, objectFit: "contain", filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.4))" }} />
                   </motion.div>
                 )}
 
