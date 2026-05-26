@@ -256,7 +256,8 @@ export default function ChickenRoadPage() {
     const ro = new ResizeObserver(() => {
       const w = el.clientWidth;
       const h = el.clientHeight;
-      setLaneW(Math.max(112, Math.min(196, (w - SIDEWALK_W) / 3.2)));
+      const mobile = w < 640;
+      setLaneW(Math.max(mobile ? 130 : 112, Math.min(mobile ? 200 : 196, (w - SIDEWALK_W) / (mobile ? 2.0 : 3.2))));
       setBoardH(h);
     });
     ro.observe(el);
@@ -544,27 +545,20 @@ export default function ChickenRoadPage() {
                 {/* left lane divider (dashed) */}
                 <div className="absolute top-0 bottom-0 left-0" style={{ width: 4, background: "repeating-linear-gradient(180deg,rgba(255,255,255,0.85),rgba(255,255,255,0.85) 22px,transparent 22px,transparent 44px)" }} />
 
-                {/* manhole / multiplier coin */}
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
-                  style={{ width: laneW * 0.46, height: laneW * 0.46 }}>
+                {/* multiplier circle */}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center" style={{ width: 58, height: 58 }}>
                   <motion.div
-                    animate={isNext ? { scale: [1, 1.08, 1], boxShadow: ["0 0 0px rgba(250,204,21,0)", "0 0 18px rgba(250,204,21,0.7)", "0 0 0px rgba(250,204,21,0)"] } : {}}
+                    animate={isNext ? { scale: [1, 1.1, 1], boxShadow: ["0 0 0px rgba(250,204,21,0)", "0 0 22px rgba(250,204,21,0.7)", "0 0 0px rgba(250,204,21,0)"] } : {}}
                     transition={isNext ? { duration: 1.4, repeat: Infinity } : {}}
                     className="w-full h-full rounded-full flex items-center justify-center"
                     style={{
-                      background: reached
-                        ? "radial-gradient(circle at 40% 35%,#22c55e,#15803d)"
-                        : isNext
-                        ? "radial-gradient(circle at 40% 35%,#fbbf24,#d97706)"
-                        : "radial-gradient(circle at 40% 35%,#4b4668,#322d4e)",
-                      border: `2px solid ${reached ? "#16a34a" : isNext ? "#f59e0b" : "rgba(255,255,255,0.12)"}`,
+                      background: reached ? "#22c55e" : isNext ? "#f59e0b" : "#2a2745",
+                      border: `2px solid ${reached ? "#16a34a" : isNext ? "#d97706" : "rgba(255,255,255,0.07)"}`,
+                      boxShadow: reached ? "0 0 0 3px rgba(34,197,94,0.2)" : "none",
                     }}
                   >
                     <span className="font-black tabular-nums text-center leading-none px-1"
-                      style={{
-                        fontSize: `clamp(9px, ${laneW * 0.085}px, 15px)`,
-                        color: reached || isNext ? "#0a0b16" : "rgba(220,215,245,0.7)",
-                      }}>
+                      style={{ fontSize: "clamp(8px,10px,12px)", color: reached ? "#fff" : isNext ? "#0a0b16" : "rgba(200,195,230,0.6)" }}>
                       {fmtMult(laneMult)}
                     </span>
                   </motion.div>
@@ -586,7 +580,7 @@ export default function ChickenRoadPage() {
 
           {/* Chicken */}
           <motion.div
-            className="absolute z-20 flex items-end justify-center"
+            className="absolute z-20 flex flex-col items-center justify-center gap-2"
             style={{ width: laneW, top: 0, bottom: 0 }}
             animate={{ left: SIDEWALK_W + currentLane * laneW - laneW / 2 }}
             transition={{ type: "spring", stiffness: 260, damping: 22 }}
@@ -600,10 +594,23 @@ export default function ChickenRoadPage() {
                   : { y: 0 }
               }
               transition={phase === "crashed" ? { duration: 0.3 } : { duration: 0.3, repeat: loading ? Infinity : 0 }}
-              style={{ marginBottom: boardH * 0.42 }}
             >
               <Chicken size={chickenSize} />
             </motion.div>
+            {(phase === "running" || phase === "crashed" || phase === "cashed") && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="px-2.5 py-1 rounded-lg text-xs font-black tabular-nums"
+                style={{
+                  background: phase === "crashed" ? "rgba(239,68,68,0.9)" : "rgba(10,11,22,0.92)",
+                  border: `1px solid ${phase === "crashed" ? "rgba(239,68,68,0.5)" : "rgba(139,92,246,0.5)"}`,
+                  color: phase === "crashed" ? "#fff" : "#c4b5fd",
+                  backdropFilter: "blur(4px)",
+                }}>
+                {fmtMult(multiplier)}
+              </motion.div>
+            )}
           </motion.div>
 
           {/* Crash burst */}
