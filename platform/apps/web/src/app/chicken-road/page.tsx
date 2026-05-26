@@ -625,80 +625,65 @@ export default function ChickenRoadPage() {
       </div>
 
       {/* ── Bottom control panel ──────────────────────────────────────────────── */}
-      <div className="shrink-0 px-3 md:px-6 pt-3 pb-4 md:py-4" style={{ background: "#0f0d1e", borderTop: "1px solid rgba(99,60,180,0.25)" }}>
-        <div className="w-full max-w-5xl mx-auto flex flex-col md:flex-row md:items-stretch gap-4 md:gap-0">
+      <div className="shrink-0 px-3 md:px-4 py-2.5 md:py-3" style={{ background: "#0f0d1e", borderTop: "1px solid rgba(99,60,180,0.25)" }}>
+        <div className="w-full max-w-6xl mx-auto flex flex-col md:flex-row md:items-center gap-2.5 md:gap-2">
 
           {/* Bet Amount */}
-          <div className="md:w-64 shrink-0 md:pr-6">
-            <label className="text-xs text-white/50 mb-1.5 flex items-center gap-1 font-semibold">
-              Bet Amount <span className="text-white/30">↓</span>
-            </label>
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center rounded-xl px-3 py-2.5 bg-black/30 border border-white/10">
-                <span className="text-white/40 text-sm mr-1 shrink-0">₹</span>
-                <input type="number" value={betAmount}
-                  onChange={e => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
-                  disabled={phase === "running"}
-                  className="bg-transparent flex-1 min-w-0 text-sm font-semibold text-white outline-none disabled:opacity-60" />
-              </div>
-              <div className="grid grid-cols-3 gap-1.5">
-                <button onClick={() => adjustBet(0.5)} disabled={phase === "running"}
-                  className="py-2 rounded-xl text-xs font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">1/2</button>
-                <button onClick={() => adjustBet(2)} disabled={phase === "running"}
-                  className="py-2 rounded-xl text-xs font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">2X</button>
-                <button onClick={() => quickBet(Math.floor(liveBalance ?? betAmount))} disabled={phase === "running"}
-                  className="py-2 rounded-xl text-xs font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">Max</button>
-              </div>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <label className="text-[11px] text-white/40 font-semibold whitespace-nowrap">Bet Amount</label>
+            <div className="flex items-center rounded-lg px-2 py-1.5 bg-black/30 border border-white/10">
+              <span className="text-white/40 text-xs mr-0.5 shrink-0">₹</span>
+              <input type="number" value={betAmount}
+                onChange={e => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
+                disabled={phase === "running"}
+                className="bg-transparent flex-1 min-w-0 text-xs font-semibold text-white outline-none disabled:opacity-60 w-16" />
             </div>
+            <button onClick={() => adjustBet(0.5)} disabled={phase === "running"}
+              className="px-2 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">1/2</button>
+            <button onClick={() => adjustBet(2)} disabled={phase === "running"}
+              className="px-2 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">2X</button>
+            <button onClick={() => quickBet(Math.floor(liveBalance ?? betAmount))} disabled={phase === "running"}
+              className="px-2 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">Max</button>
           </div>
 
           {/* Divider */}
-          <div className="hidden md:block w-px self-stretch" style={{ background: "rgba(99,60,180,0.25)" }} />
+          <div className="hidden md:block w-px h-6" style={{ background: "rgba(99,60,180,0.25)" }} />
 
           {/* Difficulty */}
-          <div className="flex-1 md:px-6 flex flex-col">
-            <label className="text-xs text-white/50 mb-1.5 flex items-center gap-1 font-semibold">Difficulty</label>
-            <div className="grid grid-cols-4 gap-1.5 flex-1">
-              {(["EASY", "MEDIUM", "HARD", "DAREDEVIL"] as Difficulty[]).map(d => (
-                <button key={d}
-                  onClick={() => { if (phase !== "running") setDifficulty(d); }}
-                  disabled={phase === "running"}
-                  className="py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
-                  style={{
-                    background: difficulty === d ? `${DIFF_CONFIG[d].color}22` : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.08)"}`,
-                    color: difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.45)",
-                  }}>
-                  {DIFF_CONFIG[d].label}
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <label className="text-[11px] text-white/40 font-semibold">Difficulty</label>
+            {(["EASY", "MEDIUM", "HARD", "DAREDEVIL"] as Difficulty[]).map(d => (
+              <button key={d}
+                onClick={() => { if (phase !== "running") setDifficulty(d); }}
+                disabled={phase === "running"}
+                className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50"
+                style={{
+                  background: difficulty === d ? `${DIFF_CONFIG[d].color}22` : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.08)"}`,
+                  color: difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.45)",
+                }}>
+                {DIFF_CONFIG[d].label}
+              </button>
+            ))}
           </div>
 
-          {/* Divider */}
-          <div className="hidden md:block w-px self-stretch" style={{ background: "rgba(99,60,180,0.25)" }} />
-
           {/* Action button */}
-          <div className="md:w-64 shrink-0 md:pl-6 flex flex-col justify-end gap-2">
+          <div className="flex-1 flex items-center gap-1.5 justify-end">
             {phase === "running" ? (
               <motion.button onClick={handleCashout} whileTap={{ scale: 0.97 }}
                 disabled={loading || currentLane === 0}
-                className="w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-widest text-white transition disabled:opacity-40"
+                className="px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider text-white transition disabled:opacity-40 whitespace-nowrap"
                 style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 4px 15px rgba(245,158,11,0.3)" }}>
                 {loading ? "…" : `Cash Out ₹${(session ? session.betAmount * multiplier : 0).toFixed(2)}`}
               </motion.button>
             ) : (
               <motion.button onClick={isOver ? handleReset : handleStart} whileTap={{ scale: 0.97 }}
                 disabled={loading}
-                className="w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-widest text-[#0a0b16] transition disabled:opacity-50"
+                className="px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider text-[#0a0b16] transition disabled:opacity-50 whitespace-nowrap"
                 style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", boxShadow: "0 4px 15px rgba(251,191,36,0.35)" }}>
                 {loading ? "Starting…" : isOver ? "Play Again" : "Start Game"}
               </motion.button>
             )}
-            <div className="text-[11px] text-center py-1.5 px-3 rounded-lg font-medium"
-              style={{ background: "rgba(139,92,246,0.12)", color: "#a78bfa", border: "1px solid rgba(139,92,246,0.2)" }}>
-              Betting less than ₹0.01 will enter demo mode
-            </div>
           </div>
         </div>
       </div>
