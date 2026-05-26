@@ -647,17 +647,22 @@ export default function ChickenRoadPage() {
                   </motion.div>
                 )}
 
-                {/* website logo on crossed lanes (desktop only), centered in the lane */}
+                {/* website logo on crossed lanes (desktop only), pixel-exact center */}
                 {reached && !underChicken && !isMobile && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.6 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.5, type: "spring", stiffness: 320, damping: 20 }}
-                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
-                    style={{ width: coinSize * 1.35, height: coinSize * 1.35 }}
+                    style={{
+                      position: "absolute",
+                      left: Math.round((laneW - coinSize * 1.35) / 2),
+                      top: Math.round((boardH - coinSize * 1.35) / 2),
+                      width: Math.round(coinSize * 1.35),
+                      height: Math.round(coinSize * 1.35),
+                    }}
                   >
                     <img src="/logo.png" alt="" draggable={false}
-                      style={{ width: coinSize * 1.35, height: coinSize * 1.35, objectFit: "contain", filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.4))" }} />
+                      style={{ width: "100%", height: "100%", objectFit: "contain", filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.4))" }} />
                   </motion.div>
                 )}
 
@@ -678,7 +683,7 @@ export default function ChickenRoadPage() {
           {/* Chicken */}
           <motion.div
             className="absolute z-20 flex flex-col items-center justify-center gap-2"
-            style={{ width: laneW, top: 0, bottom: 0 }}
+            style={{ width: laneW, top: 0, bottom: 0, paddingTop: Math.round(boardH * 0.08) }}
             animate={{ left: chickenCenterTrack - laneW / 2 }}
             transition={{ type: "spring", stiffness: 260, damping: 22 }}
           >
