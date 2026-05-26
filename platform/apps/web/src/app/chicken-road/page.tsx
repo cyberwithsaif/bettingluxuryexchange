@@ -807,12 +807,7 @@ export default function ChickenRoadPage() {
           </div>
 
           {/* Action */}
-          <div className="flex flex-col gap-1.5 flex-shrink-0 w-56">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold"
-              style={{ background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.25)", color: "#c4b5fd" }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              Betting less than ₹0.01 will enter demo mode
-            </div>
+          <div className="flex flex-col gap-1.5 flex-shrink-0 w-56 justify-end">
             {phase === "running" ? (
               <motion.button onClick={handleCashout} whileTap={{ scale: 0.97 }}
                 disabled={loading || currentLane === 0}
