@@ -606,8 +606,8 @@ export default function ChickenRoadPage() {
             const showVehicle = phase !== "idle" && i >= currentLane && i !== crashLane;
             return (
               <div key={i} className="absolute top-0 bottom-0" style={{ left, width: laneW }}>
-                {/* asphalt */}
-                <div className="absolute inset-0" style={{ background: reached ? "#3a3d70" : "#313463" }} />
+                {/* asphalt — on mobile keep crossed lanes the same shade as plain road */}
+                <div className="absolute inset-0" style={{ background: reached && !isMobile ? "#3a3d70" : "#313463" }} />
                 {/* left lane divider (dashed) */}
                 <div className="absolute top-0 bottom-0 left-0" style={{ width: 4, background: "repeating-linear-gradient(180deg,rgba(255,255,255,0.85),rgba(255,255,255,0.85) 22px,transparent 22px,transparent 44px)" }} />
 
@@ -647,8 +647,8 @@ export default function ChickenRoadPage() {
                   </motion.div>
                 )}
 
-                {/* collected coin with logo on crossed lanes */}
-                {reached && !underChicken && (
+                {/* collected coin with logo on crossed lanes (desktop only) */}
+                {reached && !underChicken && !isMobile && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.6 }}
                     animate={{ opacity: 1, scale: 1 }}
