@@ -24,6 +24,7 @@ const CASINO_GAMES = [
   { href: "/roulette",   label: "Roulette",   emoji: "🎡" },
   { href: "/mines",      label: "Mines",      emoji: "💣" },
   { href: "/plinko",     label: "Plinko",     emoji: "🎯" },
+  { href: "/chicken-road", label: "Chicken Road", emoji: "🐔" },
   { href: "/crash",      label: "Crash",      emoji: "🚀" },
   { href: "/slots",      label: "Slots",      emoji: "🎰" },
   { href: "/mini-games", label: "Mini Games", emoji: "💎" },
