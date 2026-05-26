@@ -460,13 +460,48 @@ export default function ChickenRoadPage() {
           <div className="absolute top-0 bottom-0 left-0" style={{ width: SIDEWALK_W }}>
             <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,#2f9e5e,#3cb371)" }} />
             <div className="absolute top-0 bottom-0 right-0" style={{ width: SIDEWALK_W * 0.46, background: "repeating-linear-gradient(180deg,#d7d3e4,#d7d3e4 26px,#c8c3da 26px,#c8c3da 52px)" }} />
+
             {/* decorative bushes */}
-            {[0.08, 0.42, 0.78].map((t, i) => (
-              <div key={i} className="absolute rounded-full" style={{
-                left: 6, top: `${t * 100}%`, width: SIDEWALK_W * 0.4, height: SIDEWALK_W * 0.4,
-                background: "radial-gradient(circle at 40% 35%,#34d27a,#1f7a47)", boxShadow: "0 3px 6px rgba(0,0,0,0.35)",
-              }} />
+            {[{ t: 0.08, l: 6 }, { t: 0.42, l: 8 }, { t: 0.75, l: 4 }].map((b, i) => (
+              <div key={i} className="absolute" style={{ left: b.l, top: `${b.t * 100}%`, width: SIDEWALK_W * 0.5, height: SIDEWALK_W * 0.45 }}>
+                {/* main bush */}
+                <div className="absolute w-full h-full rounded-full" style={{
+                  background: "radial-gradient(circle at 40% 35%,#1aa569,#0d6b4a)", boxShadow: "0 4px 8px rgba(0,0,0,0.4)",
+                }} />
+                {/* left detail */}
+                <div className="absolute rounded-full" style={{
+                  width: SIDEWALK_W * 0.22, height: SIDEWALK_W * 0.22, left: -8, top: `${SIDEWALK_W * 0.1}px`,
+                  background: "radial-gradient(circle,#22b876,#0d6b4a)",
+                }} />
+                {/* right detail */}
+                <div className="absolute rounded-full" style={{
+                  width: SIDEWALK_W * 0.18, height: SIDEWALK_W * 0.18, right: -6, top: `${SIDEWALK_W * 0.13}px`,
+                  background: "radial-gradient(circle,#1aa569,#096348)",
+                }} />
+              </div>
             ))}
+
+            {/* rocks area */}
+            <div className="absolute" style={{ top: `${boardH * 0.35}px`, left: 0, width: SIDEWALK_W + 12, display: "flex", flexWrap: "wrap", gap: "4px", padding: "4px" }}>
+              {[
+                { w: 32, h: 24, r: 8 },
+                { w: 28, h: 22, r: -6 },
+                { w: 24, h: 18, r: 10 },
+                { w: 36, h: 26, r: -2 },
+                { w: 26, h: 20, r: 5 },
+                { w: 30, h: 22, r: -8 },
+              ].map((rock, i) => (
+                <div key={i} className="absolute" style={{
+                  width: rock.w, height: rock.h, left: (i % 3) * 36 + 4, top: `${boardH * 0.35 + Math.floor(i / 3) * 28}px`,
+                  background: "#9ba5ad", border: "3px solid #6b7682", borderRadius: "10px",
+                  transform: `rotate(${rock.r}deg)`, boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                }}>
+                  <div style={{ position: "absolute", width: "5px", height: "5px", left: "8px", top: "6px", background: "#7a8692", borderRadius: "50%" }} />
+                  <div style={{ position: "absolute", width: "4px", height: "4px", right: "10px", bottom: "8px", background: "#7a8692", borderRadius: "50%" }} />
+                </div>
+              ))}
+            </div>
+
             {/* fire hydrant */}
             <div className="absolute" style={{ right: 8, bottom: "10%", width: 14, height: 26, borderRadius: 5, background: "linear-gradient(180deg,#ef4444,#b91c1c)", boxShadow: "0 2px 4px rgba(0,0,0,0.4)" }} />
           </div>
