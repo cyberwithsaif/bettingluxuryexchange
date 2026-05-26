@@ -148,28 +148,47 @@ function shade(hex: string, percent: number): string {
 // ─── Chicken ─────────────────────────────────────────────────────────────────
 
 function Chicken({ size }: { size: number }) {
+  const s = size / 120;
+  const p = (n: number) => n * s;
+  const featherBorder = `${p(2)}px solid #d5daf5`;
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64" style={{ filter: "drop-shadow(0 4px 4px rgba(0,0,0,0.4))" }}>
-      {/* legs */}
-      <rect x="25" y="48" width="3.4" height="9" rx="1.5" fill="#f59e0b" />
-      <rect x="35" y="48" width="3.4" height="9" rx="1.5" fill="#f59e0b" />
+    <div style={{ position: "relative", width: p(120), height: p(120) }}>
+      {/* shadow */}
+      <div style={{ position: "absolute", width: p(70), height: p(14), background: "rgba(0,0,0,.18)", borderRadius: "50%", bottom: p(-8), left: p(24), filter: `blur(${p(3)}px)` }} />
+      {/* tail */}
+      <div style={{ position: "absolute", left: p(6), top: p(44) }}>
+        <span style={{ position: "absolute", width: p(20), height: p(10), background: "#eef1ff", border: featherBorder, borderRadius: "50%", transform: "rotate(-35deg)" }} />
+        <span style={{ position: "absolute", top: p(10), left: p(2), width: p(20), height: p(10), background: "#eef1ff", border: featherBorder, borderRadius: "50%", transform: "rotate(-10deg)" }} />
+        <span style={{ position: "absolute", top: p(20), left: p(4), width: p(20), height: p(10), background: "#eef1ff", border: featherBorder, borderRadius: "50%", transform: "rotate(15deg)" }} />
+      </div>
       {/* body */}
-      <ellipse cx="32" cy="38" rx="17" ry="16" fill="#ffffff" />
-      <ellipse cx="32" cy="40" rx="13" ry="11" fill="#f8fafc" />
-      {/* head */}
-      <circle cx="32" cy="20" r="11" fill="#ffffff" />
-      {/* comb */}
-      <path d="M27 11 q2 -5 5 -2 q2 -5 5 0 q2 -3 3 2 q-8 3 -13 0 Z" fill="#ef4444" />
-      {/* eyes */}
-      <circle cx="28.5" cy="19" r="1.7" fill="#111827" />
-      <circle cx="35.5" cy="19" r="1.7" fill="#111827" />
-      {/* beak */}
-      <path d="M30 23 L34 23 L32 27 Z" fill="#f59e0b" />
-      {/* wattle */}
-      <ellipse cx="32" cy="28" rx="2" ry="3" fill="#ef4444" />
+      <div style={{ position: "absolute", width: p(92), height: p(78), background: "#f8f8ff", borderRadius: "45% 45% 40% 40%", left: p(14), top: p(22), transform: "rotate(-8deg)", border: `${p(4)}px solid #c7cce7`, boxShadow: `inset 0 ${p(-8)}px 0 rgba(0,0,0,.04), 0 ${p(8)}px ${p(15)}px rgba(0,0,0,.2)` }} />
       {/* wing */}
-      <path d="M20 36 q6 6 4 13 q-6 -1 -8 -7 Z" fill="#e2e8f0" />
-    </svg>
+      <div style={{ position: "absolute", width: p(36), height: p(28), borderRadius: "50%", background: "#eef0ff", left: p(28), top: p(48), transform: "rotate(-20deg)", border: `${p(3)}px solid #d7dbf4` }}>
+        <div style={{ position: "absolute", width: p(14), height: p(8), left: p(8), top: p(7), borderRadius: "50%", border: `${p(2)}px solid #d7dbf4` }} />
+        <div style={{ position: "absolute", width: p(18), height: p(10), left: p(4), top: p(12), borderRadius: "50%", border: `${p(2)}px solid #d7dbf4` }} />
+      </div>
+      {/* head */}
+      <div style={{ position: "absolute", width: p(58), height: p(54), background: "#fff", borderRadius: "50%", top: p(10), left: p(46), border: `${p(4)}px solid #d6dbf6` }}>
+        {/* comb */}
+        <div style={{ position: "absolute", top: p(-10), left: p(16), display: "flex", gap: p(2) }}>
+          <span style={{ width: p(10), height: p(16), background: "#ff5b5b", borderRadius: "50%", transform: "rotate(-25deg)", border: `${p(2)}px solid #e04040` }} />
+          <span style={{ width: p(10), height: p(18), background: "#ff5b5b", borderRadius: "50%", transform: "rotate(-25deg)", border: `${p(2)}px solid #e04040` }} />
+        </div>
+        {/* eyes */}
+        <div style={{ position: "absolute", width: p(7), height: p(7), background: "#1f2758", borderRadius: "50%", top: p(24), left: p(14) }} />
+        <div style={{ position: "absolute", width: p(7), height: p(7), background: "#1f2758", borderRadius: "50%", top: p(24), right: p(14) }} />
+        {/* beak */}
+        <div style={{ position: "absolute", width: p(16), height: p(12), background: "#f5a623", top: p(28), left: p(20), clipPath: "polygon(0 50%,100% 0,100% 100%)" }} />
+      </div>
+      {/* legs */}
+      <div style={{ position: "absolute", width: p(8), height: p(18), background: "#f5a623", bottom: p(6), left: p(38), borderRadius: p(10) }}>
+        <div style={{ position: "absolute", width: p(16), height: p(6), background: "#e89612", bottom: p(-2), left: p(-4), borderRadius: p(10) }} />
+      </div>
+      <div style={{ position: "absolute", width: p(8), height: p(18), background: "#f5a623", bottom: p(6), right: p(30), borderRadius: p(10) }}>
+        <div style={{ position: "absolute", width: p(16), height: p(6), background: "#e89612", bottom: p(-2), right: p(-4), borderRadius: p(10) }} />
+      </div>
+    </div>
   );
 }
 
@@ -618,7 +637,7 @@ export default function ChickenRoadPage() {
                     initial={{ opacity: 0, scale: 0.6, y: -8 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{ delay: 0.5, type: "spring", stiffness: 320, damping: 20 }}
-                    className="absolute left-1/2 -translate-x-1/2"
+                    className="absolute inset-x-0 flex justify-center"
                     style={{ top: boardH / 2 - chickenSize / 2 - (Math.min(laneW * 0.46, 96) * 58 / 95) - 4 }}
                   >
                     <StoneObstacle width={Math.min(laneW * 0.46, 96)} />
