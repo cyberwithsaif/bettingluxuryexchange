@@ -529,7 +529,7 @@ export default function TowersPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="bg-[#0a0b12] text-white flex flex-col font-sans w-full min-h-screen md:min-h-0 md:overflow-hidden md:h-[calc(100vh-74px)]">
+    <div className="bg-[#0a0b12] text-white flex flex-col font-sans w-full min-h-full md:min-h-0 md:overflow-hidden md:h-[calc(100vh-74px)]">
 
       {/* ── Desktop + Mobile: main flex container ─────────────────────────── */}
       <div className="flex-1 md:overflow-hidden flex flex-col md:flex-row md:p-3 w-full max-w-7xl mx-auto md:gap-3 min-h-0">
