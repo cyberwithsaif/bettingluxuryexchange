@@ -417,7 +417,11 @@ export default function ChickenRoadPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="bg-[#0a0b16] text-white flex flex-col font-sans w-full min-h-full md:min-h-0 md:overflow-hidden md:h-[calc(100vh-74px)]">
+    <div className="bg-[#0a0b16] text-white flex flex-col font-sans w-full min-h-full md:min-h-0 md:overflow-hidden md:h-[calc(100vh-74px)] md:p-3">
+
+      {/* ── Card wrapper ─────────────────────────────────────────────────────── */}
+      <div className="flex flex-col flex-1 min-h-0 md:rounded-2xl md:overflow-hidden"
+        style={{ border: "1px solid rgba(139,92,246,0.18)", boxShadow: "0 0 0 1px rgba(0,0,0,0.4), 0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)" }}>
 
       {/* ── Game viewport ─────────────────────────────────────────────────────── */}
       <div
@@ -745,9 +749,9 @@ export default function ChickenRoadPage() {
                   disabled={phase === "running"}
                   className="py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
                   style={{
-                    background: difficulty === d ? `${DIFF_CONFIG[d].color}1a` : "#1e1b3a",
+                    background: difficulty === d ? DIFF_CONFIG[d].color : "#1e1b3a",
                     border: `1px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(139,92,246,0.15)"}`,
-                    color: difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.5)",
+                    color: difficulty === d ? "#fff" : "rgba(255,255,255,0.5)",
                   }}>
                   {DIFF_CONFIG[d].label}
                 </button>
@@ -780,6 +784,9 @@ export default function ChickenRoadPage() {
           </div>
 
         </div>
+      </div>
+
+      {/* ── End card wrapper ── */}
       </div>
 
       {/* Error toast */}
