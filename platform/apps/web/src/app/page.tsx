@@ -20,12 +20,12 @@ export default async function HomePage() {
 
           {/* Casino art — contained on desktop, overflows on mobile via CSS */}
           <div className="absolute inset-0 z-10 pointer-events-none casino-overlay">
-            <Image src="/images/casino.png" alt="Casino" fill className="object-contain object-left" priority />
+            <Image src="/images/casino.png" alt="Casino" fill sizes="50vw" className="object-contain object-left" priority />
           </div>
 
           {/* Float chips — desktop only */}
           <div className="hidden md:block absolute -right-8 top-0 w-full h-full z-10">
-            <Image src="/images/float.png" alt="Floating Chips" fill className="object-contain object-right" priority />
+            <Image src="/images/float.png" alt="Floating Chips" fill sizes="50vw" className="object-contain object-right" priority />
           </div>
         </div>
 
@@ -33,12 +33,12 @@ export default async function HomePage() {
         <div className="group relative rounded-2xl md:rounded-3xl overflow-visible border border-white/10 hover:border-white/20 transition-all duration-300 min-h-[90px] md:min-h-[175px] hover:shadow-2xl hover:scale-[1.02] cursor-pointer">
           {/* Background — clipped */}
           <div className="absolute inset-0 rounded-2xl md:rounded-3xl overflow-hidden">
-            <Image src="/images/bannercric.png" alt="Sports Banner Background" fill className="object-cover object-center" priority />
+            <Image src="/images/bannercric.png" alt="Sports Banner Background" fill sizes="50vw" className="object-cover object-center" priority />
           </div>
           {/* Foreground — responsive overflow */}
           <div className="absolute z-10 pointer-events-none sports-overlay"
             style={{ left: "-28%", right: "-28%", top: "-30%", bottom: "-45%" }}>
-            <Image src="/images/sportb.png" alt="Sports" fill className="object-contain object-center" priority />
+            <Image src="/images/sportb.png" alt="Sports" fill sizes="50vw" className="object-contain object-center" priority />
           </div>
         </div>
       </div>
