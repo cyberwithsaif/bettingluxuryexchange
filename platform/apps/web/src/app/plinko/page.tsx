@@ -585,8 +585,8 @@ export default function PlinkoPage() {
         </div>
 
         {/* Board canvas — constrained width on desktop, full width on mobile */}
-        <div className="flex-1 flex items-stretch justify-center overflow-hidden min-w-0 min-h-0">
-          <div className="relative h-full w-full md:max-w-[600px]">
+        <div className="relative flex-1 flex items-stretch justify-center overflow-hidden min-w-0 min-h-0">
+          <div className="absolute inset-0 md:relative md:inset-auto md:h-full md:w-full md:max-w-[600px]">
           <PlinkoBoard
             rows={rows} riskLevel={risk} multiplierTable={multTable}
             turbo={turbo} queue={queue} onBallDone={onBallDone}
@@ -652,11 +652,11 @@ export default function PlinkoPage() {
       </aside>
 
       {/* ── Mobile Bottom Controls ─────────────────────────────────────────────── */}
-      <div className="md:hidden shrink-0 bg-[#0f1018] border-t border-white/[0.07] px-3 pt-3 pb-4 space-y-2.5">
+      <div className="md:hidden shrink-0 bg-[#0f1018] border-t border-white/[0.07] px-3 pt-2 pb-3 space-y-2">
 
         {/* Drop Ball button */}
         <button onClick={() => drop()} disabled={!user}
-          className="w-full py-3.5 rounded-xl font-bold text-sm tracking-wide disabled:opacity-40 active:scale-95 transition relative flex items-center justify-center gap-2 text-black"
+          className="w-full py-2.5 rounded-xl font-bold text-sm tracking-wide disabled:opacity-40 active:scale-95 transition relative flex items-center justify-center gap-2 text-black"
           style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", boxShadow: "0 4px 16px rgba(245,158,11,0.35)" }}>
           {!user ? "Login to Play" : "Drop Ball"}
           <RotateCcw size={14} className="absolute right-4 opacity-60" />
@@ -668,7 +668,7 @@ export default function PlinkoPage() {
         </button>
 
         {/* Demo mode note */}
-        <div className="text-xs text-center py-1.5 px-3 rounded-lg font-medium"
+        <div className="text-[11px] text-center py-1 px-3 rounded-lg font-medium"
           style={{ background: "rgba(99,102,241,0.12)", color: "#818cf8", border: "1px solid rgba(99,102,241,0.2)" }}>
           Betting less than ₹0.01 will enter demo mode
         </div>
@@ -698,7 +698,7 @@ export default function PlinkoPage() {
           <div className="flex gap-1.5">
             {RISK_OPTIONS.map(r => (
               <button key={r} onClick={() => setRisk(r)}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold capitalize border transition ${
+                className={`flex-1 py-1.5 rounded-xl text-xs font-bold capitalize border transition ${
                   risk === r ? RISK_ACTIVE[r] : "bg-transparent border-white/10 text-white/40 hover:border-white/25"
                 }`}>
                 {r === "low" ? "Low" : r === "medium" ? "Medium" : "High"}
@@ -713,7 +713,7 @@ export default function PlinkoPage() {
           <div className="flex gap-1.5">
             {ROWS_OPTIONS.map(r => (
               <button key={r} onClick={() => setRows(r)}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold border transition ${
+                className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition ${
                   rows === r ? "bg-violet-600/25 border-violet-500/60 text-violet-300" : "bg-transparent border-white/10 text-white/40 hover:border-white/25"
                 }`}>
                 {r}
