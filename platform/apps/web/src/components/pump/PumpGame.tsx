@@ -172,7 +172,7 @@ function GameVisual({
   const multFontSize = Math.round(Math.min(17 + balloonW * 0.08, 36));
 
   return (
-    <div ref={containerRef} className="relative w-full h-full" style={{ minHeight: 260 }}>
+    <div ref={containerRef} className="relative w-full h-full" style={{ minHeight: 160 }}>
 
       {/* Purple ambient glow */}
       <div className="absolute pointer-events-none" style={{
@@ -572,7 +572,7 @@ export function PumpGame() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen w-full flex flex-col"
+    <div className="w-full flex flex-col"
       style={{ background: "linear-gradient(135deg, #07111d, #0b1c2a)", fontFamily: "Inter, sans-serif" }}>
 
       {/* Mobile-only Header */}
@@ -767,7 +767,7 @@ export function PumpGame() {
 
           {/* Balloon stage */}
           <div
-            className="flex-1 min-h-0 relative transition-all duration-300"
+            className="h-[42vw] min-h-[160px] max-h-[230px] lg:flex-1 lg:min-h-0 lg:max-h-none relative transition-all duration-300"
             style={betFlash ? { boxShadow: "inset 0 0 60px 12px rgba(34,197,94,0.12)" } : undefined}
           >
             <GameVisual
