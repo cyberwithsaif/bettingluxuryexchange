@@ -272,18 +272,28 @@ export default function ChickenRoadPage() {
   const currentLane = session?.currentLane ?? 0;
   const multiplier = session?.multiplier ?? 1.0;
 
+  // Fetch the server's active session and restore it (position, multiplier, table)
+  const restoreActiveSession = useCallback(async () => {
+    try {
+      const r = await fetch("/api/casino/chicken-road/active");
+      if (!r.ok) return false;
+      const s: Session | null = await r.json();
+      if (!s) return false;
+      setSession(s);
+      setCrashLane(null);
+      setCashoutAmt(null);
+      setPhase("running");
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   // Restore an in-progress session on load
   useEffect(() => {
     if (!user) return;
-    fetch("/api/casino/chicken-road/active")
-      .then(r => (r.ok ? r.json() : null))
-      .then((s: Session | null) => {
-        if (!s) return;
-        setSession(s);
-        setPhase("running");
-      })
-      .catch(() => {});
-  }, [user]);
+    void restoreActiveSession();
+  }, [user, restoreActiveSession]);
 
   // Socket wiring
   useEffect(() => {
@@ -292,7 +302,16 @@ export default function ChickenRoadPage() {
 
     const onStart = (data: { ok: boolean; session?: Session; message?: string }) => {
       setLoading(false);
-      if (!data.ok || !data.session) { showError(data.message ?? "Could not start"); return; }
+      if (!data.ok || !data.session) {
+        // An active game already exists server-side — restore it in place instead
+        // of just erroring, so the player lands back on their live round.
+        if (data.message && /active game/i.test(data.message)) {
+          restoreActiveSession().then(ok => { if (!ok) showError(data.message ?? "Could not start"); });
+          return;
+        }
+        showError(data.message ?? "Could not start");
+        return;
+      }
       setSession(data.session);
       setPhase("running");
       setCrashLane(null);
@@ -331,7 +350,15 @@ export default function ChickenRoadPage() {
       sounds.cashout();
     };
 
-    const onError = (data: { message: string }) => { setLoading(false); showError(data.message); };
+    const onError = (data: { message: string }) => {
+      setLoading(false);
+      // Server rejected start because a round is already live — restore it in place.
+      if (data.message && /active game/i.test(data.message)) {
+        restoreActiveSession().then(ok => { if (!ok) showError(data.message); });
+        return;
+      }
+      showError(data.message);
+    };
     const onBalance = (data: { available: number }) => setLiveBalance(data.available);
 
     s.on("chickenRoad:startResponse", onStart);
@@ -347,7 +374,7 @@ export default function ChickenRoadPage() {
       s.off("chickenRoad:error", onError);
       s.off("wallet:balance", onBalance);
     };
-  }, [sounds]);
+  }, [sounds, restoreActiveSession]);
 
   const showError = (msg: string) => {
     setError(msg);
