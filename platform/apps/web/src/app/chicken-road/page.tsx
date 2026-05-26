@@ -461,22 +461,42 @@ export default function ChickenRoadPage() {
             <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,#2f9e5e,#3cb371)" }} />
             <div className="absolute top-0 bottom-0 right-0" style={{ width: SIDEWALK_W * 0.46, background: "repeating-linear-gradient(180deg,#d7d3e4,#d7d3e4 26px,#c8c3da 26px,#c8c3da 52px)" }} />
 
-            {/* decorative bushes */}
-            {[{ t: 0.08, l: 6 }, { t: 0.42, l: 8 }, { t: 0.75, l: 4 }].map((b, i) => (
-              <div key={i} className="absolute" style={{ left: b.l, top: `${b.t * 100}%`, width: SIDEWALK_W * 0.5, height: SIDEWALK_W * 0.45 }}>
-                {/* main bush */}
-                <div className="absolute w-full h-full rounded-full" style={{
-                  background: "radial-gradient(circle at 40% 35%,#1aa569,#0d6b4a)", boxShadow: "0 4px 8px rgba(0,0,0,0.4)",
+            {/* decorative trees */}
+            {[{ t: 0.08, l: 8 }, { t: 0.42, l: 6 }, { t: 0.75, l: 10 }].map((tree, i) => (
+              <div key={i} className="absolute" style={{ left: tree.l, top: `${tree.t * 100}%`, width: SIDEWALK_W * 0.6, height: SIDEWALK_W * 0.7 }}>
+                {/* trunk */}
+                <div className="absolute" style={{
+                  left: "50%", bottom: 0, transform: "translateX(-50%)",
+                  width: SIDEWALK_W * 0.12, height: SIDEWALK_W * 0.28,
+                  background: "linear-gradient(90deg,#5d3a1a,#8b5a2b,#5d3a1a)", borderRadius: "2px",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.5)",
                 }} />
-                {/* left detail */}
-                <div className="absolute rounded-full" style={{
-                  width: SIDEWALK_W * 0.22, height: SIDEWALK_W * 0.22, left: -8, top: `${SIDEWALK_W * 0.1}px`,
-                  background: "radial-gradient(circle,#22b876,#0d6b4a)",
+                {/* canopy - bottom */}
+                <div style={{
+                  position: "absolute", left: "50%", bottom: `${SIDEWALK_W * 0.24}px`, transform: "translateX(-50%)",
+                  width: 0, height: 0,
+                  borderLeft: `${SIDEWALK_W * 0.24}px solid transparent`,
+                  borderRight: `${SIDEWALK_W * 0.24}px solid transparent`,
+                  borderBottom: `${SIDEWALK_W * 0.32}px solid #1aa569`,
+                  filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))",
                 }} />
-                {/* right detail */}
-                <div className="absolute rounded-full" style={{
-                  width: SIDEWALK_W * 0.18, height: SIDEWALK_W * 0.18, right: -6, top: `${SIDEWALK_W * 0.13}px`,
-                  background: "radial-gradient(circle,#1aa569,#096348)",
+                {/* canopy - middle */}
+                <div style={{
+                  position: "absolute", left: "50%", bottom: `${SIDEWALK_W * 0.38}px`, transform: "translateX(-50%)",
+                  width: 0, height: 0,
+                  borderLeft: `${SIDEWALK_W * 0.2}px solid transparent`,
+                  borderRight: `${SIDEWALK_W * 0.2}px solid transparent`,
+                  borderBottom: `${SIDEWALK_W * 0.26}px solid #0f9352`,
+                  filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))",
+                }} />
+                {/* canopy - top */}
+                <div style={{
+                  position: "absolute", left: "50%", bottom: `${SIDEWALK_W * 0.5}px`, transform: "translateX(-50%)",
+                  width: 0, height: 0,
+                  borderLeft: `${SIDEWALK_W * 0.14}px solid transparent`,
+                  borderRight: `${SIDEWALK_W * 0.14}px solid transparent`,
+                  borderBottom: `${SIDEWALK_W * 0.2}px solid #0d7a44`,
+                  filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.4))",
                 }} />
               </div>
             ))}
