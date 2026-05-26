@@ -1,12 +1,66 @@
-# Future9 — White-Label Betting Exchange & Casino Platform
+# DiamondPlay — White-Label Betting Exchange & Casino Platform
 
-A modern, full-stack betting exchange + casino platform built from scratch. Features include cricket/football/tennis exchange with back-lay markets, fancy/bookmaker/session markets, a casino lobby with provider-agnostic launch + seamless-wallet callbacks, a multi-tier agent system (Super Admin → Agent → User), and a full admin panel.
+A modern, full-stack **betting exchange + casino** platform built from scratch. It pairs a Betfair-style sports exchange (back/lay markets, fancy/session markets) with a full in-house casino (provably-fair originals + provider-agnostic lobby), a multi-tier agent hierarchy, and a complete admin back office.
 
-> Theme: dark luxury — deep maroon / black / dark-red with orange-gradient highlights, glassmorphism, neon glow.
+> **Theme:** dark luxury — deep navy/maroon/black with red→orange gradient highlights, gold accents, glassmorphism and neon glow.
 
 ---
 
-## 🚀 Quick Start
+## Monorepo Structure
+
+A `pnpm` workspace under [`platform/`](platform/):
+
+```
+platform/
+├── apps/
+│   ├── api/     # NestJS REST API + Socket.io gateways (port 4000)
+│   ├── web/     # Next.js 16 player site            (port 3000)
+│   └── admin/   # Next.js 16 admin panel             (port 3001, basePath /admin)
+└── packages/
+    └── shared/  # Shared TypeScript types & utilities
+```
+
+### Tech Stack
+
+| Layer | Stack |
+|-------|-------|
+| **API** | NestJS 10 · Prisma · PostgreSQL · Redis · Socket.io · Passport/JWT |
+| **Web & Admin** | Next.js 16 (App Router, Turbopack) · React 18 · TailwindCSS · SWR · Zustand · Framer Motion · Recharts |
+| **Auth** | JWT access + rotating refresh tokens, token-version gate, TOTP 2FA |
+| **Wallet** | Atomic ledger with exposure engine and optimistic concurrency |
+| **Provably fair** | HMAC-SHA256 (server seed + client seed + nonce) |
+
+---
+
+## Features
+
+### 🎰 Casino (in-house games)
+Coinflip · Crash · Dice · Mines · Plinko · Pump (Balloon) · Roulette · Towers · Slots · Lottery · **Chicken Road** — all provably fair, with live bet feeds, multi-ball/auto-play where applicable, and per-game admin config (min/max bet, RTP/risk, force-win/loss controls).
+
+### 🏏 Sports Exchange
+Back/lay markets with real-time odds, fancy/bookmaker/session markets, exposure & liability tracking, settlement and void handling.
+
+### 👤 Player Account
+- **Wallet** — balance, exposure, bonus, available
+- **Deposit** — UPI / Bank Transfer / Crypto with QR + copy-to-clipboard, quick amounts (admin-configurable payment details)
+- **Withdraw** — saved payout methods, "Max" balance, request queue
+- **Security & 2FA** — enable/disable TOTP (QR + manual key), change password, **active session management** ("sign out all devices")
+- **VIP & loyalty tiers**, bets history, wallet statement, notifications
+
+### 🛠️ Admin Panel (22 sections)
+Dashboard · Users · All Bets · Casino Bets · Deposits · Withdrawals · Markets · VIP · Bonuses · Affiliates · Support · Live Risk · Monitoring · Provably Fair · Reports · Announcements · Payment Methods · API Keys · Admin Roles · Security Center · Audit Logs · Settings.
+
+Includes wallet adjustments, betting limits, role-based access (6-tier hierarchy: Super Admin → Admin → Super Master → Master → Agent → User), promo codes, in-house game management, real-time monitoring (sessions, CPU/memory gauges), and live exposure/risk.
+
+### 🔐 Security
+- JWT access tokens with a per-user **token-version gate** — bumping the version (on "sign out all" or password change) **instantly invalidates** every other device's access token, not just refresh tokens.
+- Rotating refresh tokens stored hashed; per-session revocation.
+- TOTP 2FA (Google Authenticator compatible).
+- Admin audit logging of sensitive actions.
+
+---
+
+## Quick Start
 
 ### Prerequisites
 - Node.js 20+
@@ -17,110 +71,48 @@ A modern, full-stack betting exchange + casino platform built from scratch. Feat
 ### Install & Run
 
 ```bash
-# Clone the repo
 git clone https://github.com/cyberwithsaif/bettingluxuryexchange.git
-cd bettingluxuryexchange
+cd bettingluxuryexchange/platform
 
-# Install all dependencies
-cd platform
+# Install all workspace dependencies
 pnpm install
 
-# Configure environment (edit as needed)
-cp apps/api/.env.example apps/api/.env
+# Configure the API environment
+cp apps/api/.env.example apps/api/.env   # then edit values
 
-# Push DB schema
-pnpm --filter @exch/api run db:push
+# Generate Prisma client & push the schema
+pnpm db:generate
+pnpm --filter @exch/api exec prisma db push
 
-# Build the API
-pnpm --filter @exch/api run build
+# Dev — run all three apps in parallel
+pnpm dev
+#   or individually:
+pnpm dev:api     # NestJS API   → http://localhost:4000
+pnpm dev:web     # Player site  → http://localhost:3000
+pnpm dev:admin   # Admin panel  → http://localhost:3001/admin
+```
 
-# Start all services
-# Terminal 1 — API server
-cd apps/api && node dist/main.js
+### Production build
 
-# Terminal 2 — User web app
-pnpm --filter @exch/web run dev
-
-# Terminal 3 — Admin panel
-pnpm --filter @exch/admin run dev
+```bash
+pnpm build       # builds api + web + admin (pnpm -r run build)
 ```
 
 ---
 
-## 🌐 URLs
+## URLs
 
 | Service | URL |
 |---------|-----|
-| **User Web App** | http://localhost:3000 |
-| **Admin Panel** | http://localhost:3001 |
+| **Player Web App** | http://localhost:3000 |
+| **Admin Panel** | http://localhost:3001/admin |
 | **API Server** | http://localhost:4000/api |
 
----
-
-## 🔑 Default Credentials
-
-| Role | Username | Password |
-|------|----------|----------|
-| **Super Admin** | `superadmin` | `ChangeMe!Now2026` |
-| **User (demo)** | `saif` | `Saif1234!` |
-
-> ⚠️ Change all passwords immediately after first login in a production environment.
+> The admin app runs under a `/admin` basePath. Casino API routes are prefixed `casino/`; with the global `/api` prefix a full route looks like `/api/casino/towers/active`.
 
 ---
 
-## 🏗️ Architecture
-
-```
-platform/
-├── apps/
-│   ├── api/          # NestJS REST API (port 4000)
-│   ├── web/          # Next.js user frontend (port 3000)
-│   └── admin/        # Next.js admin panel (port 3001)
-└── packages/
-    └── db/           # Prisma schema & migrations
-```
-
-### Tech Stack
-- **API**: NestJS + Prisma + PostgreSQL + Redis + Socket.io
-- **Frontend**: Next.js 14 (App Router) + TailwindCSS + SWR + Zustand
-- **Auth**: JWT (8h access token + 30d refresh token) with auto-refresh
-- **Wallet**: Atomic double-entry ledger with optimistic concurrency
-
----
-
-## ✅ Features Built
-
-| Subsystem | Status |
-|-----------|--------|
-| Wallet ledger (atomic, optimistic-concurrency, double-entry) | ✅ Built |
-| Exposure engine (per-runner P/L, per-market worst-case) | ✅ Built |
-| Betting engine (back/lay placement, settlement, void, fancy) | ✅ Built |
-| Admin panel (users, deposits, withdrawals, markets, risk, API-keys, logs) | ✅ Built |
-| Agent hierarchy (6 roles, parent-chain, partnership %) | ✅ Built |
-| Casino lobby (provider-agnostic, seamless wallet callbacks) | ✅ Built |
-| Deposit / Withdrawal flow (immediate deduction, refund on reject) | ✅ Built |
-| Real-time balance updates (Socket.io pub/sub via Redis) | ✅ Built |
-| 2FA (TOTP via QR code) | ✅ Built |
-| Platform settings (banners, announcements, commission %) | ✅ Built |
-| Auto JWT token refresh (no mid-session logouts) | ✅ Built |
-| Password show/hide toggle on login pages | ✅ Built |
-
----
-
-## 📋 Admin Panel Features
-
-- **Users** — Create, edit, suspend, reset password, adjust wallet balance, set betting limits
-- **Transactions** — Approve/reject deposits and withdrawals with instant ledger updates
-- **Markets** — Manage sports markets, set odds, settle results, void bets
-- **Casino** — Add/remove providers and games
-- **Risk** — View open exposure across all markets
-- **Reports** — P/L reports, bet history
-- **Platform Settings** — Banners, announcements, commission rates
-- **API Keys** — Manage third-party provider credentials
-
----
-
-## 🔐 Environment Variables
+## Environment Variables
 
 ```env
 # apps/api/.env
@@ -128,46 +120,59 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/exch_platform
 REDIS_URL=redis://127.0.0.1:6379
 API_PORT=4000
 
-JWT_ACCESS_SECRET=your-32-char-secret
+JWT_ACCESS_SECRET=your-32-char-access-secret
 JWT_REFRESH_SECRET=your-32-char-refresh-secret
-JWT_ACCESS_TTL=28800       # 8 hours
-JWT_REFRESH_TTL=2592000    # 30 days
+JWT_ACCESS_TTL=86400        # 24 hours
+JWT_REFRESH_TTL=2592000     # 30 days
 
 BOOTSTRAP_SUPERADMIN_USERNAME=superadmin
-BOOTSTRAP_SUPERADMIN_PASSWORD=ChangeMe!Now2026
+BOOTSTRAP_SUPERADMIN_PASSWORD=change-me-on-first-login
 
 CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 ```
 
+> ⚠️ Use strong secrets and change the bootstrap admin password immediately in any non-local environment.
+
 ---
 
-## 📦 Key Scripts
+## Key Scripts
 
 ```bash
-# Build API
-pnpm --filter @exch/api run build
+pnpm dev                # run api + web + admin in parallel
+pnpm build              # build all apps
+pnpm lint               # lint all apps
 
-# Database operations
-pnpm --filter @exch/api run db:push      # Push schema changes
-pnpm --filter @exch/api run db:migrate   # Run migrations
-pnpm --filter @exch/api run db:seed      # Seed initial data
+pnpm db:generate        # prisma generate
+pnpm db:migrate         # prisma migrate
+pnpm db:seed            # seed initial data
 
-# Lint & type check
-pnpm --filter @exch/api run lint
-pnpm --filter @exch/web run type-check
+# Currency is formatted as ₹ with the en-IN locale.
 ```
 
 ---
 
-## 🛠️ Recent Changes (v1.1)
+## Deployment
 
-- ✅ Fixed JWT token auto-refresh (no more 401 logouts after 15 minutes)
-- ✅ Extended JWT access token TTL to 8 hours
-- ✅ Fixed withdrawal flow: balance deducted immediately on request
-- ✅ Fixed rejection flow: balance refunded instantly via ADMIN_CREDIT
-- ✅ Fixed user edit/password-reset endpoints (PATCH /users/:id)
-- ✅ Fixed Prisma schema errors in Casino and Admin services
-- ✅ Added password show/hide eye toggle to all login pages
-- ✅ Added login disable toggle to admin panel
-- ✅ Fixed balance display in withdraw/deposit pages
-- ✅ Fixed username display (was hardcoded "Demo", now shows real user)
+Apps run under **PM2 (cluster mode)** behind **nginx**, which reverse-proxies:
+`/` → web (`:3000`), `/admin` → admin (`:3001`), `/api` → API (`:4000`), plus a Socket.io upgrade.
+
+```bash
+# On the server
+git pull origin main
+cd platform && pnpm install && pnpm build
+pm2 restart exch-web exch-api exch-admin
+```
+
+Notes:
+- Restart only the app you changed (`exch-web`, `exch-api`, or `exch-admin`).
+- Disable nginx proxy caching for the `/admin` routes (the panel is dynamic).
+- Run `prisma db push` after pulling schema changes.
+
+---
+
+## Performance & Conventions
+
+- Banner/logo art is pre-compressed and served via Next.js image optimization (WebP/AVIF) with explicit `sizes`.
+- Real-time balance, live bets, and monitoring stream over Socket.io (Redis pub/sub).
+- Currency: `₹` with `en-IN` locale throughout.
+- Mobile-first responsive layouts; casino games fit the viewport with dedicated mobile control bars.
