@@ -262,6 +262,7 @@ export default function ChickenRoadPage() {
   );
   const [showFair, setShowFair] = useState(false);
   const [liveBalance, setLiveBalance] = useState<number | null>(null);
+  const [nextCoinReady, setNextCoinReady] = useState(false);
 
   const sounds = useSounds(soundEnabled);
 
@@ -435,7 +436,7 @@ export default function ChickenRoadPage() {
   const adjustBet = (factor: number) => setBetAmount(prev => Math.max(10, Math.round(prev * factor)));
   const quickBet = (amt: number) => setBetAmount(amt);
 
-  // Keyboard + swipe controls
+  // Keyboard controls (advance with arrow / space — desktop convenience)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === " ") { e.preventDefault(); handleMove(); }
@@ -444,19 +445,14 @@ export default function ChickenRoadPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [handleMove]);
 
-  const touchStart = useRef<{ x: number; y: number } | null>(null);
-  const onTouchStart = (e: React.TouchEvent) => {
-    const t = e.touches[0]; if (t) touchStart.current = { x: t.clientX, y: t.clientY };
-  };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    const s = touchStart.current; const t = e.changedTouches[0];
-    if (!s || !t) return;
-    const dx = t.clientX - s.x, dy = t.clientY - s.y;
-    if (dx > 30 && Math.abs(dx) > Math.abs(dy)) handleMove();      // swipe right
-    else if (dy < -30 && Math.abs(dy) > Math.abs(dx)) handleMove(); // swipe up
-    else if (Math.abs(dx) < 12 && Math.abs(dy) < 12) handleMove();  // tap
-    touchStart.current = null;
-  };
+  // The next coin is locked for 1s after the chicken arrives on a new lane, so the
+  // player can't spam-advance. It becomes clickable once the timer elapses.
+  useEffect(() => {
+    if (phase !== "running") { setNextCoinReady(false); return; }
+    setNextCoinReady(false);
+    const t = setTimeout(() => setNextCoinReady(true), 1000);
+    return () => clearTimeout(t);
+  }, [currentLane, phase]);
 
   // Chicken geometry. At the start (lane 0) it stands on the sidewalk edge; once
   // moving it sits in the CENTER of the lane cell it just entered (between the two
@@ -470,7 +466,7 @@ export default function ChickenRoadPage() {
   // detaches from the left edge.
   const anchorX = isMobile ? containerW * 0.42 : SIDEWALK_W + 2 * laneW;
   const cameraX = Math.min(0, anchorX - chickenCenterTrack);
-  const chickenSize = Math.min(laneW * (isMobile ? 0.62 : 0.46), isMobile ? 110 : 74);
+  const chickenSize = Math.min(laneW * (isMobile ? 0.42 : 0.46), isMobile ? 76 : 74);
   const coinSize = Math.round(laneW * (isMobile ? 0.52 : 0.42));
   const isOver = phase === "crashed" || phase === "cashed";
 
@@ -495,11 +491,8 @@ export default function ChickenRoadPage() {
       {/* ── Game viewport ─────────────────────────────────────────────────────── */}
       <div
         ref={viewportRef}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        onClick={() => { if (!draggingRef.current && phase === "running") handleMove(); }}
         className="relative h-[46vh] flex-none md:flex-1 md:h-auto overflow-hidden select-none"
-        style={{ background: "#313463", cursor: phase === "running" ? "pointer" : "default" }}
+        style={{ background: "#313463" }}
       >
         {/* Top HUD */}
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 pointer-events-none">
@@ -524,9 +517,9 @@ export default function ChickenRoadPage() {
 
         {/* Scrolling track (auto-follows the chicken; also drag to pan) */}
         <motion.div
-          className={`absolute top-0 bottom-0 left-0 ${isMobile ? "" : "cursor-grab active:cursor-grabbing"}`}
+          className="absolute top-0 bottom-0 left-0 cursor-grab active:cursor-grabbing"
           animate={trackControls}
-          drag={isMobile ? false : "x"}
+          drag="x"
           dragConstraints={{ left: Math.min(0, containerW - trackWidth), right: 0 }}
           dragElastic={0.06}
           onDragStart={() => { draggingRef.current = true; }}
@@ -618,13 +611,23 @@ export default function ChickenRoadPage() {
                 {/* left lane divider (dashed) */}
                 <div className="absolute top-0 bottom-0 left-0" style={{ width: 4, background: "repeating-linear-gradient(180deg,rgba(255,255,255,0.85),rgba(255,255,255,0.85) 22px,transparent 22px,transparent 44px)" }} />
 
-                {/* multiplier coin — only on lanes not yet crossed */}
+                {/* multiplier coin — only on lanes not yet crossed. The NEXT coin is
+                    the only way to advance: tap it (after the 1s lock) to move. */}
                 {!reached && (
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center" style={{ width: coinSize, height: coinSize }}>
+                <div
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
+                  style={{ width: coinSize, height: coinSize, zIndex: isNext ? 25 : 1, cursor: isNext && nextCoinReady ? "pointer" : "default" }}
+                  onClick={isNext ? (e) => {
+                    e.stopPropagation();
+                    if (draggingRef.current || !nextCoinReady) return;
+                    handleMove();
+                  } : undefined}
+                >
                   <motion.div
-                    animate={isNext ? { scale: [1, 1.08, 1] } : {}}
-                    transition={isNext ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" } : {}}
+                    animate={isNext && nextCoinReady ? { scale: [1, 1.08, 1] } : { scale: 1 }}
+                    transition={isNext && nextCoinReady ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
                     className="w-full h-full"
+                    style={{ opacity: isNext && !nextCoinReady ? 0.45 : 1 }}
                   >
                     <Coin size={coinSize} variant={isNext ? "next" : "future"} label={fmtMult(laneMult)} />
                   </motion.div>
@@ -644,17 +647,16 @@ export default function ChickenRoadPage() {
                   </motion.div>
                 )}
 
-                {/* website logo on crossed lanes the chicken has left */}
+                {/* collected coin with logo on crossed lanes */}
                 {reached && !underChicken && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.6 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.5, type: "spring", stiffness: 320, damping: 20 }}
                     className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                    style={{ width: coinSize, height: coinSize }}
+                    style={{ width: coinSize * 1.35, height: coinSize * 1.35 }}
                   >
-                    <img src="/logo.png" alt="" draggable={false}
-                      style={{ width: coinSize, height: coinSize, objectFit: "contain", filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.4))" }} />
+                    <Coin size={coinSize * 1.35} variant="collected" label="" logoSrc="/logo.png" />
                   </motion.div>
                 )}
 
