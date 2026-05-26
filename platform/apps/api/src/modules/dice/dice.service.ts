@@ -39,10 +39,13 @@ function isWin(mode: DiceMode, roll: number, target: number, minTarget: number, 
   }
 }
 
-// ─── Multiplier (1% house edge) ───────────────────────────────────────────────
-function calcMultiplier(winChance: number): number {
+// ─── Multiplier — payout scales with the configured house edge ───────────────
+// fair payout = 100 / winChance; the house keeps `houseEdge` of it.
+// houseEdge can be negative (admin-set player-favoured) which boosts the payout.
+function calcMultiplier(winChance: number, houseEdge: number): number {
   if (winChance <= 0) return 0;
-  return Math.floor((99 / winChance) * 10000) / 10000;
+  const fair = 100 / winChance;
+  return Math.max(0, Math.floor(fair * (1 - houseEdge) * 10000) / 10000);
 }
 
 @Injectable()
@@ -97,7 +100,7 @@ export class DiceService {
     if (winChance < 0.01 || winChance > 98.99)
       throw new BadRequestException("Win chance must be between 0.01% and 98.99%");
 
-    const multiplier = calcMultiplier(winChance);
+    const multiplier = calcMultiplier(winChance, cfg.houseEdge);
 
     // Deduct bet from wallet
     await this.wallet.applyLedger({

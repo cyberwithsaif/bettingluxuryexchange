@@ -40,7 +40,7 @@ export default function PlControlPage() {
       <div className="rounded-xl px-4 py-3 flex items-start gap-3 border" style={{ background: "rgba(239,68,68,0.08)", borderColor: "rgba(239,68,68,0.3)" }}>
         <AlertTriangle size={18} className="text-red-400 shrink-0 mt-0.5" />
         <p className="text-xs text-red-200/80 leading-relaxed">
-          <b className="text-red-300">House P/L = money kept by the casino.</b> Each game's <b>Player Payout (RTP)</b> slider runs 0–100% — drag <b>left = house wins more</b> (more profit), <b>right = players win more</b>. Changes apply to new bets immediately.
+          <b className="text-red-300">House P/L = money kept by the casino.</b> Each game's <b>Player Payout (RTP)</b> slider runs 0–200%. <b>100% = fair</b> (break-even). Below 100% the <b>house wins</b> (profit); above 100% <b>players win</b>. Note: even at 100% individual bets still swing — RTP is the long-run average. Changes apply to new bets immediately.
         </p>
       </div>
 
@@ -157,8 +157,8 @@ function GameControl({ game }: { game: Game }) {
       {/* Controls */}
       {game.controlType === "edge" && (
         <div className="space-y-3">
-          <Slider label="Player Payout (RTP)" value={Math.round((1 - edge) * 100)} min={0} max={100} step={1}
-            onChange={(v) => setEdge((100 - v) / 100)} suffix="%" hint="← house wins   ·   players win →" tone="#34d399" />
+          <Slider label="Player Payout (RTP)" value={Math.round((1 - edge) * 100)} min={0} max={200} step={1}
+            onChange={(v) => setEdge((100 - v) / 100)} suffix="%" hint="← house wins  ·  100% = fair  ·  players win →" tone="#34d399" />
           {game.hasHardness && (
             <Slider label="Extra Difficulty" value={hardness} min={0} max={10} step={1}
               onChange={setHardness} suffix="" hint="bias toward harder boards (0 = off)" tone="#fbbf24" />
@@ -169,8 +169,8 @@ function GameControl({ game }: { game: Game }) {
 
       {game.controlType === "rtp" && (
         <div className="space-y-3">
-          <Slider label="Player Payout (RTP)" value={rtp} min={0} max={100} step={1}
-            onChange={setRtp} suffix="%" hint="← house wins   ·   players win →" tone="#34d399" />
+          <Slider label="Player Payout (RTP)" value={rtp} min={0} max={200} step={1}
+            onChange={setRtp} suffix="%" hint="← house wins  ·  100% = fair  ·  players win →" tone="#34d399" />
           <div>
             <label className="text-[10px] uppercase tracking-wider text-gray-500 block mb-1">Max Payout (₹, 0 = unlimited)</label>
             <input type="number" value={maxPayout} onChange={(e) => setMaxPayout(Number(e.target.value) || 0)}
