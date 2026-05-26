@@ -645,66 +645,80 @@ export default function ChickenRoadPage() {
       </div>
 
       {/* ── Bottom control panel ──────────────────────────────────────────────── */}
-      <div className="shrink-0 px-3 md:px-4 py-2.5 md:py-3" style={{ background: "#0f0d1e", borderTop: "1px solid rgba(99,60,180,0.25)" }}>
-        <div className="w-full max-w-6xl mx-auto flex flex-col md:flex-row md:items-center gap-2.5 md:gap-2">
+      <div className="shrink-0 px-4 md:px-6 py-3 md:py-4" style={{ background: "#13112a", borderTop: "1px solid rgba(139,92,246,0.15)" }}>
+        <div className="w-full max-w-6xl mx-auto flex flex-col md:flex-row gap-3 md:gap-5">
 
           {/* Bet Amount */}
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <label className="text-[11px] text-white/40 font-semibold whitespace-nowrap">Bet Amount</label>
-            <div className="flex items-center rounded-lg px-2 py-1.5 bg-black/30 border border-white/10">
-              <span className="text-white/40 text-xs mr-0.5 shrink-0">₹</span>
-              <input type="number" value={betAmount}
-                onChange={e => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
-                disabled={phase === "running"}
-                className="bg-transparent flex-1 min-w-0 text-xs font-semibold text-white outline-none disabled:opacity-60 w-16" />
+          <div className="flex flex-col gap-1.5 flex-shrink-0">
+            <label className="text-[11px] font-bold text-white/50 flex items-center gap-1">
+              Bet Amount
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="opacity-60"><path d="M12 4v8m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+            </label>
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center rounded-xl px-3 py-2 bg-[#0c0a20] border border-white/[0.08]" style={{ minWidth: 120 }}>
+                <span className="text-white/40 text-sm mr-1 shrink-0">₹</span>
+                <input type="number" value={betAmount}
+                  onChange={e => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
+                  disabled={phase === "running"}
+                  className="bg-transparent flex-1 min-w-0 w-16 text-sm font-bold text-white outline-none disabled:opacity-60" />
+              </div>
+              {[["1/2", () => adjustBet(0.5)], ["2X", () => adjustBet(2)], ["Max", () => quickBet(Math.floor(liveBalance ?? betAmount))]] .map(([label, fn]) => (
+                <button key={label as string} onClick={fn as () => void} disabled={phase === "running"}
+                  className="px-3 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-40"
+                  style={{ background: "#1e1b3a", border: "1px solid rgba(139,92,246,0.2)", color: "rgba(255,255,255,0.65)" }}>
+                  {label as string}
+                </button>
+              ))}
             </div>
-            <button onClick={() => adjustBet(0.5)} disabled={phase === "running"}
-              className="px-2 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">1/2</button>
-            <button onClick={() => adjustBet(2)} disabled={phase === "running"}
-              className="px-2 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">2X</button>
-            <button onClick={() => quickBet(Math.floor(liveBalance ?? betAmount))} disabled={phase === "running"}
-              className="px-2 py-1.5 rounded-lg text-[11px] font-bold bg-white/[0.07] hover:bg-white/[0.13] transition text-white/70 disabled:opacity-40">Max</button>
           </div>
-
-          {/* Divider */}
-          <div className="hidden md:block w-px h-6" style={{ background: "rgba(99,60,180,0.25)" }} />
 
           {/* Difficulty */}
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <label className="text-[11px] text-white/40 font-semibold">Difficulty</label>
-            {(["EASY", "MEDIUM", "HARD", "DAREDEVIL"] as Difficulty[]).map(d => (
-              <button key={d}
-                onClick={() => { if (phase !== "running") setDifficulty(d); }}
-                disabled={phase === "running"}
-                className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all disabled:opacity-50"
-                style={{
-                  background: difficulty === d ? `${DIFF_CONFIG[d].color}22` : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.08)"}`,
-                  color: difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.45)",
-                }}>
-                {DIFF_CONFIG[d].label}
-              </button>
-            ))}
+          <div className="flex flex-col gap-1.5 flex-1">
+            <label className="text-[11px] font-bold text-white/50 flex items-center gap-1">
+              Difficulty
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="opacity-60"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/><path d="M12 8v4m0 4h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+            </label>
+            <div className="grid grid-cols-4 gap-1.5 flex-1">
+              {(["EASY", "MEDIUM", "HARD", "DAREDEVIL"] as Difficulty[]).map(d => (
+                <button key={d}
+                  onClick={() => { if (phase !== "running") setDifficulty(d); }}
+                  disabled={phase === "running"}
+                  className="py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                  style={{
+                    background: difficulty === d ? `${DIFF_CONFIG[d].color}1a` : "#1e1b3a",
+                    border: `1px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(139,92,246,0.15)"}`,
+                    color: difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.5)",
+                  }}>
+                  {DIFF_CONFIG[d].label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Action button */}
-          <div className="flex-1 flex items-center gap-1.5 justify-end">
+          {/* Action */}
+          <div className="flex flex-col gap-1.5 flex-shrink-0 md:w-56">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold"
+              style={{ background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.25)", color: "#c4b5fd" }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              Betting less than ₹0.01 will enter demo mode
+            </div>
             {phase === "running" ? (
               <motion.button onClick={handleCashout} whileTap={{ scale: 0.97 }}
                 disabled={loading || currentLane === 0}
-                className="px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider text-white transition disabled:opacity-40 whitespace-nowrap"
-                style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 4px 15px rgba(245,158,11,0.3)" }}>
+                className="w-full py-2.5 rounded-xl font-bold text-sm uppercase tracking-widest text-white transition disabled:opacity-40"
+                style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 4px 12px rgba(245,158,11,0.3)" }}>
                 {loading ? "…" : `Cash Out ₹${(session ? session.betAmount * multiplier : 0).toFixed(2)}`}
               </motion.button>
             ) : (
               <motion.button onClick={isOver ? handleReset : handleStart} whileTap={{ scale: 0.97 }}
                 disabled={loading}
-                className="px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider text-[#0a0b16] transition disabled:opacity-50 whitespace-nowrap"
-                style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", boxShadow: "0 4px 15px rgba(251,191,36,0.35)" }}>
+                className="w-full py-2.5 rounded-xl font-bold text-sm uppercase tracking-widest text-[#0a0b16] transition disabled:opacity-50"
+                style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", boxShadow: "0 4px 12px rgba(251,191,36,0.3)" }}>
                 {loading ? "Starting…" : isOver ? "Play Again" : "Start Game"}
               </motion.button>
             )}
           </div>
+
         </div>
       </div>
 
