@@ -703,8 +703,8 @@ export default function ChickenRoadPage() {
                   </motion.div>
                 )}
 
-                {/* ── desktop logo on crossed lanes during running ── */}
-                {reached && !underChicken && !isMobile && !isOver && (
+                {/* ── logo on crossed lanes during running (mobile + desktop) ── */}
+                {reached && !underChicken && !isOver && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.6 }}
                     animate={{ opacity: 1, scale: 1 }}
