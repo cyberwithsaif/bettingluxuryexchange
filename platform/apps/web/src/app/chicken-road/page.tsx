@@ -575,7 +575,6 @@ export default function ChickenRoadPage() {
             const left = SIDEWALK_W + i * laneW;
             const reached = i < currentLane;       // already crossed
             const isNext = i === currentLane && phase === "running";
-            const underChicken = currentLane >= 1 && i === currentLane - 1; // chicken stands here
             const laneMult = multTable[i] ?? 1;
             const showVehicle = phase !== "idle" && i >= currentLane && i !== crashLane;
             return (
@@ -585,17 +584,30 @@ export default function ChickenRoadPage() {
                 {/* left lane divider (dashed) */}
                 <div className="absolute top-0 bottom-0 left-0" style={{ width: 4, background: "repeating-linear-gradient(180deg,rgba(255,255,255,0.85),rgba(255,255,255,0.85) 22px,transparent 22px,transparent 44px)" }} />
 
-                {/* multiplier coin (hidden in the cell the chicken occupies) */}
-                {!underChicken && (
+                {/* multiplier coin — only on lanes not yet crossed */}
+                {!reached && (
                 <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center" style={{ width: coinSize, height: coinSize }}>
                   <motion.div
                     animate={isNext ? { scale: [1, 1.08, 1] } : {}}
                     transition={isNext ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" } : {}}
                     className="w-full h-full"
                   >
-                    <Coin size={coinSize} variant={reached ? "reached" : isNext ? "next" : "future"} label={fmtMult(laneMult)} />
+                    <Coin size={coinSize} variant={isNext ? "next" : "future"} label={fmtMult(laneMult)} />
                   </motion.div>
                 </div>
+                )}
+
+                {/* stone barrier — fixed on each arrived lane, fades in 0.5s after crossing */}
+                {reached && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.6, y: -8 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ delay: 0.5, type: "spring", stiffness: 320, damping: 20 }}
+                    className="absolute left-1/2 -translate-x-1/2"
+                    style={{ top: boardH / 2 - chickenSize / 2 - (Math.min(laneW * 0.46, 96) * 58 / 95) - 4 }}
+                  >
+                    <StoneObstacle width={Math.min(laneW * 0.46, 96)} />
+                  </motion.div>
                 )}
 
                 {/* ambient vehicle */}
@@ -619,12 +631,6 @@ export default function ChickenRoadPage() {
             animate={{ left: chickenCenterTrack - laneW / 2 }}
             transition={{ type: "spring", stiffness: 260, damping: 22 }}
           >
-            {/* stone barrier on the arrived lane, above the chicken */}
-            {currentLane >= 1 && (
-              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: chickenSize * 0.12 }}>
-                <StoneObstacle width={Math.min(laneW * 0.55, 118)} />
-              </motion.div>
-            )}
             <motion.div
               animate={
                 phase === "crashed"
