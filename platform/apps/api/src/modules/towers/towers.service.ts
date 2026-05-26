@@ -47,10 +47,18 @@ function generateBombPositions(
   return result;
 }
 
-function calcMultiplier(level: number, columns: number, safeTiles: number, houseEdge: number): number {
+// FIXED & fair multiplier — NEVER scaled. The admin RTP biases the per-level
+// bomb chance instead (see pickTile), so the payout ladder always looks fair.
+function calcMultiplier(level: number, columns: number, safeTiles: number): number {
   if (level === 0) return 1.0;
   const fair = Math.pow(columns / safeTiles, level);
-  return Math.floor(fair * (1 - houseEdge) * 100) / 100;
+  return Math.floor(fair * 100) / 100;
+}
+
+// Deterministic per-level uniform in [0,1) for the RTP-biased bomb roll.
+function stepUniform(serverSeed: string, clientSeed: string, nonce: number, step: number): number {
+  const h = crypto.createHmac("sha256", serverSeed).update(`${clientSeed}:${nonce}:lvl:${step}`).digest("hex");
+  return parseInt(h.slice(0, 8), 16) / 0x100000000;
 }
 
 @Injectable()
@@ -128,7 +136,7 @@ export class TowersService {
     });
 
     const multiplierTable = Array.from({ length: LEVELS }, (_, i) =>
-      calcMultiplier(i + 1, columns, safeTiles, cfg.houseEdge),
+      calcMultiplier(i + 1, columns, safeTiles),
     );
 
     return {
@@ -150,24 +158,32 @@ export class TowersService {
     const bombPositions = session.bombPositions as number[][];
     const pickedCols    = session.pickedCols as number[];
     const rowBombs      = bombPositions[session.currentLevel]!;
-    const isBomb        = rowBombs.includes(col);
+    const cfg           = await this.getConfig();
+
+    // RTP biases the per-level bomb chance (not the payout). T = 1 - houseEdge:
+    // EV per level = pSurvive × (columns/safeTiles) = T  ⇒  pSurvive = T × (safeTiles/columns).
+    const T            = 1 - cfg.houseEdge;
+    const fairSurvival = session.safeTiles / session.columns;
+    const pSurvive     = Math.min(1, Math.max(0, T * fairSurvival));
+    const u            = stepUniform(session.serverSeed, session.clientSeed, session.nonce, session.currentLevel);
+    const isBomb       = u >= pSurvive;
 
     if (isBomb) {
+      const revealBombs = rowBombs.includes(col) ? rowBombs : [...rowBombs, col];
       await this.prisma.towersSession.update({
         where: { id: sessionId },
         data:  { status: TowersStatus.BUSTED, settledAt: new Date(), pickedCols: [...pickedCols, col] },
       });
       return {
         isBomb: true as const, col, row: session.currentLevel,
-        rowBombs, status: TowersStatus.BUSTED,
+        rowBombs: revealBombs, status: TowersStatus.BUSTED,
         bombPositions, serverSeed: session.serverSeed,
         multiplier: 0, payout: 0,
       };
     }
 
-    const cfg          = await this.getConfig();
     const newLevel     = session.currentLevel + 1;
-    const newMult      = calcMultiplier(newLevel, session.columns, session.safeTiles, cfg.houseEdge);
+    const newMult      = calcMultiplier(newLevel, session.columns, session.safeTiles);
     const newPicked    = [...pickedCols, col];
     const isComplete   = newLevel >= session.levels;
 
@@ -223,9 +239,8 @@ export class TowersService {
       where: { userId, status: TowersStatus.IN_PROGRESS },
     });
     if (!session) return null;
-    const cfg = await this.getConfig();
     const multiplierTable = Array.from({ length: session.levels }, (_, i) =>
-      calcMultiplier(i + 1, session.columns, session.safeTiles, cfg.houseEdge),
+      calcMultiplier(i + 1, session.columns, session.safeTiles),
     );
     return {
       id: session.id, betAmount: Number(session.betAmount), difficulty: session.difficulty,

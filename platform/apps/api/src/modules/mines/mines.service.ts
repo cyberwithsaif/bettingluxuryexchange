@@ -25,7 +25,9 @@ function generateMinePositions(serverSeed: string, clientSeed: string, nonce: nu
   return positions;
 }
 
-function calculateMultiplier(minesCount: number, safeClicks: number, houseEdge: number): number {
+// FIXED & fair multiplier (true odds) — NEVER scaled. The admin RTP biases how
+// often the player busts (see clickTile), so the payout ladder always looks fair.
+function calculateMultiplier(minesCount: number, safeClicks: number): number {
   if (safeClicks === 0) return 1.00;
   const n = 25;
   const nMinusMines = 25 - minesCount;
@@ -33,9 +35,13 @@ function calculateMultiplier(minesCount: number, safeClicks: number, houseEdge: 
   for (let i = 0; i < safeClicks; i++) {
     probability *= (nMinusMines - i) / (n - i);
   }
-  const trueOdds = 1 / probability;
-  const payoutMultiplier = trueOdds * (1 - houseEdge);
-  return Math.floor(payoutMultiplier * 100) / 100;
+  return Math.floor((1 / probability) * 100) / 100;
+}
+
+// Deterministic per-step uniform in [0,1) for the RTP-biased bust roll.
+function stepUniform(serverSeed: string, clientSeed: string, nonce: number, step: number): number {
+  const h = crypto.createHmac("sha256", serverSeed).update(`${clientSeed}:${nonce}:step:${step}`).digest("hex");
+  return parseInt(h.slice(0, 8), 16) / 0x100000000;
 }
 
 @Injectable()
@@ -128,9 +134,22 @@ export class MinesService {
     if (clickedTiles.find((t) => t.tile === tileIndex)) throw new BadRequestException("Tile already clicked");
 
     const minePositions = (session.minePositions as number[]) || [];
-    const isMine = minePositions.includes(tileIndex);
+    const cfg = await this.getConfig();
 
-    if (isMine) {
+    // RTP biases the bust chance (not the payout). T = 1 - houseEdge:
+    // EV per safe click = pSurvive × multIncrement = T  ⇒  pSurvive = T × fairSurvival.
+    const c             = clickedTiles.length;          // safe clicks so far
+    const T             = 1 - cfg.houseEdge;
+    const tilesLeft     = 25 - c;
+    const safeLeft      = (25 - session.minesCount) - c;
+    const fairSurvival  = tilesLeft > 0 ? safeLeft / tilesLeft : 0;
+    let   pSurvive      = Math.min(1, Math.max(0, T * fairSurvival));
+    if (cfg.hardness > 0) pSurvive *= (1 - cfg.hardness / 100); // extra difficulty knob
+    const u             = stepUniform(session.serverSeed, session.clientSeed, session.nonce, c);
+    const busted        = u >= pSurvive;
+
+    if (busted) {
+      const revealed = minePositions.includes(tileIndex) ? minePositions : [...minePositions, tileIndex];
       await this.prisma.minesSession.update({
         where: { id: sessionId },
         data: {
@@ -142,50 +161,29 @@ export class MinesService {
       return {
         isMine: true as const,
         status: MinesStatus.BUSTED,
-        minePositions,
+        minePositions: revealed,
         serverSeed: session.serverSeed,
       };
-    } else {
-      const cfg = await this.getConfig();
-
-      // Hardness: extra probability to force a bust on a safe tile
-      if (cfg.hardness > 0 && Math.random() * 100 < cfg.hardness) {
-        await this.prisma.minesSession.update({
-          where: { id: sessionId },
-          data: {
-            status: MinesStatus.BUSTED,
-            settledAt: new Date(),
-            clickedTiles: [...clickedTiles, { tile: tileIndex, isMine: true }],
-          },
-        });
-        return {
-          isMine: true as const,
-          status: MinesStatus.BUSTED,
-          minePositions: [...minePositions, tileIndex], // show clicked tile as mine
-          serverSeed: session.serverSeed,
-        };
-      }
-
-      const newClickedCount = clickedTiles.length + 1;
-      const nextMultiplier = calculateMultiplier(session.minesCount, newClickedCount, cfg.houseEdge);
-      const newClickedTiles = [...clickedTiles, { tile: tileIndex, isMine: false, multiplier: nextMultiplier }];
-      const wonAll = newClickedCount === (25 - session.minesCount);
-
-      if (wonAll) {
-        return this.cashoutInternal(session, newClickedTiles, nextMultiplier, true);
-      } else {
-        await this.prisma.minesSession.update({
-          where: { id: sessionId },
-          data: { multiplier: new Prisma.Decimal(nextMultiplier), clickedTiles: newClickedTiles },
-        });
-        return {
-          isMine: false as const,
-          status: MinesStatus.IN_PROGRESS,
-          multiplier: nextMultiplier,
-          tileIndex,
-        };
-      }
     }
+
+    const newClickedCount = c + 1;
+    const nextMultiplier = calculateMultiplier(session.minesCount, newClickedCount);
+    const newClickedTiles = [...clickedTiles, { tile: tileIndex, isMine: false, multiplier: nextMultiplier }];
+    const wonAll = newClickedCount === (25 - session.minesCount);
+
+    if (wonAll) {
+      return this.cashoutInternal(session, newClickedTiles, nextMultiplier, true);
+    }
+    await this.prisma.minesSession.update({
+      where: { id: sessionId },
+      data: { multiplier: new Prisma.Decimal(nextMultiplier), clickedTiles: newClickedTiles },
+    });
+    return {
+      isMine: false as const,
+      status: MinesStatus.IN_PROGRESS,
+      multiplier: nextMultiplier,
+      tileIndex,
+    };
   }
 
   async cashout(userId: string, sessionId: string) {

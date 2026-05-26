@@ -68,11 +68,14 @@ export class PumpService {
   // The next pump (pump n+1) is shown to the player as the "next multiplier"
   // pump n=0 → 1.00 (no pumps yet). Cashout payout is at currentMult.
 
-  private buildMultTable(difficulty: PumpDifficulty, rtpPercent: number, cfg?: DifficultyParams): number[] {
+  // FIXED & fair table — M(n) = 1 / (1 - popChance)^n. NEVER scaled by RTP; the
+  // admin RTP biases WHEN the balloon pops (see derivePopPump), so the payout
+  // ladder the player sees never changes.
+  private buildMultTable(difficulty: PumpDifficulty, cfg?: DifficultyParams): number[] {
     const p = cfg ?? this.config.difficulties[difficulty] ?? DIFFICULTY_DEFAULTS[difficulty];
     const table: number[] = [];
     for (let n = 1; n <= p.maxPumps; n++) {
-      const m = (rtpPercent / 100) / Math.pow(1 - p.popChance, n);
+      const m = 1 / Math.pow(1 - p.popChance, n);
       table.push(Math.max(1.00, Math.round(m * 100) / 100));
     }
     return table;
@@ -89,12 +92,16 @@ export class PumpService {
     difficulty: PumpDifficulty,
   ): number {
     const params = this.config.difficulties[difficulty] ?? DIFFICULTY_DEFAULTS[difficulty];
+    // RTP biases the EFFECTIVE pop chance (not the payout ladder). T = rtp/100:
+    // effPop = 1 - T·(1-popChance). T<1 ⇒ pops sooner (house), T>1 ⇒ pops later (players win).
+    const T = Math.max(0.01, (this.config.rtpPercent ?? 97) / 100);
+    const effPop = Math.min(0.99, Math.max(0.001, 1 - T * (1 - params.popChance)));
     const msg = `pump:popPump:v1:${clientSeed}:${nonce}:${difficulty}`;
     const hash = crypto.createHmac("sha256", serverSeed).update(msg).digest("hex");
     const u = parseInt(hash.slice(0, 8), 16) / 0xffffffff;
     // Avoid log(0)
     const safeU = Math.min(0.999999, Math.max(0.000001, u));
-    const pop = Math.floor(Math.log(1 - safeU) / Math.log(1 - params.popChance)) + 1;
+    const pop = Math.floor(Math.log(1 - safeU) / Math.log(1 - effPop)) + 1;
     return Math.min(Math.max(1, pop), params.maxPumps);
   }
 
@@ -164,7 +171,7 @@ export class PumpService {
       include: { user: { select: { username: true } } },
     });
 
-    const multTable = this.buildMultTable(input.difficulty, cfg.rtpPercent);
+    const multTable = this.buildMultTable(input.difficulty);
 
     // Live feed: announce new session
     this.gateway.broadcast("pump:session", {
@@ -238,9 +245,9 @@ export class PumpService {
       };
     }
 
-    // Survives → multiplier increases
-    const newMult = (cfg.rtpPercent / 100) / Math.pow(1 - diffParams.popChance, newPumps);
-    const newMultRounded = Math.round(newMult * 100) / 100;
+    // Survives → multiplier increases (FIXED fair ladder, no RTP scaling)
+    const newMult = 1 / Math.pow(1 - diffParams.popChance, newPumps);
+    const newMultRounded = Math.max(1.0, Math.round(newMult * 100) / 100);
 
     await this.prisma.pumpBet.update({
       where: { id: betId },
@@ -334,7 +341,7 @@ export class PumpService {
       clientSeed:     bet.clientSeed,
       nonce:          bet.nonce,
       maxPumps:       params.maxPumps,
-      multTable:      this.buildMultTable(bet.difficulty, cfg.rtpPercent),
+      multTable:      this.buildMultTable(bet.difficulty),
       status:         bet.status,
     };
   }
@@ -346,7 +353,7 @@ export class PumpService {
       difficulty,
       popChance: params.popChance,
       maxPumps:  params.maxPumps,
-      table:     this.buildMultTable(difficulty, cfg.rtpPercent),
+      table:     this.buildMultTable(difficulty),
     };
   }
 
