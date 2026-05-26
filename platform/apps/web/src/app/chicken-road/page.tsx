@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo, useLayoutEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useAnimationControls } from "framer-motion";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
 import { api } from "@/lib/api";
@@ -446,13 +446,23 @@ export default function ChickenRoadPage() {
   const chickenShift = currentLane === 0 ? 0 : -laneW / 2;
   const chickenCenterTrack = SIDEWALK_W + currentLane * laneW + chickenShift;
 
-  // Camera: anchor the chicken toward the middle on mobile (more zoomed-in feel),
-  // clamped so the start sidewalk never detaches from the left edge.
-  const anchorX = isMobile ? containerW * 0.42 : SIDEWALK_W;
+  // Camera: on mobile anchor the chicken near the middle (zoomed feel); on desktop
+  // keep ~2 crossed lanes visible behind it. Clamped so the start sidewalk never
+  // detaches from the left edge.
+  const anchorX = isMobile ? containerW * 0.42 : SIDEWALK_W + 2 * laneW;
   const cameraX = Math.min(0, anchorX - chickenCenterTrack);
   const chickenSize = Math.min(laneW * (isMobile ? 0.62 : 0.46), isMobile ? 110 : 74);
   const coinSize = Math.round(laneW * (isMobile ? 0.52 : 0.42));
   const isOver = phase === "crashed" || phase === "cashed";
+
+  // Draggable camera: track follows the chicken automatically, but the player can
+  // also drag the board horizontally to look around.
+  const trackWidth = SIDEWALK_W + lanes * laneW + laneW;
+  const trackControls = useAnimationControls();
+  const draggingRef = useRef(false);
+  useEffect(() => {
+    trackControls.start({ x: cameraX, transition: { type: "spring", stiffness: 220, damping: 28 } });
+  }, [cameraX, trackControls]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -468,7 +478,7 @@ export default function ChickenRoadPage() {
         ref={viewportRef}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        onClick={() => phase === "running" && handleMove()}
+        onClick={() => { if (!draggingRef.current && phase === "running") handleMove(); }}
         className="relative h-[46vh] flex-none md:flex-1 md:h-auto overflow-hidden select-none"
         style={{ background: "#313463", cursor: phase === "running" ? "pointer" : "default" }}
       >
@@ -493,12 +503,16 @@ export default function ChickenRoadPage() {
           <Shield size={12} /> Fair
         </button>
 
-        {/* Scrolling track */}
+        {/* Scrolling track (auto-follows the chicken; also drag to pan) */}
         <motion.div
-          className="absolute top-0 bottom-0 left-0"
-          animate={{ x: cameraX }}
-          transition={{ type: "spring", stiffness: 220, damping: 28 }}
-          style={{ width: SIDEWALK_W + lanes * laneW + laneW }}
+          className={`absolute top-0 bottom-0 left-0 ${isMobile ? "" : "cursor-grab active:cursor-grabbing"}`}
+          animate={trackControls}
+          drag={isMobile ? false : "x"}
+          dragConstraints={{ left: Math.min(0, containerW - trackWidth), right: 0 }}
+          dragElastic={0.06}
+          onDragStart={() => { draggingRef.current = true; }}
+          onDragEnd={() => { setTimeout(() => { draggingRef.current = false; }, 60); }}
+          style={{ width: trackWidth }}
         >
           {/* Start sidewalk */}
           <div className="absolute top-0 bottom-0 left-0" style={{ width: SIDEWALK_W }}>
@@ -575,6 +589,7 @@ export default function ChickenRoadPage() {
             const left = SIDEWALK_W + i * laneW;
             const reached = i < currentLane;       // already crossed
             const isNext = i === currentLane && phase === "running";
+            const underChicken = reached && i === currentLane - 1; // chicken currently stands here
             const laneMult = multTable[i] ?? 1;
             const showVehicle = phase !== "idle" && i >= currentLane && i !== crashLane;
             return (
@@ -607,6 +622,19 @@ export default function ChickenRoadPage() {
                     style={{ top: boardH / 2 - chickenSize / 2 - (Math.min(laneW * 0.46, 96) * 58 / 95) - 4 }}
                   >
                     <StoneObstacle width={Math.min(laneW * 0.46, 96)} />
+                  </motion.div>
+                )}
+
+                {/* collected gold logo coin on crossed lanes the chicken has left */}
+                {reached && !underChicken && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.6 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5, type: "spring", stiffness: 320, damping: 20 }}
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                    style={{ width: coinSize, height: coinSize }}
+                  >
+                    <Coin size={coinSize} variant="collected" label="" logoSrc="/logo.png" />
                   </motion.div>
                 )}
 
@@ -859,12 +887,12 @@ export default function ChickenRoadPage() {
 // ─── Multiplier coin (textured manhole) ─────────────────────────────────────────
 
 const COIN_PALETTE = {
-  future:  { b1: "#474a8e", b2: "#2b2f67", b3: "#202552", ring1: "#4e5395", ring2: "#232858", sA: "#252a5c", sB: "#353b77", inner: "#1b1f48", text: "#aeb7ff", glow: "rgba(135,145,255,.4)" },
-  next:    { b1: "#fcd34d", b2: "#f59e0b", b3: "#b45309", ring1: "#fde68a", ring2: "#92400e", sA: "#b45309", sB: "#f59e0b", inner: "#78350f", text: "#fffbeb", glow: "rgba(251,191,36,.55)" },
-  reached: { b1: "#4ade80", b2: "#16a34a", b3: "#15803d", ring1: "#86efac", ring2: "#166534", sA: "#15803d", sB: "#22c55e", inner: "#14532d", text: "#f0fdf4", glow: "rgba(34,197,94,.5)" },
+  future:    { b1: "#474a8e", b2: "#2b2f67", b3: "#202552", ring1: "#4e5395", ring2: "#232858", sA: "#252a5c", sB: "#353b77", inner: "#1b1f48", text: "#aeb7ff", glow: "rgba(135,145,255,.4)" },
+  next:      { b1: "#fcd34d", b2: "#f59e0b", b3: "#b45309", ring1: "#fde68a", ring2: "#92400e", sA: "#b45309", sB: "#f59e0b", inner: "#78350f", text: "#fffbeb", glow: "rgba(251,191,36,.55)" },
+  collected: { b1: "#fcd34d", b2: "#f59e0b", b3: "#b45309", ring1: "#fde68a", ring2: "#92400e", sA: "#c2710c", sB: "#f59e0b", inner: "#78350f", text: "#fffbeb", glow: "rgba(251,191,36,.55)" },
 } as const;
 
-function Coin({ size, variant, label }: { size: number; variant: keyof typeof COIN_PALETTE; label: string }) {
+function Coin({ size, variant, label, logoSrc }: { size: number; variant: keyof typeof COIN_PALETTE; label: string; logoSrc?: string }) {
   const p = COIN_PALETTE[variant];
   const inner = size * 0.63;
   const stripe = Math.max(4, inner * 0.07);
@@ -880,12 +908,19 @@ function Coin({ size, variant, label }: { size: number; variant: keyof typeof CO
         width: inner, height: inner, borderRadius: "50%", position: "relative",
         background: `repeating-linear-gradient(90deg, ${p.sA} 0px, ${p.sA} ${stripe}px, ${p.sB} ${stripe}px, ${p.sB} ${stripe * 2}px)`,
         boxShadow: `inset 0 0 0 ${size * 0.028}px ${p.inner}, inset 0 ${size * 0.07}px ${size * 0.1}px rgba(255,255,255,.05), inset 0 -${size * 0.07}px ${size * 0.1}px rgba(0,0,0,.35)`,
-        display: "flex", justifyContent: "center", alignItems: "center",
+        display: "flex", justifyContent: "center", alignItems: "center", overflow: "hidden",
       }}>
-        <span className="tabular-nums" style={{
-          position: "relative", zIndex: 2, fontSize, fontWeight: 900, color: p.text,
-          letterSpacing: "-0.5px", textShadow: `0 2px 0 ${p.inner}, 0 0 10px ${p.glow}`,
-        }}>{label}</span>
+        {logoSrc ? (
+          <img src={logoSrc} alt="" draggable={false} style={{
+            width: inner * 0.66, height: inner * 0.66, objectFit: "contain", position: "relative", zIndex: 2,
+            filter: "drop-shadow(0 1px 2px rgba(0,0,0,.45))",
+          }} />
+        ) : (
+          <span className="tabular-nums" style={{
+            position: "relative", zIndex: 2, fontSize, fontWeight: 900, color: p.text,
+            letterSpacing: "-0.5px", textShadow: `0 2px 0 ${p.inner}, 0 0 10px ${p.glow}`,
+          }}>{label}</span>
+        )}
       </div>
       <div style={{
         position: "absolute", top: size * 0.13, left: size * 0.17, width: size * 0.28, height: size * 0.1,
