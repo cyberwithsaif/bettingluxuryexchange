@@ -48,6 +48,41 @@ class SetRoleDto {
   @IsEnum(UserRole) role!: UserRole;
 }
 
+class VipLevelDto {
+  @IsOptional() @IsString() name?: string;
+  @IsOptional() @IsInt() tier?: number;
+  @IsOptional() @IsNumber() @Min(0) minWagered?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(10000) cashbackBps?: number;
+  @IsOptional() @IsNumber() @Min(0) bonusAmount?: number;
+  @IsOptional() @IsString() color?: string;
+  @IsOptional() @IsString({ each: true }) perks?: string[];
+}
+
+class AssignVipDto {
+  @IsString() username!: string;
+  @IsOptional() @IsString() vipLevelId?: string | null;
+}
+
+class PromoDto {
+  @IsOptional() @IsString() code?: string;
+  @IsOptional() @IsIn(["DEPOSIT_BONUS", "FREE_CREDIT", "CASHBACK"]) type?: string;
+  @IsOptional() @IsNumber() @Min(0) amount?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(100000) percentage?: number;
+  @IsOptional() @IsInt() @Min(1) maxUses?: number | null;
+  @IsOptional() @IsNumber() @Min(0) minDeposit?: number;
+  @IsOptional() @IsInt() @Min(1) wagerMultiplier?: number;
+  @IsOptional() @IsString() expiresAt?: string | null;
+  @IsOptional() @IsBoolean() active?: boolean;
+}
+
+class ReplyTicketDto {
+  @IsString() body!: string;
+}
+
+class TicketStatusDto {
+  @IsIn(["OPEN", "PENDING", "RESOLVED", "CLOSED"]) status!: string;
+}
+
 class PlatformSettingsDto {
   @IsOptional() @IsNumber() @Min(1) minStake?: number;
   @IsOptional() @IsNumber() @Min(100) maxStake?: number;
@@ -272,6 +307,89 @@ export class AdminController {
     const result = await this.admin.setUserRole(id, dto.role, actor.role as UserRole);
     await this.admin.writeAudit(actor.id, "user.role.set", { type: "user", id }, dto, req.ip);
     return result;
+  }
+
+  // -- VIP levels --
+
+  @Get("vip/levels")
+  vipLevels() { return this.admin.listVipLevels(); }
+
+  @Post("vip/levels")
+  async createVip(@CurrentUser() actor: AuthUser, @Body() dto: VipLevelDto, @Req() req: Request) {
+    if (!dto.name || dto.tier === undefined) throw new Error("name and tier are required");
+    const r = await this.admin.createVipLevel({ name: dto.name, tier: dto.tier, ...dto });
+    await this.admin.writeAudit(actor.id, "vip.level.create", { type: "vipLevel", id: r.id }, dto, req.ip);
+    return r;
+  }
+
+  @Patch("vip/levels/:id")
+  async updateVip(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Body() dto: VipLevelDto, @Req() req: Request) {
+    const r = await this.admin.updateVipLevel(id, dto);
+    await this.admin.writeAudit(actor.id, "vip.level.update", { type: "vipLevel", id }, dto, req.ip);
+    return r;
+  }
+
+  @Delete("vip/levels/:id")
+  async deleteVip(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Req() req: Request) {
+    const r = await this.admin.deleteVipLevel(id);
+    await this.admin.writeAudit(actor.id, "vip.level.delete", { type: "vipLevel", id }, {}, req.ip);
+    return r;
+  }
+
+  @Post("vip/assign")
+  async assignVip(@CurrentUser() actor: AuthUser, @Body() dto: AssignVipDto, @Req() req: Request) {
+    const r = await this.admin.assignVip(dto.username, dto.vipLevelId ?? null);
+    await this.admin.writeAudit(actor.id, "vip.assign", { type: "user", id: r.id }, dto, req.ip);
+    return r;
+  }
+
+  // -- Promo codes --
+
+  @Get("promos")
+  promos() { return this.admin.listPromos(); }
+
+  @Post("promos")
+  async createPromo(@CurrentUser() actor: AuthUser, @Body() dto: PromoDto, @Req() req: Request) {
+    if (!dto.code) throw new Error("code is required");
+    const r = await this.admin.createPromo({ code: dto.code, ...dto });
+    await this.admin.writeAudit(actor.id, "promo.create", { type: "promo", id: r.id }, dto, req.ip);
+    return r;
+  }
+
+  @Patch("promos/:id")
+  async updatePromo(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Body() dto: PromoDto, @Req() req: Request) {
+    const r = await this.admin.updatePromo(id, dto);
+    await this.admin.writeAudit(actor.id, "promo.update", { type: "promo", id }, dto, req.ip);
+    return r;
+  }
+
+  @Delete("promos/:id")
+  async deletePromo(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Req() req: Request) {
+    const r = await this.admin.deletePromo(id);
+    await this.admin.writeAudit(actor.id, "promo.delete", { type: "promo", id }, {}, req.ip);
+    return r;
+  }
+
+  // -- Support tickets --
+
+  @Get("support/tickets")
+  supportTickets(@Query("status") status?: string) { return this.admin.listSupportTickets(status); }
+
+  @Get("support/tickets/:id")
+  supportTicket(@Param("id") id: string) { return this.admin.getSupportTicket(id); }
+
+  @Post("support/tickets/:id/messages")
+  async replyTicket(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Body() dto: ReplyTicketDto, @Req() req: Request) {
+    const r = await this.admin.replySupportTicket(actor.id, id, dto.body);
+    await this.admin.writeAudit(actor.id, "support.reply", { type: "ticket", id }, {}, req.ip);
+    return r;
+  }
+
+  @Patch("support/tickets/:id/status")
+  async ticketStatus(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Body() dto: TicketStatusDto, @Req() req: Request) {
+    const r = await this.admin.setSupportStatus(id, dto.status);
+    await this.admin.writeAudit(actor.id, "support.status", { type: "ticket", id }, dto, req.ip);
+    return r;
   }
 
   // -- Bet void / cancel --

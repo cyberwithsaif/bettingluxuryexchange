@@ -75,11 +75,18 @@ model User {
   towersSessions  TowersSession[]
   chickenRoadSessions ChickenRoadSession[]
 
+  // VIP tier (nullable — most users have no tier assigned)
+  vipLevelId      String?
+  vipLevel        VipLevel?   @relation(fields: [vipLevelId], references: [id])
+  promoRedemptions PromoRedemption[]
+  supportTickets  SupportTicket[]
+
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
   @@index([parentId])
   @@index([role, status])
+  @@index([vipLevelId])
 }
 
 model UserLimits {
@@ -854,4 +861,99 @@ model ChickenRoadSession {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+}
+
+// -------------------------------------------------------------
+// VIP, promotions & support (engagement)
+// -------------------------------------------------------------
+
+model VipLevel {
+  id          String   @id @default(cuid())
+  name        String
+  tier        Int      @unique           // ordering: 0 = lowest tier
+  minWagered  Decimal  @default(0) @db.Decimal(20, 4)
+  cashbackBps Int      @default(0)        // basis points (500 = 5%)
+  bonusAmount Decimal  @default(0) @db.Decimal(20, 4)
+  color       String   @default("#fbbf24")
+  perks       Json     @default("[]")
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum PromoType {
+  DEPOSIT_BONUS    // percentage match on deposit
+  FREE_CREDIT      // flat wallet credit
+  CASHBACK         // percentage cashback
+}
+
+model PromoCode {
+  id              String            @id @default(cuid())
+  code            String            @unique
+  type            PromoType         @default(FREE_CREDIT)
+  amount          Decimal           @default(0) @db.Decimal(20, 4)  // flat credit (FREE_CREDIT)
+  percentage      Int               @default(0)                     // bps (DEPOSIT_BONUS / CASHBACK)
+  maxUses         Int?                                              // null = unlimited
+  usedCount       Int               @default(0)
+  minDeposit      Decimal           @default(0) @db.Decimal(20, 4)
+  wagerMultiplier Int               @default(1)
+  expiresAt       DateTime?
+  active          Boolean           @default(true)
+  redemptions     PromoRedemption[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+model PromoRedemption {
+  id          String    @id @default(cuid())
+  promoCodeId String
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  amount      Decimal   @default(0) @db.Decimal(20, 4)
+  createdAt   DateTime  @default(now())
+
+  @@index([promoCodeId])
+  @@index([userId])
+}
+
+enum SupportStatus {
+  OPEN
+  PENDING
+  RESOLVED
+  CLOSED
+}
+
+enum SupportPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model SupportTicket {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  subject   String
+  status    SupportStatus    @default(OPEN)
+  priority  SupportPriority  @default(NORMAL)
+  messages  SupportMessage[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([status])
+  @@index([userId])
+}
+
+model SupportMessage {
+  id        String        @id @default(cuid())
+  ticketId  String
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  String?        // null for system; user id or admin id otherwise
+  body      String
+  isAdmin   Boolean       @default(false)
+  createdAt DateTime      @default(now())
+
+  @@index([ticketId])
 }

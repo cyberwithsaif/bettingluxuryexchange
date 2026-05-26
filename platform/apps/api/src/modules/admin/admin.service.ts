@@ -710,5 +710,144 @@ export class AdminService {
     }
     return this.prisma.user.update({ where: { id: targetUserId }, data: { role }, select: { id: true, username: true, role: true } });
   }
+
+  // ── VIP levels ─────────────────────────────────────────────────────────────────
+  async listVipLevels() {
+    const levels = await this.prisma.vipLevel.findMany({
+      orderBy: { tier: "asc" },
+      include: { _count: { select: { users: true } } },
+    });
+    return levels.map((l) => ({
+      id: l.id, name: l.name, tier: l.tier,
+      minWagered: Number(l.minWagered.toString()), cashbackBps: l.cashbackBps,
+      bonusAmount: Number(l.bonusAmount.toString()), color: l.color, perks: l.perks,
+      userCount: l._count.users, createdAt: l.createdAt,
+    }));
+  }
+
+  createVipLevel(dto: { name: string; tier: number; minWagered?: number; cashbackBps?: number; bonusAmount?: number; color?: string; perks?: string[] }) {
+    return this.prisma.vipLevel.create({
+      data: {
+        name: dto.name, tier: dto.tier,
+        minWagered: dto.minWagered ?? 0, cashbackBps: dto.cashbackBps ?? 0,
+        bonusAmount: dto.bonusAmount ?? 0, color: dto.color ?? "#fbbf24",
+        perks: (dto.perks ?? []) as Prisma.InputJsonValue,
+      },
+    });
+  }
+
+  updateVipLevel(id: string, dto: Partial<{ name: string; tier: number; minWagered: number; cashbackBps: number; bonusAmount: number; color: string; perks: string[] }>) {
+    const data: Prisma.VipLevelUpdateInput = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.tier !== undefined) data.tier = dto.tier;
+    if (dto.minWagered !== undefined) data.minWagered = dto.minWagered;
+    if (dto.cashbackBps !== undefined) data.cashbackBps = dto.cashbackBps;
+    if (dto.bonusAmount !== undefined) data.bonusAmount = dto.bonusAmount;
+    if (dto.color !== undefined) data.color = dto.color;
+    if (dto.perks !== undefined) data.perks = dto.perks as Prisma.InputJsonValue;
+    return this.prisma.vipLevel.update({ where: { id }, data });
+  }
+
+  // Optional relation → Prisma sets affected users' vipLevelId to NULL on delete.
+  deleteVipLevel(id: string) {
+    return this.prisma.vipLevel.delete({ where: { id } });
+  }
+
+  async assignVip(username: string, vipLevelId: string | null) {
+    const user = await this.prisma.user.findUnique({ where: { username }, select: { id: true } });
+    if (!user) throw new BadRequestException("User not found");
+    if (vipLevelId) {
+      const exists = await this.prisma.vipLevel.findUnique({ where: { id: vipLevelId }, select: { id: true } });
+      if (!exists) throw new BadRequestException("VIP level not found");
+    }
+    return this.prisma.user.update({ where: { id: user.id }, data: { vipLevelId }, select: { id: true, username: true, vipLevelId: true } });
+  }
+
+  // ── Promo codes ──────────────────────────────────────────────────────────────────
+  async listPromos() {
+    const promos = await this.prisma.promoCode.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { _count: { select: { redemptions: true } } },
+    });
+    return promos.map((p) => ({
+      id: p.id, code: p.code, type: p.type, amount: Number(p.amount.toString()),
+      percentage: p.percentage, maxUses: p.maxUses, usedCount: p.usedCount,
+      minDeposit: Number(p.minDeposit.toString()), wagerMultiplier: p.wagerMultiplier,
+      expiresAt: p.expiresAt, active: p.active, redemptions: p._count.redemptions,
+      createdAt: p.createdAt,
+    }));
+  }
+
+  async createPromo(dto: { code: string; type?: string; amount?: number; percentage?: number; maxUses?: number | null; minDeposit?: number; wagerMultiplier?: number; expiresAt?: string | null; active?: boolean }) {
+    const code = dto.code.trim().toUpperCase();
+    const dupe = await this.prisma.promoCode.findUnique({ where: { code }, select: { id: true } });
+    if (dupe) throw new BadRequestException("A promo code with that name already exists");
+    return this.prisma.promoCode.create({
+      data: {
+        code,
+        type: (dto.type as Prisma.PromoCodeCreateInput["type"]) ?? "FREE_CREDIT",
+        amount: dto.amount ?? 0, percentage: dto.percentage ?? 0,
+        maxUses: dto.maxUses ?? null, minDeposit: dto.minDeposit ?? 0,
+        wagerMultiplier: dto.wagerMultiplier ?? 1,
+        expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
+        active: dto.active ?? true,
+      },
+    });
+  }
+
+  updatePromo(id: string, dto: Partial<{ active: boolean; amount: number; percentage: number; maxUses: number | null; minDeposit: number; wagerMultiplier: number; expiresAt: string | null }>) {
+    const data: Prisma.PromoCodeUpdateInput = {};
+    if (dto.active !== undefined) data.active = dto.active;
+    if (dto.amount !== undefined) data.amount = dto.amount;
+    if (dto.percentage !== undefined) data.percentage = dto.percentage;
+    if (dto.maxUses !== undefined) data.maxUses = dto.maxUses;
+    if (dto.minDeposit !== undefined) data.minDeposit = dto.minDeposit;
+    if (dto.wagerMultiplier !== undefined) data.wagerMultiplier = dto.wagerMultiplier;
+    if (dto.expiresAt !== undefined) data.expiresAt = dto.expiresAt ? new Date(dto.expiresAt) : null;
+    return this.prisma.promoCode.update({ where: { id }, data });
+  }
+
+  deletePromo(id: string) {
+    return this.prisma.promoCode.delete({ where: { id } });
+  }
+
+  // ── Support tickets ──────────────────────────────────────────────────────────────
+  async listSupportTickets(status?: string) {
+    const tickets = await this.prisma.supportTicket.findMany({
+      where: status ? { status: status as Prisma.EnumSupportStatusFilter } : {},
+      orderBy: { updatedAt: "desc" },
+      take: 200,
+      include: {
+        user: { select: { username: true } },
+        _count: { select: { messages: true } },
+        messages: { orderBy: { createdAt: "desc" }, take: 1, select: { body: true, isAdmin: true, createdAt: true } },
+      },
+    });
+    return tickets.map((t) => ({
+      id: t.id, subject: t.subject, status: t.status, priority: t.priority,
+      username: t.user?.username ?? "—", messageCount: t._count.messages,
+      lastMessage: t.messages[0] ?? null, createdAt: t.createdAt, updatedAt: t.updatedAt,
+    }));
+  }
+
+  getSupportTicket(id: string) {
+    return this.prisma.supportTicket.findUniqueOrThrow({
+      where: { id },
+      include: {
+        user: { select: { id: true, username: true, email: true } },
+        messages: { orderBy: { createdAt: "asc" } },
+      },
+    });
+  }
+
+  async replySupportTicket(adminId: string, id: string, body: string) {
+    await this.prisma.supportMessage.create({ data: { ticketId: id, authorId: adminId, body, isAdmin: true } });
+    // An admin reply moves the ticket to PENDING (awaiting the user) unless already closed.
+    return this.prisma.supportTicket.update({ where: { id }, data: { status: "PENDING" } });
+  }
+
+  setSupportStatus(id: string, status: string) {
+    return this.prisma.supportTicket.update({ where: { id }, data: { status: status as Prisma.SupportTicketUpdateInput["status"] } });
+  }
 }
 
