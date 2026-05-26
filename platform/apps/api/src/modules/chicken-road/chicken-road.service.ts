@@ -37,12 +37,14 @@ function generateDeadlyLanes(
 }
 
 // Cumulative multiplier after safely crossing `lanesCrossed` lanes.
-// Fair payout is 1 / survivalProb^n, trimmed by the house edge.
-function calcMultiplier(lanesCrossed: number, deathProb: number, houseEdge: number): number {
+// FIXED & fair (1 / survivalProb^n) based on the difficulty's displayed death
+// chance — it NEVER changes. The admin RTP instead biases the *actual* per-lane
+// death probability (see startGame), so the payout ladder always looks fair.
+function calcMultiplier(lanesCrossed: number, deathProb: number): number {
   if (lanesCrossed === 0) return 1.0;
   const survival = 1 - deathProb;
   const fair = Math.pow(1 / survival, lanesCrossed);
-  return Math.floor(fair * (1 - houseEdge) * 100) / 100;
+  return Math.floor(fair * 100) / 100;
 }
 
 @Injectable()
@@ -65,8 +67,8 @@ export class ChickenRoadService {
     };
   }
 
-  private multiplierTable(lanes: number, deathProb: number, houseEdge: number): number[] {
-    return Array.from({ length: lanes }, (_, i) => calcMultiplier(i + 1, deathProb, houseEdge));
+  private multiplierTable(lanes: number, deathProb: number): number[] {
+    return Array.from({ length: lanes }, (_, i) => calcMultiplier(i + 1, deathProb));
   }
 
   async startGame(
@@ -100,7 +102,11 @@ export class ChickenRoadService {
     const serverSeed     = crypto.randomBytes(32).toString("hex");
     const serverSeedHash = crypto.createHash("sha256").update(serverSeed).digest("hex");
     const nonce          = 1;
-    const deadlyLanes    = generateDeadlyLanes(serverSeed, clientSeed, nonce, lanes, deathProb);
+    // RTP biases the ACTUAL death chance (not the payout ladder). T = 1 - houseEdge:
+    // T<1 ⇒ chicken dies sooner (house wins), T>1 ⇒ survives longer (players win).
+    const T            = 1 - cfg.houseEdge;
+    const effDeath     = Math.min(0.99, Math.max(0.001, 1 - T * (1 - deathProb)));
+    const deadlyLanes  = generateDeadlyLanes(serverSeed, clientSeed, nonce, lanes, effDeath);
 
     const session = await this.prisma.chickenRoadSession.create({
       data: {
@@ -128,7 +134,7 @@ export class ChickenRoadService {
       id: session.id, betAmount, difficulty, lanes,
       serverSeedHash, clientSeed, nonce,
       status: session.status, currentLane: 0, multiplier: 1.0,
-      multiplierTable: this.multiplierTable(lanes, deathProb, cfg.houseEdge),
+      multiplierTable: this.multiplierTable(lanes, deathProb),
     };
   }
 
@@ -157,10 +163,9 @@ export class ChickenRoadService {
       };
     }
 
-    const cfg          = await this.getConfig();
     const { deathProb } = DIFFICULTY_CONFIG[session.difficulty];
     const newLane      = session.currentLane + 1;
-    const newMult      = calcMultiplier(newLane, deathProb, cfg.houseEdge);
+    const newMult      = calcMultiplier(newLane, deathProb);
     const isComplete   = newLane >= session.lanes;
 
     if (isComplete) {
@@ -216,14 +221,13 @@ export class ChickenRoadService {
       where: { userId, status: ChickenRoadStatus.IN_PROGRESS },
     });
     if (!session) return null;
-    const cfg = await this.getConfig();
     const { deathProb } = DIFFICULTY_CONFIG[session.difficulty];
     return {
       id: session.id, betAmount: Number(session.betAmount), difficulty: session.difficulty,
       lanes: session.lanes, serverSeedHash: session.serverSeedHash,
       clientSeed: session.clientSeed, nonce: session.nonce, status: session.status,
       currentLane: session.currentLane, multiplier: Number(session.multiplier),
-      multiplierTable: this.multiplierTable(session.lanes, deathProb, cfg.houseEdge),
+      multiplierTable: this.multiplierTable(session.lanes, deathProb),
     };
   }
 

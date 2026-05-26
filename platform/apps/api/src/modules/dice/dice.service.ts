@@ -6,17 +6,33 @@ import { Prisma, LedgerKind, DiceMode } from "@prisma/client";
 import * as crypto from "crypto";
 
 // ─── Provably Fair RNG ────────────────────────────────────────────────────────
-// HMAC-SHA256(serverSeed, "${clientSeed}:${nonce}") → map first 4 bytes to [0, 100)
-function generateRoll(serverSeed: string, clientSeed: string, nonce: number): number {
-  const hmac = crypto
-    .createHmac("sha256", serverSeed)
-    .update(`${clientSeed}:${nonce}`)
-    .digest("hex");
+// HMAC-SHA256 → two independent uniforms in [0, 1):
+//   u1 decides win/loss (against the RTP-biased probability)
+//   u2 places the displayed roll inside the matching win/loss region
+function hmacUniforms(serverSeed: string, clientSeed: string, nonce: number): [number, number] {
+  const hex = crypto.createHmac("sha256", serverSeed).update(`${clientSeed}:${nonce}`).digest("hex");
+  const u1 = parseInt(hex.slice(0, 8), 16) / 0x100000000;
+  const u2 = parseInt(hex.slice(8, 16), 16) / 0x100000000;
+  return [u1, u2];
+}
 
-  // Use first 8 hex chars → uint32 → float in [0, 1)
-  const uint32 = parseInt(hmac.slice(0, 8), 16);
-  const float  = uint32 / 0x100000000; // divide by 2^32
-  return Math.floor(float * 10000) / 100; // 0.00 – 99.99
+// Place a roll value (0.00–99.99) inside the winning or losing region so the
+// displayed number always matches the (RTP-controlled) win/loss outcome.
+function rollForOutcome(mode: DiceMode, won: boolean, target: number, minTarget: number, maxTarget: number, u: number): number {
+  const clamp = (r: number) => Math.min(99.99, Math.max(0, Math.floor(r * 100) / 100));
+  const inOne = (lo: number, hi: number) => clamp(lo + u * (hi - lo));
+  const inTwo = (a: number, b: number) => { // regions [0,a) ∪ (b,100]
+    const lowLen = a, highLen = 100 - b, total = lowLen + highLen;
+    if (total <= 0) return inOne(0, a);
+    const t = u * total;
+    return clamp(t < lowLen ? t : b + (t - lowLen));
+  };
+  switch (mode) {
+    case "ROLL_UNDER":   return won ? inOne(0, target) : inOne(target, 100);
+    case "ROLL_OVER":    return won ? inOne(target, 100) : inOne(0, target);
+    case "ROLL_BETWEEN": return won ? inOne(minTarget, maxTarget) : inTwo(minTarget, maxTarget);
+    case "ROLL_OUTSIDE": return won ? inTwo(minTarget, maxTarget) : inOne(minTarget, maxTarget);
+  }
 }
 
 // ─── Win Chance ───────────────────────────────────────────────────────────────
@@ -29,23 +45,12 @@ function calcWinChance(mode: DiceMode, target: number, minTarget: number, maxTar
   }
 }
 
-// ─── Win Condition ────────────────────────────────────────────────────────────
-function isWin(mode: DiceMode, roll: number, target: number, minTarget: number, maxTarget: number): boolean {
-  switch (mode) {
-    case "ROLL_UNDER":   return roll < target;
-    case "ROLL_OVER":    return roll > target;
-    case "ROLL_BETWEEN": return roll >= minTarget && roll <= maxTarget;
-    case "ROLL_OUTSIDE": return roll < minTarget || roll > maxTarget;
-  }
-}
-
-// ─── Multiplier — payout scales with the configured house edge ───────────────
-// fair payout = 100 / winChance; the house keeps `houseEdge` of it.
-// houseEdge can be negative (admin-set player-favoured) which boosts the payout.
-function calcMultiplier(winChance: number, houseEdge: number): number {
+// ─── Multiplier — FIXED & fair (matches what the player sees) ─────────────────
+// payout = 99 / winChance. This value NEVER changes; the admin RTP instead biases
+// how often the player wins (see placeBet), so payouts always look fair.
+function calcMultiplier(winChance: number): number {
   if (winChance <= 0) return 0;
-  const fair = 100 / winChance;
-  return Math.max(0, Math.floor(fair * (1 - houseEdge) * 10000) / 10000);
+  return Math.floor((99 / winChance) * 10000) / 10000;
 }
 
 @Injectable()
@@ -100,7 +105,7 @@ export class DiceService {
     if (winChance < 0.01 || winChance > 98.99)
       throw new BadRequestException("Win chance must be between 0.01% and 98.99%");
 
-    const multiplier = calcMultiplier(winChance, cfg.houseEdge);
+    const multiplier = calcMultiplier(winChance); // fixed/fair, never scaled
 
     // Deduct bet from wallet
     await this.wallet.applyLedger({
@@ -112,11 +117,15 @@ export class DiceService {
       note: `Dice ${mode} bet`,
     });
 
-    // Generate provably fair result
+    // Generate provably fair result — RTP biases the win probability, not the payout.
+    // target RTP T = 1 - houseEdge (edge -1 ⇒ T=2 ⇒ players win). EV = pWin × multiplier = T.
     const serverSeed     = crypto.randomBytes(32).toString("hex");
     const serverSeedHash = crypto.createHash("sha256").update(serverSeed).digest("hex");
-    const roll           = generateRoll(serverSeed, clientSeed, nonce);
-    const won            = isWin(mode, roll, target, minTarget, maxTarget);
+    const T              = 1 - cfg.houseEdge;
+    const pWin           = Math.min(1, Math.max(0, (T * winChance) / 99));
+    const [u1, u2]       = hmacUniforms(serverSeed, clientSeed, nonce);
+    const won            = u1 < pWin;
+    const roll           = rollForOutcome(mode, won, target, minTarget, maxTarget, u2);
     const payout         = won ? betAmount * multiplier : 0;
     const profit         = payout - betAmount;
 
