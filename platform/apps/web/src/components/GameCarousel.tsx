@@ -83,18 +83,18 @@ export function GameCarousel() {
         style={{ touchAction: "pan-x" }}
       >
         {CASINO_GAMES.map((game, i) => (
-          <Link key={game.href} href={game.href} className="group block flex-shrink-0 sm:w-[calc(20%-10px)] lg:w-[calc(14.28%-10px)]">
+          <Link key={game.href} href={game.href} className="group block flex-shrink-0 sm:w-[calc(16.666%-10px)] lg:w-[calc(12.5%-11px)]">
 
-            {/* Mobile: 100px × 4/5 */}
+            {/* Mobile: 88px × 4/5 */}
             <div
               className="sm:hidden relative rounded-xl overflow-hidden border border-white/10 group-hover:border-yellow-400/60 transition shadow-md"
-              style={{ width: 100, aspectRatio: "4/5" }}
+              style={{ width: 88, aspectRatio: "4/5" }}
             >
               <Image
                 src={game.thumb}
                 alt={game.name}
                 fill
-                sizes="100px"
+                sizes="88px"
                 quality={85}
                 priority={i < 4}
                 className="object-cover"
