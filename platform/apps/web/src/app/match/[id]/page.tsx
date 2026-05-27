@@ -1,7 +1,6 @@
 "use client";
 
 import useSWR from "swr";
-import { useState } from "react";
 import { useParams } from "next/navigation";
 import { Clock, Radio, ChevronLeft, TrendingUp } from "lucide-react";
 import Link from "next/link";
@@ -188,15 +187,12 @@ export default function MatchPage() {
   const { data: match, error } = useSWR<Match>(params?.id ? `/markets/match/${params.id}` : null, { refreshInterval: 6000 });
   const user = useAuthStore((s) => s.user);
 
-  const allTypes = match
-    ? [...new Set(match.markets.map((m) => m.type))]
-        .sort((a, b) => MARKET_TYPE_ORDER.indexOf(a) - MARKET_TYPE_ORDER.indexOf(b))
-    : [];
+  const ord = (t: string) => { const i = MARKET_TYPE_ORDER.indexOf(t); return i < 0 ? 99 : i; };
+  const orderedMarkets = match ? [...match.markets].sort((a, b) => ord(a.type) - ord(b.type)) : [];
+  const allTypes = [...new Set(orderedMarkets.map((m) => m.type))];
 
-  const [activeType, setActiveType] = useState<string>("");
-  const currentType = activeType || allTypes[0] || "";
-
-  const visibleMarkets = match?.markets.filter((m) => m.type === currentType) ?? [];
+  const jumpTo = (type: string) =>
+    document.getElementById(`mk-${type}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   if (error) {
     return (
@@ -225,38 +221,38 @@ export default function MatchPage() {
         <section className="col-span-12 md:col-span-9">
           <MatchHeader match={match} />
 
-          {/* Market type tabs */}
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar mb-4 pb-1">
+          {/* Quick-jump nav — sticky; the whole page is one scroll of all markets */}
+          <div className="sticky top-0 z-20 -mx-2 px-2 py-2 mb-3 bg-ink/85 backdrop-blur flex gap-1.5 overflow-x-auto no-scrollbar border-b border-line/40">
             {allTypes.map((type) => (
               <button
                 key={type}
-                onClick={() => setActiveType(type)}
-                className={cn(
-                  "px-4 py-2 rounded-md text-sm font-semibold whitespace-nowrap transition border",
-                  currentType === type
-                    ? "bg-accent-grad text-ink border-transparent shadow-glow"
-                    : "bg-panel2 text-white/70 border-line hover:border-accent hover:text-white",
-                )}
+                onClick={() => jumpTo(type)}
+                className="px-4 py-2 rounded-md text-sm font-semibold whitespace-nowrap transition border bg-panel2 text-white/70 border-line hover:border-accent hover:text-white"
               >
                 {getMarketLabel(type)}
               </button>
             ))}
           </div>
 
-          {/* Markets */}
-          {visibleMarkets.length === 0 && (
+          {/* All markets, stacked in a single scroll */}
+          {orderedMarkets.length === 0 && (
             <div className="glass rounded-xl p-8 text-center text-white/50">
-              No markets available for this selection.
+              No markets available.
             </div>
           )}
 
-          {visibleMarkets.map((market) =>
-            isFancyLike(market.type) ? (
-              <FancyTable key={market.id} market={market} matchName={match.name} />
-            ) : (
-              <BackLayMarket key={market.id} market={market} matchName={match.name} />
-            ),
-          )}
+          {orderedMarkets.map((market, idx) => {
+            const firstOfType = orderedMarkets.findIndex((m) => m.type === market.type) === idx;
+            return (
+              <div key={market.id} id={firstOfType ? `mk-${market.type}` : undefined} className="scroll-mt-20">
+                {isFancyLike(market.type) ? (
+                  <FancyTable market={market} matchName={match.name} />
+                ) : (
+                  <BackLayMarket market={market} matchName={match.name} />
+                )}
+              </div>
+            );
+          })}
         </section>
 
         <aside className="col-span-12 md:col-span-3">
