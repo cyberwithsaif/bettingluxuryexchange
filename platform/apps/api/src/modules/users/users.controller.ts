@@ -40,6 +40,12 @@ export class UsersController {
     return this.users.listDownline(actor.id, { q, role });
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get("me/referral")
+  referral(@CurrentUser() actor: AuthUser) {
+    return this.users.getReferral(actor.id);
+  }
+
   @Patch(":id/status")
   setStatus(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Body() dto: SetStatusDto) {
     return this.users.setStatus(actor.id, id, dto.status);

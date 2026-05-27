@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { Prisma, UserRole, UserStatus } from "@prisma/client";
+import { Prisma, UserRole, UserStatus, LedgerKind } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 import { PrismaService } from "../../common/prisma/prisma.service";
 
@@ -19,6 +19,31 @@ const CHILD_ROLES: Record<UserRole, UserRole[]> = {
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /** Referral / earnings summary for the logged-in user (synced with admin affiliates view). */
+  async getReferral(userId: string) {
+    const u = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true, partnershipBps: true },
+    });
+    const [referralCount, commission, recent] = await Promise.all([
+      this.prisma.user.count({ where: { parentId: userId } }),
+      this.prisma.ledgerEntry.aggregate({ _sum: { amount: true }, where: { userId, kind: LedgerKind.COMMISSION_PAYOUT } }),
+      this.prisma.ledgerEntry.findMany({
+        where: { userId, kind: LedgerKind.COMMISSION_PAYOUT },
+        orderBy: { createdAt: "desc" }, take: 12,
+        select: { id: true, amount: true, createdAt: true, note: true },
+      }),
+    ]);
+    const code = `${(u?.username ?? "").toUpperCase().slice(0, 6)}${userId.slice(-4)}`;
+    return {
+      code,
+      referralCount,
+      totalCommission: Number(commission._sum.amount ?? 0),
+      partnershipPct: (u?.partnershipBps ?? 0) / 100,
+      recent: recent.map(r => ({ id: r.id, amount: Number(r.amount), createdAt: r.createdAt, note: r.note })),
+    };
+  }
 
   /** Create a downline user. The created user's role must be a strictly-lower-rank role. */
   async createDownline(

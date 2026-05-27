@@ -623,6 +623,11 @@ export class AdminController {
 export class PublicPlatformController {
   constructor(private readonly admin: AdminService) {}
 
+  @Get("promos")
+  activePromos() {
+    return this.admin.listActivePromos();
+  }
+
   @Get("deposit-methods")
   async getDepositMethods() {
     const settings = await this.admin.getPlatformSettings();

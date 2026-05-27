@@ -824,6 +824,24 @@ export class AdminService {
   }
 
   // ── Promo codes ──────────────────────────────────────────────────────────────────
+  /** Active, non-expired, not-fully-used promos for the public Promotions view. */
+  async listActivePromos() {
+    const now = new Date();
+    const rows = await this.prisma.promoCode.findMany({
+      where: { active: true, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+      orderBy: { createdAt: "desc" },
+    });
+    return rows
+      .filter((p) => p.maxUses == null || p.usedCount < p.maxUses)
+      .map((p) => ({
+        code: p.code, type: p.type,
+        amount: Number(p.amount.toString()), percentage: p.percentage,
+        minDeposit: Number(p.minDeposit.toString()), wagerMultiplier: p.wagerMultiplier,
+        expiresAt: p.expiresAt,
+        remaining: p.maxUses == null ? null : Math.max(0, p.maxUses - p.usedCount),
+      }));
+  }
+
   async listPromos() {
     const promos = await this.prisma.promoCode.findMany({
       orderBy: { createdAt: "desc" },
