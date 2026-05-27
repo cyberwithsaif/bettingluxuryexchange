@@ -100,6 +100,9 @@ function useSounds(enabled: boolean) {
   };
 }
 
+// Quick bet-amount presets shown as chips under the Bet Amount input.
+const BET_SUGGESTIONS = [100, 500, 1000, 2500, 5000, 10000];
+
 // Soft light-purple "glass" card used to group each control category.
 const PURPLE_CARD: CSSProperties = {
   background: "linear-gradient(180deg, rgba(167,139,250,0.18), rgba(124,58,237,0.07))",
@@ -985,6 +988,20 @@ export default function ChickenRoadPage() {
                 </button>
               ))}
             </div>
+            {/* Suggestions */}
+            <div className="flex flex-wrap gap-1.5">
+              {BET_SUGGESTIONS.map(v => (
+                <button key={v} onClick={() => quickBet(v)} disabled={phase === "running"}
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all disabled:opacity-40"
+                  style={{
+                    background: betAmount === v ? "rgba(167,139,250,0.40)" : "rgba(167,139,250,0.10)",
+                    border: `1px solid ${betAmount === v ? "rgba(196,181,253,0.7)" : "rgba(167,139,250,0.28)"}`,
+                    color: "rgba(237,233,254,0.92)",
+                  }}>
+                  ₹{v.toLocaleString("en-IN")}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Card 2: Difficulty */}
@@ -1047,6 +1064,20 @@ export default function ChickenRoadPage() {
                   className="px-3 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-40 hover:brightness-125"
                   style={{ background: "rgba(167,139,250,0.14)", border: "1px solid rgba(167,139,250,0.35)", color: "rgba(237,233,254,0.9)" }}>
                   {label}
+                </button>
+              ))}
+            </div>
+            {/* Suggestions */}
+            <div className="flex flex-wrap gap-1.5">
+              {BET_SUGGESTIONS.map(v => (
+                <button key={v} onClick={() => quickBet(v)} disabled={phase === "running"}
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all disabled:opacity-40 hover:brightness-125"
+                  style={{
+                    background: betAmount === v ? "rgba(167,139,250,0.40)" : "rgba(167,139,250,0.10)",
+                    border: `1px solid ${betAmount === v ? "rgba(196,181,253,0.7)" : "rgba(167,139,250,0.28)"}`,
+                    color: "rgba(237,233,254,0.92)",
+                  }}>
+                  ₹{v.toLocaleString("en-IN")}
                 </button>
               ))}
             </div>
