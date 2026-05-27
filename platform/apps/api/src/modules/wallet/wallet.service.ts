@@ -138,6 +138,92 @@ export class WalletService {
     throw lastErr ?? new ConflictException("Wallet busy, retry");
   }
 
+  /**
+   * Move `amount` of spendable balance from one wallet to another **atomically**.
+   * Both legs (debit source + credit destination) and both LedgerEntry rows are
+   * written in a single Prisma transaction with optimistic version guards on each
+   * wallet — so the money can never half-move. Used for bookie⇄user transfers.
+   *
+   * `fromFloor` is the lowest the source balance may reach after the debit
+   * (default 0 = no overdraft). Pass a negative number (e.g. -creditLimit) to
+   * allow a credit-enabled account to go negative within its limit.
+   */
+  async transfer(opts: {
+    fromUserId: string;
+    toUserId: string;
+    amount: number;          // must be > 0
+    kind: LedgerKind;        // stamped on both legs; sign disambiguates direction
+    fromFloor?: number;      // min source balance after debit (default 0)
+    refType?: string;
+    refId?: string;
+    note?: string;
+  }) {
+    if (opts.fromUserId === opts.toUserId) {
+      throw new BadRequestException("Cannot transfer to the same wallet");
+    }
+    const amt = new Prisma.Decimal(Math.abs(opts.amount));
+    if (amt.lte(0)) throw new BadRequestException("Amount must be greater than zero");
+    const floor = new Prisma.Decimal(opts.fromFloor ?? 0);
+
+    let lastErr: unknown = null;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        const out = await this.prisma.$transaction(async (tx) => {
+          const from = await tx.wallet.findUnique({ where: { userId: opts.fromUserId } });
+          const to = await tx.wallet.findUnique({ where: { userId: opts.toUserId } });
+          if (!from) throw new NotFoundException("Source wallet not found");
+          if (!to) throw new NotFoundException("Destination wallet not found");
+
+          const newFrom = from.balance.sub(amt);
+          if (newFrom.lt(floor)) throw new BadRequestException("Insufficient available balance");
+          const newTo = to.balance.add(amt);
+
+          const u1 = await tx.wallet.updateMany({
+            where: { userId: opts.fromUserId, version: from.version },
+            data: { balance: newFrom, version: { increment: 1 } },
+          });
+          if (u1.count !== 1) throw new ConflictException("WALLET_VERSION_CONFLICT");
+
+          const u2 = await tx.wallet.updateMany({
+            where: { userId: opts.toUserId, version: to.version },
+            data: { balance: newTo, version: { increment: 1 } },
+          });
+          if (u2.count !== 1) throw new ConflictException("WALLET_VERSION_CONFLICT");
+
+          await tx.ledgerEntry.create({
+            data: {
+              userId: opts.fromUserId, kind: opts.kind, amount: amt.neg(),
+              balanceAfter: newFrom, exposureAfter: from.exposure,
+              refType: opts.refType, refId: opts.refId, note: opts.note,
+            },
+          });
+          await tx.ledgerEntry.create({
+            data: {
+              userId: opts.toUserId, kind: opts.kind, amount: amt,
+              balanceAfter: newTo, exposureAfter: to.exposure,
+              refType: opts.refType, refId: opts.refId, note: opts.note,
+            },
+          });
+
+          return {
+            from: { balance: toNum(newFrom), exposure: toNum(from.exposure), available: round4(toNum(newFrom) - toNum(from.exposure)) },
+            to: { balance: toNum(newTo), exposure: toNum(to.exposure), available: round4(toNum(newTo) - toNum(to.exposure)) },
+          };
+        });
+
+        // Push live wallet updates to both sockets.
+        await this.redis.publish(`wallet.${opts.fromUserId}`, out.from);
+        await this.redis.publish(`wallet.${opts.toUserId}`, out.to);
+        return out;
+      } catch (e: any) {
+        if (e?.message === "WALLET_VERSION_CONFLICT") { lastErr = e; continue; }
+        throw e;
+      }
+    }
+    this.logger.error(`Transfer retries exhausted ${opts.fromUserId} -> ${opts.toUserId}`);
+    throw lastErr ?? new ConflictException("Wallet busy, retry");
+  }
+
   // --- Convenience wrappers ---
 
   credit(userId: string, amount: number, kind: LedgerKind, ref?: { type: string; id: string }, note?: string) {

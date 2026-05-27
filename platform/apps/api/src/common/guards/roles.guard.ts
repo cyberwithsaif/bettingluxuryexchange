@@ -8,6 +8,7 @@ const RANK: Record<UserRole, number> = {
   ADMIN: 80,
   SUPER_MASTER: 60,
   MASTER: 40,
+  BOOKIE: 30,
   AGENT: 20,
   USER: 0,
 };

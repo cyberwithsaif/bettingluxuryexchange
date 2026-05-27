@@ -16,6 +16,7 @@ import { BettingModule } from "./modules/betting/betting.module";
 import { MarketsModule } from "./modules/markets/markets.module";
 import { CasinoModule } from "./modules/casino/casino.module";
 import { AdminModule } from "./modules/admin/admin.module";
+import { BookieModule } from "./modules/bookie/bookie.module";
 import { RealtimeModule } from "./modules/realtime/realtime.module";
 import { SportsModule } from "./modules/sports/sports.module";
 import { SettlementModule } from "./modules/settlement/settlement.module";
@@ -50,6 +51,7 @@ import { ChickenRoadModule } from "./modules/chicken-road/chicken-road.module";
     MarketsModule,
     CasinoModule,
     AdminModule,
+    BookieModule,
     RealtimeModule,
     SportsModule,
     SettlementModule,

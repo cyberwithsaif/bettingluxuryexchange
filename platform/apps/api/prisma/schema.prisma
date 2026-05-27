@@ -23,6 +23,7 @@ enum UserRole {
   SUPER_MASTER
   MASTER
   AGENT
+  BOOKIE
   USER
 }
 
@@ -51,6 +52,11 @@ model User {
   partnershipBps  Int         @default(0)
   // Credit reference shown in agent dashboards (does not affect wallet balance).
   creditReference Decimal     @default(0) @db.Decimal(20, 4)
+  // Real spendable credit facility (bookies/agents): the wallet may go negative
+  // down to -creditLimit when funding downline. 0 = no credit (hard floor at 0).
+  creditLimit     Decimal     @default(0) @db.Decimal(20, 4)
+  // Optional display name — used for bookie/agent accounts (e.g. "Acme Bookmakers").
+  fullName        String?
 
   twoFactorSecret String?
   twoFactorEnabled Boolean    @default(false)
@@ -156,6 +162,9 @@ enum LedgerKind {
   BONUS_GRANT
   BONUS_FORFEIT
   COMMISSION_PAYOUT  // agent commission payout
+  BOOKIE_RECHARGE    // admin adds (+) or deducts (-) a bookie's wallet
+  BOOKIE_TO_USER     // bookie funds a downline user  (-bookie / +user legs)
+  USER_TO_BOOKIE     // bookie reclaims from a user    (-user / +bookie legs)
   ROLLBACK
 }
 

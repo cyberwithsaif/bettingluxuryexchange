@@ -4,15 +4,16 @@ import * as bcrypt from "bcryptjs";
 import { PrismaService } from "../../common/prisma/prisma.service";
 
 const ROLE_RANK: Record<UserRole, number> = {
-  SUPER_ADMIN: 100, ADMIN: 80, SUPER_MASTER: 60, MASTER: 40, AGENT: 20, USER: 0,
+  SUPER_ADMIN: 100, ADMIN: 80, SUPER_MASTER: 60, MASTER: 40, AGENT: 20, BOOKIE: 30, USER: 0,
 };
 
 const CHILD_ROLES: Record<UserRole, UserRole[]> = {
-  SUPER_ADMIN: ["ADMIN", "SUPER_MASTER", "MASTER", "AGENT", "USER"],
-  ADMIN:       ["SUPER_MASTER", "MASTER", "AGENT", "USER"],
+  SUPER_ADMIN: ["ADMIN", "SUPER_MASTER", "MASTER", "AGENT", "BOOKIE", "USER"],
+  ADMIN:       ["SUPER_MASTER", "MASTER", "AGENT", "BOOKIE", "USER"],
   SUPER_MASTER:["MASTER", "AGENT", "USER"],
   MASTER:      ["AGENT", "USER"],
   AGENT:       ["USER"],
+  BOOKIE:      ["USER"],
   USER:        [],
 };
 
