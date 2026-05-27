@@ -172,7 +172,7 @@ function GameVisual({
   const multFontSize = Math.round(Math.min(17 + balloonW * 0.08, 36));
 
   return (
-    <div ref={containerRef} className="relative w-full h-full" style={{ minHeight: 160 }}>
+    <div ref={containerRef} className="absolute inset-0" style={{ minHeight: 160 }}>
 
       {/* Purple ambient glow */}
       <div className="absolute pointer-events-none" style={{
