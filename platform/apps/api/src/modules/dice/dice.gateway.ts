@@ -12,9 +12,10 @@ import { DiceService } from "./dice.service";
 import { WalletService } from "../wallet/wallet.service";
 import { UseGuards, Logger } from "@nestjs/common";
 import { WsJwtGuard } from "../../common/guards/ws-jwt.guard";
+import { WS_CORS } from "../../common/ws-cors";
 import { DiceMode } from "@prisma/client";
 
-@WebSocketGateway({ cors: { origin: "*" } })
+@WebSocketGateway({ cors: WS_CORS })
 export class DiceGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;

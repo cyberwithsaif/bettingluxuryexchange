@@ -79,6 +79,7 @@ export class ChickenRoadService {
   ) {
     const cfg = await this.getConfig();
     if (!cfg.enabled)           throw new BadRequestException("Chicken Road is currently disabled");
+    if (!Number.isFinite(betAmount)) throw new BadRequestException("Invalid bet amount");
     if (betAmount < cfg.minBet) throw new BadRequestException(`Minimum bet is ₹${cfg.minBet}`);
     if (betAmount > cfg.maxBet) throw new BadRequestException(`Maximum bet is ₹${cfg.maxBet}`);
     if (!clientSeed?.trim())    throw new BadRequestException("Client seed required");

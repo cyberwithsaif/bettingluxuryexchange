@@ -1,7 +1,8 @@
 import { WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { Server } from "socket.io";
+import { WS_CORS } from "../../common/ws-cors";
 
-@WebSocketGateway({ cors: { origin: "*" }, namespace: "/plinko" })
+@WebSocketGateway({ cors: WS_CORS, namespace: "/plinko" })
 export class PlinkoGateway {
   @WebSocketServer() server!: Server;
 

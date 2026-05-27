@@ -5,12 +5,13 @@ import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
 import { JwtStrategy } from "./jwt.strategy";
 import { JwtAuthGuard } from "./jwt-auth.guard";
+import { jwtSecret } from "../../common/jwt-secret";
 
 @Module({
   imports: [
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_ACCESS_SECRET ?? "dev-access-secret",
+      secret: jwtSecret(),
       signOptions: { expiresIn: Number(process.env.JWT_ACCESS_TTL ?? 900) },
     }),
   ],

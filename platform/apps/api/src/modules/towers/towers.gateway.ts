@@ -7,9 +7,10 @@ import { UseGuards, Logger } from "@nestjs/common";
 import { TowersService } from "./towers.service";
 import { WalletService } from "../wallet/wallet.service";
 import { WsJwtGuard } from "../../common/guards/ws-jwt.guard";
+import { WS_CORS } from "../../common/ws-cors";
 import { TowersDifficulty } from "@prisma/client";
 
-@WebSocketGateway({ cors: { origin: "*" } })
+@WebSocketGateway({ cors: WS_CORS })
 export class TowersGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server!: Server;
   private readonly logger = new Logger(TowersGateway.name);

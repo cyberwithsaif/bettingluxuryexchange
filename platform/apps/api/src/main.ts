@@ -4,6 +4,7 @@ import { AppModule } from "./app.module";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
 import { RedisIoAdapter } from "./common/socket/redis-io.adapter";
 import { json, urlencoded, static as expressStatic } from "express";
+import helmet from "helmet";
 import { join } from "path";
 import { mkdirSync } from "fs";
 
@@ -19,6 +20,10 @@ async function bootstrap() {
   mkdirSync(uploadsDir, { recursive: true });
   // Served at /api/uploads/ so nginx's /api/ → port-4000 rule covers it
   app.use("/api/uploads", expressStatic(uploadsDir));
+
+  // Security headers. CSP/CORP are disabled because this is a JSON API behind
+  // nginx that also serves upload images cross-origin to the web/admin apps.
+  app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
 
   app.use(json({ limit: "15mb" }));
   app.use(urlencoded({ extended: true, limit: "15mb" }));

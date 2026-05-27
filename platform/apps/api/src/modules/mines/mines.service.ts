@@ -69,6 +69,7 @@ export class MinesService {
   async startGame(userId: string, betAmount: number, minesCount: number, clientSeed: string) {
     const cfg = await this.getConfig();
     if (!cfg.enabled) throw new BadRequestException("Mines game is currently disabled");
+    if (!Number.isFinite(betAmount)) throw new BadRequestException("Invalid bet amount");
     if (betAmount < cfg.minBet) throw new BadRequestException(`Minimum bet is ${cfg.minBet}`);
     if (betAmount > cfg.maxBet) throw new BadRequestException(`Maximum bet is ${cfg.maxBet}`);
     if (minesCount < 1 || minesCount > 24) throw new BadRequestException("Mines count must be between 1 and 24");

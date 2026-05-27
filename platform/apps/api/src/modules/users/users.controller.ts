@@ -5,7 +5,7 @@ import { Roles } from "../../common/decorators/roles.decorator";
 import { CurrentUser, AuthUser } from "../../common/decorators/current-user.decorator";
 import { UsersService } from "./users.service";
 import { UserRole, UserStatus } from "@prisma/client";
-import { IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min, MinLength } from "class-validator";
+import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min, MinLength } from "class-validator";
 
 class CreateDownlineDto {
   @IsString() @MinLength(3) username!: string;
@@ -22,6 +22,16 @@ class UpdateDownlineDto {
   @IsOptional() @IsEnum(UserRole) role?: UserRole;
   @IsOptional() @IsInt() @Min(0) @Max(10_000) partnershipBps?: number;
   @IsOptional() @IsNumber() creditReference?: number;
+}
+
+class SetLimitsDto {
+  @IsOptional() @IsNumber() @Min(0) minStake?: number;
+  @IsOptional() @IsNumber() @Min(0) maxStake?: number;
+  @IsOptional() @IsNumber() @Min(0) maxMarketExposure?: number;
+  @IsOptional() @IsNumber() @Min(0) maxDailyLoss?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(60_000) betDelayMs?: number;
+  @IsOptional() @IsBoolean() fancyEnabled?: boolean;
+  @IsOptional() @IsBoolean() casinoEnabled?: boolean;
 }
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -57,8 +67,8 @@ export class UsersController {
   }
 
   @Patch(":id/limits")
-  setLimits(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Body() patch: Record<string, any>) {
-    return this.users.updateLimits(actor.id, id, patch);
+  setLimits(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Body() patch: SetLimitsDto) {
+    return this.users.updateLimits(actor.id, id, patch as Record<string, number | boolean>);
   }
 
   @Patch(":id")

@@ -56,6 +56,25 @@ export class BettingService {
     if (dto.stake < minStake) throw new BadRequestException(`Min stake is ${minStake}`);
     if (dto.stake > maxStake) throw new BadRequestException(`Max stake is ${maxStake}`);
 
+    // SECURITY: never trust client odds. A BACK bet may not be priced higher
+    // than the best offered back price, and a LAY bet may not be priced lower
+    // than the best offered lay price — otherwise a user could mint winnings
+    // by betting at arbitrary odds.
+    const backPrices = ((runner.backPrices as number[] | null) ?? []).filter((n) => Number.isFinite(n) && n > 1);
+    const layPrices  = ((runner.layPrices  as number[] | null) ?? []).filter((n) => Number.isFinite(n) && n > 1);
+    const EPS = 1e-6;
+    if (dto.side === BetSide.BACK) {
+      const bestBack = backPrices.length ? Math.max(...backPrices) : 0;
+      if (!bestBack || dto.odds > bestBack + EPS) {
+        throw new BadRequestException("Odds no longer available — refresh and try again");
+      }
+    } else {
+      const bestLay = layPrices.length ? Math.min(...layPrices) : 0;
+      if (!bestLay || dto.odds < bestLay - EPS) {
+        throw new BadRequestException("Odds no longer available — refresh and try again");
+      }
+    }
+
     // Compute potential profit & per-bet liability (separate from worst-case-per-market).
     const potentialProfit = round4(dto.stake * (dto.odds - 1));
     const liability       = round4(dto.side === BetSide.BACK ? dto.stake : dto.stake * (dto.odds - 1));
