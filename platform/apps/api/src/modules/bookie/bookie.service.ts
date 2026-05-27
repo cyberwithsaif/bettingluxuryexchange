@@ -177,6 +177,35 @@ export class BookieService {
   }
 
   // ════════════════════════════════════════════════════════════════════════
+  //  SETTINGS — platform-wide default admin commission for new bookies
+  // ════════════════════════════════════════════════════════════════════════
+
+  private static readonly DEFAULT_COMM_KEY = "bookie_default_commission_bps";
+
+  /** The default admin-commission rate (in bps) applied to newly created bookies. */
+  async getDefaultCommissionBps(): Promise<number> {
+    const row = await this.prisma.systemConfig.findUnique({ where: { key: BookieService.DEFAULT_COMM_KEY } });
+    const v = row?.value as unknown;
+    const bps = typeof v === "number" ? v : 0;
+    return Math.max(0, Math.min(10_000, Math.round(bps)));
+  }
+
+  async getSettings() {
+    return { defaultCommissionPct: round2((await this.getDefaultCommissionBps()) / 100) };
+  }
+
+  async saveSettings(actorId: string, defaultCommissionBps: number, ip?: string) {
+    const bps = Math.max(0, Math.min(10_000, Math.round(defaultCommissionBps || 0)));
+    await this.prisma.systemConfig.upsert({
+      where: { key: BookieService.DEFAULT_COMM_KEY },
+      create: { key: BookieService.DEFAULT_COMM_KEY, value: bps },
+      update: { value: bps },
+    });
+    await this.audit(actorId, "bookie.default_commission", undefined, { defaultCommissionBps: bps }, ip);
+    return { defaultCommissionPct: round2(bps / 100) };
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
   //  ADMIN-FACING
   // ════════════════════════════════════════════════════════════════════════
 
@@ -201,6 +230,8 @@ export class BookieService {
     if (await this.prisma.user.findUnique({ where: { username: dto.username } })) {
       throw new ConflictException("Username taken");
     }
+    // Fall back to the platform default commission when none is given.
+    const commissionBps = dto.commissionBps ?? (await this.getDefaultCommissionBps());
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const bookie = await this.prisma.user.create({
       data: {
@@ -211,7 +242,7 @@ export class BookieService {
         fullName: dto.fullName || null,
         email: dto.email || null,
         phone: dto.phone || null,
-        partnershipBps: dto.commissionBps ?? 0,
+        partnershipBps: commissionBps,
         creditLimit: new Prisma.Decimal(dto.creditLimit ?? 0),
         wallet: { create: {} },
         limits: { create: {} },
@@ -228,7 +259,7 @@ export class BookieService {
     }
 
     await this.audit(actorId, "bookie.create", { type: "bookie", id: bookie.id },
-      { username: dto.username, initialBalance: dto.initialBalance ?? 0, commissionBps: dto.commissionBps ?? 0 }, ip);
+      { username: dto.username, initialBalance: dto.initialBalance ?? 0, commissionBps }, ip);
     return this.pub(bookie);
   }
 

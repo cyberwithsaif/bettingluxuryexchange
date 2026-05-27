@@ -36,8 +36,11 @@ const statusTone = (s: string) => (s === "ACTIVE" ? "emerald" : s === "SUSPENDED
 export default function BookiesPage() {
   const router = useRouter();
   const { data: bookies, isLoading } = useSWR<Bookie[]>(KEY);
+  const { data: settings } = useSWR<{ defaultCommissionPct: number }>("/admin/bookies/settings");
   const [creating, setCreating] = useState(false);
+  const [defaultOpen, setDefaultOpen] = useState(false);
   const [recharge, setRecharge] = useState<Bookie | null>(null);
+  const defaultPct = settings?.defaultCommissionPct ?? 0;
 
   const list = bookies ?? [];
   const totalFloat = list.reduce((s, b) => s + (b.wallet?.balance ?? 0), 0);
@@ -114,10 +117,17 @@ export default function BookiesPage() {
         title="Manage Bookies"
         subtitle="Create and fund bookies, set commission & credit, and monitor their downline."
         right={
-          <button onClick={() => setCreating(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow-[0_2px_12px_rgba(0,200,83,0.4)] hover:brightness-110 transition">
-            <Plus size={16} /> Create Bookie
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setDefaultOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-emerald-300 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition"
+              title="Default admin commission applied to new bookies">
+              <Percent size={15} /> Default {defaultPct}%
+            </button>
+            <button onClick={() => setCreating(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow-[0_2px_12px_rgba(0,200,83,0.4)] hover:brightness-110 transition">
+              <Plus size={16} /> Create Bookie
+            </button>
+          </div>
         }
       />
 
@@ -140,7 +150,8 @@ export default function BookiesPage() {
         emptyText="No bookies yet. Click “Create Bookie” to add one."
       />
 
-      {creating && <CreateBookieModal onClose={(saved) => { setCreating(false); if (saved) mutate(KEY); }} />}
+      {creating && <CreateBookieModal defaultPct={defaultPct} onClose={(saved) => { setCreating(false); if (saved) mutate(KEY); }} />}
+      {defaultOpen && <DefaultCommissionModal current={defaultPct} onClose={(saved) => { setDefaultOpen(false); if (saved) mutate("/admin/bookies/settings"); }} />}
       {recharge && <RechargeModal bookie={recharge} onClose={(saved) => { setRecharge(null); if (saved) mutate(KEY); }} />}
     </div>
   );
@@ -148,8 +159,8 @@ export default function BookiesPage() {
 
 // ── Create Bookie ───────────────────────────────────────────────────────────
 
-function CreateBookieModal({ onClose }: { onClose: (saved?: boolean) => void }) {
-  const [f, setF] = useState({ username: "", password: "", fullName: "", phone: "", email: "", initialBalance: 0, commissionPct: 0, creditLimit: 0 });
+function CreateBookieModal({ defaultPct, onClose }: { defaultPct: number; onClose: (saved?: boolean) => void }) {
+  const [f, setF] = useState({ username: "", password: "", fullName: "", phone: "", email: "", initialBalance: 0, commissionPct: defaultPct, creditLimit: 0 });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -186,6 +197,39 @@ function CreateBookieModal({ onClose }: { onClose: (saved?: boolean) => void }) 
         <button onClick={() => onClose()} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-300 border border-gray-700 hover:bg-gray-800 transition">Cancel</button>
         <button onClick={submit} disabled={busy} className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:brightness-110 disabled:opacity-50 transition flex items-center justify-center gap-2">
           <Save size={15} /> {busy ? "Creating…" : "Create Bookie"}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Default commission setting ──────────────────────────────────────────────
+
+function DefaultCommissionModal({ current, onClose }: { current: number; onClose: (saved?: boolean) => void }) {
+  const [pct, setPct] = useState(current);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function save() {
+    setBusy(true); setErr(null);
+    try {
+      await api.patch("/admin/bookies/settings", { defaultCommissionPct: Number(pct) || 0 });
+      onClose(true);
+    } catch (e: any) { setErr(e?.response?.data?.message || "Failed to save."); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <Modal title="Default Admin Commission" onClose={() => onClose()}>
+      <p className="text-sm text-gray-400 mb-3">This rate is pre-filled as the admin commission whenever you create a new bookie. Existing bookies are unchanged.</p>
+      <ModalField label="Default Admin Commission % (e.g. 5 = 5%)">
+        <input type="number" min={0} max={100} step={0.01} className="modal-input" value={pct} onChange={(e) => setPct(Number(e.target.value))} autoFocus />
+      </ModalField>
+      {err && <p className="text-xs text-red-400 bg-red-900/20 border border-red-500/30 rounded-lg px-3 py-2 mt-3">{err}</p>}
+      <div className="flex gap-2 mt-4">
+        <button onClick={() => onClose()} className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-gray-300 border border-gray-700 hover:bg-gray-800 transition">Cancel</button>
+        <button onClick={save} disabled={busy} className="flex-1 py-2.5 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:brightness-110 disabled:opacity-50 transition flex items-center justify-center gap-2">
+          <Save size={15} /> {busy ? "Saving…" : "Save Default"}
         </button>
       </div>
     </Modal>

@@ -6,7 +6,7 @@ import { Roles } from "../../common/decorators/roles.decorator";
 import { CurrentUser, AuthUser } from "../../common/decorators/current-user.decorator";
 import { UserRole } from "@prisma/client";
 import { BookieService } from "./bookie.service";
-import { CreateBookieDto, UpdateBookieDto, RechargeDto, SetStatusDto } from "./dto";
+import { CreateBookieDto, UpdateBookieDto, RechargeDto, SetStatusDto, DefaultCommissionDto } from "./dto";
 
 /**
  * Admin → Bookie management. Guarded for ADMIN and above (rank-based guard, so
@@ -26,6 +26,18 @@ export class AdminBookieController {
   @Post()
   create(@CurrentUser() actor: AuthUser, @Body() dto: CreateBookieDto, @Req() req: Request) {
     return this.bookies.createBookie(actor.id, dto, req.ip);
+  }
+
+  // NOTE: literal routes must precede the ":id" routes below or they'd be
+  // captured as an id param.
+  @Get("settings")
+  getSettings() {
+    return this.bookies.getSettings();
+  }
+
+  @Patch("settings")
+  saveSettings(@CurrentUser() actor: AuthUser, @Body() dto: DefaultCommissionDto, @Req() req: Request) {
+    return this.bookies.saveSettings(actor.id, Math.round((dto.defaultCommissionPct ?? 0) * 100), req.ip);
   }
 
   @Get(":id")

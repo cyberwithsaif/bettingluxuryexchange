@@ -33,6 +33,11 @@ export class RechargeDto {
 
 export class SetStatusDto { @IsIn(["ACTIVE", "SUSPENDED", "LOCKED", "CLOSED"]) status!: UserStatus; }
 
+/** Platform-wide default admin commission applied to newly created bookies. */
+export class DefaultCommissionDto {
+  @IsNumber() @Min(0) @Max(100) defaultCommissionPct!: number;
+}
+
 // ── Bookie → User management ────────────────────────────────────────────────
 
 export class CreateBookieUserDto {
