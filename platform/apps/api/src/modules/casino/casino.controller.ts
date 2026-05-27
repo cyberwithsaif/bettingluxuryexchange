@@ -1,8 +1,11 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { RolesGuard } from "../../common/guards/roles.guard";
+import { Roles } from "../../common/decorators/roles.decorator";
 import { CurrentUser, AuthUser } from "../../common/decorators/current-user.decorator";
 import { CasinoService } from "./casino.service";
-import { CasinoCategory, CasinoTxKind } from "@prisma/client";
+import { SlotsLaunchService } from "./slotslaunch.service";
+import { CasinoCategory, CasinoTxKind, UserRole } from "@prisma/client";
 import { IsEnum, IsNumber, IsOptional, IsString } from "class-validator";
 
 class WalletCbDto {
@@ -15,7 +18,10 @@ class WalletCbDto {
 
 @Controller("casino")
 export class CasinoController {
-  constructor(private readonly casino: CasinoService) {}
+  constructor(
+    private readonly casino: CasinoService,
+    private readonly slotslaunch: SlotsLaunchService,
+  ) {}
 
   @Get("games")
   games(
@@ -32,6 +38,21 @@ export class CasinoController {
   @Get("providers")
   providers() {
     return this.casino.listProviders();
+  }
+
+  // Demo-game launch (SlotsLaunch) — returns the domain-locked iframe URL.
+  @UseGuards(JwtAuthGuard)
+  @Get("games/:id/launch")
+  launch(@Param("id") id: string) {
+    return this.slotslaunch.launchUrl(id);
+  }
+
+  // Admin: pull the SlotsLaunch demo catalogue into our games table.
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Post("slotslaunch/sync")
+  syncSlotsLaunch() {
+    return this.slotslaunch.syncGames();
   }
 
   @UseGuards(JwtAuthGuard)

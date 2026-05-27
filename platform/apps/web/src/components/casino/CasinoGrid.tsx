@@ -181,7 +181,8 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
             return (
               <div key={`api-${g.id}`} className="flex flex-col gap-1">
                 <GameCard
-                  as="button"
+                  as="link"
+                  href={`/casino/play/${g.id}`}
                   name={g.name}
                   publisher={g.provider.name}
                   thumbnail={g.thumbnail}

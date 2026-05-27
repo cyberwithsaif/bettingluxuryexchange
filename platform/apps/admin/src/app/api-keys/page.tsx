@@ -16,6 +16,18 @@ export default function ApiKeysPage() {
   const { data: existing }  = useSWR<Existing[]>("/admin/api-keys");
   const [editing, setEditing] = useState<Cat | null>(null);
   const [filter, setFilter] = useState<string>("");
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  async function syncSlotsLaunch() {
+    setSyncing(true); setSyncMsg(null);
+    try {
+      const { data } = await api.post("/casino/slotslaunch/sync");
+      setSyncMsg(`SlotsLaunch: imported ${data.synced} games from ${data.providers} providers (${data.pages} pages).${data.note ? " " + data.note : ""}`);
+    } catch (e: any) {
+      setSyncMsg(e?.response?.data?.message || "SlotsLaunch sync failed — check the token + host.");
+    } finally { setSyncing(false); }
+  }
 
   const map = new Map((existing ?? []).map((e) => [e.providerKey, e]));
   const grouped = groupBy((catalogue ?? []).filter((c) => !filter || c.category === filter), (c) => c.category);
@@ -28,6 +40,10 @@ export default function ApiKeysPage() {
           <p className="text-sm text-gray-500 mt-0.5">All provider credentials. Encrypted at rest, last-4 shown.</p>
         </div>
       </div>
+
+      {syncMsg && (
+        <div className="text-sm px-4 py-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300">{syncMsg}</div>
+      )}
 
       <div className="flex gap-2 flex-wrap text-xs">
         {["", "sports", "casino", "crash", "slots", "virtual", "payment"].map((c) => (
@@ -75,6 +91,16 @@ export default function ApiKeysPage() {
                       : <XCircle className="inline text-gray-400" size={18} />}
                   </div>
                   <div className="col-span-6 md:col-span-2 flex gap-1 justify-end">
+                    {c.key === "slotslaunch" && e?.enabled && (
+                      <button
+                        onClick={syncSlotsLaunch}
+                        disabled={syncing}
+                        className="text-xs px-2 py-1 rounded-lg bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold inline-flex items-center gap-1 hover:brightness-110 disabled:opacity-50 transition"
+                        title="Import the demo-slot catalogue into the casino"
+                      >
+                        {syncing ? "Syncing…" : "Sync games"}
+                      </button>
+                    )}
                     <button
                       onClick={() => setEditing(c)}
                       className="text-xs px-2 py-1 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 text-gray-100 font-bold inline-flex items-center gap-1 hover:brightness-110 transition"
