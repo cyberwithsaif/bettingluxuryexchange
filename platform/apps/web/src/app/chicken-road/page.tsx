@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo, useLayoutEffect } from "react";
+import type { CSSProperties } from "react";
 import { motion, AnimatePresence, useAnimationControls } from "framer-motion";
 import { useAuthStore } from "@/lib/stores/auth";
 import { getSocket } from "@/lib/socket";
@@ -98,6 +99,15 @@ function useSounds(enabled: boolean) {
     start:   () => tone(330, 0.15, "sine", 0.2),
   };
 }
+
+// Soft light-purple "glass" card used to group each control category.
+const PURPLE_CARD: CSSProperties = {
+  background: "linear-gradient(180deg, rgba(167,139,250,0.18), rgba(124,58,237,0.07))",
+  border: "1px solid rgba(167,139,250,0.35)",
+  borderRadius: 18,
+  padding: "12px 16px",
+  boxShadow: "0 8px 26px rgba(124,58,237,0.18), inset 0 1px 0 rgba(255,255,255,0.10)",
+};
 
 // ─── Vehicle (top-down) ─────────────────────────────────────────────────────────
 
@@ -956,41 +966,45 @@ export default function ChickenRoadPage() {
         {/* ── Mobile layout ── */}
         <div className="md:hidden px-3 pt-3 pb-4 flex flex-col gap-2">
 
-          {/* Row 1: Bet Amount */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-bold text-white/50 shrink-0 w-20">Bet Amount</span>
-            <div className="flex items-center rounded-xl px-2.5 py-2 bg-[#0c0a20] border border-white/[0.08] flex-1 min-w-0">
-              <span className="text-white/40 text-sm mr-1 shrink-0">₹</span>
-              <input type="number" value={betAmount}
-                onChange={e => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
-                disabled={phase === "running"}
-                className="bg-transparent flex-1 min-w-0 text-sm font-bold text-white outline-none disabled:opacity-60" />
+          {/* Card 1: Bet Amount */}
+          <div className="flex flex-col gap-2" style={PURPLE_CARD}>
+            <span className="text-[11px] font-bold text-purple-200/80">Bet Amount</span>
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center rounded-xl px-2.5 py-2 flex-1 min-w-0" style={{ background: "rgba(10,8,28,0.55)", border: "1px solid rgba(167,139,250,0.35)" }}>
+                <span className="text-purple-200/50 text-sm mr-1 shrink-0">₹</span>
+                <input type="number" value={betAmount}
+                  onChange={e => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
+                  disabled={phase === "running"}
+                  className="bg-transparent flex-1 min-w-0 text-sm font-bold text-white outline-none disabled:opacity-60" />
+              </div>
+              {([["1/2", () => adjustBet(0.5)], ["2X", () => adjustBet(2)], ["Max", () => quickBet(Math.floor(liveBalance ?? betAmount))]] as [string, () => void][]).map(([label, fn]) => (
+                <button key={label} onClick={fn} disabled={phase === "running"}
+                  className="px-2.5 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-40 shrink-0"
+                  style={{ background: "rgba(167,139,250,0.14)", border: "1px solid rgba(167,139,250,0.35)", color: "rgba(237,233,254,0.9)" }}>
+                  {label}
+                </button>
+              ))}
             </div>
-            {([["1/2", () => adjustBet(0.5)], ["2X", () => adjustBet(2)], ["Max", () => quickBet(Math.floor(liveBalance ?? betAmount))]] as [string, () => void][]).map(([label, fn]) => (
-              <button key={label} onClick={fn} disabled={phase === "running"}
-                className="px-2.5 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-40 shrink-0"
-                style={{ background: "#1e1b3a", border: "1px solid rgba(139,92,246,0.2)", color: "rgba(255,255,255,0.7)" }}>
-                {label}
-              </button>
-            ))}
           </div>
 
-          {/* Row 2: Difficulty */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-bold text-white/50 shrink-0 w-20">Difficulty</span>
-            {(["EASY", "MEDIUM", "HARD", "DAREDEVIL"] as Difficulty[]).map(d => (
-              <button key={d}
-                onClick={() => { if (phase !== "running") setDifficulty(d); }}
-                disabled={phase === "running"}
-                className="flex-1 py-2 rounded-xl text-[11px] font-bold transition-all disabled:opacity-50"
-                style={{
-                  background: difficulty === d ? `${DIFF_CONFIG[d].color}1a` : "#1e1b3a",
-                  border: `1px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(139,92,246,0.15)"}`,
-                  color: difficulty === d ? DIFF_CONFIG[d].color : "rgba(255,255,255,0.5)",
-                }}>
-                {DIFF_CONFIG[d].label}
-              </button>
-            ))}
+          {/* Card 2: Difficulty */}
+          <div className="flex flex-col gap-2" style={PURPLE_CARD}>
+            <span className="text-[11px] font-bold text-purple-200/80">Difficulty</span>
+            <div className="grid grid-cols-4 gap-1.5">
+              {(["EASY", "MEDIUM", "HARD", "DAREDEVIL"] as Difficulty[]).map(d => (
+                <button key={d}
+                  onClick={() => { if (phase !== "running") setDifficulty(d); }}
+                  disabled={phase === "running"}
+                  className="py-2 rounded-xl text-[11px] font-bold transition-all disabled:opacity-50"
+                  style={{
+                    background: difficulty === d ? DIFF_CONFIG[d].color : "rgba(167,139,250,0.12)",
+                    border: `1px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(167,139,250,0.30)"}`,
+                    color: difficulty === d ? "#fff" : "rgba(237,233,254,0.85)",
+                  }}>
+                  {DIFF_CONFIG[d].label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Row 3: Action */}
@@ -1015,14 +1029,14 @@ export default function ChickenRoadPage() {
         <div className="hidden md:flex px-6 py-4 w-full max-w-6xl mx-auto gap-5">
 
           {/* Bet Amount */}
-          <div className="flex flex-col gap-1.5 flex-shrink-0">
-            <label className="text-[11px] font-bold text-white/50 flex items-center gap-1">
+          <div className="flex flex-col gap-2 flex-shrink-0" style={PURPLE_CARD}>
+            <label className="text-[11px] font-bold text-purple-200/80 flex items-center gap-1">
               Bet Amount
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="opacity-60"><path d="M12 4v8m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
             </label>
             <div className="flex items-center gap-1.5">
-              <div className="flex items-center rounded-xl px-3 py-2 bg-[#0c0a20] border border-white/[0.08]" style={{ minWidth: 120 }}>
-                <span className="text-white/40 text-sm mr-1 shrink-0">₹</span>
+              <div className="flex items-center rounded-xl px-3 py-2" style={{ minWidth: 120, background: "rgba(10,8,28,0.55)", border: "1px solid rgba(167,139,250,0.35)" }}>
+                <span className="text-purple-200/50 text-sm mr-1 shrink-0">₹</span>
                 <input type="number" value={betAmount}
                   onChange={e => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
                   disabled={phase === "running"}
@@ -1030,8 +1044,8 @@ export default function ChickenRoadPage() {
               </div>
               {([["1/2", () => adjustBet(0.5)], ["2X", () => adjustBet(2)], ["Max", () => quickBet(Math.floor(liveBalance ?? betAmount))]] as [string, () => void][]).map(([label, fn]) => (
                 <button key={label} onClick={fn} disabled={phase === "running"}
-                  className="px-3 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-40"
-                  style={{ background: "#1e1b3a", border: "1px solid rgba(139,92,246,0.2)", color: "rgba(255,255,255,0.65)" }}>
+                  className="px-3 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-40 hover:brightness-125"
+                  style={{ background: "rgba(167,139,250,0.14)", border: "1px solid rgba(167,139,250,0.35)", color: "rgba(237,233,254,0.9)" }}>
                   {label}
                 </button>
               ))}
@@ -1039,8 +1053,8 @@ export default function ChickenRoadPage() {
           </div>
 
           {/* Difficulty */}
-          <div className="flex flex-col gap-1.5 flex-1">
-            <label className="text-[11px] font-bold text-white/50 flex items-center gap-1">
+          <div className="flex flex-col gap-2 flex-1" style={PURPLE_CARD}>
+            <label className="text-[11px] font-bold text-purple-200/80 flex items-center gap-1">
               Difficulty
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="opacity-60"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/><path d="M12 8v4m0 4h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
             </label>
@@ -1049,11 +1063,11 @@ export default function ChickenRoadPage() {
                 <button key={d}
                   onClick={() => { if (phase !== "running") setDifficulty(d); }}
                   disabled={phase === "running"}
-                  className="py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                  className="py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50 hover:brightness-110"
                   style={{
-                    background: difficulty === d ? DIFF_CONFIG[d].color : "#1e1b3a",
-                    border: `1px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(139,92,246,0.15)"}`,
-                    color: difficulty === d ? "#fff" : "rgba(255,255,255,0.5)",
+                    background: difficulty === d ? DIFF_CONFIG[d].color : "rgba(167,139,250,0.12)",
+                    border: `1px solid ${difficulty === d ? DIFF_CONFIG[d].color : "rgba(167,139,250,0.30)"}`,
+                    color: difficulty === d ? "#fff" : "rgba(237,233,254,0.85)",
                   }}>
                   {DIFF_CONFIG[d].label}
                 </button>
