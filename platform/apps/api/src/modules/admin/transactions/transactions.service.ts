@@ -49,6 +49,26 @@ export class TransactionsService {
     });
   }
 
+  // -- user-side: saved payout methods (UPI / bank / crypto) --
+  listPayoutMethods(userId: string) {
+    return this.prisma.userPayoutMethod.findMany({ where: { userId }, orderBy: { createdAt: "desc" } });
+  }
+
+  async addPayoutMethod(userId: string, dto: { type: string; label: string; details: string }) {
+    if (!["UPI", "BANK_TRANSFER", "CRYPTO"].includes(dto.type)) throw new BadRequestException("Invalid method type");
+    if (!dto.label?.trim() || !dto.details?.trim()) throw new BadRequestException("Label and details are required");
+    return this.prisma.userPayoutMethod.create({
+      data: { userId, type: dto.type, label: dto.label.trim(), details: dto.details.trim() },
+    });
+  }
+
+  async removePayoutMethod(userId: string, id: string) {
+    const m = await this.prisma.userPayoutMethod.findUnique({ where: { id } });
+    if (!m || m.userId !== userId) throw new NotFoundException("Method not found");
+    await this.prisma.userPayoutMethod.delete({ where: { id } });
+    return { ok: true };
+  }
+
   list(opts: { status?: TransactionStatus; kind?: TransactionKind; limit?: number; userId?: string } = {}) {
     return this.prisma.transaction.findMany({
       where: {

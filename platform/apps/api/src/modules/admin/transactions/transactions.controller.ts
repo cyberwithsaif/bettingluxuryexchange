@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
 import type { Request } from "express";
 import { JwtAuthGuard } from "../../auth/jwt-auth.guard";
 import { RolesGuard } from "../../../common/guards/roles.guard";
@@ -7,13 +7,19 @@ import { CurrentUser, AuthUser } from "../../../common/decorators/current-user.d
 import { TransactionKind, TransactionMethod, TransactionStatus, UserRole } from "@prisma/client";
 import { TransactionsService } from "./transactions.service";
 import { AdminService } from "../admin.service";
-import { IsEnum, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import { IsEnum, IsIn, IsNumber, IsOptional, IsString, Min } from "class-validator";
 
 class CreateTxDto {
   @IsEnum(TransactionKind) kind!: TransactionKind;
   @IsEnum(TransactionMethod) method!: TransactionMethod;
   @IsNumber() @Min(1) amount!: number;
   @IsOptional() @IsString() reference?: string;
+}
+
+class PayoutMethodDto {
+  @IsIn(["UPI", "BANK_TRANSFER", "CRYPTO"]) type!: string;
+  @IsString() label!: string;
+  @IsString() details!: string;
 }
 
 class RejectDto { @IsOptional() @IsString() reason?: string; }
@@ -36,6 +42,25 @@ export class TransactionsController {
   @Get("transactions/mine")
   mine(@CurrentUser() user: AuthUser) {
     return this.txs.list({ userId: user.id });
+  }
+
+  // --- saved payout methods (user's own) ---
+  @UseGuards(JwtAuthGuard)
+  @Get("me/payout-methods")
+  payoutMethods(@CurrentUser() user: AuthUser) {
+    return this.txs.listPayoutMethods(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("me/payout-methods")
+  addPayoutMethod(@CurrentUser() user: AuthUser, @Body() dto: PayoutMethodDto) {
+    return this.txs.addPayoutMethod(user.id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete("me/payout-methods/:id")
+  removePayoutMethod(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.txs.removePayoutMethod(user.id, id);
   }
 
   // --- ADMIN side ---

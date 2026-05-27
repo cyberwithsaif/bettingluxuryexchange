@@ -35,14 +35,6 @@ const METHOD_COLOR: Record<Method, string> = {
   CRYPTO:        "#f59e0b",
 };
 
-const STORAGE_KEY = "exch-saved-payout-methods";
-function load(): SavedMethod[] {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]"); } catch { return []; }
-}
-function persist(items: SavedMethod[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-}
-
 function fmt(n: number | undefined) {
   if (n == null) return "—";
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(n);
@@ -55,7 +47,7 @@ export default function WithdrawPage() {
   const { data: wallet } = useSWR(user ? "/wallet/summary" : null);
   const { data: mine }   = useSWR(user ? "/transactions/mine" : null);
 
-  const [saved, setSaved]         = useState<SavedMethod[]>([]);
+  const { data: saved = [] } = useSWR<SavedMethod[]>(user ? "/me/payout-methods" : null);
   const [selected, setSelected]   = useState<SavedMethod | null>(null);
   const [amount, setAmount]       = useState(0);
   const [busy, setBusy]           = useState(false);
@@ -66,26 +58,27 @@ export default function WithdrawPage() {
   const [newLabel, setNewLabel]     = useState("");
   const [newDetails, setNewDetails] = useState("");
 
+  // Default the selection to the first saved method (prefer UPI) once loaded.
   useEffect(() => {
-    const items = load();
-    setSaved(items);
-    const firstUpi = items.find((m) => m.type === "UPI");
-    setSelected(firstUpi ?? items[0] ?? null);
-  }, []);
+    if (!selected && saved.length) setSelected(saved.find((m) => m.type === "UPI") ?? saved[0] ?? null);
+  }, [saved, selected]);
 
-  function addMethod() {
+  async function addMethod() {
     if (!newLabel.trim() || !newDetails.trim()) return;
-    const entry: SavedMethod = { id: Date.now().toString(), type: newType, label: newLabel.trim(), details: newDetails.trim() };
-    const updated = [...saved, entry];
-    setSaved(updated); persist(updated);
-    setSelected(entry);
-    setShowAdd(false); setNewLabel(""); setNewDetails(""); setNewType("UPI");
+    try {
+      const { data } = await api.post("/me/payout-methods", { type: newType, label: newLabel.trim(), details: newDetails.trim() });
+      mutate("/me/payout-methods");
+      setSelected(data);
+      setShowAdd(false); setNewLabel(""); setNewDetails(""); setNewType("UPI");
+    } catch (e: any) { setMsg({ text: e?.response?.data?.message || "Failed to save method.", ok: false }); }
   }
 
-  function removeMethod(id: string) {
-    const updated = saved.filter((s) => s.id !== id);
-    setSaved(updated); persist(updated);
-    if (selected?.id === id) setSelected(null);
+  async function removeMethod(id: string) {
+    try {
+      await api.delete(`/me/payout-methods/${id}`);
+      mutate("/me/payout-methods");
+      if (selected?.id === id) setSelected(null);
+    } catch (e: any) { setMsg({ text: e?.response?.data?.message || "Failed to remove method.", ok: false }); }
   }
 
   const available = Number(wallet?.available ?? 0);

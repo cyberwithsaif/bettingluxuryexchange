@@ -95,6 +95,7 @@ model User {
   vipLevel        VipLevel?   @relation(fields: [vipLevelId], references: [id])
   promoRedemptions PromoRedemption[]
   supportTickets  SupportTicket[]
+  payoutMethods   UserPayoutMethod[]
 
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -673,6 +674,20 @@ model SystemConfig {
   key       String   @id
   value     Json
   updatedAt DateTime @updatedAt
+}
+
+// Withdrawal payout destinations a user has saved (UPI / bank / crypto).
+// Server-backed so admins can see them on the user profile.
+model UserPayoutMethod {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // "UPI" | "BANK_TRANSFER" | "CRYPTO"
+  label     String
+  details   String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model PlinkoBet {

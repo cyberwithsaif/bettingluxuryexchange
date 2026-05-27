@@ -41,6 +41,7 @@ interface ProfileData {
   recentTxns:   { id: string; kind: string; method: string; amount: number | string; status: string; reference: string | null; createdAt: string }[];
   recentBets:   { id: string; side: string; stake: string | number; status: string; createdAt: string; market: { name: string; type: string } | null; runner: { name: string } | null }[];
   adminNotes:   { id: string; createdAt: string; metadata: any; actor: { username: string } | null }[];
+  payoutMethods: { id: string; type: string; label: string; details: string; createdAt: string }[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -123,6 +124,29 @@ function UnavailableSection({ label }: { label: string }) {
   );
 }
 
+// Saved payout methods (bank / UPI / crypto) the user added on the withdraw page.
+function PayoutList({ methods, empty }: { methods: { id: string; type: string; label: string; details: string }[]; empty: string }) {
+  if (!methods.length) return <p className="text-xs text-gray-500 py-2">{empty}</p>;
+  const cls = (t: string) =>
+    t === "CRYPTO" ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+    : t === "BANK_TRANSFER" ? "bg-sky-500/15 text-sky-300 border-sky-500/30"
+    : "bg-emerald-500/15 text-emerald-300 border-emerald-500/30";
+  const label = (t: string) => (t === "BANK_TRANSFER" ? "BANK" : t);
+  return (
+    <div className="space-y-2">
+      {methods.map((m) => (
+        <div key={m.id} className="rounded-lg border border-gray-700 bg-gray-800/40 px-3 py-2">
+          <div className="flex items-center justify-between gap-2 mb-0.5">
+            <span className="text-sm font-semibold text-gray-200 truncate">{m.label}</span>
+            <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-bold border shrink-0", cls(m.type))}>{label(m.type)}</span>
+          </div>
+          <p className="text-xs font-mono text-gray-400 break-all">{m.details}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // On/off control for a risk flag (freeze withdrawals, mark suspicious).
 function FlagToggle({ label, desc, active, activeColor, onToggle }: {
   label: string; desc: string; active: boolean; activeColor: "red" | "amber"; onToggle: () => void;
@@ -192,7 +216,7 @@ export default function UserProfilePage() {
     </div>
   );
 
-  const { user, wallet, limits, vip, financials, bettingStats, casinoStats, recentLogins, recentTxns, recentBets, adminNotes } = data;
+  const { user, wallet, limits, vip, financials, bettingStats, casinoStats, recentLogins, recentTxns, recentBets, adminNotes, payoutMethods } = data;
   const avatarLetter = user.username[0]?.toUpperCase() ?? "U";
   const totalWinnings = financials.casinoWins + financials.betWins;
   const totalLosses   = financials.casinoBets + financials.betLosses;
@@ -501,6 +525,7 @@ export default function UserProfilePage() {
                       <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Type</th>
                       <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Method</th>
                       <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Amount</th>
+                      <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Details</th>
                       <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Status</th>
                       <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Date</th>
                     </tr>
@@ -513,6 +538,7 @@ export default function UserProfilePage() {
                         <td className={cn("py-2 px-2 tabular-nums text-right font-bold", t.kind === "DEPOSIT" ? "text-emerald-400" : "text-red-500")}>
                           {t.kind === "WITHDRAWAL" ? "-" : "+"}{fmt(Number(t.amount))}
                         </td>
+                        <td className="py-2 px-2 text-gray-400 max-w-[180px] truncate" title={t.reference ?? ""}>{t.reference ?? "—"}</td>
                         <td className="py-2 px-2">
                           <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold",
                             t.status === "APPROVED" || t.status === "COMPLETED" ? "bg-emerald-500/15 text-emerald-300" :
@@ -529,16 +555,11 @@ export default function UserProfilePage() {
           </SectionCard>
 
           <div className="grid md:grid-cols-2 gap-5">
-            <SectionCard title="Banking Details" icon={Building2} badge="Not Implemented">
-              <UnavailableSection label="Account Holder Name" />
-              <UnavailableSection label="Bank Name / Account Number" />
-              <UnavailableSection label="IFSC Code / Branch" />
-              <UnavailableSection label="UPI ID" />
+            <SectionCard title="Banking Details" icon={Building2} badge={`${payoutMethods.filter(m => m.type !== "CRYPTO").length} saved`}>
+              <PayoutList methods={payoutMethods.filter((m) => m.type !== "CRYPTO")} empty="No UPI / bank methods saved by this user." />
             </SectionCard>
-            <SectionCard title="Crypto Details" icon={Bitcoin} badge="Not Implemented">
-              <UnavailableSection label="BTC Address" />
-              <UnavailableSection label="ETH Address" />
-              <UnavailableSection label="USDT (TRC20 / ERC20) Address" />
+            <SectionCard title="Crypto Details" icon={Bitcoin} badge={`${payoutMethods.filter(m => m.type === "CRYPTO").length} saved`}>
+              <PayoutList methods={payoutMethods.filter((m) => m.type === "CRYPTO")} empty="No crypto wallets saved by this user." />
             </SectionCard>
           </div>
         </div>

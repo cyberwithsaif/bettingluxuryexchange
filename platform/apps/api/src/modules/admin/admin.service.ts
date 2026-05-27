@@ -480,7 +480,7 @@ export class AdminService {
     });
     if (!user) throw new BadRequestException("User not found");
 
-    const [ledgerGroups, betGroups, minesAgg, minesGroups, recentLogins, recentTxns, recentBets, adminNotes] =
+    const [ledgerGroups, betGroups, minesAgg, minesGroups, recentLogins, recentTxns, recentBets, adminNotes, payoutMethods] =
       await Promise.all([
         this.prisma.ledgerEntry.groupBy({
           by: ["kind"],
@@ -529,6 +529,10 @@ export class AdminService {
           orderBy: { createdAt: "desc" },
           take: 20,
           include: { actor: { select: { username: true } } },
+        }),
+        this.prisma.userPayoutMethod.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
         }),
       ]);
 
@@ -623,6 +627,7 @@ export class AdminService {
       recentTxns,
       recentBets,
       adminNotes,
+      payoutMethods,
     };
   }
 
