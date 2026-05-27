@@ -85,7 +85,7 @@ export class UsersService {
     // SUPER_ADMIN/ADMIN can see all users; others see only their downline
     const isGlobalAdmin = actor.role === "SUPER_ADMIN" || actor.role === "ADMIN";
 
-    return this.prisma.user.findMany({
+    const rows = await this.prisma.user.findMany({
       where: {
         ...(isGlobalAdmin ? {} : { parentId: actorId }),
         ...(opts.q ? { username: { contains: opts.q, mode: "insensitive" } } : {}),
@@ -95,6 +95,8 @@ export class UsersService {
       orderBy: { createdAt: "desc" },
       take: 200,
     });
+    // Strip passwordHash / twoFactorSecret — same as every other method here.
+    return rows.map((u) => this.publicUser(u));
   }
 
   async setStatus(actorId: string, targetId: string, status: UserStatus) {
