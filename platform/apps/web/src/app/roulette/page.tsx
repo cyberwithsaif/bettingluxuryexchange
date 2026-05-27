@@ -309,6 +309,8 @@ export default function RoulettePage() {
     @media(min-width:768px){ .casino-chip span{font-size:16px;} }
     @keyframes chipPulse { 0%{box-shadow:0 0 10px currentColor}50%{box-shadow:0 0 22px currentColor}100%{box-shadow:0 0 10px currentColor} }
     @keyframes tickerScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+    @keyframes rlWheelSpin { to { transform: rotate(360deg); } }
+    .rl-wheel-spin { animation: rlWheelSpin 3.5s linear infinite; }
 
     /* ── Landscape mobile compact layout ── */
     @media (orientation:landscape) and (max-height:520px) {
@@ -419,26 +421,18 @@ export default function RoulettePage() {
                   />
                 </div>
 
-                {/* Spinning roulette wheel overlay */}
-                <motion.div
-                  className="absolute inset-0 flex items-center justify-center"
-                  animate={{ rotate: status === "SPINNING" && round?.winningNumber === null ? 3600 : 0 }}
-                  transition={{
-                    duration: 25,
-                    repeat: status === "SPINNING" && round?.winningNumber === null ? Infinity : 0,
-                    repeatType: "loop",
-                    ease: "linear"
-                  }}
-                >
+                {/* Spinning roulette wheel overlay — continuous CSS spin while the round spins */}
+                <div className="absolute inset-0 flex items-center justify-center">
                   <Image
                     src="/images/rou.png"
                     alt="Roulette Wheel"
                     width={200}
                     height={200}
                     priority
+                    className={status === "SPINNING" ? "rl-wheel-spin" : ""}
                     style={{ pointerEvents: "none" }}
                   />
-                </motion.div>
+                </div>
               </div>
 
               {/* Below-wheel area: win amount for 3s, otherwise winning number badge */}
