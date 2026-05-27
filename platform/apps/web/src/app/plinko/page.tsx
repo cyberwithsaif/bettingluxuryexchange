@@ -186,9 +186,13 @@ export default function PlinkoPage() {
     if (!token) return;
     try {
       const r = await fetch("/api/wallet/summary", { headers: { Authorization: `Bearer ${token}` } });
+      // Throttled/error (e.g. 429 under heavy play) → keep the last good balance,
+      // never clobber it to 0. The optimistic update already keeps it live.
+      if (!r.ok) return;
       const d = await r.json();
-      setBalance(Number(d.balance ?? 0));
-    } catch { /* ignore */ }
+      const v = Number(d.balance ?? d.available);
+      if (Number.isFinite(v)) setBalance(v);
+    } catch { /* network error — keep current balance */ }
   }, [token]);
   const scheduleFetchBalance = useCallback(() => {
     if (balanceFetchTimer.current) clearTimeout(balanceFetchTimer.current);
