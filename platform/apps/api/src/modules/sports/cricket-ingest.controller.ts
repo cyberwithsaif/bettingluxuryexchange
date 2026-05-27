@@ -4,24 +4,32 @@ import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { UserRole } from "@prisma/client";
 import { CricketIngestService } from "./cricket-ingest.service";
+import { BetfairIngestService } from "./betfair-ingest.service";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-@Controller("sports/cricket")
+@Controller("sports")
 export class CricketIngestController {
-  constructor(private readonly ingest: CricketIngestService) {}
+  constructor(
+    private readonly ingest: CricketIngestService,
+    private readonly betfair: BetfairIngestService,
+  ) {}
 
   // Primary: real matches WITH real odds from The Odds API (free tier).
-  @Post("sync/live")
+  @Post("cricket/sync/live")
   syncLive() { return this.ingest.syncFromOddsApi(); }
 
+  // Betfair Exchange — authentic back/lay cricket match odds.
+  @Post("betfair/sync")
+  syncBetfair() { return this.betfair.syncCricketMatchOdds(); }
+
   // Secondary: CricAPI (scores only, no odds) — kept for those with a cricapi key.
-  @Post("sync/cricapi")
+  @Post("cricket/sync/cricapi")
   syncCricapi() { return this.ingest.syncLiveMatches(); }
 
-  @Post("sync/series")
+  @Post("cricket/sync/series")
   syncSeries() { return this.ingest.syncSeries(); }
 
-  @Post("sync/series/:id/matches")
+  @Post("cricket/sync/series/:id/matches")
   syncMatches(@Param("id") id: string) { return this.ingest.syncSeriesMatches(id); }
 }

@@ -19,6 +19,16 @@ export default function MarketsAdmin() {
       setSyncMsg(e?.response?.data?.message || "Sync failed — check your Cricket API key in API Keys.");
     } finally { setSyncing(false); }
   }
+  async function syncBetfair() {
+    setSyncing(true); setSyncMsg(null);
+    try {
+      const { data } = await api.post("/sports/betfair/sync");
+      setSyncMsg(`Betfair: ${data.synced} markets (live ${data.live}, upcoming ${data.upcoming}).${data.note ? " " + data.note : ""}`);
+      mutate(`/markets/matches?sport=${sport}`);
+    } catch (e: any) {
+      setSyncMsg(e?.response?.data?.message || "Betfair sync failed — add app_key + session_token in API Keys.");
+    } finally { setSyncing(false); }
+  }
   async function deleteMarket(id: string) {
     if (!confirm("Delete this market? Its runners and ALL bets/exposure on it are permanently removed.")) return;
     try { await api.delete(`/admin/markets/${id}`); mutate(`/markets/matches?sport=${sport}`); }
@@ -58,6 +68,14 @@ export default function MarketsAdmin() {
             title="Import real live/upcoming cricket matches from the Cricket API"
           >
             {syncing ? "Syncing…" : "Sync Live Cricket"}
+          </button>
+          <button
+            onClick={syncBetfair}
+            disabled={syncing}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-indigo-500 to-blue-600 shadow-[0_2px_12px_rgba(79,70,229,0.4)] hover:brightness-110 disabled:opacity-50 transition"
+            title="Import authentic back/lay cricket odds from Betfair Exchange"
+          >
+            Sync Betfair
           </button>
           <select
             value={sport}
