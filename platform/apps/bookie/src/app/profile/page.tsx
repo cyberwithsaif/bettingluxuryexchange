@@ -25,7 +25,7 @@ export default function ProfilePage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <StatCard label="Wallet Balance" value={inr(data?.wallet?.balance ?? 0)} Icon={Wallet} accent="emerald" loading={isLoading} />
         <StatCard label="Credit Limit" value={inr(data?.creditLimit ?? 0)} sub={`Used ${inr(data?.creditUsed ?? 0)}`} Icon={CreditCard} accent="amber" loading={isLoading} />
-        <StatCard label="Commission" value={`${data?.commissionPct ?? 0}%`} Icon={Percent} accent="violet" loading={isLoading} />
+        <StatCard label="Admin Commission" value={`${data?.commissionPct ?? 0}%`} sub="of your profit" Icon={Percent} accent="violet" loading={isLoading} />
         <StatCard label="Total Users" value={data?.totalUsers ?? 0} Icon={Users} accent="sky" loading={isLoading} />
       </div>
 

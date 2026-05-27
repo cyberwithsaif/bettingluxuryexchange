@@ -13,6 +13,14 @@ const num = (d: Prisma.Decimal | number | null | undefined) =>
   d == null ? 0 : typeof d === "number" ? d : Number(d.toString());
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
+// Gameplay ledger kinds whose signed sum tells us a player's net result.
+// A user whose net across these is negative has *lost* money — and that loss
+// is the bookie's profit (the admin then earns commission on it).
+const GAMEPLAY_KINDS = [
+  LedgerKind.BET_SETTLE_WIN, LedgerKind.BET_SETTLE_LOSS,
+  LedgerKind.CASINO_BET, LedgerKind.CASINO_WIN, LedgerKind.CASINO_REFUND,
+];
+
 /**
  * BookieService owns both the admin→bookie management surface and the
  * bookie→user surface. Every read on the bookie side is scoped to
@@ -48,19 +56,57 @@ export class BookieService {
     return rest;
   }
 
-  private shapeBookie(b: any) {
+  private shapeBookie(b: any, profit = 0) {
     const balance = num(b.wallet?.balance);
     const creditLimit = num(b.creditLimit);
     const creditUsed = balance < 0 ? -balance : 0;
+    const commissionBps = b.partnershipBps ?? 0;
     return {
       ...this.pub(b),
       wallet: b.wallet ? { ...b.wallet, balance, exposure: num(b.wallet.exposure) } : null,
-      commissionPct: round2((b.partnershipBps ?? 0) / 100),
+      // partnershipBps is reused as the ADMIN's commission rate on this bookie's profit.
+      commissionPct: round2(commissionBps / 100),
       creditLimit,
       creditUsed: round2(creditUsed),
       available: round2(balance + creditLimit),
       totalUsers: b._count?.children ?? 0,
+      // bookieProfit = total losses of this bookie's players; admin earns commissionPct of it.
+      bookieProfit: round2(profit),
+      adminCommission: round2((profit * commissionBps) / 10_000),
     };
+  }
+
+  /**
+   * Bookie profit = Σ over the bookie's players of each player's *net loss*
+   * (a player who is net up contributes 0 — wins never reduce profit).
+   * Returns a map bookieId → profit, computed in two queries regardless of
+   * how many bookies are passed. No money moves: this is a reported figure.
+   */
+  private async profitForBookies(bookieIds: string[]): Promise<Map<string, number>> {
+    const map = new Map<string, number>();
+    bookieIds.forEach((id) => map.set(id, 0));
+    if (!bookieIds.length) return map;
+
+    const children = await this.prisma.user.findMany({
+      where: { parentId: { in: bookieIds } },
+      select: { id: true, parentId: true },
+    });
+    if (!children.length) return map;
+    const userToBookie = new Map(children.map((c) => [c.id, c.parentId as string]));
+
+    const grouped = await this.prisma.ledgerEntry.groupBy({
+      by: ["userId"],
+      where: { userId: { in: children.map((c) => c.id) }, kind: { in: GAMEPLAY_KINDS } },
+      _sum: { amount: true },
+    });
+    for (const g of grouped) {
+      const net = num(g._sum.amount);
+      if (net < 0) {
+        const b = userToBookie.get(g.userId);
+        if (b) map.set(b, round2((map.get(b) ?? 0) + -net));
+      }
+    }
+    return map;
   }
 
   // Fetch a bookie row or throw. Optionally assert it really is a BOOKIE.
@@ -90,7 +136,8 @@ export class BookieService {
       orderBy: { createdAt: "desc" },
       take: 200,
     });
-    return rows.map((r) => this.shapeBookie(r));
+    const profit = await this.profitForBookies(rows.map((r) => r.id));
+    return rows.map((r) => this.shapeBookie(r, profit.get(r.id) ?? 0));
   }
 
   async createBookie(actorId: string, dto: CreateBookieDto, ip?: string) {
@@ -188,6 +235,8 @@ export class BookieService {
     }));
     const ids = childIds.map((c) => c.id);
     const stats = await this.rollup(ids);
+    const profit = (await this.profitForBookies([bookieId])).get(bookieId) ?? 0;
+    const commissionBps = b.partnershipBps ?? 0;
     const [walletLogs, activity] = await Promise.all([
       this.prisma.ledgerEntry.findMany({
         where: { userId: bookieId, kind: { in: [LedgerKind.BOOKIE_RECHARGE, LedgerKind.BOOKIE_TO_USER, LedgerKind.USER_TO_BOOKIE] } },
@@ -199,8 +248,15 @@ export class BookieService {
       }),
     ]);
     return {
-      bookie: this.shapeBookie(b),
-      stats: { ...stats, totalUsers: ids.length, activeUsers: childIds.filter((c) => c.status === "ACTIVE").length },
+      bookie: this.shapeBookie(b, profit),
+      stats: {
+        ...stats,
+        totalUsers: ids.length,
+        activeUsers: childIds.filter((c) => c.status === "ACTIVE").length,
+        bookieProfit: round2(profit),
+        commissionPct: round2(commissionBps / 100),
+        adminCommission: round2((profit * commissionBps) / 10_000),
+      },
       walletLogs,
       activity,
     };
@@ -246,6 +302,8 @@ export class BookieService {
 
     const balance = num(me.wallet?.balance);
     const creditLimit = num(me.creditLimit);
+    const commissionBps = me.partnershipBps ?? 0;
+    const profit = (await this.profitForBookies([bookieId])).get(bookieId) ?? 0;
     const since = new Date(); since.setHours(0, 0, 0, 0);
     const [depToday, pendingW, exposureAgg] = await Promise.all([
       this.prisma.ledgerEntry.aggregate({
@@ -261,7 +319,10 @@ export class BookieService {
       totalUsers: ids.length,
       activeUsers: children.filter((c) => c.status === "ACTIVE").length,
       totalBets: stats.totalBets,
-      profitLoss: stats.usersNet * -1,   // platform/bookie view = inverse of users' net
+      // Bookie profit = total player losses; admin earns commissionPct of it.
+      bookieProfit: round2(profit),
+      commissionPct: round2(commissionBps / 100),
+      adminCommission: round2((profit * commissionBps) / 10_000),
       pendingWithdrawals: pendingW,
       depositsToday: round2(num(depToday._sum.amount)),
       exposure: round2(num(exposureAgg._sum.exposure)),
@@ -401,7 +462,8 @@ export class BookieService {
       include: { wallet: true, limits: true, _count: { select: { children: true } } },
     });
     if (!me) throw new ForbiddenException();
-    return this.shapeBookie(me);
+    const profit = (await this.profitForBookies([bookieId])).get(bookieId) ?? 0;
+    return this.shapeBookie(me, profit);
   }
 
   // ── shared ──────────────────────────────────────────────────────────────

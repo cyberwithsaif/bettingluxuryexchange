@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { PageHeader, StatCard, Badge, DataTable, Column, GlassCard } from "@/components/ui";
 import { ModalField } from "../page";
 import {
-  ArrowLeft, Wallet, Users as UsersIcon, Ticket, TrendingUp, CreditCard, Save,
+  ArrowLeft, Wallet, Users as UsersIcon, Ticket, TrendingDown, Percent, CreditCard, Save,
 } from "lucide-react";
 
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -37,12 +37,13 @@ export default function BookieDetailPage() {
         right={bookie && <Badge tone={statusTone(bookie.status)}>{bookie.status}</Badge>}
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
         <StatCard label="Wallet Balance" value={inr(bookie?.wallet?.balance ?? 0)} Icon={Wallet} accent="emerald" loading={isLoading} />
         <StatCard label="Credit Used" value={inr(bookie?.creditUsed ?? 0)} sub={`Limit ${inr(bookie?.creditLimit ?? 0)}`} Icon={CreditCard} accent="amber" loading={isLoading} />
         <StatCard label="Users" value={`${stats?.activeUsers ?? 0}/${stats?.totalUsers ?? 0}`} sub="active / total" Icon={UsersIcon} accent="violet" loading={isLoading} />
         <StatCard label="Total Bets" value={stats?.totalBets ?? 0} Icon={Ticket} accent="sky" loading={isLoading} />
-        <StatCard label="Bookie P/L" value={inr(stats?.profitLoss ?? 0)} Icon={TrendingUp} accent={(stats?.profitLoss ?? 0) >= 0 ? "emerald" : "red"} loading={isLoading} />
+        <StatCard label="Bookie Profit" value={inr(stats?.bookieProfit ?? 0)} sub="total player losses" Icon={TrendingDown} accent="amber" loading={isLoading} />
+        <StatCard label="Admin Commission" value={inr(stats?.adminCommission ?? 0)} sub={`${stats?.commissionPct ?? 0}% of profit`} Icon={Percent} accent="emerald" loading={isLoading} />
       </div>
 
       {/* Tabs */}
@@ -95,7 +96,7 @@ function SettingsCard({ id, bookie, onSaved }: { id: string; bookie: any; onSave
         <ModalField label="Full Name" className="col-span-2"><input className="modal-input" value={f.fullName} onChange={(e) => setF({ ...f, fullName: e.target.value })} /></ModalField>
         <ModalField label="Phone"><input className="modal-input" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></ModalField>
         <ModalField label="Email"><input className="modal-input" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></ModalField>
-        <ModalField label="Commission (bps · 100=1%)"><input type="number" min={0} max={10000} className="modal-input" value={f.commissionBps} onChange={(e) => setF({ ...f, commissionBps: Number(e.target.value) })} /></ModalField>
+        <ModalField label="Admin Commission % (bps · 100=1%)"><input type="number" min={0} max={10000} className="modal-input" value={f.commissionBps} onChange={(e) => setF({ ...f, commissionBps: Number(e.target.value) })} /></ModalField>
         <ModalField label="Credit Limit (₹)"><input type="number" min={0} className="modal-input" value={f.creditLimit} onChange={(e) => setF({ ...f, creditLimit: Number(e.target.value) })} /></ModalField>
       </div>
       <div className="flex items-center gap-3 mt-4">

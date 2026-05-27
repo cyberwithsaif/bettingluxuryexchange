@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { PageHeader, StatCard, Badge, DataTable, Column } from "@/components/ui";
 import {
   Store, Wallet, Users as UsersIcon, CreditCard, Plus, X, Eye,
-  PlusCircle, UserX, UserCheck, LogOut, Save,
+  PlusCircle, UserX, UserCheck, LogOut, Save, TrendingDown, Percent,
 } from "lucide-react";
 
 interface Bookie {
@@ -22,6 +22,8 @@ interface Bookie {
   creditUsed: number;
   available: number;
   totalUsers: number;
+  bookieProfit: number;
+  adminCommission: number;
   lastLoginAt: string | null;
   createdAt: string;
   wallet: { balance: number; exposure: number } | null;
@@ -39,8 +41,9 @@ export default function BookiesPage() {
 
   const list = bookies ?? [];
   const totalFloat = list.reduce((s, b) => s + (b.wallet?.balance ?? 0), 0);
-  const totalCredit = list.reduce((s, b) => s + b.creditUsed, 0);
   const totalUsers = list.reduce((s, b) => s + b.totalUsers, 0);
+  const totalProfit = list.reduce((s, b) => s + (b.bookieProfit ?? 0), 0);
+  const totalCommission = list.reduce((s, b) => s + (b.adminCommission ?? 0), 0);
 
   async function act(b: Bookie, action: "suspend" | "activate" | "logout") {
     try {
@@ -78,8 +81,16 @@ export default function BookiesPage() {
       render: (b) => <span className="tabular-nums text-sky-300">{inr(b.available)}</span> },
     { key: "users", header: "Users", align: "center", sortValue: (b) => b.totalUsers,
       render: (b) => <span className="tabular-nums text-gray-200 font-semibold">{b.totalUsers}</span> },
-    { key: "commission", header: "Comm.", align: "right", sortValue: (b) => b.commissionPct,
-      render: (b) => <span className="tabular-nums text-gray-400">{b.commissionPct}%</span> },
+    { key: "profit", header: "Profit (loss)", align: "right", sortValue: (b) => b.bookieProfit,
+      exportValue: (b) => b.bookieProfit,
+      render: (b) => <span className="tabular-nums text-amber-300">{inr(b.bookieProfit)}</span> },
+    { key: "adminComm", header: "Admin Comm.", align: "right", sortValue: (b) => b.adminCommission,
+      exportValue: (b) => b.adminCommission,
+      render: (b) => (
+        <span className="tabular-nums text-emerald-300 font-semibold">
+          {inr(b.adminCommission)} <span className="text-gray-600 text-[11px]">({b.commissionPct}%)</span>
+        </span>
+      ) },
     { key: "status", header: "Status", align: "center", sortValue: (b) => b.status,
       render: (b) => <Badge tone={statusTone(b.status)}>{b.status}</Badge> },
     { key: "lastLogin", header: "Last Login", sortValue: (b) => b.lastLoginAt ?? "",
@@ -110,11 +121,12 @@ export default function BookiesPage() {
         }
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
         <StatCard label="Total Bookies" value={list.length} Icon={Store} accent="emerald" loading={isLoading} />
         <StatCard label="Total Float" value={inr(totalFloat)} Icon={Wallet} accent="sky" loading={isLoading} />
-        <StatCard label="Credit Outstanding" value={inr(totalCredit)} Icon={CreditCard} accent="amber" loading={isLoading} />
         <StatCard label="Users Under Bookies" value={totalUsers} Icon={UsersIcon} accent="violet" loading={isLoading} />
+        <StatCard label="Total User Loss → Bookie Profit" value={inr(totalProfit)} Icon={TrendingDown} accent="amber" loading={isLoading} />
+        <StatCard label="Total Admin Commission" value={inr(totalCommission)} sub="across all bookies' profit" Icon={Percent} accent="emerald" loading={isLoading} />
       </div>
 
       <DataTable
@@ -166,7 +178,7 @@ function CreateBookieModal({ onClose }: { onClose: (saved?: boolean) => void }) 
         <ModalField label="Phone"><input className="modal-input" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></ModalField>
         <ModalField label="Email"><input className="modal-input" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></ModalField>
         <ModalField label="Initial Wallet (₹)"><input type="number" min={0} className="modal-input" value={f.initialBalance} onChange={(e) => setF({ ...f, initialBalance: Number(e.target.value) })} /></ModalField>
-        <ModalField label="Commission (bps · 100=1%)"><input type="number" min={0} max={10000} className="modal-input" value={f.commissionBps} onChange={(e) => setF({ ...f, commissionBps: Number(e.target.value) })} /></ModalField>
+        <ModalField label="Admin Commission % (bps · 100=1%)"><input type="number" min={0} max={10000} className="modal-input" value={f.commissionBps} onChange={(e) => setF({ ...f, commissionBps: Number(e.target.value) })} /></ModalField>
         <ModalField label="Credit Limit (₹)" className="col-span-2"><input type="number" min={0} className="modal-input" value={f.creditLimit} onChange={(e) => setF({ ...f, creditLimit: Number(e.target.value) })} /></ModalField>
       </div>
       {err && <p className="text-xs text-red-400 bg-red-900/20 border border-red-500/30 rounded-lg px-3 py-2 mt-3">{err}</p>}

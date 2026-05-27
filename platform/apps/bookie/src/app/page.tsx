@@ -1,7 +1,7 @@
 "use client";
 import useSWR from "swr";
 import { PageHeader, StatCard, GlassCard } from "@/components/ui";
-import { Wallet, Users, UserCheck, Ticket, TrendingUp, Clock, ArrowDownToLine, ShieldAlert } from "lucide-react";
+import { Wallet, Users, UserCheck, Ticket, TrendingDown, Percent, Clock, ArrowDownToLine, ShieldAlert } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
@@ -24,10 +24,24 @@ export default function BookieDashboard() {
         <StatCard label="Total Users" value={data?.totalUsers ?? 0} Icon={Users} accent="sky" loading={isLoading} />
         <StatCard label="Active Users" value={data?.activeUsers ?? 0} Icon={UserCheck} accent="violet" loading={isLoading} />
         <StatCard label="Total Bets" value={data?.totalBets ?? 0} Icon={Ticket} accent="amber" loading={isLoading} />
-        <StatCard label="Profit / Loss" value={inr(data?.profitLoss ?? 0)} Icon={TrendingUp} accent={(data?.profitLoss ?? 0) >= 0 ? "emerald" : "red"} loading={isLoading} />
+        <StatCard label="Bookie Profit" value={inr(data?.bookieProfit ?? 0)} sub="total player losses" Icon={TrendingDown} accent="amber" loading={isLoading} />
         <StatCard label="Pending Withdrawals" value={data?.pendingWithdrawals ?? 0} Icon={Clock} accent="amber" loading={isLoading} />
         <StatCard label="Deposits Today" value={inr(data?.depositsToday ?? 0)} Icon={ArrowDownToLine} accent="emerald" loading={isLoading} />
         <StatCard label="Exposure" value={inr(data?.exposure ?? 0)} Icon={ShieldAlert} accent="red" loading={isLoading} />
+      </div>
+
+      {/* Admin commission — the cut the admin takes from your profit (set in admin panel). */}
+      <div className="mb-4">
+        <GlassCard glow className="p-5 flex flex-wrap items-center justify-between gap-4 border-emerald-500/30">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-emerald-500/10"><Percent size={22} className="text-emerald-400" /></div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-gray-500 font-semibold">Admin Commission</p>
+              <p className="text-sm text-gray-400">{data?.commissionPct ?? 0}% of your bookie profit ({inr(data?.bookieProfit ?? 0)})</p>
+            </div>
+          </div>
+          <p className="text-3xl font-black tabular-nums text-emerald-300">{inr(data?.adminCommission ?? 0)}</p>
+        </GlassCard>
       </div>
 
       <GlassCard className="p-5">
