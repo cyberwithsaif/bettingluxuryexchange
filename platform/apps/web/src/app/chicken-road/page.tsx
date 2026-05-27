@@ -195,7 +195,7 @@ function shade(hex: string, percent: number): string {
 
 // ─── Chicken ─────────────────────────────────────────────────────────────────
 
-function Chicken({ size, dead = false }: { size: number; dead?: boolean }) {
+function Chicken({ size, dead = false, walking = false }: { size: number; dead?: boolean; walking?: boolean }) {
   const s = size / 120;
   const p = (n: number) => n * s;
   const featherBorder = `${p(2)}px solid #d5daf5`;
@@ -244,13 +244,21 @@ function Chicken({ size, dead = false }: { size: number; dead?: boolean }) {
         {/* beak */}
         <div style={{ position: "absolute", width: p(16), height: p(12), background: "#f5a623", top: p(28), left: p(20), clipPath: "polygon(0 50%,100% 0,100% 100%)" }} />
       </div>
-      {/* legs */}
-      <div style={{ position: "absolute", width: p(8), height: p(18), background: "#f5a623", bottom: p(6), left: p(38), borderRadius: p(10) }}>
+      {/* legs — alternating walking gait while crossing */}
+      <motion.div
+        animate={walking ? { y: [0, -p(6), 0], rotate: [0, -11, 0] } : { y: 0, rotate: 0 }}
+        transition={walking ? { duration: 0.36, repeat: Infinity, ease: "easeInOut" } : { duration: 0.15 }}
+        style={{ position: "absolute", width: p(8), height: p(18), background: "#f5a623", bottom: p(6), left: p(38), borderRadius: p(10), transformOrigin: "top center" }}
+      >
         <div style={{ position: "absolute", width: p(16), height: p(6), background: "#e89612", bottom: p(-2), left: p(-4), borderRadius: p(10) }} />
-      </div>
-      <div style={{ position: "absolute", width: p(8), height: p(18), background: "#f5a623", bottom: p(6), right: p(30), borderRadius: p(10) }}>
+      </motion.div>
+      <motion.div
+        animate={walking ? { y: [0, -p(6), 0], rotate: [0, 11, 0] } : { y: 0, rotate: 0 }}
+        transition={walking ? { duration: 0.36, repeat: Infinity, ease: "easeInOut", delay: 0.18 } : { duration: 0.15 }}
+        style={{ position: "absolute", width: p(8), height: p(18), background: "#f5a623", bottom: p(6), right: p(30), borderRadius: p(10), transformOrigin: "top center" }}
+      >
         <div style={{ position: "absolute", width: p(16), height: p(6), background: "#e89612", bottom: p(-2), right: p(-4), borderRadius: p(10) }} />
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -924,7 +932,7 @@ export default function ChickenRoadPage() {
                       : { duration: 0.3, repeat: loading ? Infinity : 0 }
                   }
                 >
-                  <Chicken size={chickenSize} />
+                  <Chicken size={chickenSize} walking={phase === "running"} />
                 </motion.div>
               )}
 
