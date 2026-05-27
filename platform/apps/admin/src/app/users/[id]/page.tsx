@@ -693,7 +693,7 @@ export default function UserProfilePage() {
       {/* ══ TAB: Admin Controls ══ */}
       {tab === "Admin Controls" && (
         <div className="space-y-5">
-          <div className="grid md:grid-cols-2 gap-5">
+          <div>
             <SectionCard title="Admin Actions" icon={Settings}>
               <div className="grid grid-cols-2 gap-2">
                 <button onClick={() => handleStatusChange("ACTIVE")} disabled={saving || user.status === "ACTIVE"}
@@ -715,28 +715,6 @@ export default function UserProfilePage() {
                 <button onClick={handleResetPwd}
                   className="col-span-2 flex items-center justify-center gap-1.5 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-xs font-bold py-2.5 rounded-lg transition">
                   <Key size={12} /> Reset Password
-                </button>
-              </div>
-            </SectionCard>
-
-            <SectionCard title="Adjust Balance" icon={DollarSign}>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block mb-1">Amount (+ credit / − debit)</label>
-                  <input type="number" value={adjustAmt} onChange={e => setAdjustAmt(e.target.value)}
-                    placeholder="e.g. 500 or -200"
-                    className="w-full bg-gray-800 border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-yellow-400 transition" />
-                </div>
-                <div>
-                  <label className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block mb-1">Note</label>
-                  <input type="text" value={adjustNote} onChange={e => setAdjustNote(e.target.value)}
-                    placeholder="Reason for adjustment…"
-                    className="w-full bg-gray-800 border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-yellow-400 transition" />
-                </div>
-                <button onClick={handleAdjust} disabled={adjusting || !adjustAmt}
-                  className="btn-primary flex items-center gap-2 disabled:opacity-50">
-                  {adjusting ? <RefreshCw size={13} className="animate-spin" /> : <DollarSign size={13} />}
-                  {adjusting ? "Applying…" : "Apply Adjustment"}
                 </button>
               </div>
             </SectionCard>
