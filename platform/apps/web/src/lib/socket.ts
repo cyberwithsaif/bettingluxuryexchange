@@ -1,5 +1,6 @@
 "use client";
 import { io, Socket } from "socket.io-client";
+import { useAuthStore } from "@/lib/stores/auth";
 
 let socket: Socket | null = null;
 
@@ -27,5 +28,10 @@ export function connectSocket(token?: string | null) {
 }
 
 export function getSocket() {
-  return socket ?? connectSocket();
+  if (socket) return socket;
+  // Create authenticated from the start — the token is hydrated synchronously
+  // from persisted storage, so first-render callers don't get an unauth socket
+  // (which the WS guard would reject with "Unauthorized").
+  const token = useAuthStore.getState().accessToken;
+  return connectSocket(token);
 }
