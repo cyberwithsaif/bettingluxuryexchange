@@ -314,7 +314,7 @@ function ProvablyFairModal({ session, onClose }: {
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function TowersPage() {
-  const { user }   = useAuthStore();
+  const { user, accessToken } = useAuthStore();
   const socket     = useRef(getSocket());
 
   // Game state
@@ -355,18 +355,28 @@ export default function TowersPage() {
     return tiles;
   }, []);
 
+  // Restore an in-progress game (e.g. after navigating away and back) instead of
+  // starting a new one. The /active endpoint needs the JWT — the previous raw
+  // fetch had no Authorization header, so it 401'd and never restored.
+  const restoreActive = useCallback(async () => {
+    try {
+      const r = await fetch("/api/casino/towers/active", {
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      });
+      if (!r.ok) return false;
+      const s = await r.json();
+      if (!s) return false;
+      setSession(s);
+      setPhase("playing");
+      setTileStates(initTiles(s.columns, s.currentLevel, s.pickedCols));
+      return true;
+    } catch { return false; }
+  }, [accessToken, initTiles]);
+
   useEffect(() => {
     if (!user) return;
-    fetch("/api/casino/towers/active")
-      .then(r => r.ok ? r.json() : null)
-      .then(s => {
-        if (!s) return;
-        setSession(s);
-        setPhase("playing");
-        setTileStates(initTiles(s.columns, s.currentLevel, s.pickedCols));
-      })
-      .catch(() => {});
-  }, [user, initTiles]);
+    restoreActive();
+  }, [user, restoreActive]);
 
   useEffect(() => {
     const s = socket.current;
@@ -375,7 +385,9 @@ export default function TowersPage() {
     const onStart = (data: { ok: boolean; session?: Session; message?: string }) => {
       setLoading(false);
       if (!data.ok || !data.session) {
-        showError(data.message ?? "Failed to start");
+        // Race: a game is already active — load it instead of erroring.
+        if (/active game|cashout first|already/i.test(data.message ?? "")) restoreActive();
+        else showError(data.message ?? "Failed to start");
         return;
       }
       setSession(data.session);
@@ -479,7 +491,7 @@ export default function TowersPage() {
       s.off("towers:error",           onError);
       s.off("wallet:balance",         onBalance);
     };
-  }, [session, sounds, initTiles]);
+  }, [session, sounds, initTiles, restoreActive]);
 
   const showError = (msg: string) => {
     setError(msg);

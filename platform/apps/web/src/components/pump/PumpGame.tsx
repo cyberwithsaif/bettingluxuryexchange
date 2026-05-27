@@ -447,14 +447,22 @@ export function PumpGame() {
   }, []);
   useEffect(() => { loadTable(difficulty); }, [difficulty, loadTable]);
 
-  useEffect(() => {
-    if (!user) return;
-    api.get("/casino/pump/active").then(r => {
-      const s = r.data; if (!s) return;
+  // Load any in-progress session (e.g. after navigating away and back) so we
+  // continue it instead of trying to start a new one.
+  const restoreActive = useCallback(async () => {
+    try {
+      const r = await api.get("/casino/pump/active");
+      const s = r.data; if (!s) return false;
       setSession(s); setStatus("ACTIVE"); setDifficulty(s.difficulty);
       setBetAmount(String(s.betAmount)); setMultTable(s.multTable ?? []); setTableLoaded(true);
-    }).catch(() => {});
-  }, [user]);
+      return true;
+    } catch { return false; }
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    restoreActive();
+  }, [user, restoreActive]);
 
   const reset = useCallback(() => {
     setSession(null); setStatus("IDLE"); setPoppedMult(null);
@@ -481,9 +489,15 @@ export function PumpGame() {
         multTable: data.multTable, status: "ACTIVE",
       });
       setMultTable(data.multTable); setStatus("ACTIVE"); mutateWallet();
-    } catch (e: any) { notify(e?.response?.data?.message ?? "Bet failed", false); }
+    } catch (e: any) {
+      const msg = e?.response?.data?.message ?? "Bet failed";
+      // Race: a session already exists (e.g. opened in another tab / before the
+      // restore fetch landed) — quietly load it instead of erroring.
+      if (/active\s+\w*\s*session|already have/i.test(msg)) { await restoreActive(); }
+      else notify(msg, false);
+    }
     finally { setBusy("none"); }
-  }, [user, status, betAmount, difficulty, minBet, maxBet, balance, mutateWallet, notify, playBet]);
+  }, [user, status, betAmount, difficulty, minBet, maxBet, balance, mutateWallet, notify, playBet, restoreActive]);
 
   const pumpOnce = useCallback(async () => {
     if (!session || status !== "ACTIVE" || busy !== "none") return;
