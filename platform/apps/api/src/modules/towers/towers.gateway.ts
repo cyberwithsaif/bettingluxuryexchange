@@ -77,10 +77,12 @@ export class TowersGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     try {
       const user   = (client as any).user;
+      this.logger.log(`towers:cashout socketUser=${user?.userId} session=${data.sessionId}`);
       const result = await this.towersService.cashout(user.userId, data.sessionId);
       await this.emitBalance(client, user.userId);
       return { event: "towers:cashoutResponse", data: { ok: true, result } };
     } catch (e) {
+      this.logger.warn(`towers:cashout FAIL socketUser=${(client as any).user?.userId}: ${(e as Error).message}`);
       return { event: "towers:error", data: { message: (e as Error).message } };
     }
   }
