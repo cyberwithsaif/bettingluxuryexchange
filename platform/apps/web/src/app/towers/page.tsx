@@ -363,13 +363,21 @@ export default function TowersPage() {
       const r = await fetch("/api/casino/towers/active", {
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
       });
-      if (!r.ok) return false;
+      if (!r.ok) return false; // transient error — keep current state
       const s = await r.json();
-      if (!s) return false;
-      setSession(s);
-      setPhase("playing");
-      setTileStates(initTiles(s.columns, s.currentLevel, s.pickedCols));
-      return true;
+      if (s && s.id) {
+        setSession(s);
+        setPhase("playing");
+        setTileStates(initTiles(s.columns, s.currentLevel, s.pickedCols));
+        return true;
+      }
+      // Current user has NO active game → clear any stale session (e.g. one left
+      // over from a previously logged-in account) so we never show/cash out
+      // someone else's game.
+      setSession(null);
+      setPhase("idle");
+      setTileStates([]);
+      return false;
     } catch { return false; }
   }, [accessToken, initTiles]);
 

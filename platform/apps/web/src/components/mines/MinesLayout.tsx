@@ -82,19 +82,26 @@ export default function MinesLayout() {
   useEffect(() => {
     if (!user) return;
     fetch("/api/mines/active", { headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} })
-      .then(r => (r.ok ? r.json() : null))
+      .then(r => (r.ok ? r.json() : undefined)) // undefined = transient error → keep state
       .then(s => {
-        if (!s) return;
-        setGameState({
-          id: s.id,
-          betAmount: s.betAmount,
-          minesCount: s.minesCount,
-          clientSeed: s.clientSeed,
-          serverSeedHash: s.serverSeedHash,
-          status: "IN_PROGRESS",
-          multiplier: s.multiplier,
-          clickedTiles: s.clickedTiles ?? [],
-        });
+        if (s === undefined) return;
+        if (s && s.id) {
+          setGameState({
+            id: s.id,
+            betAmount: s.betAmount,
+            minesCount: s.minesCount,
+            clientSeed: s.clientSeed,
+            serverSeedHash: s.serverSeedHash,
+            status: "IN_PROGRESS",
+            multiplier: s.multiplier,
+            clickedTiles: s.clickedTiles ?? [],
+          });
+        } else {
+          // No active game for this user → drop any stale (previous-account) session.
+          setGameState(prev => prev.status === "IN_PROGRESS"
+            ? { ...prev, id: undefined, status: "IDLE", multiplier: 1.0, clickedTiles: [] }
+            : prev);
+        }
       })
       .catch(() => {});
   }, [user, accessToken]);

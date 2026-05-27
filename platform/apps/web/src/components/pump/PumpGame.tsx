@@ -452,10 +452,15 @@ export function PumpGame() {
   const restoreActive = useCallback(async () => {
     try {
       const r = await api.get("/casino/pump/active");
-      const s = r.data; if (!s) return false;
-      setSession(s); setStatus("ACTIVE"); setDifficulty(s.difficulty);
-      setBetAmount(String(s.betAmount)); setMultTable(s.multTable ?? []); setTableLoaded(true);
-      return true;
+      const s = r.data;
+      if (s && s.betId) {
+        setSession(s); setStatus("ACTIVE"); setDifficulty(s.difficulty);
+        setBetAmount(String(s.betAmount)); setMultTable(s.multTable ?? []); setTableLoaded(true);
+        return true;
+      }
+      // No active session for this user → clear any stale (previous-account) one.
+      setSession(null); setStatus(prev => (prev === "ACTIVE" ? "IDLE" : prev));
+      return false;
     } catch { return false; }
   }, []);
 
