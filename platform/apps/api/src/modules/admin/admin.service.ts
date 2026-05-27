@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from "@nestjs/common";
 import { BetStatus, LedgerKind, Prisma, TransactionStatus, UserRole } from "@prisma/client";
+import { VIP_TIERS, getTierIndex, levelFromDeposits } from "@exch/shared";
 import * as os from "os";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { RedisService } from "../../common/redis/redis.service";
@@ -475,7 +476,7 @@ export class AdminService {
   async getUserProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { wallet: true, limits: true, vipLevel: true },
+      include: { wallet: true, limits: true },
     });
     if (!user) throw new BadRequestException("User not found");
 
@@ -577,16 +578,19 @@ export class AdminService {
         fancyEnabled:      user.limits.fancyEnabled,
         casinoEnabled:     user.limits.casinoEnabled,
       } : null,
-      vip: user.vipLevel ? {
-        id:          user.vipLevel.id,
-        name:        user.vipLevel.name,
-        tier:        user.vipLevel.tier,
-        color:       user.vipLevel.color,
-        cashbackBps: user.vipLevel.cashbackBps,
-        bonusAmount: Number(user.vipLevel.bonusAmount.toString()),
-        minWagered:  Number(user.vipLevel.minWagered.toString()),
-        perks:       user.vipLevel.perks,
-      } : null,
+      vip: (() => {
+        // Level derived from total deposits (DEPOSIT + ADMIN_CREDIT) — same as web.
+        const dep = Math.max(0, lm["DEPOSIT"] ?? 0) + Math.max(0, lm["ADMIN_CREDIT"] ?? 0);
+        const lvl = levelFromDeposits(dep);
+        const next = lvl.max === Infinity ? null : lvl.max;
+        return {
+          name: lvl.name, tier: lvl.tier, color: lvl.color,
+          cashbackBps: lvl.cashback * 100, minWagered: lvl.min,
+          totalDeposited: dep, nextThreshold: next,
+          toNext: next ? Math.max(0, next - dep) : 0,
+          perks: lvl.perks,
+        };
+      })(),
       financials: {
         totalDeposits:    Math.max(0,  lm["DEPOSIT"]          ?? 0),
         totalWithdrawals: Math.abs(Math.min(0, lm["WITHDRAWAL"] ?? 0)),
@@ -831,6 +835,31 @@ export class AdminService {
       if (!exists) throw new BadRequestException("VIP level not found");
     }
     return this.prisma.user.update({ where: { id: user.id }, data: { vipLevelId }, select: { id: true, username: true, vipLevelId: true } });
+  }
+
+  /** Deposit-based VIP overview: the canonical tiers + how many players sit in each. */
+  async getVipOverview() {
+    const groups = await this.prisma.ledgerEntry.groupBy({
+      by: ["userId"],
+      where: { kind: { in: [LedgerKind.DEPOSIT, LedgerKind.ADMIN_CREDIT] }, amount: { gt: 0 } },
+      _sum: { amount: true },
+    });
+    const counts = new Array(VIP_TIERS.length).fill(0) as number[];
+    const depositors = new Set<string>();
+    for (const g of groups) {
+      counts[getTierIndex(Number(g._sum.amount ?? 0))]++;
+      depositors.add(g.userId);
+    }
+    // Players with no deposits sit at Bronze by default.
+    const totalPlayers = await this.prisma.user.count({ where: { role: { not: UserRole.BOOKIE } } });
+    counts[0] += Math.max(0, totalPlayers - depositors.size);
+    return {
+      totalMembers: totalPlayers,
+      tiers: VIP_TIERS.map((t, i) => ({
+        name: t.name, tier: i + 1, min: t.min, max: t.max === Infinity ? null : t.max,
+        color: t.color, cashback: t.cashback, perks: t.perks as readonly string[], members: counts[i],
+      })),
+    };
   }
 
   // ── Promo codes ──────────────────────────────────────────────────────────────────

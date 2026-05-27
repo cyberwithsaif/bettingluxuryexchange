@@ -333,6 +333,9 @@ export class AdminController {
   @Get("vip/levels")
   vipLevels() { return this.admin.listVipLevels(); }
 
+  @Get("vip/overview")
+  vipOverview() { return this.admin.getVipOverview(); }
+
   @Post("vip/levels")
   async createVip(@CurrentUser() actor: AuthUser, @Body() dto: VipLevelDto, @Req() req: Request) {
     if (!dto.name || dto.tier === undefined) throw new Error("name and tier are required");

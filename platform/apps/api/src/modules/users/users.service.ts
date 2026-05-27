@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma, UserRole, UserStatus, LedgerKind } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
+import { levelFromDeposits } from "@exch/shared";
 import { PrismaService } from "../../common/prisma/prisma.service";
 
 const ROLE_RANK: Record<UserRole, number> = {
@@ -94,12 +95,27 @@ export class UsersService {
         // generic Users list hides them unless a role filter explicitly asks.
         ...(opts.role ? { role: opts.role } : { role: { not: UserRole.BOOKIE } }),
       },
-      include: { wallet: true, limits: true, vipLevel: true },
+      include: { wallet: true, limits: true },
       orderBy: { createdAt: "desc" },
       take: 200,
     });
+
+    // VIP level is derived from total deposits (DEPOSIT + ADMIN_CREDIT) — the
+    // same rule the web VIP page uses. One groupBy covers the whole page.
+    const ids = rows.map((r) => r.id);
+    const depGroups = ids.length ? await this.prisma.ledgerEntry.groupBy({
+      by: ["userId"],
+      where: { userId: { in: ids }, kind: { in: [LedgerKind.DEPOSIT, LedgerKind.ADMIN_CREDIT] }, amount: { gt: 0 } },
+      _sum: { amount: true },
+    }) : [];
+    const depMap = new Map<string, number>();
+    for (const g of depGroups) depMap.set(g.userId, Number(g._sum.amount ?? 0));
+
     // Strip passwordHash / twoFactorSecret — same as every other method here.
-    return rows.map((u) => this.publicUser(u));
+    return rows.map((u) => {
+      const lvl = levelFromDeposits(depMap.get(u.id) ?? 0);
+      return { ...this.publicUser(u), vipLevel: { name: lvl.name, tier: lvl.tier, color: lvl.color } };
+    });
   }
 
   async setStatus(actorId: string, targetId: string, status: UserStatus) {
