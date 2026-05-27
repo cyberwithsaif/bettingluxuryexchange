@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import useSWR from "swr";
 import { useAuthStore } from "@/lib/stores/auth";
+import { api } from "@/lib/api";
 import { getSocket } from "@/lib/socket";
 import { MobileSidebar } from "../mobile/MobileSidebar";
 import { type VipRank, getTierIndex, VIP_TIERS } from "@/lib/vip";
@@ -68,6 +69,14 @@ function RankBadge({ rank, size = 28 }: { rank: Rank; size?: number }) {
 
 export function TopBar() {
   const { user, clear } = useAuthStore();
+
+  // Proper logout: revoke the refresh token server-side so the session disappears
+  // from "Active Sessions", then clear local state.
+  async function handleLogout() {
+    const rt = useAuthStore.getState().refreshToken;
+    try { if (rt) await api.post("/auth/logout", { refreshToken: rt }); } catch { /* ignore */ }
+    clear();
+  }
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { data: wallet, mutate } = useSWR(user ? "/wallet/summary" : null);
   /* Same SWR key as account/page.tsx — shared cache, no double request */
@@ -224,7 +233,7 @@ export function TopBar() {
             <NotificationBell />
 
             {/* Profile menu — all viewports */}
-            <ProfileMenu username={user.username} onLogout={clear} rank={rank} />
+            <ProfileMenu username={user.username} onLogout={handleLogout} rank={rank} />
           </div>
         )}
       </div>

@@ -11,6 +11,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   const logger = new Logger("Bootstrap");
 
+  // Behind nginx — trust the first proxy hop so req.ip uses X-Forwarded-For
+  // (the real client IP) instead of 127.0.0.1.
+  app.getHttpAdapter().getInstance().set("trust proxy", 1);
+
   const uploadsDir = process.env.UPLOADS_DIR ?? join(process.cwd(), "uploads");
   mkdirSync(uploadsDir, { recursive: true });
   // Served at /api/uploads/ so nginx's /api/ → port-4000 rule covers it

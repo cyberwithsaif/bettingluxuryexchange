@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ShieldCheck, Zap, Headphones, Send, Twitter, Instagram, Mail, ChevronRight } from "lucide-react";
 
 const PURPLE_GRAD = "linear-gradient(135deg, #c4b5fd 0%, #a78bfa 100%)";
@@ -18,8 +19,9 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-2">
-            <div className="font-display text-2xl bg-clip-text text-transparent mb-3 inline-block"
-              style={{ backgroundImage: PURPLE_GRAD }}>Exch</div>
+            <div className="mb-3">
+              <Image src="/logo.png" alt="Logo" width={48} height={48} className="rounded-full ring-1 ring-white/15" priority={false} />
+            </div>
             <p className="text-white/55 text-sm leading-relaxed max-w-xs">
               Premium betting exchange &amp; casino platform — built for operators, scaled for players.
             </p>
