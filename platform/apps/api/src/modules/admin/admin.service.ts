@@ -646,9 +646,40 @@ export class AdminService {
   }
 
   /** Delete a single market (and its runners, bets, exposure rows). */
+  /**
+   * Release the wallet exposure reserved against OPEN bets on the given markets
+   * BEFORE those bets are deleted — otherwise the liability stays locked in
+   * wallet.exposure forever (a leak that shrinks the player's available balance).
+   */
+  private async releaseOpenExposure(marketIds: string[]) {
+    if (!marketIds.length) return;
+    const openBets = await this.prisma.bet.findMany({
+      where: { marketId: { in: marketIds }, status: BetStatus.OPEN },
+      select: { userId: true, liability: true },
+    });
+    if (!openBets.length) return;
+    const byUser = new Map<string, number>();
+    for (const b of openBets) byUser.set(b.userId, (byUser.get(b.userId) ?? 0) + Number(b.liability));
+    for (const [userId, rel] of byUser) {
+      if (rel <= 0) continue;
+      const w = await this.prisma.wallet.findUnique({ where: { userId } });
+      if (!w) continue;
+      const newExp = Math.max(0, Math.round((Number(w.exposure) - rel) * 10000) / 10000);
+      await this.prisma.$transaction([
+        this.prisma.ledgerEntry.create({ data: {
+          userId, kind: LedgerKind.BET_VOID, amount: 0, exposureDelta: -(Number(w.exposure) - newExp),
+          balanceAfter: Number(w.balance), exposureAfter: newExp,
+          refType: "market_delete", note: "Exposure released — open bets removed by admin market/match delete",
+        } }),
+        this.prisma.wallet.update({ where: { userId }, data: { exposure: newExp, version: { increment: 1 } } }),
+      ]);
+    }
+  }
+
   async deleteMarket(id: string) {
     const m = await this.prisma.market.findUnique({ where: { id } });
     if (!m) throw new BadRequestException("Market not found");
+    await this.releaseOpenExposure([id]);
     await this.prisma.$transaction([
       this.prisma.bet.deleteMany({ where: { marketId: id } }),
       this.prisma.marketExposure.deleteMany({ where: { marketId: id } }),
@@ -662,6 +693,7 @@ export class AdminService {
     const match = await this.prisma.match.findUnique({ where: { id } });
     if (!match) throw new BadRequestException("Match not found");
     const marketIds = (await this.prisma.market.findMany({ where: { matchId: id }, select: { id: true } })).map((x) => x.id);
+    await this.releaseOpenExposure(marketIds);
     await this.prisma.$transaction([
       this.prisma.bet.deleteMany({ where: { marketId: { in: marketIds } } }),
       this.prisma.marketExposure.deleteMany({ where: { marketId: { in: marketIds } } }),
