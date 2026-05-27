@@ -78,7 +78,11 @@ export function TopBar() {
     clear();
   }
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { data: wallet, mutate } = useSWR(user ? "/wallet/summary" : null);
+  const { data: wallet, mutate } = useSWR(user ? "/wallet/summary" : null, {
+    refreshInterval: 1000,      // poll every second so the balance never stays stuck
+    dedupingInterval: 0,        // override the global 5s dedup so the 1s poll actually fires
+    keepPreviousData: true,     // a throttled/failed tick keeps the last balance (no blank/0)
+  });
   /* Same SWR key as account/page.tsx — shared cache, no double request */
   const { data: depositData } = useSWR<number>(user ? "/wallet/total-deposited" : null);
 
