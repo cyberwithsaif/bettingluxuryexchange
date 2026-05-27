@@ -1,8 +1,16 @@
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import axios from "axios";
 import { MarketType } from "@prisma/client";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { CryptoService } from "../../common/crypto/crypto.service";
+
+// The Odds API "group" → our Sport.key. Soccer maps to our "football".
+const SPORT_GROUP_MAP: Record<string, string> = {
+  Cricket: "cricket",
+  Soccer: "football",
+  Tennis: "tennis",
+  Basketball: "basketball",
+};
 
 /**
  * CricAPI ingestion (https://cricapi.com — free tier: 100 hits/day).
@@ -15,7 +23,7 @@ import { CryptoService } from "../../common/crypto/crypto.service";
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
 @Injectable()
-export class CricketIngestService {
+export class CricketIngestService implements OnModuleInit {
   private readonly logger = new Logger(CricketIngestService.name);
   private readonly base = process.env.CRICKET_API_BASE ?? "https://api.cricapi.com";
   private readonly oddsBase = process.env.ODDS_API_BASE ?? "https://api.the-odds-api.com/v4";
@@ -24,6 +32,31 @@ export class CricketIngestService {
     private readonly prisma: PrismaService,
     private readonly crypto: CryptoService,
   ) {}
+
+  /**
+   * Auto-sync loop. Runs only on PM2 worker 0 (so the cluster doesn't multiply
+   * API calls) and only when ODDS_SYNC_HOURS > 0. Keeps a small per-sport cap
+   * to respect the free 500/month quota — tune ODDS_SYNC_HOURS or upgrade the
+   * plan for more frequent live refreshes.
+   */
+  onModuleInit() {
+    const hours = Number(process.env.ODDS_SYNC_HOURS ?? 12);
+    const instance = process.env.NODE_APP_INSTANCE ?? "0";
+    if (hours <= 0 || instance !== "0") return;
+    const ms = hours * 3600_000;
+    const tick = async () => {
+      try {
+        if (!(await this.getOddsApiKey())) return; // no key yet — skip silently
+        const r = await this.syncFromOddsApi({ perSportCap: Number(process.env.ODDS_SYNC_CAP ?? 2) });
+        this.logger.log(`Auto-sync: ${r.synced} matches (live ${r.live}, upcoming ${r.upcoming})`);
+      } catch (e: any) {
+        this.logger.warn(`Auto-sync failed: ${e?.message ?? e}`);
+      }
+    };
+    setTimeout(tick, 30_000);          // first run shortly after boot
+    setInterval(tick, ms);             // then every ODDS_SYNC_HOURS
+    this.logger.log(`Odds auto-sync enabled: every ${hours}h (worker 0)`);
+  }
 
   /** Resolve The Odds API key: admin API-Keys entry (the_odds_api) first, then env. */
   private async getOddsApiKey(): Promise<string> {
@@ -37,86 +70,92 @@ export class CricketIngestService {
     return (process.env.THE_ODDS_API_KEY ?? "").trim();
   }
 
+  /** Upsert one event into a Match + "Match Winner" market with real h2h odds. */
+  private async importEvent(sportId: string, ev: any): Promise<"LIVE" | "UPCOMING" | null> {
+    const home = ev.home_team; const away = ev.away_team;
+    if (!home || !away) return null;
+    const commence = ev.commence_time ? new Date(ev.commence_time) : new Date();
+    const started = commence.getTime() <= Date.now();
+    const status = started ? "LIVE" : "UPCOMING";
+    const name = `${home} vs ${away}`;
+
+    const h2h = (ev.bookmakers ?? [])[0]?.markets?.find((m: any) => m.key === "h2h");
+    const outcomes: Array<{ name: string; price: number }> = h2h?.outcomes ?? [];
+
+    const match = await this.prisma.match.upsert({
+      where: { externalId: ev.id },
+      create: { externalId: ev.id, sportId, name, homeTeam: home, awayTeam: away, startTime: commence, status: status as any, inplay: started },
+      update: { name, status: status as any, inplay: started, startTime: commence },
+    });
+
+    const runnerDefs = (outcomes.length ? outcomes : [{ name: home, price: 2 }, { name: away, price: 2 }]).map((o, i) => {
+      const back = round2(o.price && o.price > 1 ? o.price : 2);
+      const lay = round2(back + Math.max(0.02, back * 0.02));
+      return { name: o.name, sortOrder: i + 1, backPrices: [back], layPrices: [lay] };
+    });
+
+    const existing = await this.prisma.market.findFirst({ where: { matchId: match.id, type: MarketType.MATCH_ODDS } });
+    if (!existing) {
+      await this.prisma.market.create({
+        data: { matchId: match.id, type: MarketType.MATCH_ODDS, name: "Match Winner", status: "OPEN" as any, runners: { create: runnerDefs } },
+      });
+    } else {
+      await this.prisma.market.update({ where: { id: existing.id }, data: { status: "OPEN" as any } });
+      const runners = await this.prisma.runner.findMany({ where: { marketId: existing.id } });
+      for (const r of runners) {
+        const def = runnerDefs.find((d) => d.name === r.name);
+        if (def) await this.prisma.runner.update({ where: { id: r.id }, data: { backPrices: def.backPrices, layPrices: def.layPrices } });
+      }
+    }
+    return status;
+  }
+
   /**
-   * Import real cricket matches WITH real bookmaker odds from The Odds API
-   * (free tier, https://the-odds-api.com). Each event becomes a bettable
-   * "Match Winner" market; runner back prices = the bookmaker decimal odds,
-   * lay prices a hair above. Re-running refreshes odds + statuses.
+   * Import real matches WITH real bookmaker odds from The Odds API across
+   * cricket, football (soccer), tennis and basketball. Each event becomes a
+   * bettable "Match Winner" market. `perSportCap` limits competitions per sport
+   * to respect the free 500/month quota.
    */
-  async syncFromOddsApi() {
+  async syncFromOddsApi(opts: { perSportCap?: number; groups?: string[] } = {}) {
     const key = await this.getOddsApiKey();
     if (!key) {
       throw new BadRequestException("No 'The Odds API' key configured. Get a free key at the-odds-api.com and add it under Admin → API Keys → 'The Odds API'.");
     }
-    const sport = await this.prisma.sport.findUnique({ where: { key: "cricket" } });
-    if (!sport) throw new BadRequestException("Cricket sport not seeded");
+    const perSportCap = opts.perSportCap ?? 3;
+    const wantGroups = opts.groups ?? Object.keys(SPORT_GROUP_MAP);
 
-    // List sports (free, doesn't use quota) and pick active cricket competitions.
+    // List sports (free, no quota) → active competitions grouped by our sport.
     const { data: sportsList } = await axios.get(`${this.oddsBase}/sports`, { params: { apiKey: key }, timeout: 15_000 });
     if (sportsList?.message) throw new BadRequestException(`The Odds API: ${sportsList.message}`);
-    const cricketKeys: string[] = (Array.isArray(sportsList) ? sportsList : [])
-      .filter((s: any) => s.active && (s.group === "Cricket" || String(s.key).startsWith("cricket_")))
-      .map((s: any) => s.key)
-      .slice(0, 8); // conserve the 500/mo free quota
-
-    if (!cricketKeys.length) {
-      return { synced: 0, live: 0, upcoming: 0, sports: 0, note: "No active cricket competitions right now (off-season)." };
-    }
+    const active: any[] = (Array.isArray(sportsList) ? sportsList : []).filter((s: any) => s.active);
 
     let synced = 0, live = 0, upcoming = 0;
-    for (const sk of cricketKeys) {
-      let events: any[] = [];
-      try {
-        const { data } = await axios.get(`${this.oddsBase}/sports/${sk}/odds`, {
-          params: { apiKey: key, regions: "uk,eu", markets: "h2h", oddsFormat: "decimal" },
-          timeout: 15_000,
-        });
-        events = Array.isArray(data) ? data : [];
-      } catch { continue; } // skip a competition that errors, keep going
+    const perSport: Record<string, number> = {};
 
-      for (const ev of events) {
-        const home = ev.home_team; const away = ev.away_team;
-        if (!home || !away) continue;
-        const commence = ev.commence_time ? new Date(ev.commence_time) : new Date();
-        const started = commence.getTime() <= Date.now();
-        const status = started ? "LIVE" : "UPCOMING";
-        const name = `${home} vs ${away}`;
+    for (const group of wantGroups) {
+      const ourKey = SPORT_GROUP_MAP[group];
+      if (!ourKey) continue;
+      const sport = await this.prisma.sport.findUnique({ where: { key: ourKey } });
+      if (!sport) continue;
+      const comps = active.filter((s) => s.group === group).map((s) => s.key).slice(0, perSportCap);
 
-        // First bookmaker's head-to-head outcomes = real odds.
-        const h2h = (ev.bookmakers ?? [])[0]?.markets?.find((m: any) => m.key === "h2h");
-        const outcomes: Array<{ name: string; price: number }> = h2h?.outcomes ?? [];
-
-        const match = await this.prisma.match.upsert({
-          where: { externalId: ev.id },
-          create: { externalId: ev.id, sportId: sport.id, name, homeTeam: home, awayTeam: away, startTime: commence, status: status as any, inplay: started },
-          update: { name, status: status as any, inplay: started, startTime: commence },
-        });
-
-        const runnerDefs = (outcomes.length ? outcomes : [{ name: home, price: 2 }, { name: away, price: 2 }]).map((o, i) => {
-          const back = round2(o.price && o.price > 1 ? o.price : 2);
-          const lay = round2(back + Math.max(0.02, back * 0.02));
-          return { name: o.name, sortOrder: i + 1, backPrices: [back], layPrices: [lay] };
-        });
-
-        const existing = await this.prisma.market.findFirst({ where: { matchId: match.id, type: MarketType.MATCH_ODDS } });
-        if (!existing) {
-          await this.prisma.market.create({
-            data: { matchId: match.id, type: MarketType.MATCH_ODDS, name: "Match Winner", status: "OPEN" as any, runners: { create: runnerDefs } },
+      for (const sk of comps) {
+        let events: any[] = [];
+        try {
+          const { data } = await axios.get(`${this.oddsBase}/sports/${sk}/odds`, {
+            params: { apiKey: key, regions: "uk,eu", markets: "h2h", oddsFormat: "decimal" },
+            timeout: 15_000,
           });
-        } else {
-          await this.prisma.market.update({ where: { id: existing.id }, data: { status: "OPEN" as any } });
-          // Refresh odds on existing runners (match by name).
-          const runners = await this.prisma.runner.findMany({ where: { marketId: existing.id } });
-          for (const r of runners) {
-            const def = runnerDefs.find((d) => d.name === r.name);
-            if (def) await this.prisma.runner.update({ where: { id: r.id }, data: { backPrices: def.backPrices, layPrices: def.layPrices } });
-          }
+          events = Array.isArray(data) ? data : [];
+        } catch { continue; }
+        for (const ev of events) {
+          const st = await this.importEvent(sport.id, ev);
+          if (st) { synced++; perSport[ourKey] = (perSport[ourKey] ?? 0) + 1; if (st === "LIVE") live++; else upcoming++; }
         }
-        synced++; if (started) live++; else upcoming++;
       }
     }
-    this.logger.log(`Odds API sync: ${synced} cricket matches (live ${live}, upcoming ${upcoming}) across ${cricketKeys.length} competitions`);
-    return { synced, live, upcoming, sports: cricketKeys.length };
+    this.logger.log(`Odds API sync: ${synced} matches (live ${live}, upcoming ${upcoming}) — ${JSON.stringify(perSport)}`);
+    return { synced, live, upcoming, byKey: perSport };
   }
 
   /** Resolve the CricAPI key: admin API-Keys entry first, then env fallback. */
