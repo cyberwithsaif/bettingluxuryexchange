@@ -152,11 +152,12 @@ function GameVisual({
 }: GameVisualProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerW, setContainerW] = useState(400);
+  const [containerH, setContainerH] = useState(0);
 
   useEffect(() => {
     if (!containerRef.current) return;
     const ro = new ResizeObserver(entries => {
-      for (const e of entries) setContainerW(e.contentRect.width);
+      for (const e of entries) { setContainerW(e.contentRect.width); setContainerH(e.contentRect.height); }
     });
     ro.observe(containerRef.current);
     return () => ro.disconnect();
@@ -170,6 +171,13 @@ function GameVisual({
   const balloonH = showDeflated ? 58  : 104 + pumpsCount * 26;
   const dotCount = Math.min(8, maxPumps || 8);
   const multFontSize = Math.round(Math.min(17 + balloonW * 0.08, 36));
+
+  // Zoom the whole machine+balloon out as it inflates so the balloon never
+  // overflows the top of the stage (and hides behind the header). The group is
+  // bottom-anchored; balloon top sits ~ (260 + balloonH) px above the base.
+  const contentTop = 260 + balloonH + 40;                 // group-space height to balloon top + headroom
+  const heightFit = containerH > 0 ? (containerH - 14) / contentTop : 1;
+  const groupScale = Math.max(0.3, Math.min(sf, heightFit));
 
   return (
     <div ref={containerRef} className="absolute inset-0" style={{ minHeight: 160 }}>
@@ -189,13 +197,14 @@ function GameVisual({
         </p>
       </div>
 
-      {/* ── Machine + Balloon group — scaled uniformly ── */}
+      {/* ── Machine + Balloon group — scales down as the balloon grows ── */}
       <div style={{
         position: "absolute",
         bottom: 0,
         left: "50%",
-        transform: `translateX(-50%) scale(${sf})`,
+        transform: `translateX(-50%) scale(${groupScale})`,
         transformOrigin: "bottom center",
+        transition: "transform 0.35s ease",
         width: 400,
         height: 480,
         pointerEvents: "none",
