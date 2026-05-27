@@ -11,8 +11,13 @@ import { CricketIngestService } from "./cricket-ingest.service";
 export class CricketIngestController {
   constructor(private readonly ingest: CricketIngestService) {}
 
+  // Primary: real matches WITH real odds from The Odds API (free tier).
   @Post("sync/live")
-  syncLive() { return this.ingest.syncLiveMatches(); }
+  syncLive() { return this.ingest.syncFromOddsApi(); }
+
+  // Secondary: CricAPI (scores only, no odds) — kept for those with a cricapi key.
+  @Post("sync/cricapi")
+  syncCricapi() { return this.ingest.syncLiveMatches(); }
 
   @Post("sync/series")
   syncSeries() { return this.ingest.syncSeries(); }
