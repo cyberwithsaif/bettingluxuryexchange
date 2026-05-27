@@ -64,6 +64,28 @@ export default function MinesControls({ isLoggedIn, gameState, setGameState, han
           >2×</button>
         </div>
         <p className="text-[10px] text-gray-600 mt-0.5">Min: ₹{minBet.toLocaleString("en-IN")} · Max: ₹{maxBet.toLocaleString("en-IN")}</p>
+
+        {/* Suggestions */}
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {[100, 500, 1000, 2500, 5000, 10000].map((v) => {
+            const clamped = Math.min(maxBet, Math.max(minBet, v));
+            const active = gameState.betAmount === clamped;
+            return (
+              <button
+                key={v}
+                onClick={() => onBetAmountChange(clamped)}
+                disabled={isPlaying}
+                className={`px-2.5 py-1 rounded text-[11px] font-bold transition disabled:opacity-40 ${
+                  active
+                    ? "bg-[#557086] text-white"
+                    : "bg-[#2f4553] text-gray-300 hover:bg-[#3d5566]"
+                }`}
+              >
+                ₹{v.toLocaleString("en-IN")}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Mines Count */}
