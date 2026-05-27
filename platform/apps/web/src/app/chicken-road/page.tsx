@@ -537,6 +537,14 @@ export default function ChickenRoadPage() {
     };
   }, [sounds, restoreActiveSession]);
 
+  // Seed the live balance on mount so "Max" works before any socket push.
+  useEffect(() => {
+    if (!user) return;
+    api.get("/wallet/summary")
+      .then(r => { const a = Number(r.data?.available); if (!isNaN(a)) setLiveBalance(a); })
+      .catch(() => {});
+  }, [user]);
+
   const showError = (msg: string) => {
     setError(msg);
     if (errorTimer.current) clearTimeout(errorTimer.current);
@@ -980,7 +988,7 @@ export default function ChickenRoadPage() {
                   disabled={phase === "running"}
                   className="bg-transparent flex-1 min-w-0 text-sm font-bold text-white outline-none disabled:opacity-60" />
               </div>
-              {([["1/2", () => adjustBet(0.5)], ["2X", () => adjustBet(2)], ["Max", () => quickBet(Math.floor(liveBalance ?? betAmount))]] as [string, () => void][]).map(([label, fn]) => (
+              {([["1/2", () => adjustBet(0.5)], ["2X", () => adjustBet(2)], ["Max", () => quickBet(Math.max(10, Math.floor(liveBalance ?? betAmount)))]] as [string, () => void][]).map(([label, fn]) => (
                 <button key={label} onClick={fn} disabled={phase === "running"}
                   className="px-2.5 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-40 shrink-0"
                   style={{ background: "rgba(167,139,250,0.14)", border: "1px solid rgba(167,139,250,0.35)", color: "rgba(237,233,254,0.9)" }}>
@@ -1059,7 +1067,7 @@ export default function ChickenRoadPage() {
                   disabled={phase === "running"}
                   className="bg-transparent flex-1 min-w-0 w-16 text-sm font-bold text-white outline-none disabled:opacity-60" />
               </div>
-              {([["1/2", () => adjustBet(0.5)], ["2X", () => adjustBet(2)], ["Max", () => quickBet(Math.floor(liveBalance ?? betAmount))]] as [string, () => void][]).map(([label, fn]) => (
+              {([["1/2", () => adjustBet(0.5)], ["2X", () => adjustBet(2)], ["Max", () => quickBet(Math.max(10, Math.floor(liveBalance ?? betAmount)))]] as [string, () => void][]).map(([label, fn]) => (
                 <button key={label} onClick={fn} disabled={phase === "running"}
                   className="px-3 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-40 hover:brightness-125"
                   style={{ background: "rgba(167,139,250,0.14)", border: "1px solid rgba(167,139,250,0.35)", color: "rgba(237,233,254,0.9)" }}>
