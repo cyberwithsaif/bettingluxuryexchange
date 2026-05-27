@@ -3,10 +3,13 @@ import axios from "axios";
 import { MarketType } from "@prisma/client";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import { CryptoService } from "../../common/crypto/crypto.service";
+import { EntitySportIngestService } from "./entitysport-ingest.service";
 
 // The Odds API "group" → our Sport.key. Soccer maps to our "football".
+// Cricket is intentionally NOT here — cricket comes exclusively from the paid
+// EntitySport feed (see EntitySportIngestService); The Odds API only supplies
+// the other sports.
 const SPORT_GROUP_MAP: Record<string, string> = {
-  Cricket: "cricket",
   Soccer: "football",
   Tennis: "tennis",
   Basketball: "basketball",
@@ -31,6 +34,7 @@ export class CricketIngestService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly crypto: CryptoService,
+    private readonly entitysport: EntitySportIngestService,
   ) {}
 
   /**
@@ -45,12 +49,21 @@ export class CricketIngestService implements OnModuleInit {
     if (hours <= 0 || instance !== "0") return;
     const ms = hours * 3600_000;
     const tick = async () => {
+      // Cricket — paid EntitySport feed (token via API Keys / env fallback).
       try {
-        if (!(await this.getOddsApiKey())) return; // no key yet — skip silently
-        const r = await this.syncFromOddsApi({ perSportCap: Number(process.env.ODDS_SYNC_CAP ?? 2) });
-        this.logger.log(`Auto-sync: ${r.synced} matches (live ${r.live}, upcoming ${r.upcoming})`);
+        const r = await this.entitysport.syncMatches();
+        this.logger.log(`Auto-sync EntitySport cricket: ${r.synced} (live ${r.live}, upcoming ${r.upcoming})`);
       } catch (e: any) {
-        this.logger.warn(`Auto-sync failed: ${e?.message ?? e}`);
+        this.logger.warn(`EntitySport auto-sync failed: ${e?.message ?? e}`);
+      }
+      // Other sports — The Odds API (skips silently if no key configured).
+      try {
+        if (await this.getOddsApiKey()) {
+          const r = await this.syncFromOddsApi({ perSportCap: Number(process.env.ODDS_SYNC_CAP ?? 2) });
+          this.logger.log(`Auto-sync Odds API: ${r.synced} matches (live ${r.live}, upcoming ${r.upcoming})`);
+        }
+      } catch (e: any) {
+        this.logger.warn(`Odds API auto-sync failed: ${e?.message ?? e}`);
       }
     };
     setTimeout(tick, 30_000);          // first run shortly after boot

@@ -45,12 +45,13 @@ interface Match {
   markets: Market[];
 }
 
-const MARKET_TYPE_ORDER = ["MATCH_ODDS", "BOOKMAKER", "FANCY", "SESSION", "TIED_MATCH"];
+const MARKET_TYPE_ORDER = ["MATCH_ODDS", "BOOKMAKER", "TOSS", "TIED_MATCH", "FANCY", "SESSION"];
 
 function getMarketLabel(type: string) {
   switch (type) {
     case "MATCH_ODDS": return "Match Odds";
     case "BOOKMAKER": return "Bookmaker";
+    case "TOSS": return "Toss";
     case "FANCY": return "Fancy";
     case "SESSION": return "Session";
     case "TIED_MATCH": return "Tied Match";

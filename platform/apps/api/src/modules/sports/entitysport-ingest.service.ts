@@ -80,6 +80,44 @@ export class EntitySportIngestService {
     return out;
   }
 
+  /** Two-tier back/lay prices around a quoted best back/lay (fills the exchange grid). */
+  private priceTiers(back: number, lay: number): { backPrices: number[]; layPrices: number[] } {
+    const b = back > 1.01 ? back : 1.95;
+    const l = lay > 1.01 ? lay : 1.97;
+    return {
+      backPrices: [round2(b), round2(b - 0.01)],
+      layPrices: [round2(l), round2(l + 0.01)],
+    };
+  }
+
+  /**
+   * Create a market if missing, else keep it in sync. Prices are only
+   * overwritten when `overwritePrices` is true (i.e. a live feed is the source
+   * of truth) — so admin-set odds on default markets survive re-syncs.
+   */
+  private async ensureMarket(
+    matchId: string,
+    type: MarketType,
+    name: string,
+    status: string,
+    overwritePrices: boolean,
+    runnerDefs: Array<{ name: string; sortOrder: number; backPrices: number[]; layPrices: number[] }>,
+  ) {
+    const existing = await this.prisma.market.findFirst({ where: { matchId, type, name } });
+    if (!existing) {
+      await this.prisma.market.create({ data: { matchId, type, name, status: status as any, runners: { create: runnerDefs } } });
+      return;
+    }
+    await this.prisma.market.update({ where: { id: existing.id }, data: { status: status as any } });
+    if (!overwritePrices) return; // preserve admin-tuned odds on default (non-feed) markets
+    const runners = await this.prisma.runner.findMany({ where: { marketId: existing.id } });
+    for (const def of runnerDefs) {
+      const r = runners.find((x) => x.name === def.name);
+      if (r) await this.prisma.runner.update({ where: { id: r.id }, data: { backPrices: def.backPrices, layPrices: def.layPrices } });
+      else await this.prisma.runner.create({ data: { marketId: existing.id, name: def.name, sortOrder: def.sortOrder, backPrices: def.backPrices, layPrices: def.layPrices } });
+    }
+  }
+
   async syncMatches() {
     const token = await this.getToken();
     if (!token) throw new BadRequestException("No EntitySport token configured. Add it under Admin → API Keys → 'EntitySport Cricket'.");
@@ -109,38 +147,49 @@ export class EntitySportIngestService {
         update: { name, status: status as any, inplay: status === "LIVE" },
       });
 
-      // Real odds when the plan exposes them; otherwise sensible defaults.
+      // Real exchange odds when the feed exposes them (odds_available=true,
+      // in-play); otherwise operator-set defaults the admin tunes on Markets.
       let odds: { matchOdds: Record<string, { back: number; lay: number }>; sessions: Array<{ title: string; back: number; lay: number }> } | null = null;
       if (String(m.odds_available) === "true" && status !== "ENDED") odds = await this.fetchOdds(m.match_id, token);
 
       const moA = odds?.matchOdds?.teama; const moB = odds?.matchOdds?.teamb;
-      const runnerDefs = [
-        { name: home, sortOrder: 1, backPrices: [round2(moA?.back && moA.back > 1 ? moA.back : 1.95)], layPrices: [round2(moA?.lay && moA.lay > 1 ? moA.lay : 1.97)] },
-        { name: away, sortOrder: 2, backPrices: [round2(moB?.back && moB.back > 1 ? moB.back : 1.95)], layPrices: [round2(moB?.lay && moB.lay > 1 ? moB.lay : 1.97)] },
-      ];
+      const hasFeed = !!((moA?.back ?? 0) > 1 || (moB?.back ?? 0) > 1);
       const mkStatus = status === "ENDED" ? "CLOSED" : "OPEN";
+      const limited = !/test|first.?class/i.test(String(m.format_str ?? ""));
 
-      const existing = await this.prisma.market.findFirst({ where: { matchId: match.id, type: MarketType.MATCH_ODDS } });
-      if (!existing) {
-        await this.prisma.market.create({ data: { matchId: match.id, type: MarketType.MATCH_ODDS, name: "Match Odds", status: mkStatus as any, runners: { create: runnerDefs } } });
-      } else {
-        await this.prisma.market.update({ where: { id: existing.id }, data: { status: mkStatus as any } });
-        const runners = await this.prisma.runner.findMany({ where: { marketId: existing.id } });
-        for (const r of runners) {
-          const def = runnerDefs.find((d) => d.name === r.name);
-          if (def) await this.prisma.runner.update({ where: { id: r.id }, data: { backPrices: def.backPrices, layPrices: def.layPrices } });
-        }
+      // Match Odds — back/lay with two tiers; feed prices override when live.
+      await this.ensureMarket(match.id, MarketType.MATCH_ODDS, "Match Odds", mkStatus, hasFeed, [
+        { name: home, sortOrder: 1, ...this.priceTiers(moA?.back ?? 1.95, moA?.lay ?? 1.97) },
+        { name: away, sortOrder: 2, ...this.priceTiers(moB?.back ?? 1.95, moB?.lay ?? 1.97) },
+      ]);
+
+      // Bookmaker — wider spread than the exchange market.
+      await this.ensureMarket(match.id, MarketType.BOOKMAKER, "Bookmaker", mkStatus, false, [
+        { name: home, sortOrder: 1, ...this.priceTiers((moA?.back ?? 1.95) - 0.03, (moA?.lay ?? 1.97) + 0.03) },
+        { name: away, sortOrder: 2, ...this.priceTiers((moB?.back ?? 1.95) - 0.03, (moB?.lay ?? 1.97) + 0.03) },
+      ]);
+
+      // Toss Winner — even-money two-way.
+      await this.ensureMarket(match.id, MarketType.TOSS, "Toss Winner", mkStatus, false, [
+        { name: home, sortOrder: 1, ...this.priceTiers(1.95, 1.97) },
+        { name: away, sortOrder: 2, ...this.priceTiers(1.95, 1.97) },
+      ]);
+
+      // Tied Match — limited-overs formats only.
+      if (limited) {
+        await this.ensureMarket(match.id, MarketType.TIED_MATCH, "Tied Match", mkStatus, false, [
+          { name: "Yes", sortOrder: 1, ...this.priceTiers(8.0, 8.6) },
+          { name: "No", sortOrder: 2, ...this.priceTiers(1.08, 1.11) },
+        ]);
       }
 
-      // Session/fancy markets when available (paid plans).
+      // Session/fancy — ONLY from the live feed; never fabricated.
       if (odds?.sessions?.length) {
-        for (const s of odds.sessions.slice(0, 12)) {
-          const exists = await this.prisma.market.findFirst({ where: { matchId: match.id, type: MarketType.SESSION, name: s.title } });
-          if (!exists && s.back > 0) {
-            await this.prisma.market.create({
-              data: { matchId: match.id, type: MarketType.SESSION, name: s.title, status: "OPEN" as any,
-                runners: { create: [{ name: "Yes", sortOrder: 1, backPrices: [round2(s.back)], layPrices: [round2(s.lay || s.back)] }] } },
-            });
+        for (const s of odds.sessions.slice(0, 16)) {
+          if (s.back > 0) {
+            await this.ensureMarket(match.id, MarketType.SESSION, s.title, "OPEN", true, [
+              { name: "Yes", sortOrder: 1, ...this.priceTiers(s.back, s.lay || s.back) },
+            ]);
           }
         }
       }
