@@ -3,7 +3,7 @@ import useSWR, { mutate } from "swr";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { Edit2, Wallet, UserX, UserCheck, KeyRound, X, Save, ChevronDown } from "lucide-react";
+import { Edit2, Wallet, UserX, UserCheck, KeyRound, X, Save, ChevronDown, Crown } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 interface UserRecord {
@@ -19,6 +19,7 @@ interface UserRecord {
     minStake: string; maxStake: string; maxMarketExposure: string;
     maxDailyLoss: string; betDelayMs: number; fancyEnabled: boolean; casinoEnabled: boolean;
   } | null;
+  vipLevel?: { id: string; name: string; tier: number; color: string } | null;
 }
 
 const ROLES = ["USER", "AGENT", "MASTER", "SUPER_MASTER", "ADMIN"];
@@ -39,7 +40,6 @@ export default function UsersPage() {
   const router = useRouter();
   const [q, setQ]       = useState("");
   const [role, setRole] = useState("");
-  const [editing, setEditing] = useState<UserRecord | null>(null);
   const [creating, setCreating] = useState(false);
 
   const swrKey = buildKey(q, role);
@@ -89,14 +89,14 @@ export default function UsersPage() {
               <Th>Exposure</Th>
               <Th>Partnership</Th>
               <Th>Credit Ref</Th>
-              <Th>Actions</Th>
+              <Th>Level</Th>
             </tr>
           </thead>
           <tbody>
             {isLoading && (
               <tr><td colSpan={8} className="text-center py-10 text-gray-500">Loading…</td></tr>
             )}
-            {!isLoading && (users ?? []).map((u) => (
+            {!isLoading && (users ?? []).filter((u) => u.role !== "BOOKIE").map((u) => (
               <tr
                 key={u.id}
                 className="border-t border-gray-700 hover:bg-gray-800/40 transition cursor-pointer group"
@@ -118,35 +118,12 @@ export default function UsersPage() {
                 <Td className="text-gray-400">{(u.partnershipBps / 100).toFixed(2)}%</Td>
                 <Td className="tabular-nums text-gray-300">₹{Number(u.creditReference ?? 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Td>
                 <Td>
-                  <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                    <ActionBtn title="Edit user" icon={<Edit2 size={13} />}
-                      className="hover:border-yellow-400 hover:text-yellow-400 hover:bg-gray-800"
-                      onClick={() => setEditing(u)} />
-                    <ActionBtn title="Wallet adjust" icon={<Wallet size={13} />}
-                      className="hover:border-blue-400 hover:text-blue-400 hover:bg-blue-900/20"
-                      onClick={async () => {
-                        const amt = Number(prompt("Credit (+) or Debit (-) amount:") || 0);
-                        if (!amt) return;
-                        await api.post("/admin/wallet/adjust", { userId: u.id, amount: amt, note: "Admin adjustment" });
-                        refresh();
-                      }} />
-                    <ActionBtn
-                      title={u.status === "ACTIVE" ? "Suspend" : "Activate"}
-                      icon={u.status === "ACTIVE" ? <UserX size={13} /> : <UserCheck size={13} />}
-                      className={u.status === "ACTIVE" ? "hover:border-red-400 hover:text-red-500 hover:bg-red-900/20" : "hover:border-emerald-400 hover:text-emerald-400 hover:bg-emerald-50"}
-                      onClick={async () => {
-                        await api.patch(`/users/${u.id}/status`, { status: u.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE" });
-                        refresh();
-                      }} />
-                    <ActionBtn title="Reset password" icon={<KeyRound size={13} />}
-                      className="hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50"
-                      onClick={async () => {
-                        const pwd = prompt("New password (min 8 chars):");
-                        if (!pwd || pwd.length < 8) { alert("Min 8 characters."); return; }
-                        await api.patch(`/users/${u.id}/password`, { password: pwd });
-                        alert("Password reset successfully.");
-                      }} />
-                  </div>
+                  {u.vipLevel ? (
+                    <span className="text-xs px-2 py-0.5 rounded-full font-bold border inline-flex items-center gap-1"
+                      style={{ background: `${u.vipLevel.color}22`, color: u.vipLevel.color, borderColor: `${u.vipLevel.color}66` }}>
+                      <Crown size={11} /> {u.vipLevel.name} · T{u.vipLevel.tier}
+                    </span>
+                  ) : <span className="text-xs text-gray-600">—</span>}
                 </Td>
               </tr>
             ))}
@@ -157,7 +134,6 @@ export default function UsersPage() {
         </table>
       </div>
 
-      {editing && <EditUserModal user={editing} onClose={(saved) => { setEditing(null); if (saved) refresh(); }} />}
       {creating && <CreateUserModal onClose={(saved) => { setCreating(false); if (saved) refresh(); }} />}
     </div>
   );

@@ -90,9 +90,11 @@ export class UsersService {
       where: {
         ...(isGlobalAdmin ? {} : { parentId: actorId }),
         ...(opts.q ? { username: { contains: opts.q, mode: "insensitive" } } : {}),
-        ...(opts.role ? { role: opts.role } : {}),
+        // Bookies are managed on the dedicated Manage Bookies screen, so the
+        // generic Users list hides them unless a role filter explicitly asks.
+        ...(opts.role ? { role: opts.role } : { role: { not: UserRole.BOOKIE } }),
       },
-      include: { wallet: true, limits: true },
+      include: { wallet: true, limits: true, vipLevel: true },
       orderBy: { createdAt: "desc" },
       take: 200,
     });
