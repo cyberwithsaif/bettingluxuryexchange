@@ -81,7 +81,7 @@ export default function MinesLayout() {
   // orphaning the old session + its stake).
   useEffect(() => {
     if (!user) return;
-    fetch("/api/casino/mines/active", { headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} })
+    fetch("/api/mines/active", { headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} })
       .then(r => (r.ok ? r.json() : null))
       .then(s => {
         if (!s) return;

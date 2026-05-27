@@ -634,8 +634,8 @@ export default function TowersPage() {
             </div>
           )}
 
-          {/* Tower Grid */}
-          <div className="w-full max-w-[480px]">
+          {/* Tower Grid — pushed down while the stats badges overlay is shown so the top row doesn't sit under them */}
+          <div className={`w-full max-w-[480px] ${phase === "playing" && session ? "mt-10 md:mt-14" : ""}`}>
             <div className="flex flex-col-reverse gap-1.5 items-center">
               {Array.from({ length: LEVELS }, (_, row) => {
                 const cols         = session?.columns ?? cfg.columns;
