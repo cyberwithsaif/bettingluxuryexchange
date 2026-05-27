@@ -475,7 +475,7 @@ export class AdminService {
   async getUserProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { wallet: true, limits: true },
+      include: { wallet: true, limits: true, vipLevel: true },
     });
     if (!user) throw new BadRequestException("User not found");
 
@@ -576,6 +576,16 @@ export class AdminService {
         betDelayMs:        user.limits.betDelayMs,
         fancyEnabled:      user.limits.fancyEnabled,
         casinoEnabled:     user.limits.casinoEnabled,
+      } : null,
+      vip: user.vipLevel ? {
+        id:          user.vipLevel.id,
+        name:        user.vipLevel.name,
+        tier:        user.vipLevel.tier,
+        color:       user.vipLevel.color,
+        cashbackBps: user.vipLevel.cashbackBps,
+        bonusAmount: Number(user.vipLevel.bonusAmount.toString()),
+        minWagered:  Number(user.vipLevel.minWagered.toString()),
+        perks:       user.vipLevel.perks,
       } : null,
       financials: {
         totalDeposits:    Math.max(0,  lm["DEPOSIT"]          ?? 0),

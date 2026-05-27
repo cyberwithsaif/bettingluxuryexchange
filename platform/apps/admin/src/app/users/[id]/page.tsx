@@ -11,7 +11,7 @@ import {
   Phone, Mail, Calendar, Key, BarChart3, Gamepad2, Ban,
   UserCheck, UserX, DollarSign, MessageSquare, AlertTriangle,
   Eye, Fingerprint, Building2, Bitcoin, Gift, Star, ShieldAlert,
-  ToggleLeft, ToggleRight, Edit2, ChevronRight, Info, Plus,
+  ToggleLeft, ToggleRight, Edit2, ChevronRight, Info, Plus, Crown,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -29,6 +29,7 @@ interface ProfileData {
     minStake: number; maxStake: number; maxMarketExposure: number;
     maxDailyLoss: number; betDelayMs: number; fancyEnabled: boolean; casinoEnabled: boolean;
   } | null;
+  vip: { id: string; name: string; tier: number; color: string; cashbackBps: number; bonusAmount: number; minWagered: number; perks: string[] } | null;
   financials: {
     totalDeposits: number; totalWithdrawals: number; casinoWins: number;
     casinoBets: number; betWins: number; betLosses: number; adminCredits: number; bonusGranted: number;
@@ -121,6 +122,63 @@ function UnavailableSection({ label }: { label: string }) {
   );
 }
 
+// Assign / change / remove a user's VIP tier (admin action on the profile).
+function VipSection({ username, vip, onChanged }: { username: string; vip: ProfileData["vip"]; onChanged: () => void }) {
+  const { data: levels } = useSWR<any[]>("/admin/vip/levels");
+  const [sel, setSel] = useState(vip?.id ?? "");
+  const [busy, setBusy] = useState(false);
+
+  async function assign(vipLevelId: string | null) {
+    setBusy(true);
+    try { await api.post("/admin/vip/assign", { username, vipLevelId }); onChanged(); }
+    catch (e: any) { alert(e?.response?.data?.message ?? "Failed to assign VIP tier."); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-gray-400">Current tier:</span>
+        {vip ? (
+          <span className="text-xs px-2.5 py-0.5 rounded-full font-bold border flex items-center gap-1"
+            style={{ background: `${vip.color}22`, color: vip.color, borderColor: `${vip.color}66` }}>
+            <Crown size={11} /> {vip.name} · Tier {vip.tier}
+          </span>
+        ) : <span className="text-sm text-gray-500">None assigned</span>}
+      </div>
+
+      {vip && (
+        <div className="grid grid-cols-2 gap-2">
+          <StatCard label="Cashback" value={`${vip.cashbackBps / 100}%`} color="text-emerald-400" />
+          <StatCard label="Welcome Bonus" value={fmt(vip.bonusAmount)} color="text-yellow-400" />
+        </div>
+      )}
+
+      <div className="flex gap-2 items-end pt-1">
+        <div className="flex-1">
+          <label className="text-[10px] uppercase tracking-wider text-gray-400 font-bold block mb-1">Assign / Change Tier</label>
+          <select value={sel} onChange={(e) => setSel(e.target.value)}
+            className="w-full bg-gray-800 border border-yellow-500/30 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-yellow-400 transition">
+            <option value="">— select tier —</option>
+            {(levels ?? []).map((l) => <option key={l.id} value={l.id}>{l.name} (Tier {l.tier})</option>)}
+          </select>
+        </div>
+        <button onClick={() => assign(sel || null)} disabled={busy || !sel}
+          className="px-4 py-2 rounded-lg text-sm font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 disabled:opacity-40 transition">
+          {busy ? "…" : "Assign"}
+        </button>
+        {vip && (
+          <button onClick={() => assign(null)} disabled={busy}
+            className="px-3 py-2 rounded-lg text-sm font-bold text-red-300 bg-red-500/15 border border-red-500/30 hover:bg-red-500/25 disabled:opacity-40 transition">
+            Remove
+          </button>
+        )}
+      </div>
+      {(levels ?? []).length === 0 && <p className="text-[11px] text-gray-500">No VIP tiers exist yet — create them on the VIP page.</p>}
+    </div>
+  );
+}
+
 // ─── TABS ─────────────────────────────────────────────────────────────────────
 
 const TABS = ["Overview", "Wallet & Finance", "Betting", "Casino", "Security", "Admin Controls"] as const;
@@ -167,7 +225,7 @@ export default function UserProfilePage() {
     </div>
   );
 
-  const { user, wallet, limits, financials, bettingStats, casinoStats, recentLogins, recentTxns, recentBets, adminNotes } = data;
+  const { user, wallet, limits, vip, financials, bettingStats, casinoStats, recentLogins, recentTxns, recentBets, adminNotes } = data;
   const avatarLetter = user.username[0]?.toUpperCase() ?? "U";
   const totalWinnings = financials.casinoWins + financials.betWins;
   const totalLosses   = financials.casinoBets + financials.betLosses;
@@ -241,6 +299,12 @@ export default function UserProfilePage() {
               {user.twoFactorEnabled && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center gap-1 font-bold">
                   <Shield size={10} /> 2FA
+                </span>
+              )}
+              {vip && (
+                <span className="text-xs px-2.5 py-0.5 rounded-full font-bold border flex items-center gap-1"
+                  style={{ background: `${vip.color}22`, color: vip.color, borderColor: `${vip.color}66` }}>
+                  <Crown size={10} /> {vip.name} · Tier {vip.tier}
                 </span>
               )}
             </div>
@@ -613,9 +677,24 @@ export default function UserProfilePage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-5">
-            <SectionCard title="VIP & Loyalty" icon={Star} badge="Not Implemented">
-              <UnavailableSection label="VIP Level / XP Points" />
-              <UnavailableSection label="Favorite Game / Streak" />
+            <SectionCard title="VIP & Loyalty" icon={Star}>
+              {vip ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Crown size={16} style={{ color: vip.color }} />
+                    <span className="font-black text-gray-100">{vip.name}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/50">Tier {vip.tier}</span>
+                  </div>
+                  <DataRow label="Cashback"      value={`${vip.cashbackBps / 100}%`} />
+                  <DataRow label="Welcome Bonus"  value={fmt(vip.bonusAmount)} mono />
+                  <DataRow label="Min Wagered"    value={fmt(vip.minWagered)} mono />
+                  {Array.isArray(vip.perks) && vip.perks.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {vip.perks.map((p, i) => <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-300 border border-yellow-500/30">{p}</span>)}
+                    </div>
+                  )}
+                </div>
+              ) : <p className="text-sm text-gray-400">No VIP tier assigned. Assign one from the Admin Controls tab.</p>}
             </SectionCard>
             <SectionCard title="Referral System" icon={ChevronRight} badge="Not Implemented">
               <UnavailableSection label="Referral Code" />
@@ -803,9 +882,8 @@ export default function UserProfilePage() {
           </SectionCard>
 
           <div className="grid md:grid-cols-2 gap-5">
-            <SectionCard title="VIP Management" icon={Star} badge="Not Implemented">
-              <UnavailableSection label="VIP Level / Tier" />
-              <UnavailableSection label="Loyalty Points" />
+            <SectionCard title="VIP Management" icon={Star}>
+              <VipSection username={user.username} vip={vip} onChanged={refresh} />
             </SectionCard>
             <SectionCard title="Freeze Controls" icon={AlertTriangle} badge="Not Implemented">
               <UnavailableSection label="Freeze Withdrawals" />
