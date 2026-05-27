@@ -63,6 +63,11 @@ class AssignVipDto {
   @IsOptional() @IsString() vipLevelId?: string | null;
 }
 
+class UserFlagsDto {
+  @IsOptional() @IsBoolean() withdrawalsFrozen?: boolean;
+  @IsOptional() @IsBoolean() flaggedSuspicious?: boolean;
+}
+
 class PromoDto {
   @IsOptional() @IsString() code?: string;
   @IsOptional() @IsIn(["DEPOSIT_BONUS", "FREE_CREDIT", "CASHBACK"]) type?: string;
@@ -471,6 +476,14 @@ export class AdminController {
     @Body() dto: { note: string }, @Req() req: Request,
   ) {
     return this.admin.addUserNote(actor.id, id, dto.note);
+  }
+
+  @Patch("users/:id/flags")
+  setUserFlags(
+    @CurrentUser() actor: AuthUser, @Param("id") id: string,
+    @Body() dto: UserFlagsDto, @Req() req: Request,
+  ) {
+    return this.admin.setUserFlags(actor.id, id, dto, req.ip);
   }
 
   // -- Platform Settings --

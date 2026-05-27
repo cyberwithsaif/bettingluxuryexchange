@@ -23,6 +23,7 @@ interface ProfileData {
     lastLoginAt: string | null; lastLoginIp: string | null;
     createdAt: string; updatedAt: string;
     partnershipBps: number; creditReference: number;
+    withdrawalsFrozen: boolean; flaggedSuspicious: boolean;
   };
   wallet: { balance: number; exposure: number; bonus: number };
   limits: {
@@ -118,6 +119,28 @@ function UnavailableSection({ label }: { label: string }) {
     <div className="flex items-center gap-2 p-3 rounded-lg border border-dashed border-gray-700 text-gray-400 text-xs">
       <Info size={12} />
       {label} — not configured in this version
+    </div>
+  );
+}
+
+// On/off control for a risk flag (freeze withdrawals, mark suspicious).
+function FlagToggle({ label, desc, active, activeColor, onToggle }: {
+  label: string; desc: string; active: boolean; activeColor: "red" | "amber"; onToggle: () => void;
+}) {
+  const onCls = activeColor === "red"
+    ? "border-red-500/40 bg-red-500/10"
+    : "border-amber-500/40 bg-amber-500/10";
+  return (
+    <div className={cn("flex items-center justify-between gap-3 rounded-lg border p-3 transition", active ? onCls : "border-gray-700 bg-gray-800/40")}>
+      <div className="min-w-0">
+        <p className={cn("text-sm font-bold", active ? (activeColor === "red" ? "text-red-300" : "text-amber-300") : "text-gray-300")}>{label}</p>
+        <p className="text-[11px] text-gray-500">{desc}{active ? " · Currently ON" : ""}</p>
+      </div>
+      <button onClick={onToggle} title={active ? "Turn off" : "Turn on"} className="shrink-0">
+        {active
+          ? <ToggleRight size={30} className={activeColor === "red" ? "text-red-400" : "text-amber-400"} />
+          : <ToggleLeft size={30} className="text-gray-600" />}
+      </button>
     </div>
   );
 }
@@ -220,6 +243,11 @@ export default function UserProfilePage() {
     alert("Password reset successfully.");
   }
 
+  async function handleFlag(patch: { withdrawalsFrozen?: boolean; flaggedSuspicious?: boolean }) {
+    try { await api.patch(`/admin/users/${id}/flags`, patch); refresh(); }
+    catch (e: any) { alert(e?.response?.data?.message ?? "Failed to update."); }
+  }
+
   const lf = limitForm ?? limits ?? {};
 
   return (
@@ -249,6 +277,16 @@ export default function UserProfilePage() {
                 <span className="text-xs px-2.5 py-0.5 rounded-full font-bold border flex items-center gap-1"
                   style={{ background: `${vip.color}22`, color: vip.color, borderColor: `${vip.color}66` }}>
                   <Crown size={10} /> {vip.name} · Tier {vip.tier}
+                </span>
+              )}
+              {user.withdrawalsFrozen && (
+                <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-red-500/15 text-red-300 border border-red-500/30 flex items-center gap-1">
+                  <Lock size={10} /> Withdrawals Frozen
+                </span>
+              )}
+              {user.flaggedSuspicious && (
+                <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                  <AlertTriangle size={10} /> Suspicious
                 </span>
               )}
             </div>
@@ -844,9 +882,23 @@ export default function UserProfilePage() {
                 </div>
               )}
             </SectionCard>
-            <SectionCard title="Freeze Controls" icon={AlertTriangle} badge="Not Implemented">
-              <UnavailableSection label="Freeze Withdrawals" />
-              <UnavailableSection label="Mark Suspicious" />
+            <SectionCard title="Freeze Controls" icon={AlertTriangle}>
+              <div className="space-y-2">
+                <FlagToggle
+                  label="Freeze Withdrawals"
+                  desc="Block this user from requesting withdrawals."
+                  active={user.withdrawalsFrozen}
+                  activeColor="red"
+                  onToggle={() => handleFlag({ withdrawalsFrozen: !user.withdrawalsFrozen })}
+                />
+                <FlagToggle
+                  label="Mark Suspicious"
+                  desc="Flag this account for risk review."
+                  active={user.flaggedSuspicious}
+                  activeColor="amber"
+                  onToggle={() => handleFlag({ flaggedSuspicious: !user.flaggedSuspicious })}
+                />
+              </div>
             </SectionCard>
           </div>
         </div>

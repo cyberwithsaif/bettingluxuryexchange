@@ -14,6 +14,12 @@ export class TransactionsService {
   async request(userId: string, input: { kind: TransactionKind; method: TransactionMethod; amount: number; reference?: string; payload?: Prisma.InputJsonValue }) {
     if (input.amount <= 0) throw new BadRequestException("Amount must be positive");
 
+    // Admin freeze: blocked accounts cannot request withdrawals.
+    if (input.kind === TransactionKind.WITHDRAWAL) {
+      const u = await this.prisma.user.findUnique({ where: { id: userId }, select: { withdrawalsFrozen: true } });
+      if (u?.withdrawalsFrozen) throw new BadRequestException("Withdrawals are frozen on this account. Please contact support.");
+    }
+
     return this.prisma.$transaction(async (tx) => {
       const t = await tx.transaction.create({
         data: {

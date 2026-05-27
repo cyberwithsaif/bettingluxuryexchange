@@ -563,6 +563,8 @@ export class AdminService {
         updatedAt: user.updatedAt,
         partnershipBps: user.partnershipBps,
         creditReference: Number(user.creditReference),
+        withdrawalsFrozen: user.withdrawalsFrozen,
+        flaggedSuspicious: user.flaggedSuspicious,
       },
       wallet: {
         balance:  Number(user.wallet?.balance  ?? 0),
@@ -622,6 +624,19 @@ export class AdminService {
       recentBets,
       adminNotes,
     };
+  }
+
+  /** Freeze controls: toggle withdrawal freeze / suspicious flag on a user. */
+  async setUserFlags(actorId: string, targetUserId: string, patch: { withdrawalsFrozen?: boolean; flaggedSuspicious?: boolean }, ip?: string) {
+    const data: Prisma.UserUpdateInput = {};
+    if (patch.withdrawalsFrozen !== undefined) data.withdrawalsFrozen = patch.withdrawalsFrozen;
+    if (patch.flaggedSuspicious !== undefined) data.flaggedSuspicious = patch.flaggedSuspicious;
+    const u = await this.prisma.user.update({
+      where: { id: targetUserId }, data,
+      select: { id: true, withdrawalsFrozen: true, flaggedSuspicious: true },
+    });
+    await this.writeAudit(actorId, "user.flags", { type: "user", id: targetUserId }, patch, ip);
+    return u;
   }
 
   async addUserNote(actorId: string, targetUserId: string, note: string) {

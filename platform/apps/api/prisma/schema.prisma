@@ -69,6 +69,10 @@ model User {
   lastLoginAt     DateTime?
   lastLoginIp     String?
 
+  // Admin risk controls (Freeze Controls on the user profile).
+  withdrawalsFrozen Boolean   @default(false)  // blocks new withdrawal requests
+  flaggedSuspicious Boolean   @default(false)  // review marker for risk/monitoring
+
   wallet          Wallet?
   bets            Bet[]
   ledgerEntries   LedgerEntry[]
