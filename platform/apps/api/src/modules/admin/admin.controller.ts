@@ -232,6 +232,20 @@ export class AdminController {
     return this.settlement.enqueue({ marketId, ...dto, actorId: actor.id });
   }
 
+  @Delete("markets/:id")
+  async deleteMarket(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Req() req: Request) {
+    const r = await this.admin.deleteMarket(id);
+    await this.admin.writeAudit(actor.id, "market.delete", { type: "market", id }, {}, req.ip);
+    return r;
+  }
+
+  @Delete("matches/:id")
+  async deleteMatch(@CurrentUser() actor: AuthUser, @Param("id") id: string, @Req() req: Request) {
+    const r = await this.admin.deleteMatch(id);
+    await this.admin.writeAudit(actor.id, "match.delete", { type: "match", id }, {}, req.ip);
+    return r;
+  }
+
   // -- Manual wallet adjustment --
 
   @Post("wallet/adjust")

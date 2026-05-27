@@ -645,6 +645,31 @@ export class AdminService {
     return u;
   }
 
+  /** Delete a single market (and its runners, bets, exposure rows). */
+  async deleteMarket(id: string) {
+    const m = await this.prisma.market.findUnique({ where: { id } });
+    if (!m) throw new BadRequestException("Market not found");
+    await this.prisma.$transaction([
+      this.prisma.bet.deleteMany({ where: { marketId: id } }),
+      this.prisma.marketExposure.deleteMany({ where: { marketId: id } }),
+      this.prisma.market.delete({ where: { id } }), // runners cascade
+    ]);
+    return { ok: true };
+  }
+
+  /** Delete a whole match (all its markets, runners, bets, exposure rows). */
+  async deleteMatch(id: string) {
+    const match = await this.prisma.match.findUnique({ where: { id } });
+    if (!match) throw new BadRequestException("Match not found");
+    const marketIds = (await this.prisma.market.findMany({ where: { matchId: id }, select: { id: true } })).map((x) => x.id);
+    await this.prisma.$transaction([
+      this.prisma.bet.deleteMany({ where: { marketId: { in: marketIds } } }),
+      this.prisma.marketExposure.deleteMany({ where: { marketId: { in: marketIds } } }),
+      this.prisma.match.delete({ where: { id } }), // markets + runners cascade
+    ]);
+    return { ok: true };
+  }
+
   async addUserNote(actorId: string, targetUserId: string, note: string) {
     await this.writeAudit(actorId, "admin.note", { type: "user", id: targetUserId }, { note });
     return { ok: true };

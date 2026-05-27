@@ -11,6 +11,9 @@ import { CricketIngestService } from "./cricket-ingest.service";
 export class CricketIngestController {
   constructor(private readonly ingest: CricketIngestService) {}
 
+  @Post("sync/live")
+  syncLive() { return this.ingest.syncLiveMatches(); }
+
   @Post("sync/series")
   syncSeries() { return this.ingest.syncSeries(); }
 
