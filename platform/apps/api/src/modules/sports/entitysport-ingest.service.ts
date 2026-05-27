@@ -61,24 +61,38 @@ export class EntitySportIngestService {
     } catch { return null; }
   }
 
+  /** Fetch matches for a specific status (3=live, 1=upcoming, 2=completed), paging up to `maxPages`. */
+  private async fetchByStatus(token: string, status: number, maxPages: number): Promise<any[]> {
+    const out: any[] = [];
+    for (let page = 1; page <= maxPages; page++) {
+      const { data } = await axios.get(`${this.base}/matches/`, { params: { token, per_page: 50, status, paged: page }, timeout: 15_000 });
+      if (data?.status !== "ok") {
+        if (page === 1 && status === 3) {
+          // surface auth/plan errors only on the first (live) request
+          throw new BadRequestException(`EntitySport: ${typeof data?.response === "string" ? data.response : (data?.message ?? "request failed")}`);
+        }
+        break;
+      }
+      const its = data?.response?.items ?? [];
+      out.push(...its);
+      if (its.length < 50) break;
+    }
+    return out;
+  }
+
   async syncMatches() {
     const token = await this.getToken();
     if (!token) throw new BadRequestException("No EntitySport token configured. Add it under Admin → API Keys → 'EntitySport Cricket'.");
     const sport = await this.prisma.sport.findUnique({ where: { key: "cricket" } });
     if (!sport) throw new BadRequestException("Cricket sport not seeded");
 
-    // Pull a couple of pages of matches.
-    const items: any[] = [];
-    for (let page = 1; page <= 2; page++) {
-      const { data } = await axios.get(`${this.base}/matches/`, { params: { token, per_page: 30, paged: page }, timeout: 15_000 });
-      if (data?.status !== "ok") {
-        if (page === 1) throw new BadRequestException(`EntitySport: ${typeof data?.response === "string" ? data.response : (data?.message ?? "request failed")}`);
-        break;
-      }
-      const its = data?.response?.items ?? [];
-      items.push(...its);
-      if (its.length < 30) break;
-    }
+    // Pull LIVE + UPCOMING explicitly — the default /matches feed returns
+    // historical (completed) fixtures first, so we must filter by status.
+    const liveMatches = await this.fetchByStatus(token, 3, 2);     // all in-play
+    const upcomingMatches = await this.fetchByStatus(token, 1, 1);  // next page of upcoming (~50)
+    const byId = new Map<number, any>();
+    for (const m of [...liveMatches, ...upcomingMatches]) if (m?.match_id != null) byId.set(m.match_id, m);
+    const items = [...byId.values()].slice(0, 80);
 
     let synced = 0, live = 0, upcoming = 0, completed = 0;
     for (const m of items) {
@@ -133,9 +147,11 @@ export class EntitySportIngestService {
       synced++; if (status === "LIVE") live++; else if (status === "UPCOMING") upcoming++; else completed++;
     }
 
-    const note = completed && !live && !upcoming
-      ? "Demo token returns COMPLETED matches only (no odds). Upgrade EntitySport for live matches + odds + session/fancy."
-      : undefined;
+    const note = !live && !upcoming
+      ? "No live or upcoming cricket from EntitySport right now. Exchange odds attach to a fixture only once its market goes active (near/at start)."
+      : (live + upcoming > 0 && !items.some((m: any) => String(m.odds_available) === "true")
+          ? "Live/upcoming matches imported. Exchange back/lay + session odds will populate automatically when each fixture's odds feed activates."
+          : undefined);
     this.logger.log(`EntitySport sync: ${synced} matches (live ${live}, upcoming ${upcoming}, completed ${completed})`);
     return { synced, live, upcoming, completed, note };
   }
