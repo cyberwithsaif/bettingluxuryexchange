@@ -103,14 +103,19 @@ function useSounds(enabled: boolean) {
 
 const VEHICLE_COLORS = ["#7c3aed", "#ef4444", "#f59e0b", "#3b82f6", "#10b981", "#e5e7eb", "#ec4899"];
 
-function Vehicle({ w, color, length }: { w: number; color: string; length: number }) {
-  const bw = w * 0.56;
+type VehicleKind = "car" | "bike";
+
+function Vehicle({ w, color, length, kind = "car" }: { w: number; color: string; length: number; kind?: VehicleKind }) {
+  if (kind === "bike") return <Bike w={w} color={color} length={length} />;
+
+  // Small car — narrower body than before so it reads as a compact car.
+  const bw = w * 0.42;
   const bh = length;
   return (
     <div style={{ width: bw, height: bh, position: "relative" }}>
       <div
         style={{
-          position: "absolute", inset: 0, borderRadius: bw * 0.28,
+          position: "absolute", inset: 0, borderRadius: bw * 0.3,
           background: `linear-gradient(180deg, ${color}, ${shade(color, -18)})`,
           boxShadow: `0 ${bh * 0.06}px ${bh * 0.14}px rgba(0,0,0,0.45), inset 0 2px 2px rgba(255,255,255,0.25)`,
           border: "1px solid rgba(0,0,0,0.25)",
@@ -118,21 +123,51 @@ function Vehicle({ w, color, length }: { w: number; color: string; length: numbe
       />
       {/* windshield (front = bottom, vehicle drives downward) */}
       <div style={{
-        position: "absolute", left: "16%", right: "16%", bottom: "12%", height: bh * 0.22,
-        borderRadius: bw * 0.14, background: "linear-gradient(180deg,#bae6fd,#7dd3fc)",
+        position: "absolute", left: "16%", right: "16%", bottom: "14%", height: bh * 0.24,
+        borderRadius: bw * 0.16, background: "linear-gradient(180deg,#bae6fd,#7dd3fc)",
         boxShadow: "inset 0 1px 2px rgba(255,255,255,0.6)",
       }} />
       {/* rear window */}
       <div style={{
-        position: "absolute", left: "20%", right: "20%", top: "10%", height: bh * 0.16,
+        position: "absolute", left: "20%", right: "20%", top: "12%", height: bh * 0.18,
         borderRadius: bw * 0.12, background: "rgba(255,255,255,0.18)",
       }} />
       {/* headlights */}
-      <div style={{ position: "absolute", bottom: 1, left: "14%", width: bw * 0.18, height: bw * 0.18, borderRadius: "50%", background: "#fde68a", boxShadow: "0 0 6px #fde047" }} />
-      <div style={{ position: "absolute", bottom: 1, right: "14%", width: bw * 0.18, height: bw * 0.18, borderRadius: "50%", background: "#fde68a", boxShadow: "0 0 6px #fde047" }} />
+      <div style={{ position: "absolute", bottom: 1, left: "14%", width: bw * 0.2, height: bw * 0.2, borderRadius: "50%", background: "#fde68a", boxShadow: "0 0 6px #fde047" }} />
+      <div style={{ position: "absolute", bottom: 1, right: "14%", width: bw * 0.2, height: bw * 0.2, borderRadius: "50%", background: "#fde68a", boxShadow: "0 0 6px #fde047" }} />
       {/* taillights */}
-      <div style={{ position: "absolute", top: 1, left: "16%", width: bw * 0.14, height: bw * 0.12, borderRadius: 2, background: "#dc2626" }} />
-      <div style={{ position: "absolute", top: 1, right: "16%", width: bw * 0.14, height: bw * 0.12, borderRadius: 2, background: "#dc2626" }} />
+      <div style={{ position: "absolute", top: 1, left: "16%", width: bw * 0.16, height: bw * 0.12, borderRadius: 2, background: "#dc2626" }} />
+      <div style={{ position: "absolute", top: 1, right: "16%", width: bw * 0.16, height: bw * 0.12, borderRadius: 2, background: "#dc2626" }} />
+    </div>
+  );
+}
+
+// Top-down motorbike (drives downward; front = bottom).
+function Bike({ w, color, length }: { w: number; color: string; length: number }) {
+  const bw = w * 0.26;
+  const bh = length;
+  const wheelW = bw * 0.46;
+  const wheelH = bh * 0.2;
+  return (
+    <div style={{ width: bw, height: bh, position: "relative" }}>
+      {/* rear wheel (top) */}
+      <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: wheelW, height: wheelH, background: "#1f2937", borderRadius: wheelW * 0.4 }} />
+      {/* front wheel (bottom) */}
+      <div style={{ position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)", width: wheelW, height: wheelH, background: "#111827", borderRadius: wheelW * 0.4, boxShadow: "0 1px 2px rgba(0,0,0,0.5)" }} />
+      {/* frame / fuel tank */}
+      <div style={{
+        position: "absolute", top: "16%", bottom: "16%", left: "50%", transform: "translateX(-50%)", width: bw * 0.6,
+        background: `linear-gradient(180deg, ${color}, ${shade(color, -18)})`, borderRadius: bw * 0.4,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.45), inset 0 1px 1px rgba(255,255,255,0.3)",
+      }} />
+      {/* handlebars (front) */}
+      <div style={{ position: "absolute", bottom: "24%", left: "50%", transform: "translateX(-50%)", width: bw, height: Math.max(2, bh * 0.035), background: "#374151", borderRadius: 2 }} />
+      {/* rider shoulders */}
+      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translateX(-50%)", width: bw * 0.82, height: bh * 0.14, borderRadius: bw * 0.4, background: "#3f3f5e" }} />
+      {/* rider helmet */}
+      <div style={{ position: "absolute", top: "40%", left: "50%", transform: "translate(-50%,-50%)", width: bw * 0.52, height: bw * 0.52, borderRadius: "50%", background: "#0f172a", border: "1px solid rgba(255,255,255,0.25)" }} />
+      {/* headlight (front) */}
+      <div style={{ position: "absolute", bottom: 1, left: "50%", transform: "translateX(-50%)", width: bw * 0.32, height: bw * 0.32, borderRadius: "50%", background: "#fde68a", boxShadow: "0 0 6px #fde047" }} />
     </div>
   );
 }
@@ -1163,8 +1198,10 @@ function AmbientVehicle({ laneIndex, laneW, boardH, difficulty }: {
   const seed = (laneIndex * 9301 + 49297) % 233280;
   const rnd = seed / 233280;
   const color = VEHICLE_COLORS[laneIndex % VEHICLE_COLORS.length]!;
-  const kindRoll = (laneIndex * 7) % 3;
-  const length = kindRoll === 0 ? laneW * 0.86 : kindRoll === 1 ? laneW * 1.25 : laneW * 1.55;
+  // Mix small cars and bikes; lanes cycle so traffic stays varied.
+  const variant = (laneIndex * 7) % 3;            // 0,1,2
+  const kind: VehicleKind = variant === 2 ? "bike" : "car";
+  const length = kind === "bike" ? laneW * 0.5 : (variant === 0 ? laneW * 0.6 : laneW * 0.72);
   const speedFactor = { EASY: 1.9, MEDIUM: 1.45, HARD: 1.05, DAREDEVIL: 0.75 }[difficulty];
   const duration = (2.2 + rnd * 1.6) * speedFactor;
   const delay = -rnd * duration;
@@ -1176,7 +1213,7 @@ function AmbientVehicle({ laneIndex, laneW, boardH, difficulty }: {
       animate={{ y: boardH + length + 20 }}
       transition={{ duration, repeat: Infinity, ease: "linear", delay }}
     >
-      <Vehicle w={laneW} color={color} length={length} />
+      <Vehicle w={laneW} color={color} length={length} kind={kind} />
     </motion.div>
   );
 }
@@ -1192,12 +1229,12 @@ function CrashBurst({ laneIndex, laneW, boardH }: { laneIndex: number; laneW: nu
       {/* crash vehicle — rushes in from top and keeps driving through */}
       <motion.div
         className="absolute z-30"
-        style={{ left: cx - laneW * 0.28, top: 0 }}
+        style={{ left: cx - laneW * 0.21, top: 0 }}
         initial={{ y: -laneW * 1.5 }}
         animate={{ y: boardH + laneW * 1.5 }}
         transition={{ duration: 0.85, ease: "linear" }}
       >
-        <Vehicle w={laneW} color="#dc2626" length={laneW * 1.2} />
+        <Vehicle w={laneW} color="#dc2626" length={laneW * 0.8} />
       </motion.div>
       {/* feather/spark burst */}
       {sparks.map(s => (
