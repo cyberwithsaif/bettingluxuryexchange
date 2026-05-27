@@ -607,12 +607,12 @@ export default function ChickenRoadPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [handleMove]);
 
-  // The next coin is locked for 1s after the chicken arrives on a new lane, so the
+  // The next coin is locked for 0.6s after the chicken arrives on a new lane, so the
   // player can't spam-advance. It becomes clickable once the timer elapses.
   useEffect(() => {
     if (phase !== "running") { setNextCoinReady(false); return; }
     setNextCoinReady(false);
-    const t = setTimeout(() => setNextCoinReady(true), 1000);
+    const t = setTimeout(() => setNextCoinReady(true), 600);
     return () => clearTimeout(t);
   }, [currentLane, phase]);
 
