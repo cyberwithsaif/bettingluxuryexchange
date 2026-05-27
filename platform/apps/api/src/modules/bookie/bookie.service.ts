@@ -119,6 +119,63 @@ export class BookieService {
     return b;
   }
 
+  /**
+   * Collect any newly-accrued admin commission from the bookie's wallet into the
+   * admin (parent) wallet, writing COMMISSION_PAYOUT ledger rows on both sides.
+   *
+   * Uses User.commissionedProfit as a high-water mark so commission is only ever
+   * charged on *increases* in profit (player wins never refund), and an optimistic
+   * guard on that mark means concurrent/duplicate calls can't double-charge.
+   * Returns the amount collected (0 if nothing accrued). No-throw: a failure here
+   * must never break the read that triggered it.
+   */
+  async reconcileCommission(bookieId: string): Promise<number> {
+    try {
+      const b = await this.prisma.user.findUnique({
+        where: { id: bookieId },
+        select: { id: true, role: true, parentId: true, partnershipBps: true, commissionedProfit: true },
+      });
+      if (!b || b.role !== UserRole.BOOKIE || !b.parentId || (b.partnershipBps ?? 0) <= 0) return 0;
+
+      const profit = (await this.profitForBookies([bookieId])).get(bookieId) ?? 0;
+      const marked = num(b.commissionedProfit);
+      if (profit <= marked) return 0;
+
+      const increment = round2(profit - marked);
+      const commission = round2((increment * b.partnershipBps) / 10_000);
+
+      // Advance the high-water mark first; only the writer that wins this race continues.
+      const guard = await this.prisma.user.updateMany({
+        where: { id: bookieId, commissionedProfit: b.commissionedProfit },
+        data: { commissionedProfit: new Prisma.Decimal(profit) },
+      });
+      if (guard.count !== 1) return 0;
+      if (commission <= 0) return 0;
+
+      // Make sure the recipient (admin) has a wallet, then move the money atomically.
+      await this.prisma.wallet.upsert({ where: { userId: b.parentId }, create: { userId: b.parentId }, update: {} });
+      await this.wallet.transfer({
+        fromUserId: bookieId, toUserId: b.parentId, amount: commission,
+        kind: LedgerKind.COMMISSION_PAYOUT, fromFloor: -1e12,  // commission is owed; allow the float to dip
+        refType: "commission", refId: bookieId,
+        note: `Admin commission ${round2(b.partnershipBps / 100)}% on ₹${increment} profit`,
+      });
+      await this.audit(b.parentId, "bookie.commission_collected", { type: "bookie", id: bookieId }, { increment, commission }, undefined);
+      return commission;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /** Total commission already collected from a bookie (abs of COMMISSION_PAYOUT debits). */
+  private async commissionCollected(bookieId: string): Promise<number> {
+    const r = await this.prisma.ledgerEntry.aggregate({
+      _sum: { amount: true },
+      where: { userId: bookieId, kind: LedgerKind.COMMISSION_PAYOUT, amount: { lt: 0 } },
+    });
+    return round2(Math.abs(num(r._sum.amount)));
+  }
+
   // ════════════════════════════════════════════════════════════════════════
   //  ADMIN-FACING
   // ════════════════════════════════════════════════════════════════════════
@@ -229,6 +286,7 @@ export class BookieService {
 
   /** Full profile + rolled-up stats for one bookie (admin detail page). */
   async getBookieDetail(bookieId: string) {
+    await this.reconcileCommission(bookieId);   // auto-collect any newly accrued commission
     const b = await this.getBookieOrThrow(bookieId);
     const childIds = (await this.prisma.user.findMany({
       where: { parentId: bookieId }, select: { id: true, status: true },
@@ -237,16 +295,18 @@ export class BookieService {
     const stats = await this.rollup(ids);
     const profit = (await this.profitForBookies([bookieId])).get(bookieId) ?? 0;
     const commissionBps = b.partnershipBps ?? 0;
+    const collected = await this.commissionCollected(bookieId);
     const [walletLogs, activity] = await Promise.all([
       this.prisma.ledgerEntry.findMany({
-        where: { userId: bookieId, kind: { in: [LedgerKind.BOOKIE_RECHARGE, LedgerKind.BOOKIE_TO_USER, LedgerKind.USER_TO_BOOKIE] } },
-        orderBy: { createdAt: "desc" }, take: 20,
+        where: { userId: bookieId, kind: { in: [LedgerKind.BOOKIE_RECHARGE, LedgerKind.BOOKIE_TO_USER, LedgerKind.USER_TO_BOOKIE, LedgerKind.COMMISSION_PAYOUT] } },
+        orderBy: { createdAt: "desc" }, take: 30,
       }),
       this.prisma.adminLog.findMany({
         where: { OR: [{ actorId: bookieId }, { targetId: bookieId }] },
         orderBy: { createdAt: "desc" }, take: 20,
       }),
     ]);
+    const adminCommission = round2((profit * commissionBps) / 10_000);
     return {
       bookie: this.shapeBookie(b, profit),
       stats: {
@@ -255,7 +315,9 @@ export class BookieService {
         activeUsers: childIds.filter((c) => c.status === "ACTIVE").length,
         bookieProfit: round2(profit),
         commissionPct: round2(commissionBps / 100),
-        adminCommission: round2((profit * commissionBps) / 10_000),
+        adminCommission,
+        commissionCollected: collected,
+        commissionPending: round2(Math.max(0, adminCommission - collected)),
       },
       walletLogs,
       activity,
@@ -265,7 +327,7 @@ export class BookieService {
   async walletLogs(bookieId: string) {
     await this.getBookieOrThrow(bookieId);
     return this.prisma.ledgerEntry.findMany({
-      where: { userId: bookieId, kind: { in: [LedgerKind.BOOKIE_RECHARGE, LedgerKind.BOOKIE_TO_USER, LedgerKind.USER_TO_BOOKIE] } },
+      where: { userId: bookieId, kind: { in: [LedgerKind.BOOKIE_RECHARGE, LedgerKind.BOOKIE_TO_USER, LedgerKind.USER_TO_BOOKIE, LedgerKind.COMMISSION_PAYOUT] } },
       orderBy: { createdAt: "desc" }, take: 200,
     });
   }
@@ -292,6 +354,7 @@ export class BookieService {
   // ════════════════════════════════════════════════════════════════════════
 
   async dashboard(bookieId: string) {
+    await this.reconcileCommission(bookieId);   // auto-collect commission before showing the wallet
     const me = await this.prisma.user.findUnique({ where: { id: bookieId }, include: { wallet: true } });
     if (!me) throw new ForbiddenException();
     const children = await this.prisma.user.findMany({
@@ -319,10 +382,12 @@ export class BookieService {
       totalUsers: ids.length,
       activeUsers: children.filter((c) => c.status === "ACTIVE").length,
       totalBets: stats.totalBets,
-      // Bookie profit = total player losses; admin earns commissionPct of it.
+      // Bookie profit = total player losses; admin earns commissionPct of it,
+      // auto-deducted from this wallet (adminCommission = total earned to date).
       bookieProfit: round2(profit),
       commissionPct: round2(commissionBps / 100),
       adminCommission: round2((profit * commissionBps) / 10_000),
+      commissionCollected: await this.commissionCollected(bookieId),
       pendingWithdrawals: pendingW,
       depositsToday: round2(num(depToday._sum.amount)),
       exposure: round2(num(exposureAgg._sum.exposure)),
@@ -426,6 +491,7 @@ export class BookieService {
 
   /** The bookie's own wallet view: float, totals, credit, pending withdrawals + ledger. */
   async myWallet(bookieId: string) {
+    await this.reconcileCommission(bookieId);
     const me = await this.prisma.user.findUnique({ where: { id: bookieId }, include: { wallet: true } });
     if (!me) throw new ForbiddenException();
     const childIds = (await this.prisma.user.findMany({ where: { parentId: bookieId }, select: { id: true } })).map((c) => c.id);
@@ -450,8 +516,9 @@ export class BookieService {
   }
 
   async myTransactions(bookieId: string) {
+    await this.reconcileCommission(bookieId);
     return this.prisma.ledgerEntry.findMany({
-      where: { userId: bookieId, kind: { in: [LedgerKind.BOOKIE_RECHARGE, LedgerKind.BOOKIE_TO_USER, LedgerKind.USER_TO_BOOKIE] } },
+      where: { userId: bookieId, kind: { in: [LedgerKind.BOOKIE_RECHARGE, LedgerKind.BOOKIE_TO_USER, LedgerKind.USER_TO_BOOKIE, LedgerKind.COMMISSION_PAYOUT] } },
       orderBy: { createdAt: "desc" }, take: 200,
     });
   }

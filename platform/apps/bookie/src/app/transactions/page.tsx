@@ -4,8 +4,8 @@ import { PageHeader, Badge, DataTable, Column } from "@/components/ui";
 
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const dt = (s: string) => new Date(s).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-const kindLabel = (k: string) => k.replace(/_/g, " ");
-const kindTone = (k: string) => (k === "BOOKIE_RECHARGE" ? "sky" : k === "USER_TO_BOOKIE" ? "emerald" : "amber");
+const kindLabel = (k: string) => (k === "COMMISSION_PAYOUT" ? "ADMIN COMMISSION" : k.replace(/_/g, " "));
+const kindTone = (k: string) => (k === "BOOKIE_RECHARGE" ? "sky" : k === "USER_TO_BOOKIE" ? "emerald" : k === "COMMISSION_PAYOUT" ? "red" : "amber");
 
 export default function TransactionsPage() {
   const { data, isLoading } = useSWR<any[]>("/bookie/transactions");

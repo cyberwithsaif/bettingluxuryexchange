@@ -55,6 +55,10 @@ model User {
   // Real spendable credit facility (bookies/agents): the wallet may go negative
   // down to -creditLimit when funding downline. 0 = no credit (hard floor at 0).
   creditLimit     Decimal     @default(0) @db.Decimal(20, 4)
+  // High-water mark of a bookie's profit that has already had admin commission
+  // collected. Commission is only charged on increases past this — so player
+  // wins never trigger a refund and collection can't double-charge.
+  commissionedProfit Decimal  @default(0) @db.Decimal(20, 4)
   // Optional display name — used for bookie/agent accounts (e.g. "Acme Bookmakers").
   fullName        String?
 

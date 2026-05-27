@@ -30,17 +30,20 @@ export default function BookieDashboard() {
         <StatCard label="Exposure" value={inr(data?.exposure ?? 0)} Icon={ShieldAlert} accent="red" loading={isLoading} />
       </div>
 
-      {/* Admin commission — the cut the admin takes from your profit (set in admin panel). */}
+      {/* Admin commission — auto-deducted from your wallet as profit accrues. */}
       <div className="mb-4">
         <GlassCard glow className="p-5 flex flex-wrap items-center justify-between gap-4 border-emerald-500/30">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-xl bg-emerald-500/10"><Percent size={22} className="text-emerald-400" /></div>
             <div>
               <p className="text-[11px] uppercase tracking-wider text-gray-500 font-semibold">Admin Commission</p>
-              <p className="text-sm text-gray-400">{data?.commissionPct ?? 0}% of your bookie profit ({inr(data?.bookieProfit ?? 0)})</p>
+              <p className="text-sm text-gray-400">{data?.commissionPct ?? 0}% of your bookie profit ({inr(data?.bookieProfit ?? 0)}) — auto-deducted from your wallet</p>
             </div>
           </div>
-          <p className="text-3xl font-black tabular-nums text-emerald-300">{inr(data?.adminCommission ?? 0)}</p>
+          <div className="text-right">
+            <p className="text-3xl font-black tabular-nums text-emerald-300">{inr(data?.adminCommission ?? 0)}</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">{inr(data?.commissionCollected ?? 0)} collected</p>
+          </div>
         </GlassCard>
       </div>
 

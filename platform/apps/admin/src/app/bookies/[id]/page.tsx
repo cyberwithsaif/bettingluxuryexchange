@@ -43,7 +43,7 @@ export default function BookieDetailPage() {
         <StatCard label="Users" value={`${stats?.activeUsers ?? 0}/${stats?.totalUsers ?? 0}`} sub="active / total" Icon={UsersIcon} accent="violet" loading={isLoading} />
         <StatCard label="Total Bets" value={stats?.totalBets ?? 0} Icon={Ticket} accent="sky" loading={isLoading} />
         <StatCard label="Bookie Profit" value={inr(stats?.bookieProfit ?? 0)} sub="total player losses" Icon={TrendingDown} accent="amber" loading={isLoading} />
-        <StatCard label="Admin Commission" value={inr(stats?.adminCommission ?? 0)} sub={`${stats?.commissionPct ?? 0}% of profit`} Icon={Percent} accent="emerald" loading={isLoading} />
+        <StatCard label="Admin Commission" value={inr(stats?.adminCommission ?? 0)} sub={`${stats?.commissionPct ?? 0}% · ${inr(stats?.commissionCollected ?? 0)} collected`} Icon={Percent} accent="emerald" loading={isLoading} />
       </div>
 
       {/* Tabs */}
@@ -127,10 +127,11 @@ function UsersTab({ id }: { id: string }) {
 
 function WalletLogsTab({ id }: { id: string }) {
   const { data, isLoading } = useSWR<any[]>(`/admin/bookies/${id}/wallet-logs`);
-  const kindTone = (k: string) => (k === "BOOKIE_RECHARGE" ? "sky" : k === "USER_TO_BOOKIE" ? "emerald" : "amber");
+  const kindTone = (k: string) => (k === "BOOKIE_RECHARGE" ? "sky" : k === "USER_TO_BOOKIE" ? "emerald" : k === "COMMISSION_PAYOUT" ? "red" : "amber");
+  const kindLabel = (k: string) => (k === "COMMISSION_PAYOUT" ? "ADMIN COMMISSION" : k.replace(/_/g, " "));
   const columns: Column<any>[] = [
     { key: "createdAt", header: "Time", sortValue: (l) => l.createdAt, render: (l) => <span className="text-xs text-gray-500">{dt(l.createdAt)}</span> },
-    { key: "kind", header: "Type", render: (l) => <Badge tone={kindTone(l.kind)}>{l.kind.replace(/_/g, " ")}</Badge> },
+    { key: "kind", header: "Type", render: (l) => <Badge tone={kindTone(l.kind)}>{kindLabel(l.kind)}</Badge> },
     { key: "amount", header: "Amount", align: "right", sortValue: (l) => Number(l.amount), render: (l) => <span className={`tabular-nums font-semibold ${Number(l.amount) >= 0 ? "text-emerald-300" : "text-red-400"}`}>{Number(l.amount) >= 0 ? "+" : ""}{inr(Number(l.amount))}</span> },
     { key: "balanceAfter", header: "Balance After", align: "right", render: (l) => <span className="tabular-nums text-gray-300">{inr(Number(l.balanceAfter))}</span> },
     { key: "note", header: "Note", render: (l) => <span className="text-xs text-gray-500">{l.note ?? "—"}</span> },

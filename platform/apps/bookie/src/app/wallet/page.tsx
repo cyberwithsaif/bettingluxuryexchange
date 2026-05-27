@@ -6,9 +6,9 @@ import { Wallet, CreditCard, TrendingUp, TrendingDown, Clock } from "lucide-reac
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const dt = (s: string) => new Date(s).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 
-const kindLabel = (k: string) => k.replace(/_/g, " ");
+const kindLabel = (k: string) => (k === "COMMISSION_PAYOUT" ? "ADMIN COMMISSION" : k.replace(/_/g, " "));
 const kindTone = (k: string) =>
-  k === "BOOKIE_RECHARGE" ? "sky" : k === "USER_TO_BOOKIE" ? "emerald" : k === "BOOKIE_TO_USER" ? "amber" : "violet";
+  k === "BOOKIE_RECHARGE" ? "sky" : k === "USER_TO_BOOKIE" ? "emerald" : k === "BOOKIE_TO_USER" ? "amber" : k === "COMMISSION_PAYOUT" ? "red" : "violet";
 
 export default function WalletPage() {
   const { data, isLoading } = useSWR<any>("/bookie/wallet");
