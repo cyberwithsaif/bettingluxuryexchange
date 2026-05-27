@@ -29,6 +29,7 @@ export interface MinesState {
 
 export default function MinesLayout() {
   const user = useAuthStore((s) => s.user);
+  const accessToken = useAuthStore((s) => s.accessToken);
   const { data: walletData, mutate: mutateWallet } = useSWR<{ available: number }>(user ? "/wallet/summary" : null);
   const { data: platformCfg } = useSWR<{ minesMinBet?: number; minesMaxBet?: number }>("/api/platform/settings",
     (url: string) => fetch(url).then(r => r.ok ? r.json() : {}),
@@ -75,6 +76,28 @@ export default function MinesLayout() {
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
     };
   }, []);
+
+  // Restore an in-progress game on re-entry (instead of starting a new one and
+  // orphaning the old session + its stake).
+  useEffect(() => {
+    if (!user) return;
+    fetch("/api/casino/mines/active", { headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} })
+      .then(r => (r.ok ? r.json() : null))
+      .then(s => {
+        if (!s) return;
+        setGameState({
+          id: s.id,
+          betAmount: s.betAmount,
+          minesCount: s.minesCount,
+          clientSeed: s.clientSeed,
+          serverSeedHash: s.serverSeedHash,
+          status: "IN_PROGRESS",
+          multiplier: s.multiplier,
+          clickedTiles: s.clickedTiles ?? [],
+        });
+      })
+      .catch(() => {});
+  }, [user, accessToken]);
 
   useEffect(() => {
     const s = getSocket();

@@ -290,6 +290,25 @@ export class MinesService {
     return { ok: true };
   }
 
+  /** Safe in-progress session for restore on re-entry (no mine positions / server seed). */
+  async getActiveSession(userId: string) {
+    const session = await this.prisma.minesSession.findFirst({
+      where: { userId, status: MinesStatus.IN_PROGRESS },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!session) return null;
+    return {
+      id:             session.id,
+      betAmount:      Number(session.betAmount),
+      minesCount:     session.minesCount,
+      clientSeed:     session.clientSeed,
+      serverSeedHash: session.serverSeedHash,
+      multiplier:     Number(session.multiplier),
+      clickedTiles:   (session.clickedTiles as any[]) ?? [], // only revealed safe tiles while IN_PROGRESS
+      status:         session.status,
+    };
+  }
+
   async getRecentResults(limit = 20) {
     return this.prisma.minesSession.findMany({
       where: { status: { in: [MinesStatus.CASHED_OUT, MinesStatus.BUSTED] } },

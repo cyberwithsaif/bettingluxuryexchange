@@ -35,6 +35,12 @@ export class MinesController {
     return this.minesService.getUserBets(req.user.userId, limit ? parseInt(limit, 10) : 50);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get("active")
+  getActiveSession(@Req() req: any) {
+    return this.minesService.getActiveSession(req.user.userId);
+  }
+
   // ── Admin endpoints ───────────────────────────────────────────────────────
 
   @UseGuards(JwtAuthGuard, RolesGuard)
