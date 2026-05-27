@@ -73,7 +73,7 @@ function SettingsCard({ id, bookie, onSaved }: { id: string; bookie: any; onSave
 
   // initialise once data arrives
   if (bookie && !f) {
-    setF({ fullName: bookie.fullName ?? "", phone: bookie.phone ?? "", email: bookie.email ?? "", commissionBps: bookie.partnershipBps ?? 0, creditLimit: bookie.creditLimit ?? 0 });
+    setF({ fullName: bookie.fullName ?? "", phone: bookie.phone ?? "", email: bookie.email ?? "", commissionPct: Math.round((bookie.partnershipBps ?? 0)) / 100, creditLimit: bookie.creditLimit ?? 0 });
   }
   if (!f) return <GlassCard className="p-6 text-gray-500 text-sm">Loading…</GlassCard>;
 
@@ -82,7 +82,7 @@ function SettingsCard({ id, bookie, onSaved }: { id: string; bookie: any; onSave
     try {
       await api.patch(`/admin/bookies/${id}`, {
         fullName: f.fullName || undefined, phone: f.phone || undefined, email: f.email || undefined,
-        commissionBps: Number(f.commissionBps) || 0, creditLimit: Number(f.creditLimit) || 0,
+        commissionBps: Math.round((Number(f.commissionPct) || 0) * 100), creditLimit: Number(f.creditLimit) || 0,
       });
       setMsg("Saved."); onSaved();
     } catch (e: any) { setMsg(e?.response?.data?.message || "Failed."); }
@@ -96,7 +96,7 @@ function SettingsCard({ id, bookie, onSaved }: { id: string; bookie: any; onSave
         <ModalField label="Full Name" className="col-span-2"><input className="modal-input" value={f.fullName} onChange={(e) => setF({ ...f, fullName: e.target.value })} /></ModalField>
         <ModalField label="Phone"><input className="modal-input" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></ModalField>
         <ModalField label="Email"><input className="modal-input" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></ModalField>
-        <ModalField label="Admin Commission % (bps · 100=1%)"><input type="number" min={0} max={10000} className="modal-input" value={f.commissionBps} onChange={(e) => setF({ ...f, commissionBps: Number(e.target.value) })} /></ModalField>
+        <ModalField label="Admin Commission % (e.g. 5 = 5%)"><input type="number" min={0} max={100} step={0.01} className="modal-input" value={f.commissionPct} onChange={(e) => setF({ ...f, commissionPct: Number(e.target.value) })} /></ModalField>
         <ModalField label="Credit Limit (₹)"><input type="number" min={0} className="modal-input" value={f.creditLimit} onChange={(e) => setF({ ...f, creditLimit: Number(e.target.value) })} /></ModalField>
       </div>
       <div className="flex items-center gap-3 mt-4">

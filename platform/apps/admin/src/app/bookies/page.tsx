@@ -149,7 +149,7 @@ export default function BookiesPage() {
 // ── Create Bookie ───────────────────────────────────────────────────────────
 
 function CreateBookieModal({ onClose }: { onClose: (saved?: boolean) => void }) {
-  const [f, setF] = useState({ username: "", password: "", fullName: "", phone: "", email: "", initialBalance: 0, commissionBps: 0, creditLimit: 0 });
+  const [f, setF] = useState({ username: "", password: "", fullName: "", phone: "", email: "", initialBalance: 0, commissionPct: 0, creditLimit: 0 });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -161,7 +161,7 @@ function CreateBookieModal({ onClose }: { onClose: (saved?: boolean) => void }) 
         username: f.username, password: f.password,
         fullName: f.fullName || undefined, phone: f.phone || undefined, email: f.email || undefined,
         initialBalance: Number(f.initialBalance) || 0,
-        commissionBps: Number(f.commissionBps) || 0,
+        commissionBps: Math.round((Number(f.commissionPct) || 0) * 100),
         creditLimit: Number(f.creditLimit) || 0,
       });
       onClose(true);
@@ -178,7 +178,7 @@ function CreateBookieModal({ onClose }: { onClose: (saved?: boolean) => void }) 
         <ModalField label="Phone"><input className="modal-input" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></ModalField>
         <ModalField label="Email"><input className="modal-input" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></ModalField>
         <ModalField label="Initial Wallet (₹)"><input type="number" min={0} className="modal-input" value={f.initialBalance} onChange={(e) => setF({ ...f, initialBalance: Number(e.target.value) })} /></ModalField>
-        <ModalField label="Admin Commission % (bps · 100=1%)"><input type="number" min={0} max={10000} className="modal-input" value={f.commissionBps} onChange={(e) => setF({ ...f, commissionBps: Number(e.target.value) })} /></ModalField>
+        <ModalField label="Admin Commission % (e.g. 5 = 5%)"><input type="number" min={0} max={100} step={0.01} className="modal-input" value={f.commissionPct} onChange={(e) => setF({ ...f, commissionPct: Number(e.target.value) })} /></ModalField>
         <ModalField label="Credit Limit (₹)" className="col-span-2"><input type="number" min={0} className="modal-input" value={f.creditLimit} onChange={(e) => setF({ ...f, creditLimit: Number(e.target.value) })} /></ModalField>
       </div>
       {err && <p className="text-xs text-red-400 bg-red-900/20 border border-red-500/30 rounded-lg px-3 py-2 mt-3">{err}</p>}
