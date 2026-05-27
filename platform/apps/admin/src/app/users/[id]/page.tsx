@@ -53,11 +53,11 @@ const fmtShort = (d: string | null) =>
   d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 const STATUS_STYLE: Record<string, string> = {
-  ACTIVE:    "bg-emerald-50 text-emerald-300 border-emerald-200",
-  SUSPENDED: "bg-gray-800  text-yellow-300  border-yellow-200",
-  LOCKED:    "bg-red-900/20     text-red-400     border-red-200",
-  CLOSED:    "bg-gray-700   text-gray-500    border-gray-700",
-  BANNED:    "bg-red-100    text-red-300     border-red-300",
+  ACTIVE:    "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+  SUSPENDED: "bg-yellow-500/15  text-yellow-300  border-yellow-500/30",
+  LOCKED:    "bg-red-500/15     text-red-300     border-red-500/30",
+  CLOSED:    "bg-gray-700/50    text-gray-400    border-gray-600/50",
+  BANNED:    "bg-red-500/20     text-red-300     border-red-500/40",
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -70,7 +70,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function RoleBadge({ role }: { role: string }) {
   return (
-    <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-blue-900/20 text-blue-300 border border-blue-200">
+    <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30">
       {role}
     </span>
   );
@@ -230,7 +230,7 @@ export default function UserProfilePage() {
       {/* ── Profile Header ── */}
       <div className="bg-gray-800 rounded-xl border border-yellow-500/20 p-5 shadow-sm">
         <div className="flex flex-wrap items-start gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-yellow-100 border-2 border-yellow-300 flex items-center justify-center shrink-0">
+          <div className="w-16 h-16 rounded-2xl bg-yellow-500/15 border-2 border-yellow-500/40 flex items-center justify-center shrink-0">
             <span className="font-black text-2xl text-yellow-400">{avatarLetter}</span>
           </div>
           <div className="flex-1 min-w-0">
@@ -239,7 +239,7 @@ export default function UserProfilePage() {
               <StatusBadge status={user.status} />
               <RoleBadge role={user.role} />
               {user.twoFactorEnabled && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-900/20 text-blue-400 border border-blue-200 flex items-center gap-1 font-bold">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center gap-1 font-bold">
                   <Shield size={10} /> 2FA
                 </span>
               )}
@@ -297,17 +297,17 @@ export default function UserProfilePage() {
             <div className="pt-3 grid grid-cols-2 gap-2">
               {user.status !== "ACTIVE" ? (
                 <button onClick={() => handleStatusChange("ACTIVE")} disabled={saving}
-                  className="flex items-center justify-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-300 text-xs font-bold py-2 rounded-lg transition disabled:opacity-50">
+                  className="flex items-center justify-center gap-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-bold py-2 rounded-lg transition disabled:opacity-50">
                   <UserCheck size={12} /> Activate
                 </button>
               ) : (
                 <button onClick={() => handleStatusChange("SUSPENDED")} disabled={saving}
-                  className="flex items-center justify-center gap-1.5 bg-gray-800 hover:bg-yellow-100 border border-yellow-200 text-yellow-300 text-xs font-bold py-2 rounded-lg transition disabled:opacity-50">
+                  className="flex items-center justify-center gap-1.5 bg-yellow-500/15 hover:bg-yellow-500/25 border border-yellow-500/30 text-yellow-300 text-xs font-bold py-2 rounded-lg transition disabled:opacity-50">
                   <UserX size={12} /> Suspend
                 </button>
               )}
               <button onClick={() => handleStatusChange("LOCKED")} disabled={saving}
-                className="flex items-center justify-center gap-1.5 bg-red-900/20 hover:bg-red-100 border border-red-200 text-red-400 text-xs font-bold py-2 rounded-lg transition disabled:opacity-50">
+                className="flex items-center justify-center gap-1.5 bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 text-xs font-bold py-2 rounded-lg transition disabled:opacity-50">
                 <Lock size={12} /> Lock Account
               </button>
             </div>
@@ -375,7 +375,7 @@ export default function UserProfilePage() {
                     </button>
                     <button type="button" onClick={() => setAdjustMode("debit")}
                       className={cn("flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-sm transition",
-                        !isCredit ? "bg-red-900/200 text-white shadow-md" : "text-gray-400 hover:text-gray-300")}>
+                        !isCredit ? "bg-red-600 text-white shadow-md" : "text-gray-400 hover:text-gray-300")}>
                       <span className="text-lg leading-none">−</span> Debit (Remove)
                     </button>
                   </div>
@@ -428,7 +428,7 @@ export default function UserProfilePage() {
 
                   {adjustStatus && (
                     <div className={cn("rounded-lg px-3 py-2 text-sm flex items-center gap-2 border",
-                      adjustStatus.kind === "ok" ? "bg-emerald-50 border-emerald-200 text-emerald-300" : "bg-red-900/20 border-red-200 text-red-400")}>
+                      adjustStatus.kind === "ok" ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-300" : "bg-red-500/15 border-red-500/30 text-red-300")}>
                       {adjustStatus.kind === "ok" ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
                       {adjustStatus.msg}
                     </div>
@@ -436,7 +436,7 @@ export default function UserProfilePage() {
 
                   <button type="button" onClick={handleAdjust} disabled={adjusting || !amt}
                     className={cn("w-full py-3 rounded-lg font-bold text-sm tracking-wide transition disabled:opacity-40 disabled:cursor-not-allowed",
-                      isCredit ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-red-900/200 hover:bg-red-600 text-white")}>
+                      isCredit ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-red-600 hover:bg-red-500 text-white")}>
                     {adjusting ? "Processing…" : amt > 0 ? `${isCredit ? "Credit" : "Debit"} ₹${amt.toLocaleString("en-IN")}` : `${isCredit ? "Credit" : "Debit"} Account`}
                   </button>
                 </div>
@@ -461,7 +461,7 @@ export default function UserProfilePage() {
                   </thead>
                   <tbody>
                     {recentTxns.map(t => (
-                      <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-800 transition">
+                      <tr key={t.id} className="border-b border-gray-800 hover:bg-gray-800/40 transition">
                         <td className="py-2 px-2 font-semibold text-gray-300">{t.kind}</td>
                         <td className="py-2 px-2 text-gray-500">{t.method}</td>
                         <td className={cn("py-2 px-2 tabular-nums text-right font-bold", t.kind === "DEPOSIT" ? "text-emerald-400" : "text-red-500")}>
@@ -469,9 +469,9 @@ export default function UserProfilePage() {
                         </td>
                         <td className="py-2 px-2">
                           <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold",
-                            t.status === "APPROVED" || t.status === "COMPLETED" ? "bg-emerald-50 text-emerald-300" :
-                            t.status === "REJECTED" || t.status === "FAILED"   ? "bg-red-900/20 text-red-400" :
-                            "bg-gray-800 text-yellow-300")}>{t.status}</span>
+                            t.status === "APPROVED" || t.status === "COMPLETED" ? "bg-emerald-500/15 text-emerald-300" :
+                            t.status === "REJECTED" || t.status === "FAILED"   ? "bg-red-500/15 text-red-300" :
+                            "bg-yellow-500/15 text-yellow-300")}>{t.status}</span>
                         </td>
                         <td className="py-2 px-2 text-gray-400">{fmtShort(t.createdAt)}</td>
                       </tr>
@@ -526,7 +526,7 @@ export default function UserProfilePage() {
                   <StatCard label="Fancy Bets"      value={limits.fancyEnabled ? "Enabled" : "Disabled"} color={limits.fancyEnabled ? "text-emerald-400" : "text-red-500"} />
                 </div>
                 <div className="flex gap-3 text-xs font-semibold">
-                  <span className={cn("px-3 py-1.5 rounded-lg border", limits.casinoEnabled ? "bg-emerald-50 text-emerald-300 border-emerald-200" : "bg-red-900/20 text-red-400 border-red-200")}>
+                  <span className={cn("px-3 py-1.5 rounded-lg border", limits.casinoEnabled ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" : "bg-red-500/15 text-red-300 border-red-500/30")}>
                     Casino: {limits.casinoEnabled ? "Enabled" : "Disabled"}
                   </span>
                 </div>
@@ -557,7 +557,7 @@ export default function UserProfilePage() {
                   </thead>
                   <tbody>
                     {recentBets.map(b => (
-                      <tr key={b.id} className="border-b border-gray-50 hover:bg-gray-800 transition">
+                      <tr key={b.id} className="border-b border-gray-800 hover:bg-gray-800/40 transition">
                         <td className="py-2 px-2 max-w-[140px] truncate text-gray-400 font-medium">{b.market?.name ?? "—"}</td>
                         <td className="py-2 px-2 text-gray-500">{b.runner?.name ?? "—"}</td>
                         <td className="py-2 px-2">
@@ -567,9 +567,9 @@ export default function UserProfilePage() {
                         <td className="py-2 px-2 tabular-nums text-right text-gray-300 font-semibold">{fmt(Number(b.stake))}</td>
                         <td className="py-2 px-2">
                           <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold",
-                            b.status === "SETTLED_WON"  ? "bg-emerald-50 text-emerald-300" :
-                            b.status === "SETTLED_LOST" ? "bg-red-900/20 text-red-400" :
-                            "bg-gray-800 text-yellow-300")}>{b.status}</span>
+                            b.status === "SETTLED_WON"  ? "bg-emerald-500/15 text-emerald-300" :
+                            b.status === "SETTLED_LOST" ? "bg-red-500/15 text-red-300" :
+                            "bg-yellow-500/15 text-yellow-300")}>{b.status}</span>
                         </td>
                         <td className="py-2 px-2 text-gray-400">{fmtShort(b.createdAt)}</td>
                       </tr>
@@ -641,7 +641,7 @@ export default function UserProfilePage() {
               <DataRow label="Login PIN"           value={<NA />} />
               <div className="pt-3">
                 <button onClick={handleResetPwd}
-                  className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-lg border border-purple-200 text-purple-600 bg-purple-50 hover:bg-purple-100 transition">
+                  className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-lg border border-purple-500/30 text-purple-300 bg-purple-500/15 hover:bg-purple-500/25 transition">
                   <Key size={12} /> Reset Password
                 </button>
               </div>
@@ -697,23 +697,23 @@ export default function UserProfilePage() {
             <SectionCard title="Admin Actions" icon={Settings}>
               <div className="grid grid-cols-2 gap-2">
                 <button onClick={() => handleStatusChange("ACTIVE")} disabled={saving || user.status === "ACTIVE"}
-                  className="flex items-center justify-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-300 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-30">
+                  className="flex items-center justify-center gap-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-30">
                   <UserCheck size={12} /> Activate
                 </button>
                 <button onClick={() => handleStatusChange("SUSPENDED")} disabled={saving}
-                  className="flex items-center justify-center gap-1.5 bg-gray-800 hover:bg-yellow-100 border border-yellow-200 text-yellow-300 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-50">
+                  className="flex items-center justify-center gap-1.5 bg-yellow-500/15 hover:bg-yellow-500/25 border border-yellow-500/30 text-yellow-300 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-50">
                   <UserX size={12} /> Suspend
                 </button>
                 <button onClick={() => handleStatusChange("LOCKED")} disabled={saving}
-                  className="flex items-center justify-center gap-1.5 bg-red-900/20 hover:bg-red-100 border border-red-200 text-red-400 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-50">
+                  className="flex items-center justify-center gap-1.5 bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-300 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-50">
                   <Lock size={12} /> Lock
                 </button>
                 <button onClick={() => handleStatusChange("CLOSED")} disabled={saving}
-                  className="flex items-center justify-center gap-1.5 bg-red-100 hover:bg-red-200 border border-red-300 text-red-300 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-50">
+                  className="flex items-center justify-center gap-1.5 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-300 text-xs font-bold py-2.5 rounded-lg transition disabled:opacity-50">
                   <Ban size={12} /> Ban
                 </button>
                 <button onClick={handleResetPwd}
-                  className="col-span-2 flex items-center justify-center gap-1.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-bold py-2.5 rounded-lg transition">
+                  className="col-span-2 flex items-center justify-center gap-1.5 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-xs font-bold py-2.5 rounded-lg transition">
                   <Key size={12} /> Reset Password
                 </button>
               </div>
@@ -756,7 +756,7 @@ export default function UserProfilePage() {
                   </div>
                 ) : <p className="text-sm text-gray-400">Using platform defaults.</p>}
                 <button onClick={() => setLimitForm(limits ?? { minStake: 100, maxStake: 100000, maxMarketExposure: 1000000, maxDailyLoss: 500000, betDelayMs: 0, fancyEnabled: true, casinoEnabled: true })}
-                  className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-lg border border-yellow-300 text-yellow-300 bg-gray-800 hover:bg-yellow-100 transition">
+                  className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-lg border border-yellow-500/30 text-yellow-300 bg-yellow-500/10 hover:bg-yellow-500/20 transition">
                   <Edit2 size={12} /> Edit Limits
                 </button>
               </div>
