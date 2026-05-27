@@ -107,6 +107,8 @@ class PlatformSettingsDto {
   @IsOptional() @IsBoolean() registrationEnabled?: boolean;
   @IsOptional() @IsBoolean() depositEnabled?: boolean;
   @IsOptional() @IsBoolean() withdrawalEnabled?: boolean;
+  @IsOptional() @IsNumber() @Min(0) minWithdrawal?: number;
+  @IsOptional() @IsNumber() @Min(0) maxWithdrawal?: number;
   // Banner / branding fields
   @IsOptional() @IsString() subBanner?: string;
   @IsOptional() @IsString() marqueeText?: string;

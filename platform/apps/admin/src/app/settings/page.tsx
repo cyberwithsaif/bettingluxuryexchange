@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 import useSWR, { mutate } from "swr";
 import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Settings2, RefreshCw, Shield, Database, CreditCard, Navigation, ChevronRight } from "lucide-react";
+import { useAuthStore } from "@/lib/stores/auth";
+import { Settings2, RefreshCw, Shield, Database, CreditCard, Navigation, ChevronRight, KeyRound, ArrowUpToLine } from "lucide-react";
 
 interface PlatformSettings {
   minStake: number;
@@ -15,11 +16,13 @@ interface PlatformSettings {
   registrationEnabled: boolean;
   withdrawalEnabled: boolean;
   depositEnabled: boolean;
+  minWithdrawal: number;
+  maxWithdrawal: number;
 }
 
 const SETTINGS_KEY = "/admin/platform-settings";
 
-const inputCls = "w-full bg-gray-800 border border-yellow-200 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 transition";
+const inputCls = "w-full bg-gray-800 border border-yellow-500/30 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-500/20 transition";
 
 export default function SettingsPage() {
   const { data, isLoading } = useSWR<PlatformSettings>(SETTINGS_KEY);
@@ -27,6 +30,11 @@ export default function SettingsPage() {
   const [syncBusy, setSyncBusy] = useState(false);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [form, setForm] = useState<PlatformSettings | null>(null);
+
+  // Change password
+  const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwMsg, setPwMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
   const current = form ?? data;
 
@@ -43,13 +51,31 @@ export default function SettingsPage() {
     } finally { setBusy(false); }
   }
 
+  async function changePassword() {
+    if (pw.next.length < 8) { setPwMsg({ text: "New password must be at least 8 characters.", ok: false }); return; }
+    if (pw.next !== pw.confirm) { setPwMsg({ text: "New password and confirmation do not match.", ok: false }); return; }
+    setPwBusy(true); setPwMsg(null);
+    try {
+      const { data: res } = await api.post("/auth/change-password", { currentPassword: pw.current, newPassword: pw.next });
+      // The API rotates tokens on password change — adopt the new ones so this
+      // session stays logged in instead of getting kicked to /login.
+      if (res?.accessToken) {
+        useAuthStore.getState().set({ accessToken: res.accessToken, refreshToken: res.refreshToken, user: res.user });
+      }
+      setPw({ current: "", next: "", confirm: "" });
+      setPwMsg({ text: "Password changed successfully.", ok: true });
+    } catch (e: any) {
+      setPwMsg({ text: e?.response?.data?.message || "Failed to change password.", ok: false });
+    } finally { setPwBusy(false); }
+  }
+
   async function syncCricket() {
     setSyncBusy(true); setMsg(null);
     try {
       const res = await api.post("/sports/cricket/sync/series");
-      setMsg({ text: `âœ“ Imported ${res.data.synced} series from Cricket API.`, ok: true });
+      setMsg({ text: `Imported ${res.data.synced} series from the Cricket API.`, ok: true });
     } catch (e: any) {
-      setMsg({ text: e?.response?.data?.message || "Sync failed – check your Cricket API key in API Keys.", ok: false });
+      setMsg({ text: e?.response?.data?.message || "Sync failed — check your Cricket API key in API Keys.", ok: false });
     } finally { setSyncBusy(false); }
   }
 
@@ -75,7 +101,7 @@ export default function SettingsPage() {
 
       {msg && (
         <div className={`text-sm px-4 py-2.5 rounded-lg border font-medium ${
-          msg.ok ? "bg-emerald-50 border-emerald-200 text-emerald-300" : "bg-red-900/20 border-red-200 text-red-400"
+          msg.ok ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-300" : "bg-red-500/15 border-red-500/30 text-red-300"
         }`}>
           {msg.text}
         </div>
@@ -103,23 +129,84 @@ export default function SettingsPage() {
         </div>
       </Section>
 
+      {/* Withdrawal limits */}
+      <Section title="Withdrawal Limits" Icon={ArrowUpToLine}>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Min Withdrawal (₹)">
+            <input type="number" min={0} className={inputCls} value={current?.minWithdrawal ?? 100}
+              onChange={(e) => set("minWithdrawal", Number(e.target.value))} />
+          </Field>
+          <Field label="Max Withdrawal (₹)">
+            <input type="number" min={0} className={inputCls} value={current?.maxWithdrawal ?? 500000}
+              onChange={(e) => set("maxWithdrawal", Number(e.target.value))} />
+          </Field>
+        </div>
+        <p className="text-xs text-gray-500 mt-3">Enforced when a user requests a withdrawal. Set max to 0 for no upper limit.</p>
+      </Section>
+
       {/* Feature toggles */}
       <Section title="Feature Toggles" Icon={Settings2}>
         <div className="grid grid-cols-2 gap-4">
           {([
-            ["maintenanceMode",     "🔴 Maintenance Mode (disables site)"],
-            ["registrationEnabled", "âœ… New User Registration"],
-            ["depositEnabled",      "âœ… Deposits"],
-            ["withdrawalEnabled",   "âœ… Withdrawals"],
-          ] as [keyof PlatformSettings, string][]).map(([key, label]) => (
+            ["maintenanceMode",     "Maintenance Mode (disables site)", "red"],
+            ["registrationEnabled", "New User Registration",            "emerald"],
+            ["depositEnabled",      "Deposits",                          "emerald"],
+            ["withdrawalEnabled",   "Withdrawals",                       "emerald"],
+          ] as [keyof PlatformSettings, string, string][]).map(([key, label, tone]) => (
             <label key={key} className="flex items-center justify-between rounded-lg border border-yellow-500/20 bg-gray-800/50 px-4 py-3 cursor-pointer hover:border-yellow-400 hover:bg-gray-800 transition">
-              <span className="text-sm text-gray-300">{label}</span>
+              <span className="text-sm text-gray-300 flex items-center gap-2">
+                <span className={`h-2 w-2 rounded-full ${tone === "red" ? "bg-red-400" : "bg-emerald-400"}`} />
+                {label}
+              </span>
               <input type="checkbox" className="w-4 h-4 accent-yellow-500"
                 checked={!!(current?.[key])}
                 onChange={(e) => set(key, e.target.checked)} />
             </label>
           ))}
         </div>
+        <p className="text-xs text-gray-500 mt-3">
+          Maintenance mode blocks all non-admin logins. Disabling registration/deposits/withdrawals rejects those actions platform-wide.
+        </p>
+      </Section>
+
+      {/* Save button */}
+      <button
+        onClick={save}
+        disabled={busy || !current}
+        className="rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-2.5 font-bold text-gray-900 shadow-sm disabled:opacity-40 hover:brightness-110 transition"
+      >
+        {busy ? "Saving…" : "Save Settings"}
+      </button>
+
+      {/* Change admin password */}
+      <Section title="Change Admin Password" Icon={KeyRound}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Field label="Current Password">
+            <input type="password" autoComplete="current-password" className={inputCls} value={pw.current}
+              onChange={(e) => setPw({ ...pw, current: e.target.value })} />
+          </Field>
+          <Field label="New Password (8+ chars)">
+            <input type="password" autoComplete="new-password" className={inputCls} value={pw.next}
+              onChange={(e) => setPw({ ...pw, next: e.target.value })} />
+          </Field>
+          <Field label="Confirm New Password">
+            <input type="password" autoComplete="new-password" className={inputCls} value={pw.confirm}
+              onChange={(e) => setPw({ ...pw, confirm: e.target.value })} />
+          </Field>
+        </div>
+        {pwMsg && (
+          <div className={`mt-3 text-sm px-3 py-2 rounded-lg border font-medium ${
+            pwMsg.ok ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-300" : "bg-red-500/15 border-red-500/30 text-red-300"
+          }`}>{pwMsg.text}</div>
+        )}
+        <button
+          onClick={changePassword}
+          disabled={pwBusy || !pw.current || !pw.next}
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-5 py-2 font-bold text-gray-900 shadow-sm disabled:opacity-40 hover:brightness-110 transition"
+        >
+          <KeyRound size={15} /> {pwBusy ? "Updating…" : "Change Password"}
+        </button>
+        <p className="text-xs text-gray-500 mt-3">Changing your password signs out every other device. This session stays active.</p>
       </Section>
 
       {/* Navigation Bar */}
@@ -148,15 +235,6 @@ export default function SettingsPage() {
         </section>
       </Link>
 
-      {/* Save button */}
-      <button
-        onClick={save}
-        disabled={busy || !form}
-        className="rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-6 py-2.5 font-bold text-gray-100 shadow-sm disabled:opacity-40 hover:brightness-110 transition"
-      >
-        {busy ? "Saving…" : "Save Settings"}
-      </button>
-
       {/* Cricket Sync */}
       <Section title="Data Sync" Icon={Database}>
         <p className="text-sm text-gray-500 mb-3">
@@ -165,7 +243,7 @@ export default function SettingsPage() {
         <button
           onClick={syncCricket}
           disabled={syncBusy}
-          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-2 font-bold text-gray-100 shadow-sm disabled:opacity-50 hover:brightness-110 transition"
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-500 px-4 py-2 font-bold text-gray-900 shadow-sm disabled:opacity-50 hover:brightness-110 transition"
         >
           <RefreshCw size={16} className={syncBusy ? "animate-spin" : ""} />
           {syncBusy ? "Syncing…" : "Sync Cricket Series"}

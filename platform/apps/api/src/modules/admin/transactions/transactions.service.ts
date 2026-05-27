@@ -2,20 +2,32 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { LedgerKind, Prisma, TransactionKind, TransactionMethod, TransactionStatus } from "@prisma/client";
 import { PrismaService } from "../../../common/prisma/prisma.service";
 import { WalletService } from "../../wallet/wallet.service";
+import { AdminService } from "../admin.service";
 
 @Injectable()
 export class TransactionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly wallet: WalletService,
+    private readonly admin: AdminService,
   ) {}
 
   // -- user-side: submit a deposit/withdrawal request (pending until admin reviews) --
   async request(userId: string, input: { kind: TransactionKind; method: TransactionMethod; amount: number; reference?: string; payload?: Prisma.InputJsonValue }) {
     if (input.amount <= 0) throw new BadRequestException("Amount must be positive");
 
-    // Admin freeze: blocked accounts cannot request withdrawals.
+    // Platform-wide toggles + limits (admin Settings page).
+    const s = (await this.admin.getPlatformSettings()) as Record<string, any>;
+    if (input.kind === TransactionKind.DEPOSIT && s.depositEnabled === false) {
+      throw new BadRequestException("Deposits are temporarily disabled.");
+    }
     if (input.kind === TransactionKind.WITHDRAWAL) {
+      if (s.withdrawalEnabled === false) throw new BadRequestException("Withdrawals are temporarily disabled.");
+      const min = Number(s.minWithdrawal ?? 0);
+      const max = Number(s.maxWithdrawal ?? Infinity);
+      if (min > 0 && input.amount < min) throw new BadRequestException(`Minimum withdrawal is ₹${min.toLocaleString("en-IN")}`);
+      if (max > 0 && input.amount > max) throw new BadRequestException(`Maximum withdrawal is ₹${max.toLocaleString("en-IN")}`);
+      // Admin freeze: blocked accounts cannot request withdrawals.
       const u = await this.prisma.user.findUnique({ where: { id: userId }, select: { withdrawalsFrozen: true } });
       if (u?.withdrawalsFrozen) throw new BadRequestException("Withdrawals are frozen on this account. Please contact support.");
     }

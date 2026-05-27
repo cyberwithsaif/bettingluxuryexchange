@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from "@nestjs/common";
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, ForbiddenException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcryptjs";
 import * as crypto from "crypto";
@@ -14,7 +14,21 @@ export class AuthService {
     private readonly jwt: JwtService,
   ) {}
 
+  /** Platform on/off flags from admin Settings (SystemConfig key "platform"). */
+  private async platformFlags(): Promise<{ maintenanceMode: boolean; registrationEnabled: boolean }> {
+    const row = await this.prisma.systemConfig.findUnique({ where: { key: "platform" } });
+    const v = (row?.value ?? {}) as Record<string, unknown>;
+    return {
+      maintenanceMode: v.maintenanceMode === true,
+      registrationEnabled: v.registrationEnabled !== false, // default ON
+    };
+  }
+
   async register(dto: RegisterDto, ip?: string) {
+    const flags = await this.platformFlags();
+    if (flags.maintenanceMode) throw new ForbiddenException("Site is under maintenance. Please try again later.");
+    if (!flags.registrationEnabled) throw new ForbiddenException("New registrations are currently disabled.");
+
     const exists = await this.prisma.user.findUnique({ where: { username: dto.username } });
     if (exists) throw new ConflictException("Username already taken");
 
@@ -41,6 +55,12 @@ export class AuthService {
 
     const ok = await bcrypt.compare(dto.password, user.passwordHash);
     if (!ok) throw new UnauthorizedException("Invalid credentials");
+
+    // Maintenance mode: only staff (ADMIN/SUPER_ADMIN) may sign in.
+    const flags = await this.platformFlags();
+    if (flags.maintenanceMode && user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+      throw new UnauthorizedException("Site is under maintenance. Please try again later.");
+    }
 
     if (user.twoFactorEnabled) {
       if (!dto.otp) throw new UnauthorizedException("OTP required");

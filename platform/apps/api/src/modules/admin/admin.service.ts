@@ -444,6 +444,7 @@ export class AdminService {
       defaultPartnershipBps: 0, currency: "INR",
       maintenanceMode: false, registrationEnabled: true,
       depositEnabled: true, withdrawalEnabled: true,
+      minWithdrawal: 100, maxWithdrawal: 500000,
     };
     const merged = row ? { ...defaults, ...(row.value as object) } : defaults;
     // Best-effort cache write; ignore errors so Redis outages don't break the API.
