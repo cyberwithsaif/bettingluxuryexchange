@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, Fragment } from "react";
+import { useState, useEffect, useRef, Fragment, type CSSProperties } from "react";
 import { motion } from "framer-motion";
 
 const RED = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
@@ -383,6 +383,97 @@ export function BettingTable({ chip, bets, disabled, onPlaceBet }: Props) {
             19-36 <Chip amount={totalForCell(bets, "high")} small />
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Vertical PORTRAIT betting table for mobile — 0 on top, a 3-column number grid
+ * (1,2,3 / 4,5,6 / … / 34,35,36) reading top-to-bottom, the column (2:1) bets
+ * beneath, dozens as a vertical band, and the even-money outside bets on the far
+ * left. Straight numbers + dozens/columns/outside bets (split/street/corner are
+ * desktop-only). Mirrors the classic mobile roulette layout.
+ */
+export function MobileBettingTable({ chip, bets, disabled, onPlaceBet }: Props) {
+  const place = (betType: BetType, betValue: string | null) => {
+    if (disabled) return;
+    onPlaceBet({ betType, betValue, amount: chip });
+  };
+  const amt = (t: BetType, v?: string | null) => totalForCell(bets, t, v ?? null);
+
+  const ChipBadge = ({ value }: { value: number }) => {
+    if (!value) return null;
+    const s = chipStyle(value);
+    return (
+      <span className="absolute z-20 flex items-center justify-center font-black pointer-events-none"
+        style={{ top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 18, height: 18, borderRadius: "50%", background: s.bg, boxShadow: `0 0 6px ${s.glow}`, border: "1.5px solid rgba(255,255,255,0.4)", fontSize: 7, color: s.text }}>
+        {fmt(value)}
+      </span>
+    );
+  };
+
+  const ncolor = (n: number) => (n === 0 ? "#0d9b3f" : RED.has(n) ? "#c8102e" : "#1a1a1a");
+  const cellBase = "relative flex items-center justify-center select-none transition active:brightness-150 font-bold text-white";
+  const bd = "1px solid rgba(255,255,255,0.14)";
+  const vtext: CSSProperties = { writingMode: "vertical-rl", transform: "rotate(180deg)", letterSpacing: "0.04em", fontSize: 10 };
+
+  return (
+    <div className={`rounded-lg p-1.5 ${disabled ? "opacity-60 pointer-events-none" : ""}`}
+      style={{ background: "linear-gradient(135deg,#6a0e1f 0%,#8c1a2e 50%,#5a0a1a 100%)", boxShadow: "inset 0 0 50px rgba(0,0,0,0.5)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "30px 24px 1fr 1fr 1fr", gridTemplateRows: "34px repeat(12, 26px) 30px", gap: 2 }}>
+
+        {/* Zero */}
+        <button onClick={() => place("number", "0")} disabled={disabled}
+          className={`${cellBase} text-sm rounded`} style={{ gridColumn: "3 / 6", gridRow: "1", background: "#0d9b3f", border: bd }}>
+          0<ChipBadge value={amt("number", "0")} />
+        </button>
+
+        {/* Outside even-money band (far left) */}
+        {([
+          ["low", "1-18", null], ["even", "EVEN", null], ["red", "♦", "#c8102e"],
+          ["black", "♦", "#1a1a1a"], ["odd", "ODD", null], ["high", "19-36", null],
+        ] as [BetType, string, string | null][]).map(([type, label, bg], i) => (
+          <button key={type} onClick={() => place(type, null)} disabled={disabled}
+            className={`${cellBase}`}
+            style={{ gridColumn: 1, gridRow: `${2 + i * 2} / span 2`, background: bg ?? "rgba(0,0,0,0.32)", border: bd, borderRadius: 3 }}>
+            {label === "♦" ? <span style={{ fontSize: 18, lineHeight: 1 }}>♦</span> : <span style={vtext}>{label}</span>}
+            <ChipBadge value={amt(type)} />
+          </button>
+        ))}
+
+        {/* Dozens band */}
+        {(["dozen1", "dozen2", "dozen3"] as const).map((type, i) => (
+          <button key={type} onClick={() => place(type, null)} disabled={disabled}
+            className={`${cellBase} text-white/80`}
+            style={{ gridColumn: 2, gridRow: `${2 + i * 4} / span 4`, background: "rgba(0,0,0,0.32)", border: bd, borderRadius: 3 }}>
+            <span style={vtext}>{i === 0 ? "1st 12" : i === 1 ? "2nd 12" : "3rd 12"}</span>
+            <ChipBadge value={amt(type)} />
+          </button>
+        ))}
+
+        {/* Number grid (3 columns, 12 rows) */}
+        {Array.from({ length: 12 }).map((_, r) =>
+          [0, 1, 2].map(c => {
+            const n = r * 3 + c + 1;
+            return (
+              <button key={n} onClick={() => place("number", String(n))} disabled={disabled}
+                className={`${cellBase} text-xs rounded-sm`}
+                style={{ gridColumn: c + 3, gridRow: r + 2, background: ncolor(n), border: bd }}>
+                {n}<ChipBadge value={amt("number", String(n))} />
+              </button>
+            );
+          })
+        )}
+
+        {/* Column (2:1) bets */}
+        {(["col1", "col2", "col3"] as const).map((type, c) => (
+          <button key={type} onClick={() => place(type, null)} disabled={disabled}
+            className={`${cellBase} text-[11px] text-white/80`}
+            style={{ gridColumn: c + 3, gridRow: 14, background: "rgba(0,0,0,0.32)", border: bd, borderRadius: 3 }}>
+            {c === 0 ? "1st" : c === 1 ? "2nd" : "3rd"}<ChipBadge value={amt(type)} />
+          </button>
+        ))}
       </div>
     </div>
   );

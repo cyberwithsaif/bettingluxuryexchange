@@ -8,7 +8,7 @@ import { getSocket } from "@/lib/socket";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth";
 import { RouletteWheel } from "@/components/roulette/RouletteWheel";
-import { BettingTable, type BetType } from "@/components/roulette/BettingTable";
+import { BettingTable, MobileBettingTable, type BetType } from "@/components/roulette/BettingTable";
 import { INDIAN_NAMES } from "@/lib/roulette-names";
 import useSWR from "swr";
 
@@ -112,13 +112,9 @@ export default function RoulettePage() {
     }, delay);
   }, [makeFakeWin]);
 
-  // Pre-fetch names on mount + lock orientation to landscape on mobile
+  // Pre-fetch names on mount (no orientation lock — portrait is supported)
   useEffect(() => {
     fetchNames();
-    try {
-      const scr = window.screen as any;
-      if (scr?.orientation?.lock) scr.orientation.lock("landscape").catch(() => {});
-    } catch {}
     // Seed initial fake wins after 1.2 s (names likely loaded by then)
     const seed = setTimeout(() => {
       setWinFeed(Array.from({ length: 15 }, () => makeFakeWin()));
@@ -127,7 +123,6 @@ export default function RoulettePage() {
     return () => {
       clearTimeout(seed);
       if (fakeWinTimerRef.current) clearTimeout(fakeWinTimerRef.current);
-      try { (window.screen as any)?.orientation?.unlock?.(); } catch {}
     };
   }, [fetchNames, makeFakeWin, scheduleFakeWin]);
 
@@ -315,10 +310,6 @@ export default function RoulettePage() {
     @keyframes chipPulse { 0%{box-shadow:0 0 10px currentColor}50%{box-shadow:0 0 22px currentColor}100%{box-shadow:0 0 10px currentColor} }
     @keyframes tickerScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 
-    /* ── Portrait overlay (mobile only) ── */
-    .rl-rotate-prompt { display:none; position:fixed; inset:0; z-index:9999; background:#0F1923; flex-direction:column; align-items:center; justify-content:center; gap:16px; }
-    @media (max-width:900px) and (orientation:portrait) { .rl-rotate-prompt { display:flex; } }
-
     /* ── Landscape mobile compact layout ── */
     @media (orientation:landscape) and (max-height:520px) {
       .rl-header { padding:3px 10px!important; }
@@ -346,14 +337,6 @@ export default function RoulettePage() {
   return (
     <div className="h-[100dvh] bg-[#0F1923] text-white flex flex-col font-sans w-full overflow-hidden">
       <style>{chipStyle}</style>
-
-      {/* ── Portrait rotate prompt (mobile only, portrait orientation) ── */}
-      <div className="rl-rotate-prompt">
-        <div style={{ fontSize: 64, lineHeight: 1, animation: "spin 2s linear infinite", display: "inline-block" }}>⟳</div>
-        <p style={{ color: "#fff", fontSize: 20, fontWeight: 700, margin: 0 }}>Rotate your device</p>
-        <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, margin: 0 }}>Roulette is best in landscape</p>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      </div>
 
       {/* ── Header ── */}
       <header className="rl-header px-3 py-2 flex items-center justify-between border-b border-gray-800 bg-[#0f212e] shrink-0">
@@ -500,9 +483,14 @@ export default function RoulettePage() {
             {/* Controls column */}
             <div className="rl-controls space-y-2">
 
-              {/* Betting table */}
-              <div className="overflow-x-auto mt-0 md:mt-4">
-                <BettingTable chip={chip} bets={bets} disabled={status !== "BETTING"} onPlaceBet={placeBet} />
+              {/* Betting table — vertical portrait on mobile, full table on desktop */}
+              <div className="mt-0 md:mt-4">
+                <div className="md:hidden">
+                  <MobileBettingTable chip={chip} bets={bets} disabled={status !== "BETTING"} onPlaceBet={placeBet} />
+                </div>
+                <div className="hidden md:block overflow-x-auto">
+                  <BettingTable chip={chip} bets={bets} disabled={status !== "BETTING"} onPlaceBet={placeBet} />
+                </div>
               </div>
 
               {/* Last results */}
