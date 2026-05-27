@@ -29,6 +29,16 @@ export default function MarketsAdmin() {
       setSyncMsg(e?.response?.data?.message || "Betfair sync failed — add app_key + session_token in API Keys.");
     } finally { setSyncing(false); }
   }
+  async function syncEntity() {
+    setSyncing(true); setSyncMsg(null);
+    try {
+      const { data } = await api.post("/sports/entitysport/sync");
+      setSyncMsg(`EntitySport: ${data.synced} matches (live ${data.live}, upcoming ${data.upcoming}, completed ${data.completed}).${data.note ? " " + data.note : ""}`);
+      mutate(`/markets/matches?sport=${sport}`);
+    } catch (e: any) {
+      setSyncMsg(e?.response?.data?.message || "EntitySport sync failed — add token in API Keys.");
+    } finally { setSyncing(false); }
+  }
   async function deleteMarket(id: string) {
     if (!confirm("Delete this market? Its runners and ALL bets/exposure on it are permanently removed.")) return;
     try { await api.delete(`/admin/markets/${id}`); mutate(`/markets/matches?sport=${sport}`); }
@@ -76,6 +86,14 @@ export default function MarketsAdmin() {
             title="Import authentic back/lay cricket odds from Betfair Exchange"
           >
             Sync Betfair
+          </button>
+          <button
+            onClick={syncEntity}
+            disabled={syncing}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-fuchsia-500 to-purple-600 shadow-[0_2px_12px_rgba(192,38,211,0.4)] hover:brightness-110 disabled:opacity-50 transition"
+            title="Import cricket matches from EntitySport (India). Demo = completed only; paid = live + odds + session."
+          >
+            Sync EntitySport
           </button>
           <select
             value={sport}

@@ -5,6 +5,7 @@ import { Roles } from "../../common/decorators/roles.decorator";
 import { UserRole } from "@prisma/client";
 import { CricketIngestService } from "./cricket-ingest.service";
 import { BetfairIngestService } from "./betfair-ingest.service";
+import { EntitySportIngestService } from "./entitysport-ingest.service";
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
@@ -13,6 +14,7 @@ export class CricketIngestController {
   constructor(
     private readonly ingest: CricketIngestService,
     private readonly betfair: BetfairIngestService,
+    private readonly entity: EntitySportIngestService,
   ) {}
 
   // Primary: real matches WITH real odds from The Odds API (free tier).
@@ -22,6 +24,10 @@ export class CricketIngestController {
   // Betfair Exchange — authentic back/lay cricket match odds.
   @Post("betfair/sync")
   syncBetfair() { return this.betfair.syncCricketMatchOdds(); }
+
+  // EntitySport (India-accessible) — matches + odds + session (paid plan).
+  @Post("entitysport/sync")
+  syncEntitySport() { return this.entity.syncMatches(); }
 
   // Secondary: CricAPI (scores only, no odds) — kept for those with a cricapi key.
   @Post("cricket/sync/cricapi")

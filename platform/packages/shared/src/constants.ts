@@ -20,6 +20,7 @@ export const API_KEY_PROVIDERS = [
   { key: "the_odds_api",       label: "The Odds API",         category: "sports" as const, fields: ["api_key"] },
   { key: "cricket_api",        label: "Cricket API (cricapi)", category: "sports" as const, fields: ["api_key"] },
   { key: "betsapi",            label: "BetsAPI (b365api)",    category: "sports" as const, fields: ["api_token"] },
+  { key: "entitysport",        label: "EntitySport Cricket",  category: "sports" as const, fields: ["api_token"] },
   // Casino live
   { key: "evolution",          label: "Evolution Gaming",     category: "casino" as const, fields: ["agent_id", "secret", "callback_token"] },
   { key: "pragmatic_play",     label: "Pragmatic Play",       category: "casino" as const, fields: ["api_url", "secret", "operator_id"] },
