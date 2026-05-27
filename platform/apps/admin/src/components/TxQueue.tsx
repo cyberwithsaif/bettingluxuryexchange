@@ -36,16 +36,16 @@ export function TxQueue({ kind, title }: { kind: "DEPOSIT" | "WITHDRAWAL"; title
                 <Td className="text-xs text-gray-500">{t.reference ?? "–"}</Td>
                 <Td>
                   <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${
-                    t.status === "PENDING"   ? "bg-gray-800 text-yellow-300 border-yellow-200" :
-                    t.status === "COMPLETED" ? "bg-emerald-50 text-emerald-300 border-emerald-200" :
-                                               "bg-red-900/20 text-red-400 border-red-200"
+                    t.status === "PENDING"   ? "bg-yellow-500/15 text-yellow-300 border-yellow-500/30" :
+                    t.status === "COMPLETED" ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" :
+                                               "bg-red-500/15 text-red-300 border-red-500/30"
                   }`}>{t.status}</span>
                 </Td>
                 <Td className="flex gap-1">
                   {t.status === "PENDING" && (
                     <>
-                      <button onClick={() => approve(t.id)} className="text-xs px-2 py-1 rounded-lg border border-emerald-200 text-emerald-300 bg-emerald-50 hover:bg-emerald-100 font-medium transition">Approve</button>
-                      <button onClick={() => reject(t.id)} className="text-xs px-2 py-1 rounded-lg border border-red-200 text-red-400 bg-red-900/20 hover:bg-red-100 font-medium transition">Reject</button>
+                      <button onClick={() => approve(t.id)} className="text-xs px-2 py-1 rounded-lg border border-emerald-500/30 text-emerald-300 bg-emerald-500/15 hover:bg-emerald-500/25 font-medium transition">Approve</button>
+                      <button onClick={() => reject(t.id)} className="text-xs px-2 py-1 rounded-lg border border-red-500/30 text-red-400 bg-red-900/20 hover:bg-red-500/20 font-medium transition">Reject</button>
                     </>
                   )}
                 </Td>

@@ -20,12 +20,12 @@ interface Bet {
 }
 
 const STATUS_STYLE: Record<BetStatus, string> = {
-  OPEN:         "bg-blue-900/20    text-blue-300   border-blue-200",
-  MATCHED:      "bg-blue-900/20    text-blue-300   border-blue-200",
-  SETTLED_WON:  "bg-emerald-50 text-emerald-300 border-emerald-200",
-  SETTLED_LOST: "bg-red-900/20     text-red-400    border-red-200",
-  VOID:         "bg-gray-800  text-yellow-300 border-yellow-200",
-  CANCELLED:    "bg-gray-700   text-gray-500   border-gray-700",
+  OPEN:         "bg-blue-500/15    text-blue-300    border-blue-500/30",
+  MATCHED:      "bg-blue-500/15    text-blue-300    border-blue-500/30",
+  SETTLED_WON:  "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+  SETTLED_LOST: "bg-red-500/15     text-red-300     border-red-500/30",
+  VOID:         "bg-yellow-500/15  text-yellow-300  border-yellow-500/30",
+  CANCELLED:    "bg-gray-700/40    text-gray-400    border-gray-600/50",
 };
 
 function buildKey(q: string, status: string, skip: number) {
@@ -148,11 +148,11 @@ export default function AdminBetsPage() {
                   {bet.status === "OPEN" && (
                     <div className="flex gap-1">
                       <button onClick={() => handleAction(bet.id, "void")}
-                        className="text-xs px-2 py-1 rounded-lg border border-yellow-200 text-yellow-300 bg-gray-800 hover:bg-yellow-100 font-medium transition">
+                        className="text-xs px-2 py-1 rounded-lg border border-yellow-500/30 text-yellow-300 bg-gray-800 hover:bg-yellow-500/20 font-medium transition">
                         Void
                       </button>
                       <button onClick={() => handleAction(bet.id, "cancel")}
-                        className="text-xs px-2 py-1 rounded-lg border border-red-200 text-red-400 bg-red-900/20 hover:bg-red-100 font-medium transition">
+                        className="text-xs px-2 py-1 rounded-lg border border-red-500/30 text-red-400 bg-red-900/20 hover:bg-red-500/20 font-medium transition">
                         Cancel
                       </button>
                     </div>

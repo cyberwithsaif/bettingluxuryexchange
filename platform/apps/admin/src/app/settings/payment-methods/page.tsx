@@ -67,7 +67,7 @@ export default function PaymentMethodsPage() {
           <button
             onClick={() => setUpi(p => ({ ...p, enabled: !p.enabled }))}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-semibold transition ${
-              upi.enabled ? "border-emerald-200 bg-emerald-50 text-emerald-300" : "border-gray-700 text-gray-500 hover:border-yellow-400"
+              upi.enabled ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300" : "border-gray-700 text-gray-500 hover:border-yellow-400"
             }`}
           >
             {upi.enabled ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
@@ -112,7 +112,7 @@ export default function PaymentMethodsPage() {
           <button
             onClick={() => setBank(p => ({ ...p, enabled: !p.enabled }))}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-semibold transition ${
-              bank.enabled ? "border-emerald-200 bg-emerald-50 text-emerald-300" : "border-gray-700 text-gray-500 hover:border-yellow-400"
+              bank.enabled ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300" : "border-gray-700 text-gray-500 hover:border-yellow-400"
             }`}
           >
             {bank.enabled ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
@@ -138,7 +138,7 @@ export default function PaymentMethodsPage() {
           <button
             onClick={() => setCrypto(p => ({ ...p, enabled: !p.enabled }))}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-semibold transition ${
-              crypto.enabled ? "border-emerald-200 bg-emerald-50 text-emerald-300" : "border-gray-700 text-gray-500 hover:border-yellow-400"
+              crypto.enabled ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300" : "border-gray-700 text-gray-500 hover:border-yellow-400"
             }`}
           >
             {crypto.enabled ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}

@@ -55,15 +55,15 @@ export default function MarketsAdmin() {
                 <span className="font-semibold text-gray-200">
                   {mk.name}
                   <span className={`text-xs ml-2 px-1.5 py-0.5 rounded-full border font-semibold ${
-                    mk.status === "OPEN" ? "bg-emerald-50 text-emerald-300 border-emerald-200" : "bg-gray-800 text-yellow-300 border-yellow-200"
+                    mk.status === "OPEN" ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" : "bg-yellow-500/15 text-yellow-300 border-yellow-500/30"
                   }`}>{mk.status}</span>
                 </span>
                 <div className="flex gap-1">
                   {mk.status === "OPEN"
-                    ? <button onClick={() => setStatus(mk.id, "SUSPENDED")} className="text-xs px-2 py-1 rounded-lg border border-yellow-200 text-yellow-300 bg-gray-800 hover:bg-yellow-100 font-medium transition">Suspend</button>
-                    : <button onClick={() => setStatus(mk.id, "OPEN")} className="text-xs px-2 py-1 rounded-lg border border-emerald-200 text-emerald-300 bg-emerald-50 hover:bg-emerald-100 font-medium transition">Resume</button>
+                    ? <button onClick={() => setStatus(mk.id, "SUSPENDED")} className="text-xs px-2 py-1 rounded-lg border border-yellow-500/30 text-yellow-300 bg-gray-800 hover:bg-yellow-500/20 font-medium transition">Suspend</button>
+                    : <button onClick={() => setStatus(mk.id, "OPEN")} className="text-xs px-2 py-1 rounded-lg border border-emerald-500/30 text-emerald-300 bg-emerald-500/15 hover:bg-emerald-500/25 font-medium transition">Resume</button>
                   }
-                  <button onClick={() => settle(mk.id, undefined, true)} className="text-xs px-2 py-1 rounded-lg border border-red-200 text-red-400 bg-red-900/20 hover:bg-red-100 font-medium transition">Void</button>
+                  <button onClick={() => settle(mk.id, undefined, true)} className="text-xs px-2 py-1 rounded-lg border border-red-500/30 text-red-400 bg-red-900/20 hover:bg-red-500/20 font-medium transition">Void</button>
                 </div>
               </div>
 

@@ -16,11 +16,11 @@ interface CasinoBet {
 }
 
 const GAME_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
-  mines:    { label: "Mines",    emoji: "💣", color: "bg-red-900/20    text-red-400    border-red-200" },
-  plinko:   { label: "Plinko",   emoji: "🎯", color: "bg-purple-50 text-purple-700 border-purple-200" },
-  pump:     { label: "Pump",     emoji: "🎈", color: "bg-pink-50   text-pink-700   border-pink-200" },
-  dice:     { label: "Dice",     emoji: "🎲", color: "bg-blue-900/20   text-blue-300   border-blue-200" },
-  roulette: { label: "Roulette", emoji: "🎡", color: "bg-gray-800  text-amber-700  border-yellow-800" },
+  mines:    { label: "Mines",    emoji: "💣", color: "bg-red-500/15    text-red-300    border-red-500/30" },
+  plinko:   { label: "Plinko",   emoji: "🎯", color: "bg-purple-500/15 text-purple-300 border-purple-500/30" },
+  pump:     { label: "Pump",     emoji: "🎈", color: "bg-pink-500/15   text-pink-300   border-pink-500/30" },
+  dice:     { label: "Dice",     emoji: "🎲", color: "bg-blue-500/15   text-blue-300   border-blue-500/30" },
+  roulette: { label: "Roulette", emoji: "🎡", color: "bg-amber-500/15  text-amber-300  border-amber-500/30" },
 };
 
 function buildKey(q: string, game: string, skip: number) {
@@ -115,8 +115,8 @@ export default function AdminCasinoBetsPage() {
                     <span className={cn(
                       "px-2 py-0.5 rounded-full text-[10px] font-bold border",
                       bet.status === "WON"
-                        ? "bg-emerald-50 text-emerald-300 border-emerald-200"
-                        : "bg-red-900/20 text-red-400 border-red-200",
+                        ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                        : "bg-red-500/15 text-red-300 border-red-500/30",
                     )}>
                       {bet.status}
                     </span>
