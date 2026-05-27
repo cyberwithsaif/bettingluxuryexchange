@@ -17,7 +17,7 @@ const isAuthError = (e: any) => {
  * reconnect with the current token — refreshing it first if the store's token is
  * the one being rejected.
  */
-async function recoverAuth() {
+export async function reauthSocket() {
   if (reauthing || !socket) return;
   reauthing = true;
   try {
@@ -57,8 +57,8 @@ export function connectSocket(token?: string | null) {
     reconnectionDelay: 1000,
   });
   // Auto-recover from auth rejections instead of leaving the socket dead.
-  socket.on("exception", (e) => { if (isAuthError(e)) recoverAuth(); });
-  socket.on("connect_error", (e) => { if (isAuthError(e)) recoverAuth(); });
+  socket.on("exception", (e) => { if (isAuthError(e)) reauthSocket(); });
+  socket.on("connect_error", (e) => { if (isAuthError(e)) reauthSocket(); });
   return socket;
 }
 

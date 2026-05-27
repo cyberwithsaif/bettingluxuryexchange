@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { getSocket } from "@/lib/socket";
+import { getSocket, reauthSocket } from "@/lib/socket";
 import { useAuthStore } from "@/lib/stores/auth";
 import useSWR from "swr";
 import MinesControls from "./MinesControls";
@@ -190,8 +190,11 @@ export default function MinesLayout() {
 
     const onError = (data: any) => {
       setLoading(false);
-      if (data?.message?.toLowerCase().includes("already clicked")) return;
-      showError(data.message);
+      const msg: string = data?.message ?? "";
+      if (msg.toLowerCase().includes("already clicked")) return;
+      // Stale socket auth (e.g. after switching accounts) — reconnect silently.
+      if (/unauthor|session expired/i.test(msg)) { reauthSocket(); return; }
+      showError(msg);
     };
 
     const onException = (data: any) => {

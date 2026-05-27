@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/lib/stores/auth";
-import { getSocket } from "@/lib/socket";
+import { getSocket, reauthSocket } from "@/lib/socket";
 import { Shield } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -471,6 +471,9 @@ export default function TowersPage() {
 
     const onError = (data: { message: string }) => {
       setLoading(false);
+      // Stale socket auth (e.g. after switching accounts) — reconnect with the
+      // current token instead of toasting; the action can be retried.
+      if (/unauthor|session expired|not your/i.test(data.message ?? "")) { reauthSocket(); return; }
       showError(data.message);
     };
 
