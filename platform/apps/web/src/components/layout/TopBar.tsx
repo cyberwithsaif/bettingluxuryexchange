@@ -283,8 +283,9 @@ function ProfileMenu({ username, onLogout, rank }: { username: string; onLogout:
         {/* Rank badge icon — slightly smaller on mobile */}
         <RankBadge rank={rank} size={26} />
 
-        {/* Username — mobile + desktop */}
-        <span className="text-[11px] sm:text-[13px] font-semibold text-white/90 truncate leading-none min-w-0" style={{ maxWidth: 50 }}>
+        {/* Username — mobile + desktop. leading-tight (not leading-none) so
+            descenders like g/y/p aren't clipped by truncate's overflow-hidden. */}
+        <span className="text-[11px] sm:text-[13px] font-semibold text-white/90 truncate leading-tight min-w-0" style={{ maxWidth: 90 }}>
           {username}
         </span>
 
