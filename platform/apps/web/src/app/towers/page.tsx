@@ -378,6 +378,14 @@ export default function TowersPage() {
     restoreActive();
   }, [user, restoreActive]);
 
+  // Safety: if a socket response is lost (e.g. during a reconnect), never leave
+  // the action buttons permanently disabled — clear the loading lock after 6s.
+  useEffect(() => {
+    if (!loading) return;
+    const t = setTimeout(() => setLoading(false), 6000);
+    return () => clearTimeout(t);
+  }, [loading]);
+
   useEffect(() => {
     const s = socket.current;
     if (!s) return;
@@ -524,9 +532,11 @@ export default function TowersPage() {
 
   const handleCashout = () => {
     if (!session || phase !== "playing" || loading) return;
-    if ((session.pickedCols?.length ?? 0) === 0) { showError("Clear at least one level first"); return; }
+    if ((session.currentLevel ?? 0) === 0) { showError("Clear at least one level first"); return; }
     setLoading(true);
-    socket.current?.emit("towers:cashout", { sessionId: session.id });
+    const s = socket.current;
+    if (s && s.disconnected) s.connect();   // ensure delivery if the socket dropped
+    s?.emit("towers:cashout", { sessionId: session.id });
   };
 
   const handleReset = () => {
