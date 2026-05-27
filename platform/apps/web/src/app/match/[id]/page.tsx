@@ -184,7 +184,7 @@ function BackLayMarket({ market, matchName }: { market: Market; matchName: strin
 
 export default function MatchPage() {
   const params = useParams<{ id: string }>();
-  const { data: match, error } = useSWR<Match>(params?.id ? `/markets/match/${params.id}` : null);
+  const { data: match, error } = useSWR<Match>(params?.id ? `/markets/match/${params.id}` : null, { refreshInterval: 6000 });
   const user = useAuthStore((s) => s.user);
 
   const allTypes = match

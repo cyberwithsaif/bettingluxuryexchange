@@ -28,7 +28,7 @@ interface MatchData {
 }
 
 export function MatchList({ sport }: { sport: string }) {
-  const { data, error, isLoading } = useSWR<MatchData[]>(`/markets/matches?sport=${sport}`);
+  const { data, error, isLoading } = useSWR<MatchData[]>(`/markets/matches?sport=${sport}`, { refreshInterval: 8000 });
 
   if (isLoading) return <SkeletonRows />;
   if (error) return <p className="glass rounded-xl p-6 text-bad">Failed to load matches.</p>;

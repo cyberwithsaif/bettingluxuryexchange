@@ -1,8 +1,7 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { OddsBox } from "./OddsBox";
-import { useBetslip } from "@/lib/stores/betslip";
-import type { BetSide } from "@exch/shared";
-import { Clock, Tv } from "lucide-react";
+import { Clock, Tv, ChevronRight } from "lucide-react";
 
 interface Props {
   match: {
@@ -29,20 +28,21 @@ interface Props {
 }
 
 export function MatchCard({ match }: Props) {
-  const add = useBetslip((s) => s.add);
+  const router = useRouter();
   const matchOdds = match.markets.find((m) => m.name.toLowerCase().includes("match"))
                  ?? match.markets[0];
-
-  const select = (side: BetSide, runnerId: string, runnerName: string, odds: number, marketId: string, marketName: string) => {
-    add({
-      marketId, marketName,
-      matchName: match.name, runnerId, runnerName, side, odds, stake: 0,
-    });
-  };
+  const open = () => router.push(`/match/${match.id}`);
+  const marketCount = match.markets.length;
 
   const date = new Date(match.startTime);
   return (
-    <article className="glass rounded-xl overflow-hidden">
+    <article
+      onClick={open}
+      role="link"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter") open(); }}
+      className="glass rounded-xl overflow-hidden cursor-pointer transition hover:ring-1 hover:ring-accent/40"
+    >
       <header className="flex items-center justify-between px-4 py-2.5 border-b border-line/70 bg-panel/40">
         <div className="flex items-center gap-3 min-w-0">
           {match.inplay && (
@@ -52,12 +52,14 @@ export function MatchCard({ match }: Props) {
             <h3 className="font-semibold truncate">{match.name}</h3>
             <p className="text-xs text-white/50 truncate">
               {match.competition?.name ?? match.sport.name}
+              {marketCount > 1 && <span className="text-accentSoft"> · {marketCount} markets</span>}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3 text-xs text-white/60 shrink-0">
           <span className="inline-flex items-center gap-1"><Clock size={12}/>{date.toLocaleString("en-IN", { hour12: false })}</span>
           <span className="inline-flex items-center gap-1 text-accentSoft"><Tv size={12}/>Stream</span>
+          <ChevronRight size={16} className="text-white/40" />
         </div>
       </header>
 
@@ -69,24 +71,13 @@ export function MatchCard({ match }: Props) {
             <span className="text-center text-lay col-span-2">Lay</span>
           </div>
           {matchOdds.runners.map((r) => (
-            <div key={r.id} className="grid grid-cols-[1fr_repeat(2,72px)_repeat(2,72px)] items-center gap-1 px-4 py-2 border-b border-line/30 last:border-0 hover:bg-panel2/30">
+            <div key={r.id} className="grid grid-cols-[1fr_repeat(2,72px)_repeat(2,72px)] items-center gap-1 px-4 py-2 border-b border-line/30 last:border-0">
               <span className="font-semibold truncate pr-2">{r.name}</span>
-              <OddsBox
-                side="BACK" tier={1} odds={r.backPrices?.[1] ?? 0}
-                onClick={() => r.backPrices?.[1] && select("BACK", r.id, r.name, r.backPrices[1], matchOdds.id, matchOdds.name)}
-              />
-              <OddsBox
-                side="BACK" tier={0} odds={r.backPrices?.[0] ?? 0}
-                onClick={() => r.backPrices?.[0] && select("BACK", r.id, r.name, r.backPrices[0], matchOdds.id, matchOdds.name)}
-              />
-              <OddsBox
-                side="LAY" tier={0} odds={r.layPrices?.[0] ?? 0}
-                onClick={() => r.layPrices?.[0] && select("LAY", r.id, r.name, r.layPrices[0], matchOdds.id, matchOdds.name)}
-              />
-              <OddsBox
-                side="LAY" tier={1} odds={r.layPrices?.[1] ?? 0}
-                onClick={() => r.layPrices?.[1] && select("LAY", r.id, r.name, r.layPrices[1], matchOdds.id, matchOdds.name)}
-              />
+              {/* Display only — the whole card opens the full market page where bets are placed. */}
+              <OddsBox side="BACK" tier={1} odds={r.backPrices?.[1] ?? 0} />
+              <OddsBox side="BACK" tier={0} odds={r.backPrices?.[0] ?? 0} />
+              <OddsBox side="LAY"  tier={0} odds={r.layPrices?.[0] ?? 0} />
+              <OddsBox side="LAY"  tier={1} odds={r.layPrices?.[1] ?? 0} />
             </div>
           ))}
           {matchOdds.status === "SUSPENDED" && (
