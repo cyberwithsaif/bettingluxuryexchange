@@ -163,8 +163,10 @@ function GameVisual({
     return () => ro.disconnect();
   }, []);
 
-  // Scale factor: design baseline is 400px, scales down on narrow screens
-  const sf = Math.min(1, Math.max(0.52, containerW / 400));
+  // Scale factor: design baseline is 400px, scales down on narrow screens.
+  // Cap a bit lower on wide (desktop) screens so the machine isn't oversized.
+  const maxScale = containerW >= 700 ? 0.85 : 1;
+  const sf = Math.min(maxScale, Math.max(0.52, containerW / 400));
 
   // Balloon grows freely with each pump — no hard cap
   const balloonW = showDeflated ? 78  : 84 + pumpsCount * 20;
