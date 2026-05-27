@@ -583,7 +583,10 @@ export default function DicePage() {
       resetRolling();
       setAutoRunning(false);
       autoRef.current = false;
-      setBetError(e?.message ?? "Unauthorized — please log in again.");
+      const msg = e?.message ?? "";
+      // Transient socket auth hiccup — the socket layer re-authenticates itself.
+      if (/unauthor|session expired|token|jwt/i.test(msg)) return;
+      if (msg) setBetError(msg);
     };
 
     s.on("dice:betResponse", onBetResponse);

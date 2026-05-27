@@ -197,12 +197,9 @@ export default function MinesLayout() {
     const onException = (data: any) => {
       setLoading(false);
       const msg: string = data?.message || "An error occurred";
-      if (msg.toLowerCase().includes("unauthorized")) {
-        // Token expired mid-session — force re-login
-        useAuthStore.getState().clear();
-        window.location.href = "/auth/login";
-        return;
-      }
+      // Transient socket auth hiccup (stale/expired token) — the socket layer
+      // re-authenticates and reconnects on its own; don't toast or force logout.
+      if (/unauthor|session expired|token|jwt/i.test(msg)) return;
       showError(msg);
     };
 
