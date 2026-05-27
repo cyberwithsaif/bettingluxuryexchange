@@ -118,6 +118,52 @@ export class EntitySportIngestService {
     }
   }
 
+  /**
+   * Standard cricket Session + Fancy panels (run-line markets). Each runner
+   * carries a No/Yes run line in layPrices[0]/backPrices[0] — the shape the
+   * FancyTable renders. Format-aware (Test vs limited-overs). These are
+   * operator-set defaults; the live feed replaces Session lines when active.
+   */
+  private fancyTemplate(format: string): {
+    session: Array<{ name: string; sortOrder: number; backPrices: number[]; layPrices: number[] }>;
+    fancy: Array<{ name: string; sortOrder: number; backPrices: number[]; layPrices: number[] }>;
+  } {
+    const mk = (name: string, no: number, yes: number, i: number) => ({ name, sortOrder: i, backPrices: [yes], layPrices: [no] });
+    if (/test|first.?class/i.test(format)) {
+      return {
+        session: [
+          mk("1st Session Runs (Day 1)", 78, 80, 1),
+          mk("2nd Session Runs (Day 1)", 82, 84, 2),
+          mk("Day 1 Total Runs", 268, 272, 3),
+        ],
+        fancy: [
+          mk("1st Innings Total Runs", 338, 342, 1),
+          mk("Fall of 1st Wicket", 33, 35, 2),
+          mk("Highest Opening Partnership", 44, 46, 3),
+          mk("Match Total Fours", 58, 60, 4),
+        ],
+      };
+    }
+    return {
+      session: [
+        mk("2 Over Runs", 17, 18, 1),
+        mk("6 Over Runs (Powerplay)", 52, 53, 2),
+        mk("10 Over Runs", 86, 87, 3),
+        mk("15 Over Runs", 128, 129, 4),
+        mk("20 Over Runs (Innings)", 170, 171, 5),
+      ],
+      fancy: [
+        mk("Total Match Runs", 339, 341, 1),
+        mk("1st Innings Total Runs", 169, 171, 2),
+        mk("Fall of 1st Wicket", 27, 28, 3),
+        mk("Highest Innings Total", 174, 176, 4),
+        mk("Total Match Fours", 27, 28, 5),
+        mk("Total Match Sixes", 13, 14, 6),
+        mk("Top Batsman Runs", 54, 56, 7),
+      ],
+    };
+  }
+
   async syncMatches() {
     const token = await this.getToken();
     if (!token) throw new BadRequestException("No EntitySport token configured. Add it under Admin → API Keys → 'EntitySport Cricket'.");
@@ -183,14 +229,23 @@ export class EntitySportIngestService {
         ]);
       }
 
-      // Session/fancy — ONLY from the live feed; never fabricated.
-      if (odds?.sessions?.length) {
-        for (const s of odds.sessions.slice(0, 16)) {
-          if (s.back > 0) {
-            await this.ensureMarket(match.id, MarketType.SESSION, s.title, "OPEN", true, [
-              { name: "Yes", sortOrder: 1, ...this.priceTiers(s.back, s.lay || s.back) },
-            ]);
-          }
+      // Session + Fancy panels. Real feed lines override when EntitySport
+      // prices the match; otherwise a standard operator-set template the
+      // admin tunes. OPEN in-play, SUSPENDED pre-match (real-exchange style).
+      if (status !== "ENDED") {
+        if (odds?.sessions?.length) {
+          // Live feed prices the run lines — open for betting with real rates.
+          const sess = odds.sessions
+            .filter((s) => s.back > 0)
+            .slice(0, 16)
+            .map((s, i) => ({ name: s.title, sortOrder: i + 1, backPrices: [round2(s.back)], layPrices: [round2(s.lay || s.back)] }));
+          if (sess.length) await this.ensureMarket(match.id, MarketType.SESSION, "Session", "OPEN", true, sess);
+        } else {
+          // Display template — SUSPENDED (visible, not bettable) until the live
+          // feed prices the lines, so the run-line figure can't be bet as odds.
+          const { session, fancy } = this.fancyTemplate(String(m.format_str ?? ""));
+          await this.ensureMarket(match.id, MarketType.SESSION, "Session", "SUSPENDED", false, session);
+          await this.ensureMarket(match.id, MarketType.FANCY, "Fancy", "SUSPENDED", false, fancy);
         }
       }
       synced++; if (status === "LIVE") live++; else if (status === "UPCOMING") upcoming++; else completed++;
