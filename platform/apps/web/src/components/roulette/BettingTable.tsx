@@ -418,49 +418,106 @@ export function MobileBettingTable({ chip, bets, disabled, onPlaceBet }: Props) 
   const bd = "1px solid rgba(255,255,255,0.14)";
   const vtext: CSSProperties = { writingMode: "vertical-rl", transform: "rotate(180deg)", letterSpacing: "0.04em", fontSize: 10 };
 
+  // Number col index → grid column. Splits live in the 8px gap cols (4, 6).
+  const NUM_COL = [3, 5, 7] as const;
+  // Number row index r (0..11) → grid row. Vertical-split rows live at odd
+  // grid rows between number rows.
+  const numRow = (r: number) => 2 + r * 2;
+
+  const split = (a: number, b: number) => {
+    const [lo, hi] = a < b ? [a, b] : [b, a];
+    place("split", `${lo}/${hi}`);
+  };
+
   return (
     <div className={`rounded-lg p-1.5 ${disabled ? "opacity-60 pointer-events-none" : ""}`}
       style={{ background: "linear-gradient(135deg,#6a0e1f 0%,#8c1a2e 50%,#5a0a1a 100%)", boxShadow: "inset 0 0 50px rgba(0,0,0,0.5)" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "30px 24px 1fr 1fr 1fr", gridTemplateRows: "34px repeat(12, 26px) 30px", gap: 2 }}>
+      <div style={{
+        display: "grid",
+        // outside | dozen | num | h-split | num | h-split | num
+        gridTemplateColumns: "28px 22px 1fr 8px 1fr 8px 1fr",
+        // 0 row | (num 22 / v-split 5) × 12 | col-bets — compact so the whole
+        // table fits a mobile viewport without scroll during BETTING.
+        gridTemplateRows: `26px ${Array.from({ length: 12 }, () => "22px 5px").join(" ")} 26px`,
+        gap: 2,
+      }}>
 
-        {/* Zero */}
+        {/* Zero (spans all three number columns + the two h-split gaps) */}
         <button onClick={() => place("number", "0")} disabled={disabled}
-          className={`${cellBase} text-sm rounded`} style={{ gridColumn: "3 / 6", gridRow: "1", background: "#0d9b3f", border: bd }}>
+          className={`${cellBase} text-sm rounded`} style={{ gridColumn: "3 / 8", gridRow: "1", background: "#0d9b3f", border: bd }}>
           0<ChipBadge value={amt("number", "0")} />
         </button>
 
-        {/* Outside even-money band (far left) */}
+        {/* Outside even-money band (far left) — spans 4 number rows each (2 × 2 grid-rows) */}
         {([
           ["low", "1-18", null], ["even", "EVEN", null], ["red", "♦", "#c8102e"],
           ["black", "♦", "#1a1a1a"], ["odd", "ODD", null], ["high", "19-36", null],
         ] as [BetType, string, string | null][]).map(([type, label, bg], i) => (
           <button key={type} onClick={() => place(type, null)} disabled={disabled}
             className={`${cellBase}`}
-            style={{ gridColumn: 1, gridRow: `${2 + i * 2} / span 2`, background: bg ?? "rgba(0,0,0,0.32)", border: bd, borderRadius: 3 }}>
+            style={{ gridColumn: 1, gridRow: `${2 + i * 4} / span 4`, background: bg ?? "rgba(0,0,0,0.32)", border: bd, borderRadius: 3 }}>
             {label === "♦" ? <span style={{ fontSize: 18, lineHeight: 1 }}>♦</span> : <span style={vtext}>{label}</span>}
             <ChipBadge value={amt(type)} />
           </button>
         ))}
 
-        {/* Dozens band */}
+        {/* Dozens band — each spans 4 number rows = 8 grid rows */}
         {(["dozen1", "dozen2", "dozen3"] as const).map((type, i) => (
           <button key={type} onClick={() => place(type, null)} disabled={disabled}
             className={`${cellBase} text-white/80`}
-            style={{ gridColumn: 2, gridRow: `${2 + i * 4} / span 4`, background: "rgba(0,0,0,0.32)", border: bd, borderRadius: 3 }}>
+            style={{ gridColumn: 2, gridRow: `${2 + i * 8} / span 8`, background: "rgba(0,0,0,0.32)", border: bd, borderRadius: 3 }}>
             <span style={vtext}>{i === 0 ? "1st 12" : i === 1 ? "2nd 12" : "3rd 12"}</span>
             <ChipBadge value={amt(type)} />
           </button>
         ))}
 
-        {/* Number grid (3 columns, 12 rows) */}
+        {/* Number grid (3 columns × 12 rows) */}
         {Array.from({ length: 12 }).map((_, r) =>
           [0, 1, 2].map(c => {
             const n = r * 3 + c + 1;
             return (
               <button key={n} onClick={() => place("number", String(n))} disabled={disabled}
                 className={`${cellBase} text-xs rounded-sm`}
-                style={{ gridColumn: c + 3, gridRow: r + 2, background: ncolor(n), border: bd }}>
+                style={{ gridColumn: NUM_COL[c], gridRow: numRow(r), background: ncolor(n), border: bd }}>
                 {n}<ChipBadge value={amt("number", String(n))} />
+              </button>
+            );
+          })
+        )}
+
+        {/* Horizontal split zones (between adjacent cols in the same row) */}
+        {Array.from({ length: 12 }).map((_, r) => (
+          <Fragment key={`hs-${r}`}>
+            {[0, 1].map(c => {
+              const a = r * 3 + c + 1, b = a + 1;
+              const splitVal = `${a}/${b}`;
+              const v = totalForCell(bets, "split", splitVal);
+              return (
+                <button key={c} onClick={() => split(a, b)} disabled={disabled}
+                  className="relative cursor-pointer"
+                  style={{ gridColumn: 4 + c * 2, gridRow: numRow(r), background: v > 0 ? "rgba(253,224,71,0.18)" : "transparent", border: "none", padding: 0 }}
+                  title={`Split ${a}|${b}`}>
+                  <div style={{ position: "absolute", inset: 1, borderRadius: 1, background: v > 0 ? "rgba(253,224,71,0.5)" : "rgba(255,255,255,0.06)" }} />
+                  {v > 0 && <ChipBadge value={v} />}
+                </button>
+              );
+            })}
+          </Fragment>
+        ))}
+
+        {/* Vertical split zones (between adjacent rows in the same column) */}
+        {Array.from({ length: 11 }).map((_, r) =>
+          [0, 1, 2].map(c => {
+            const a = r * 3 + c + 1, b = a + 3;
+            const splitVal = `${a}/${b}`;
+            const v = totalForCell(bets, "split", splitVal);
+            return (
+              <button key={`vs-${r}-${c}`} onClick={() => split(a, b)} disabled={disabled}
+                className="relative cursor-pointer"
+                style={{ gridColumn: NUM_COL[c], gridRow: numRow(r) + 1, background: v > 0 ? "rgba(253,224,71,0.18)" : "transparent", border: "none", padding: 0 }}
+                title={`Split ${a}|${b}`}>
+                <div style={{ position: "absolute", inset: 1, borderRadius: 1, background: v > 0 ? "rgba(253,224,71,0.5)" : "rgba(255,255,255,0.06)" }} />
+                {v > 0 && <ChipBadge value={v} />}
               </button>
             );
           })
@@ -470,7 +527,7 @@ export function MobileBettingTable({ chip, bets, disabled, onPlaceBet }: Props) 
         {(["col1", "col2", "col3"] as const).map((type, c) => (
           <button key={type} onClick={() => place(type, null)} disabled={disabled}
             className={`${cellBase} text-[11px] text-white/80`}
-            style={{ gridColumn: c + 3, gridRow: 14, background: "rgba(0,0,0,0.32)", border: bd, borderRadius: 3 }}>
+            style={{ gridColumn: NUM_COL[c], gridRow: 26, background: "rgba(0,0,0,0.32)", border: bd, borderRadius: 3 }}>
             {c === 0 ? "1st" : c === 1 ? "2nd" : "3rd"}<ChipBadge value={amt(type)} />
           </button>
         ))}

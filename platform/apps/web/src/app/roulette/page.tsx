@@ -408,11 +408,22 @@ export default function RoulettePage() {
               {/* Wheel — 242px on mobile, 286px md, 360px lg */}
               <div
                 className="wheel-outer relative overflow-hidden shrink-0 rounded-full"
-                style={{ width: 242, height: 242 }}
+                style={{
+                  // Mobile only — desktop CSS (!important) overrides these.
+                  // SPINNING: zoom in. BETTING/SETTLED: compact 80% so the table fits on one screen.
+                  width: status === "SPINNING" ? 320 : 160,
+                  height: status === "SPINNING" ? 320 : 160,
+                  transition: "width .35s ease, height .35s ease",
+                }}
               >
                 <div
                   className="wheel-inner absolute"
-                  style={{ width: 440, height: 440, transform: "scale(0.55)", transformOrigin: "top left" }}
+                  style={{
+                    width: 440, height: 440,
+                    transform: `scale(${(status === "SPINNING" ? 320 : 160) / 440})`,
+                    transformOrigin: "top left",
+                    transition: "transform .35s ease",
+                  }}
                 >
                   <RouletteWheel
                     winningNumber={round?.winningNumber ?? null}
