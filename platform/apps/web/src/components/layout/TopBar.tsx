@@ -96,7 +96,7 @@ export function TopBar() {
     // it updates instantly with the new available + revalidates from the server.
     const onBalance = (d: { available?: number }) => {
       if (typeof d?.available === "number") {
-        mutate(prev => ({ ...(prev as any), available: d.available }), { revalidate: false });
+        mutate((prev: any) => ({ ...(prev ?? {}), available: d.available }), { revalidate: false });
       }
       mutate(); // confirm with server
     };
