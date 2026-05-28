@@ -69,6 +69,7 @@ export default function RoulettePage() {
   const audioCtxRef                   = useRef<AudioContext | null>(null);
   const spinAudioRef                  = useRef<HTMLAudioElement | null>(null);
   const lastBetsRef                   = useRef<LocalBet[]>([]);
+  const scrollRef                     = useRef<HTMLDivElement | null>(null);
   const namePoolRef                   = useRef<string[]>([]);
   const nameFetchingRef               = useRef(false);
 
@@ -296,6 +297,23 @@ export default function RoulettePage() {
 
   useEffect(() => { if (status === "SPINNING" && bets.length > 0) lastBetsRef.current = [...bets]; }, [status, bets]);
 
+  // Mobile auto-scroll: when betting opens, scroll the body to the bottom so
+  // the betting table is in view; when the wheel starts spinning, jump back to
+  // the top so the wheel is the focus. Desktop is unaffected.
+  useEffect(() => {
+    if (typeof window === "undefined" || window.innerWidth >= 768) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    if (status === "BETTING") {
+      // Wait a tick so layout (wheel-shrink animation) settles before scrolling.
+      const t = setTimeout(() => el.scrollTo({ top: el.scrollHeight, behavior: "smooth" }), 180);
+      return () => clearTimeout(t);
+    }
+    if (status === "SPINNING") {
+      el.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [status]);
+
   // Chip + control button styles injected once
   const chipStyle = `
     .casino-chip { width:42px;height:42px;border-radius:50%;position:relative;cursor:pointer;transition:all .25s;display:flex;justify-content:center;align-items:center;overflow:hidden; }
@@ -354,7 +372,7 @@ export default function RoulettePage() {
       </header>
 
       {/* ── Scrollable body ── */}
-      <div className="rl-scroll flex-1 overflow-y-auto overflow-x-hidden">
+      <div ref={scrollRef} className="rl-scroll flex-1 overflow-y-auto overflow-x-hidden">
 
         {/* Casino stage */}
         <div
