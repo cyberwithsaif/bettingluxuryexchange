@@ -18,69 +18,23 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 @Injectable()
 export class EntitySportIngestService {
   private readonly logger = new Logger(EntitySportIngestService.name);
-  private readonly base = process.env.ENTITYSPORT_API_BASE ?? "https://restapi.entitysport.com/v2";
-  // Cricket Exchange access tokens are short-lived — cache the issued token until
-  // expiry so we don't hit /v2/auth/ on every API call.
-  private cachedAuthToken: { token: string; expiresAt: number; accessKey: string } | null = null;
+  private readonly base = process.env.ENTITYSPORT_API_BASE ?? "https://rest.entitysport.com/v2";
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly crypto: CryptoService,
   ) {}
 
-  private async getCreds(): Promise<{ accessKey?: string; secretKey?: string; legacyToken?: string }> {
+  /** Static-token mode: read api_token from the API Keys row (env fallback). */
+  private async getToken(): Promise<string> {
     try {
       const row = await this.prisma.apiKey.findUnique({ where: { providerKey: "entitysport" } });
       if (row?.enabled) {
         const f = JSON.parse(this.crypto.decrypt(row.ciphertext, row.iv, row.authTag)) as Record<string, string>;
-        return {
-          accessKey:   f.access_key?.trim(),
-          secretKey:   f.secret_key?.trim(),
-          legacyToken: f.api_token?.trim(),
-        };
+        if (f.api_token) return f.api_token.trim();
       }
     } catch { /* fall through to env */ }
-    return {
-      accessKey:   process.env.ENTITYSPORT_ACCESS_KEY?.trim(),
-      secretKey:   process.env.ENTITYSPORT_SECRET_KEY?.trim(),
-      legacyToken: process.env.ENTITYSPORT_TOKEN?.trim(),
-    };
-  }
-
-  /**
-   * Resolve an EntitySport API token.
-   *  • Cricket Exchange (preferred): POST /v2/auth/ with access_key + secret_key
-   *    → short-lived token; cached until ~1 min before expiry.
-   *  • Legacy: a single api_token (older tier) used directly.
-   */
-  private async getToken(): Promise<string> {
-    const c = await this.getCreds();
-    if (c.accessKey && c.secretKey) {
-      if (this.cachedAuthToken
-          && this.cachedAuthToken.accessKey === c.accessKey
-          && this.cachedAuthToken.expiresAt > Date.now() + 60_000) {
-        return this.cachedAuthToken.token;
-      }
-      try {
-        const { data } = await axios.post(`${this.base}/auth/`, null, {
-          params: { access_key: c.accessKey, secret_key: c.secretKey, extend: 1 },
-          timeout: 12_000,
-        });
-        if (data?.status === "ok" && data.response?.token) {
-          // `expires` is documented as a timestamp; accept a few shapes defensively.
-          const exp = data.response.expires;
-          const expiresAt = typeof exp === "number"
-            ? (exp > 1e12 ? exp : exp * 1000)
-            : (Date.parse(String(exp)) || Date.now() + 55 * 60_000);
-          this.cachedAuthToken = { token: data.response.token, expiresAt, accessKey: c.accessKey };
-          return data.response.token;
-        }
-        this.logger.warn(`EntitySport /v2/auth/ failed: ${JSON.stringify(data)}`);
-      } catch (e: any) {
-        this.logger.warn(`EntitySport /v2/auth/ error: ${e?.response?.data?.response ?? e?.message ?? e}`);
-      }
-    }
-    return c.legacyToken ?? "";
+    return (process.env.ENTITYSPORT_TOKEN ?? "").trim();
   }
 
   private statusOf(s: number): "LIVE" | "UPCOMING" | "ENDED" {
