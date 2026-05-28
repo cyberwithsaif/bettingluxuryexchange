@@ -168,9 +168,10 @@ function GameVisual({
   const maxScale = containerW >= 700 ? 0.72 : 1;
   const sf = Math.min(maxScale, Math.max(0.52, containerW / 400));
 
-  // Balloon grows freely with each pump — no hard cap
-  const balloonW = showDeflated ? 78  : 84 + pumpsCount * 20;
-  const balloonH = showDeflated ? 58  : 104 + pumpsCount * 26;
+  // Balloon grows freely with each pump — no hard cap. When deflated (idle/no
+  // bet) it sags into a limp, taller-than-wide shape.
+  const balloonW = showDeflated ? 56  : 84 + pumpsCount * 20;
+  const balloonH = showDeflated ? 78  : 104 + pumpsCount * 26;
   const dotCount = Math.min(8, maxPumps || 8);
   const multFontSize = Math.round(Math.min(17 + balloonW * 0.08, 36));
 
@@ -224,6 +225,8 @@ function GameVisual({
                     ? { y: -400, opacity: 0, rotate: 14, scale: 1.22 }
                     : pumping
                     ? { y: [0, -12, 0], scale: [1, 1.07, 1] }
+                    : showDeflated
+                    ? { y: 0 }                              // limp / no bob when no bet
                     : { y: [0, -14, 0, -14, 0] }
                 }
                 transition={
@@ -231,6 +234,8 @@ function GameVisual({
                     ? { duration: 0.7, ease: [0.22, 0.61, 0.36, 1] }
                     : pumping
                     ? { duration: 0.28, ease: "easeInOut" }
+                    : showDeflated
+                    ? { duration: 0.3 }
                     : { duration: 2.6, repeat: Infinity, ease: "easeInOut" }
                 }
               >
@@ -238,13 +243,18 @@ function GameVisual({
                   width: balloonW,
                   height: balloonH,
                   background: color,
-                  borderRadius: "50% 50% 48% 48%",
+                  // Loose, irregular blob when deflated; round balloon when inflated.
+                  borderRadius: showDeflated
+                    ? "45% 55% 40% 60% / 62% 72% 30% 40%"
+                    : "50% 50% 48% 48%",
                   position: "relative",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  boxShadow: `0 0 ${showDeflated ? 12 : 54}px ${color}66`,
-                  transition: "width 0.22s ease, height 0.22s ease, box-shadow 0.22s",
+                  boxShadow: `0 0 ${showDeflated ? 8 : 54}px ${color}66, inset 0 ${showDeflated ? -6 : 0}px 10px rgba(0,0,0,0.18)`,
+                  transform: showDeflated ? "rotate(-9deg) skewX(-5deg)" : "none",
+                  opacity: showDeflated ? 0.85 : 1,
+                  transition: "width 0.22s ease, height 0.22s ease, box-shadow 0.22s, transform 0.22s, opacity 0.22s",
                 }}>
                   {!showDeflated && (
                     <div style={{
