@@ -89,8 +89,20 @@ export function TopBar() {
   useEffect(() => {
     if (!user) return;
     const s = getSocket();
-    s.on("wallet:update", () => mutate());
-    return () => { s.off("wallet:update"); };
+    // wallet:update — fired by the realtime gateway on deposits/withdrawals.
+    const onUpdate = () => mutate();
+    // wallet:balance — fired by EACH game gateway after a bet/win/cashout. The
+    // header was missing this, so balance only refreshed via the 1s poll. Now
+    // it updates instantly with the new available + revalidates from the server.
+    const onBalance = (d: { available?: number }) => {
+      if (typeof d?.available === "number") {
+        mutate(prev => ({ ...(prev as any), available: d.available }), { revalidate: false });
+      }
+      mutate(); // confirm with server
+    };
+    s.on("wallet:update", onUpdate);
+    s.on("wallet:balance", onBalance);
+    return () => { s.off("wallet:update", onUpdate); s.off("wallet:balance", onBalance); };
   }, [user, mutate]);
 
   const balance = Number(wallet?.available ?? 0);
