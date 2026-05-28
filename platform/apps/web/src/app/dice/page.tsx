@@ -110,7 +110,7 @@ function HexMarker({ roll, won }: { roll: number; won: boolean }) {
       style={{
         position: "absolute",
         left: `${left}%`,
-        bottom: "calc(100% + 12px)",
+        bottom: "calc(100% + 4px)",                 // tight gap → arrow visually meets the bar
         transform: "translateX(-50%)",
         display: "flex",
         flexDirection: "column",
@@ -130,10 +130,11 @@ function HexMarker({ roll, won }: { roll: number; won: boolean }) {
       </DiceCube>
       <div style={{
         width: 0, height: 0,
-        borderLeft: "6px solid transparent",
-        borderRight: "6px solid transparent",
-        borderTop: "7px solid #d8d8e8",
+        borderLeft: "7px solid transparent",
+        borderRight: "7px solid transparent",
+        borderTop: "9px solid #eaeaf4",             // larger, lighter arrow — clearly anchored
         marginTop: -1,
+        filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.5))",
       }} />
     </motion.div>
   );
