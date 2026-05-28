@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo, useLayoutEffect } fr
 import type { CSSProperties } from "react";
 import { motion, AnimatePresence, useAnimationControls } from "framer-motion";
 import { useAuthStore } from "@/lib/stores/auth";
-import { getSocket } from "@/lib/socket";
+import { getSocket, reauthSocket } from "@/lib/socket";
 import { api } from "@/lib/api";
 import { Shield } from "lucide-react";
 
@@ -447,12 +447,21 @@ export default function ChickenRoadPage() {
   const restoreActiveSession = useCallback(async () => {
     try {
       const { data } = await api.get<Session | null>("/casino/chicken-road/active");
-      if (!data) return false;
-      setSession(data);
+      if (data && (data as any).id) {
+        setSession(data);
+        setCrashLane(null);
+        setCashoutAmt(null);
+        setPhase("running");
+        return true;
+      }
+      // Current user has NO active game → drop any stale session left over from a
+      // previously logged-in account (otherwise the page shows someone else's
+      // round and every action gets rejected as "Unauthorized").
+      setSession(null);
       setCrashLane(null);
       setCashoutAmt(null);
-      setPhase("running");
-      return true;
+      setPhase("idle");
+      return false;
     } catch {
       return false;
     }
@@ -521,12 +530,20 @@ export default function ChickenRoadPage() {
 
     const onError = (data: { message: string }) => {
       setLoading(false);
-      // Server rejected start because a round is already live — restore it in place.
-      if (data.message && /active game/i.test(data.message)) {
-        restoreActiveSession().then(ok => { if (!ok) showError(data.message); });
+      const msg = data?.message ?? "";
+      // Stale socket auth (e.g. after switching accounts) — reauth + re-restore
+      // so we drop any leftover session and the next action runs on the right user.
+      if (/unauthor|session expired|not your/i.test(msg)) {
+        reauthSocket();
+        restoreActiveSession();
         return;
       }
-      showError(data.message);
+      // Server rejected start because a round is already live — restore it in place.
+      if (/active game/i.test(msg)) {
+        restoreActiveSession().then(ok => { if (!ok) showError(msg); });
+        return;
+      }
+      showError(msg);
     };
     const onBalance = (data: { available: number }) => setLiveBalance(data.available);
 
