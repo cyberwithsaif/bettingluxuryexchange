@@ -76,48 +76,22 @@ const MODE_ICONS: { mode: DiceMode; dots: [number, number][] }[] = [
 
 // ─── Result Marker (3D dice cube on the track) ───────────────────────────────
 function DiceCube({ children, width = 74 }: { children: React.ReactNode; width?: number }) {
-  const faceH = 42;
-  const topH  = 7;
-  const sideW = 7;
-  // Wrapper width = visible front face only, so translateX(-50%) on the parent
-  // centers the cube body on the roll position. Perspective top + right side
-  // overflow to the right (purely decorative).
+  // Flat, symmetric tile so the marker arrow always centers exactly under the
+  // visible body (no perspective bulge throwing off the visual center).
   return (
-    <div style={{ position: "relative", width, height: faceH + topH, overflow: "visible" }}>
-      {/* Top face (overflows right) */}
-      <div style={{
-        position: "absolute",
-        left: sideW, top: 0,
-        width, height: topH,
-        background: "linear-gradient(90deg, #e8e8f0 0%, #c8c8d8 100%)",
-        borderRadius: "5px 5px 0 0",
-        transform: "skewX(-20deg)",
-        transformOrigin: "bottom left",
-      }} />
-      {/* Right side (overflows right) */}
-      <div style={{
-        position: "absolute",
-        left: width, top: topH - 2,
-        width: sideW, height: faceH,
-        background: "linear-gradient(180deg, #b0b0c4 0%, #8888a0 100%)",
-        borderRadius: "0 3px 3px 0",
-        transform: "skewY(-20deg)",
-        transformOrigin: "top left",
-      }} />
-      {/* Front face — fills the wrapper exactly */}
-      <div style={{
-        position: "absolute",
-        left: 0, top: topH - 1,
-        width, height: faceH,
+    <div
+      style={{
+        width,
+        height: 42,
         background: "linear-gradient(160deg, #ffffff 0%, #eaeaf4 70%, #d8d8e8 100%)",
-        borderRadius: 7,
+        borderRadius: 8,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         boxShadow: "0 4px 14px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,1)",
-      }}>
-        {children}
-      </div>
+      }}
+    >
+      {children}
     </div>
   );
 }
