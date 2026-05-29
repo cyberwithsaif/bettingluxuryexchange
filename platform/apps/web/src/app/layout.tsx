@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 async function fetchPlatformSettings(): Promise<Record<string, unknown> | null> {
   try {
     const base = process.env.INTERNAL_API_URL ?? "http://localhost:4000";
-    const res = await fetch(`${base}/api/platform/settings`, { next: { revalidate: 60 } });
+    const res = await fetch(`${base}/api/platform/settings`, { cache: "no-store" });
     if (!res.ok) return null;
     return res.json() as Promise<Record<string, unknown>>;
   } catch {
