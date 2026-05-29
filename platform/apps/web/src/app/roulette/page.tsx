@@ -154,13 +154,26 @@ export default function RoulettePage() {
   const { data: history, mutate: mutateHistory } = useSWR<HistoryRound[]>("/roulette/history?limit=15", { refreshInterval: 30000 });
   const { data: wallet, mutate: mutateWallet }   = useSWR<{ available: number }>(user ? "/wallet/summary" : null);
 
-  useEffect(() => {
+  // Pull the authoritative live round from the API. Called on mount, on socket
+  // (re)connect, and when the tab becomes visible again so the wheel/table never
+  // gets stuck on a stale phase after the WS drops (common on mobile).
+  const syncRound = useCallback(() => {
     api.get<CurrentRound>("/roulette/current").then(r => { if (r.data) setRound(r.data); }).catch(() => {});
   }, []);
+
+  useEffect(() => { syncRound(); }, [syncRound]);
 
   useEffect(() => {
     const s = getSocket();
     s.emit("roulette:subscribe");
+
+    // Mobile drops the WS when backgrounded or on a network switch; events that
+    // fire while we're offline are lost. Re-subscribe + re-sync on reconnect and
+    // on tab-visible so play resumes immediately instead of waiting a full round.
+    const onConnect = () => { s.emit("roulette:subscribe"); syncRound(); };
+    const onVisible = () => { if (document.visibilityState === "visible") syncRound(); };
+    s.on("connect", onConnect);
+    document.addEventListener("visibilitychange", onVisible);
 
     const onNewRound = (data: any) => {
       setRound({ id: data.roundId, roundNumber: data.roundNumber, status: "BETTING",
@@ -200,12 +213,14 @@ export default function RoulettePage() {
     s.on("roulette:result", onResult);
     s.on("roulette:betPlaced", onBetPlaced);
     return () => {
+      s.off("connect", onConnect);
+      document.removeEventListener("visibilitychange", onVisible);
       s.off("roulette:newRound", onNewRound);
       s.off("roulette:spin", onSpin);
       s.off("roulette:result", onResult);
       s.off("roulette:betPlaced", onBetPlaced);
     };
-  }, [user, mutateHistory, mutateWallet, nextName]);
+  }, [user, mutateHistory, mutateWallet, nextName, syncRound]);
 
   useEffect(() => {
     if (!round) return;

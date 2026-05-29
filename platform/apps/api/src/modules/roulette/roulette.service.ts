@@ -14,6 +14,13 @@ const LOOP_LOCK_TTL_SECS = 30;
 const LOOP_LOCK_REFRESH_MS = 10_000;
 const LOOP_RETRY_MS = 5_000;
 
+// Current-round pointer shared across ALL cluster workers. Only the worker
+// holding the loop lock drives the game, but every worker must be able to
+// answer GET /current and accept bets — so the active round id + phase
+// deadline live in Redis, not only in the loop owner's memory.
+const STATE_KEY = "roulette:current";
+const STATE_TTL_SECS = 300; // safety net; rewritten on every phase (≤20s apart)
+
 const RED_NUMBERS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 const BETTING_MS  = 15000;  // 15 seconds to place bets
 const SPIN_MS     = 20000;  // 20 seconds spin animation
@@ -143,8 +150,7 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
       },
     });
 
-    this.currentRoundId = round.id;
-    this.phaseEndsAt = Date.now() + BETTING_MS;
+    await this.publishState(round.id, Date.now() + BETTING_MS);
 
     this.gateway.broadcast("roulette:newRound", {
       roundId: round.id,
@@ -173,7 +179,7 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
       data: { status: RouletteRoundStatus.SPINNING, spinAt: new Date() },
     });
 
-    this.phaseEndsAt = Date.now() + SPIN_MS;
+    await this.publishState(roundId, Date.now() + SPIN_MS);
 
     this.gateway.broadcast("roulette:spin", {
       roundId,
@@ -239,7 +245,7 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
 
     const round = await this.prisma.rouletteRound.findUnique({ where: { id: roundId } });
 
-    this.phaseEndsAt = Date.now() + RESULT_MS;
+    await this.publishState(roundId, Date.now() + RESULT_MS);
 
     this.gateway.broadcast("roulette:result", {
       roundId,
@@ -253,10 +259,39 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
     setTimeout(() => this.startNewRound(), RESULT_MS);
   }
 
-  async placeBet(userId: string, input: { betType: BetType; betValue?: string | null; amount: number }) {
-    if (!this.currentRoundId) throw new BadRequestException("No active round");
+  /**
+   * Mirror the active-round pointer to Redis so EVERY cluster worker can serve
+   * GET /current and accept bets — not only the worker that owns the game loop.
+   * Without this, ~half of all HTTP requests hit a worker whose in-memory
+   * currentRoundId is null, surfacing as a "stuck" wheel and "No active round"
+   * bet failures until the user happens to refresh onto the loop-owner worker.
+   */
+  private async publishState(roundId: string, phaseEndsAt: number) {
+    this.currentRoundId = roundId;
+    this.phaseEndsAt = phaseEndsAt;
+    try {
+      await this.redis.client.set(STATE_KEY, JSON.stringify({ roundId, phaseEndsAt }), "EX", STATE_TTL_SECS);
+    } catch (e) {
+      this.logger.warn(`Failed to publish roulette state: ${(e as Error).message}`);
+    }
+  }
 
-    const round = await this.prisma.rouletteRound.findUnique({ where: { id: this.currentRoundId } });
+  /** Read the shared round pointer; fall back to this worker's own memory
+   *  (set only on the loop owner) if Redis is briefly unavailable. */
+  private async readState(): Promise<{ roundId: string; phaseEndsAt: number } | null> {
+    try {
+      const raw = await this.redis.client.get(STATE_KEY);
+      if (raw) return JSON.parse(raw) as { roundId: string; phaseEndsAt: number };
+    } catch { /* fall through to in-memory */ }
+    if (this.currentRoundId) return { roundId: this.currentRoundId, phaseEndsAt: this.phaseEndsAt };
+    return null;
+  }
+
+  async placeBet(userId: string, input: { betType: BetType; betValue?: string | null; amount: number }) {
+    const state = await this.readState();
+    if (!state) throw new BadRequestException("No active round");
+
+    const round = await this.prisma.rouletteRound.findUnique({ where: { id: state.roundId } });
     if (!round) throw new BadRequestException("Round not found");
     if (round.status !== RouletteRoundStatus.BETTING) {
       throw new BadRequestException("Betting is closed for this round");
@@ -315,10 +350,11 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
   }
 
   async getCurrentRound() {
-    if (!this.currentRoundId) return null;
+    const state = await this.readState();
+    if (!state) return null;
 
     const round = await this.prisma.rouletteRound.findUnique({
-      where: { id: this.currentRoundId },
+      where: { id: state.roundId },
       include: {
         bets: {
           select: { id: true, userId: true, betType: true, betValue: true, amount: true, payout: true, isWin: true },
@@ -335,7 +371,7 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
       serverSeedHash: round.serverSeedHash,
       winningNumber: round.winningNumber,
       winningColor: round.winningColor,
-      phaseEndsAt: this.phaseEndsAt,
+      phaseEndsAt: state.phaseEndsAt,
       betsCount: round.bets.length,
     };
   }
