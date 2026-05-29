@@ -129,6 +129,26 @@ class PlatformSettingsDto {
   @IsOptional() @IsNumber() minesMaxBet?: number;
   @IsOptional() @IsBoolean() minesEnabled?: boolean;
   @IsOptional() @IsNumber() minesHardness?: number;
+  // Dice game config
+  @IsOptional() @IsNumber() diceHouseEdge?: number;
+  @IsOptional() @IsNumber() diceMinBet?: number;
+  @IsOptional() @IsNumber() diceMaxBet?: number;
+  @IsOptional() @IsBoolean() diceEnabled?: boolean;
+  // Towers game config
+  @IsOptional() @IsNumber() towersHouseEdge?: number;
+  @IsOptional() @IsNumber() towersMinBet?: number;
+  @IsOptional() @IsNumber() towersMaxBet?: number;
+  @IsOptional() @IsBoolean() towersEnabled?: boolean;
+  // Chicken Road game config
+  @IsOptional() @IsNumber() chickenRoadHouseEdge?: number;
+  @IsOptional() @IsNumber() chickenRoadMinBet?: number;
+  @IsOptional() @IsNumber() chickenRoadMaxBet?: number;
+  @IsOptional() @IsBoolean() chickenRoadEnabled?: boolean;
+  // Security config
+  @IsOptional() @IsBoolean() antiDdosEnabled?: boolean;
+  @IsOptional() securityIpAllowlist?: any[];
+  // Internal / misc fields written by other services
+  @IsOptional() _noop?: any;
   // Top navigation bar items
   @IsOptional() navItems?: any[];
 }
