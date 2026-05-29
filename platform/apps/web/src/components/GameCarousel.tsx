@@ -11,7 +11,7 @@ const CASINO_GAMES = [
   { name: "Pump",     href: "/pump",     thumb: "/game-thumbs/pump.png" },
   { name: "Dice",     href: "/dice",     thumb: "/game-thumbs/dice.png" },
   { name: "Towers",   href: "/towers",   thumb: "/game-thumbs/towers.png" },
-  { name: "Chicken Road", href: "/chicken-road", thumb: "/game-thumbs/chicken-road.png" },
+  { name: "Chicken Road", href: "/chicken-road", thumb: "/game-thumbs/chick.png" },
   { name: "Coinflip", href: "/coinflip", thumb: "/game-thumbs/coinflip.png" },
 ];
 
