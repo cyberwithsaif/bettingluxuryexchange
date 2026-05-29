@@ -30,6 +30,8 @@ export default function SettingsPage() {
   const [syncBusy, setSyncBusy] = useState(false);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [form, setForm] = useState<PlatformSettings | null>(null);
+  const [toggleBusy, setToggleBusy] = useState<string | null>(null);
+  const [toggleMsg, setToggleMsg] = useState<{ key: string; ok: boolean } | null>(null);
 
   // Change password
   const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
@@ -81,6 +83,22 @@ export default function SettingsPage() {
 
   function set(key: keyof PlatformSettings, value: any) {
     setForm((prev) => ({ ...(prev ?? data!), [key]: value }));
+  }
+
+  async function toggleSave(key: keyof PlatformSettings, value: boolean) {
+    setToggleBusy(key);
+    setToggleMsg(null);
+    setForm((prev) => ({ ...(prev ?? data!), [key]: value }));
+    try {
+      await api.post(SETTINGS_KEY, { [key]: value });
+      mutate(SETTINGS_KEY);
+      setToggleMsg({ key, ok: true });
+      setTimeout(() => setToggleMsg(null), 2000);
+    } catch {
+      setForm((prev) => ({ ...(prev ?? data!), [key]: !value }));
+      setToggleMsg({ key, ok: false });
+      setTimeout(() => setToggleMsg(null), 3000);
+    } finally { setToggleBusy(null); }
   }
 
   if (isLoading) {
@@ -148,24 +166,43 @@ export default function SettingsPage() {
       <Section title="Feature Toggles" Icon={Settings2}>
         <div className="grid grid-cols-2 gap-4">
           {([
-            ["maintenanceMode",     "Maintenance Mode (disables site)", "red"],
-            ["registrationEnabled", "New User Registration",            "emerald"],
-            ["depositEnabled",      "Deposits",                          "emerald"],
-            ["withdrawalEnabled",   "Withdrawals",                       "emerald"],
-          ] as [keyof PlatformSettings, string, string][]).map(([key, label, tone]) => (
-            <label key={key} className="flex items-center justify-between rounded-lg border border-yellow-500/20 bg-gray-800/50 px-4 py-3 cursor-pointer hover:border-yellow-400 hover:bg-gray-800 transition">
-              <span className="text-sm text-gray-300 flex items-center gap-2">
-                <span className={`h-2 w-2 rounded-full ${tone === "red" ? "bg-red-400" : "bg-emerald-400"}`} />
-                {label}
-              </span>
-              <input type="checkbox" className="w-4 h-4 accent-yellow-500"
-                checked={!!(current?.[key])}
-                onChange={(e) => set(key, e.target.checked)} />
-            </label>
-          ))}
+            ["maintenanceMode",     "Maintenance Mode", "red"],
+            ["registrationEnabled", "New User Registration", "emerald"],
+            ["depositEnabled",      "Deposits",         "emerald"],
+            ["withdrawalEnabled",   "Withdrawals",      "emerald"],
+          ] as [keyof PlatformSettings, string, string][]).map(([key, label, tone]) => {
+            const isOn   = !!(current?.[key]);
+            const saving = toggleBusy === key;
+            const fb     = toggleMsg?.key === key;
+            return (
+              <div key={key} className={`flex items-center justify-between rounded-lg border px-4 py-3 transition ${
+                saving ? "opacity-70 pointer-events-none" : "cursor-pointer hover:border-yellow-400 hover:bg-gray-800"
+              } ${
+                fb ? (toggleMsg!.ok ? "border-emerald-500/50 bg-emerald-900/20" : "border-red-500/50 bg-red-900/20") : "border-yellow-500/20 bg-gray-800/50"
+              }`}
+                onClick={() => !saving && toggleSave(key, !isOn)}
+              >
+                <span className="text-sm text-gray-300 flex items-center gap-2 select-none">
+                  <span className={`h-2 w-2 rounded-full transition-colors ${
+                    saving ? "bg-gray-500 animate-pulse" :
+                    fb && !toggleMsg!.ok ? "bg-red-400" :
+                    (tone === "red" ? (isOn ? "bg-red-400" : "bg-gray-600") : (isOn ? "bg-emerald-400" : "bg-gray-600"))
+                  }`} />
+                  {label}
+                  {saving && <span className="text-[10px] text-gray-500 ml-1">saving…</span>}
+                  {fb && toggleMsg!.ok && <span className="text-[10px] text-emerald-400 ml-1">✓ saved</span>}
+                  {fb && !toggleMsg!.ok && <span className="text-[10px] text-red-400 ml-1">✗ failed</span>}
+                </span>
+                {/* Toggle switch */}
+                <div className={`relative w-10 h-5 rounded-full transition-colors ${isOn ? (tone === "red" ? "bg-red-500" : "bg-emerald-500") : "bg-gray-600"}`}>
+                  <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${isOn ? "translate-x-5" : "translate-x-0.5"}`} />
+                </div>
+              </div>
+            );
+          })}
         </div>
         <p className="text-xs text-gray-500 mt-3">
-          Maintenance mode blocks all non-admin logins. Disabling registration/deposits/withdrawals rejects those actions platform-wide.
+          Maintenance mode shows a maintenance page to all users — admins can still log in. Other toggles reject those actions platform-wide.
         </p>
       </Section>
 
