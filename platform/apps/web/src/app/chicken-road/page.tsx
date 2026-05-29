@@ -48,7 +48,7 @@ const DIFF_CONFIG: Record<Difficulty, { lanes: number; deathProb: number; label:
 };
 
 const HOUSE_EDGE = 0.03;
-const SIDEWALK_W = 96;
+const SIDEWALK_W = 140;
 
 // Client-side preview of the same multiplier curve the server computes, so the
 // board can render rewards before a round starts. Authoritative values come
@@ -650,7 +650,7 @@ export default function ChickenRoadPage() {
     ? (isMobile ? containerW * 0.48 : containerW * 0.38)
     : (isMobile ? containerW * 0.42 : SIDEWALK_W + 2 * laneW);
   const cameraX = Math.min(0, anchorX - cameraTarget);
-  const chickenSize = Math.min(laneW * (isMobile ? 0.42 : 0.46), isMobile ? 76 : 74);
+  const chickenSize = Math.min(laneW * (isMobile ? 0.46 : 0.48), isMobile ? 82 : 80);
   const coinSize = Math.round(laneW * (isMobile ? 0.52 : 0.42));
   const isOver = phase === "crashed" || phase === "cashed";
 
@@ -710,74 +710,9 @@ export default function ChickenRoadPage() {
           onDragEnd={() => { setTimeout(() => { draggingRef.current = false; }, 60); }}
           style={{ width: trackWidth }}
         >
-          {/* Start sidewalk */}
+          {/* Start sidewalk — grassy roadside scene (trees, bushes, hydrant, signal) */}
           <div className="absolute top-0 bottom-0 left-0" style={{ width: SIDEWALK_W }}>
-            <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,#2f9e5e,#3cb371)" }} />
-            <div className="absolute top-0 bottom-0 right-0" style={{ width: SIDEWALK_W * 0.46, background: "repeating-linear-gradient(180deg,#d7d3e4,#d7d3e4 26px,#c8c3da 26px,#c8c3da 52px)" }} />
-
-            {/* decorative trees */}
-            {[{ t: 0.08, l: 8 }, { t: 0.42, l: 6 }, { t: 0.75, l: 10 }].map((tree, i) => (
-              <div key={i} className="absolute" style={{ left: tree.l, top: `${tree.t * 100}%`, width: SIDEWALK_W * 0.6, height: SIDEWALK_W * 0.7 }}>
-                {/* trunk */}
-                <div className="absolute" style={{
-                  left: "50%", bottom: 0, transform: "translateX(-50%)",
-                  width: SIDEWALK_W * 0.12, height: SIDEWALK_W * 0.28,
-                  background: "linear-gradient(90deg,#5d3a1a,#8b5a2b,#5d3a1a)", borderRadius: "2px",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.5)",
-                }} />
-                {/* canopy - bottom */}
-                <div style={{
-                  position: "absolute", left: "50%", bottom: `${SIDEWALK_W * 0.24}px`, transform: "translateX(-50%)",
-                  width: 0, height: 0,
-                  borderLeft: `${SIDEWALK_W * 0.24}px solid transparent`,
-                  borderRight: `${SIDEWALK_W * 0.24}px solid transparent`,
-                  borderBottom: `${SIDEWALK_W * 0.32}px solid #1aa569`,
-                  filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.4))",
-                }} />
-                {/* canopy - middle */}
-                <div style={{
-                  position: "absolute", left: "50%", bottom: `${SIDEWALK_W * 0.38}px`, transform: "translateX(-50%)",
-                  width: 0, height: 0,
-                  borderLeft: `${SIDEWALK_W * 0.2}px solid transparent`,
-                  borderRight: `${SIDEWALK_W * 0.2}px solid transparent`,
-                  borderBottom: `${SIDEWALK_W * 0.26}px solid #0f9352`,
-                  filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))",
-                }} />
-                {/* canopy - top */}
-                <div style={{
-                  position: "absolute", left: "50%", bottom: `${SIDEWALK_W * 0.5}px`, transform: "translateX(-50%)",
-                  width: 0, height: 0,
-                  borderLeft: `${SIDEWALK_W * 0.14}px solid transparent`,
-                  borderRight: `${SIDEWALK_W * 0.14}px solid transparent`,
-                  borderBottom: `${SIDEWALK_W * 0.2}px solid #0d7a44`,
-                  filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.4))",
-                }} />
-              </div>
-            ))}
-
-            {/* rocks area */}
-            <div className="absolute" style={{ top: `${boardH * 0.35}px`, left: 0, width: SIDEWALK_W + 12, display: "flex", flexWrap: "wrap", gap: "4px", padding: "4px" }}>
-              {[
-                { w: 32, h: 24, r: 8 },
-                { w: 28, h: 22, r: -6 },
-                { w: 24, h: 18, r: 10 },
-                { w: 36, h: 26, r: -2 },
-                { w: 26, h: 20, r: 5 },
-                { w: 30, h: 22, r: -8 },
-              ].map((rock, i) => (
-                <div key={i} className="absolute" style={{
-                  width: rock.w, height: rock.h, left: (i % 3) * 36 + 4, top: `${boardH * 0.35 + Math.floor(i / 3) * 28}px`,
-                  background: "#9ba5ad", border: "3px solid #6b7682", borderRadius: "10px",
-                  transform: `rotate(${rock.r}deg)`, boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                }}>
-                  <div style={{ position: "absolute", width: "5px", height: "5px", left: "8px", top: "6px", background: "#7a8692", borderRadius: "50%" }} />
-                  <div style={{ position: "absolute", width: "4px", height: "4px", right: "10px", bottom: "8px", background: "#7a8692", borderRadius: "50%" }} />
-                </div>
-              ))}
-            </div>
-
-            {/* fire hydrant */}
-            <div className="absolute" style={{ right: 8, bottom: "10%", width: 14, height: 26, borderRadius: 5, background: "linear-gradient(180deg,#ef4444,#b91c1c)", boxShadow: "0 2px 4px rgba(0,0,0,0.4)" }} />
+            <StartScene width={SIDEWALK_W} go={phase !== "crashed"} />
           </div>
 
           {/* Lanes */}
@@ -949,7 +884,7 @@ export default function ChickenRoadPage() {
                       : { duration: 0.3, repeat: loading ? Infinity : 0 }
                   }
                 >
-                  <Chicken size={chickenSize} walking={phase === "running"} />
+                  <Chicken size={phase === "idle" ? Math.round(chickenSize * 1.3) : chickenSize} walking={phase === "running"} />
                 </motion.div>
               )}
 
@@ -1179,6 +1114,151 @@ export default function ChickenRoadPage() {
       <AnimatePresence>
         {showFair && <ProvablyFairModal session={session} onClose={() => setShowFair(false)} />}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Fire hydrant ───────────────────────────────────────────────────────────────
+
+function FireHydrant({ scale = 1 }: { scale?: number }) {
+  const p = (n: number) => n * scale;
+  const red = "linear-gradient(90deg,#c42a2a,#ff5a5a 42%,#d8362f 70%,#9e1f1f)";
+  const edge = `${Math.max(1, p(1.5))}px solid #871d1d`;
+  return (
+    <div style={{ position: "relative", width: p(30), height: p(50) }}>
+      {/* ground shadow */}
+      <div style={{ position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)", width: p(32), height: p(8), background: "rgba(0,0,0,.28)", borderRadius: "50%", filter: `blur(${p(2)}px)` }} />
+      {/* base flange */}
+      <div style={{ position: "absolute", bottom: p(2), left: "50%", transform: "translateX(-50%)", width: p(28), height: p(9), background: red, borderRadius: p(3), border: edge }} />
+      {/* body */}
+      <div style={{ position: "absolute", bottom: p(9), left: "50%", transform: "translateX(-50%)", width: p(19), height: p(28), background: red, borderRadius: `${p(9)}px ${p(9)}px ${p(4)}px ${p(4)}px`, border: edge, boxShadow: `inset ${p(4)}px 0 ${p(4)}px rgba(255,255,255,.28), inset ${p(-4)}px 0 ${p(5)}px rgba(0,0,0,.25)` }} />
+      {/* side nozzles */}
+      <div style={{ position: "absolute", bottom: p(20), left: p(-1), width: p(8), height: p(10), background: red, borderRadius: p(3), border: edge }} />
+      <div style={{ position: "absolute", bottom: p(20), right: p(-1), width: p(8), height: p(10), background: red, borderRadius: p(3), border: edge }} />
+      {/* neck / bonnet */}
+      <div style={{ position: "absolute", bottom: p(35), left: "50%", transform: "translateX(-50%)", width: p(15), height: p(7), background: red, borderRadius: p(4), border: edge }} />
+      {/* dome cap */}
+      <div style={{ position: "absolute", bottom: p(40), left: "50%", transform: "translateX(-50%)", width: p(13), height: p(10), background: red, borderRadius: "50% 50% 42% 42%", border: edge }} />
+      {/* top bolt */}
+      <div style={{ position: "absolute", bottom: p(47), left: "50%", transform: "translateX(-50%)", width: p(5), height: p(5), background: "#ffd23b", borderRadius: p(1.5), border: `${Math.max(1, p(1))}px solid #b8860b` }} />
+    </div>
+  );
+}
+
+// ─── Traffic light (red on crash, green to go) ───────────────────────────────────
+
+function TrafficLight({ go, scale = 1 }: { go: boolean; scale?: number }) {
+  const p = (n: number) => n * scale;
+  const lamp = (color: string, lit: boolean, glow: string) => (
+    <div style={{
+      width: p(13), height: p(13), borderRadius: "50%",
+      background: lit ? color : "rgba(255,255,255,.10)",
+      border: `${Math.max(1, p(1.5))}px solid rgba(0,0,0,.45)`,
+      boxShadow: lit
+        ? `0 0 ${p(9)}px ${glow}, inset 0 0 ${p(3)}px rgba(255,255,255,.6)`
+        : "inset 0 0 4px rgba(0,0,0,.65)",
+    }} />
+  );
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+      {/* housing */}
+      <div style={{
+        display: "flex", flexDirection: "column", gap: p(3.5), padding: p(4), borderRadius: p(6),
+        background: "linear-gradient(180deg,#2c303b,#171a22)", border: `${Math.max(1, p(1.5))}px solid #0b0d12`,
+        boxShadow: `0 ${p(3)}px ${p(6)}px rgba(0,0,0,.5)`,
+      }}>
+        {lamp("#ff3b3b", !go, "rgba(255,59,59,.95)")}
+        {lamp("#ffd23b", false, "rgba(255,210,59,.9)")}
+        {lamp("#27d64e", go, "rgba(39,214,78,.95)")}
+      </div>
+      {/* pole */}
+      <div style={{ width: p(6), height: p(50), background: "linear-gradient(90deg,#34384a,#5b6172,#34384a)", borderRadius: p(2) }} />
+      {/* base plate */}
+      <div style={{ width: p(16), height: p(5), marginTop: p(-1), background: "linear-gradient(180deg,#4a4f60,#2b2f3a)", borderRadius: p(2) }} />
+    </div>
+  );
+}
+
+// ─── Start scene — grassy roadside: trees, bushes, hydrant, traffic light ────────
+
+function StartScene({ width, go }: { width: number; go: boolean }) {
+  const curbW = Math.round(width * 0.42);
+  const grassW = width - curbW;
+
+  const pine = (sz: number, leftPx: number, topPct: number, key: string) => (
+    <div key={key} className="absolute" style={{ left: leftPx, top: `${topPct}%`, width: sz, height: sz * 1.25 }}>
+      {/* shadow */}
+      <div style={{ position: "absolute", left: "50%", bottom: -3, transform: "translateX(-50%)", width: sz * 0.74, height: sz * 0.13, background: "rgba(0,0,0,.22)", borderRadius: "50%", filter: "blur(2px)" }} />
+      {/* trunk */}
+      <div style={{ position: "absolute", left: "50%", bottom: 0, transform: "translateX(-50%)", width: Math.max(4, sz * 0.16), height: sz * 0.3, background: "linear-gradient(90deg,#5d3a1a,#8b5a2b,#5d3a1a)", borderRadius: 2, boxShadow: "0 2px 4px rgba(0,0,0,.5)" }} />
+      {/* canopy layers */}
+      {[
+        { b: 0.24, w: 0.54, h: 0.40, c: "#1aa569" },
+        { b: 0.45, w: 0.42, h: 0.32, c: "#0f9352" },
+        { b: 0.63, w: 0.30, h: 0.26, c: "#0d7a44" },
+      ].map((c, i) => (
+        <div key={i} style={{
+          position: "absolute", left: "50%", bottom: `${c.b * 100}%`, transform: "translateX(-50%)",
+          width: 0, height: 0,
+          borderLeft: `${(sz * c.w) / 2}px solid transparent`,
+          borderRight: `${(sz * c.w) / 2}px solid transparent`,
+          borderBottom: `${sz * c.h}px solid ${c.c}`,
+          filter: "drop-shadow(0 2px 3px rgba(0,0,0,.32))",
+        }} />
+      ))}
+    </div>
+  );
+
+  const bush = (sz: number, leftPx: number, topPct: number, key: string) => (
+    <div key={key} className="absolute" style={{ left: leftPx, top: `${topPct}%`, width: sz, height: sz * 0.6 }}>
+      {[[0, 0.34, 0.6], [0.27, 0.08, 0.72], [0.54, 0.36, 0.58]].map(([lx, ty, d], i) => (
+        <div key={i} style={{
+          position: "absolute", left: `${(lx as number) * 100}%`, top: `${(ty as number) * 100}%`,
+          width: sz * (d as number), height: sz * (d as number), borderRadius: "50%",
+          background: i === 1 ? "#15915a" : "#1aa86a", boxShadow: "inset 0 -3px 0 rgba(0,0,0,.12)",
+        }} />
+      ))}
+    </div>
+  );
+
+  const tuft = (leftPx: number, topPct: number, key: string, c = "#0f8a4d") => (
+    <div key={key} className="absolute" style={{ left: leftPx, top: `${topPct}%`, display: "flex", alignItems: "flex-end", gap: 1 }}>
+      {[7, 11, 8].map((h, i) => (
+        <div key={i} style={{ width: 3, height: h, background: c, borderRadius: "40% 40% 0 0", transform: `rotate(${(i - 1) * 13}deg)`, transformOrigin: "bottom" }} />
+      ))}
+    </div>
+  );
+
+  return (
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+      {/* grass base + blade texture */}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg,#2c9457 0%,#37ab6b 55%,#3cb371 100%)" }} />
+      <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: grassW, background: "repeating-linear-gradient(82deg, rgba(255,255,255,.05) 0 1px, transparent 1px 6px), repeating-linear-gradient(98deg, rgba(0,0,0,.05) 0 1px, transparent 1px 8px)" }} />
+
+      {/* curb / pavement next to the road */}
+      <div style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: curbW, background: "repeating-linear-gradient(180deg,#d7d3e4,#d7d3e4 26px,#c8c3da 26px,#c8c3da 52px)" }} />
+      <div style={{ position: "absolute", top: 0, bottom: 0, right: curbW - 2, width: 4, background: "linear-gradient(90deg,#79a96d,#a7cfa0)", boxShadow: "1px 0 3px rgba(0,0,0,.25)" }} />
+
+      {/* trees */}
+      {pine(grassW * 0.82, 2, 3, "t1")}
+      {pine(grassW * 0.6, grassW * 0.22, 28, "t2")}
+      {pine(grassW * 0.9, -2, 55, "t3")}
+
+      {/* bushes + grass tufts */}
+      {bush(grassW * 0.5, grassW * 0.04, 84, "b1")}
+      {tuft(grassW * 0.64, 24, "g1")}
+      {tuft(4, 50, "g2", "#0c7d45")}
+      {tuft(grassW * 0.48, 72, "g3")}
+
+      {/* fire hydrant — roadside on the grass by the curb */}
+      <div className="absolute" style={{ right: curbW + 2, bottom: "13%" }}>
+        <FireHydrant scale={1} />
+      </div>
+
+      {/* traffic light — on the curb, facing the road */}
+      <div className="absolute" style={{ right: 6, top: "5%" }}>
+        <TrafficLight go={go} scale={1} />
+      </div>
     </div>
   );
 }
