@@ -19,6 +19,10 @@ module.exports = {
       instances: 2,
       exec_mode: "cluster",
       max_memory_restart: "512M",
+      // Graceful reload: new worker must be ready before old one is killed.
+      wait_ready: true,
+      listen_timeout: 10000,
+      kill_timeout: 5000,
       env: { NODE_ENV: "production", API_PORT: 4000, UPLOADS_DIR: "/var/www/exch/uploads" },
     },
     {
@@ -29,6 +33,10 @@ module.exports = {
       instances: 2,
       exec_mode: "cluster",
       max_memory_restart: "512M",
+      // Rolling reload keeps one worker alive — prevents "connection refused" during deploy.
+      wait_ready: true,
+      listen_timeout: 15000,
+      kill_timeout: 5000,
       env: { NODE_ENV: "production" },
     },
     {
@@ -39,6 +47,9 @@ module.exports = {
       instances: 2,
       exec_mode: "cluster",
       max_memory_restart: "384M",
+      wait_ready: true,
+      listen_timeout: 15000,
+      kill_timeout: 5000,
       env: { NODE_ENV: "production" },
     },
   ],

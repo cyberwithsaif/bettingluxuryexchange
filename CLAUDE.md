@@ -42,11 +42,12 @@ Deploy flow (commit & push locally first, then on VPS pull + build + restart):
 git add <files> && git commit -m "..." && git push origin main
 
 # deploy (one line)
-ssh -i ~/.ssh/diamond_idrsa root@51.222.84.91 "cd /var/www/exch && git pull origin main && cd platform && npm run build && pm2 restart exch-web"
+ssh -i ~/.ssh/diamond_idrsa root@51.222.84.91 "cd /var/www/exch && git pull origin main && cd platform && npm run build && pm2 reload exch-web"
 ```
 
 - `npm run build` in `platform/` runs `pnpm -r run build` (all apps).
-- Restart only the app you changed: `exch-web` (frontend), `exch-api` (backend), `exch-admin` (admin).
+- **Use `pm2 reload` not `pm2 restart`** — reload does a rolling restart (one worker stays alive), preventing "connection refused" gaps that cause pages to redirect to homepage. `pm2 restart` kills all workers at once.
+- Reload only the app you changed: `exch-web` (frontend), `exch-api` (backend), `exch-admin` (admin).
 - If `git pull` is blocked by local VPS changes, `git stash` first then pull.
 
 ## Conventions
