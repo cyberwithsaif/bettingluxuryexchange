@@ -947,6 +947,23 @@ export default function ChickenRoadPage() {
         {/* ── Mobile layout ── */}
         <div className="md:hidden px-3 pt-3 pb-4 flex flex-col gap-2">
 
+          {/* Action button — top of card on mobile */}
+          {phase === "running" ? (
+            <motion.button onClick={handleCashout} whileTap={{ scale: 0.97 }}
+              disabled={loading || currentLane === 0}
+              className="w-full py-3 rounded-xl font-bold text-sm uppercase tracking-widest text-white transition disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 4px 12px rgba(245,158,11,0.3)" }}>
+              {loading ? "…" : `Cash Out  ₹${(session ? session.betAmount * multiplier : 0).toFixed(2)}`}
+            </motion.button>
+          ) : (
+            <motion.button onClick={isOver ? handlePlayAgain : handleStart} whileTap={{ scale: 0.97 }}
+              disabled={loading}
+              className="w-full py-3 rounded-xl font-bold text-sm uppercase tracking-widest text-[#0a0b16] transition disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", boxShadow: "0 4px 12px rgba(251,191,36,0.3)" }}>
+              {loading ? "Starting…" : "Start Game"}
+            </motion.button>
+          )}
+
           {/* Card 1: Bet Amount */}
           <div className="flex flex-col gap-2" style={PURPLE_CARD}>
             <span className="text-[11px] font-bold text-purple-200/80">Bet Amount</span>
@@ -1002,22 +1019,6 @@ export default function ChickenRoadPage() {
             </div>
           </div>
 
-          {/* Row 3: Action */}
-          {phase === "running" ? (
-            <motion.button onClick={handleCashout} whileTap={{ scale: 0.97 }}
-              disabled={loading || currentLane === 0}
-              className="w-full py-3 rounded-xl font-bold text-sm uppercase tracking-widest text-white transition disabled:opacity-40"
-              style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "0 4px 12px rgba(245,158,11,0.3)" }}>
-              {loading ? "…" : `Cash Out  ₹${(session ? session.betAmount * multiplier : 0).toFixed(2)}`}
-            </motion.button>
-          ) : (
-            <motion.button onClick={isOver ? handlePlayAgain : handleStart} whileTap={{ scale: 0.97 }}
-              disabled={loading}
-              className="w-full py-3 rounded-xl font-bold text-sm uppercase tracking-widest text-[#0a0b16] transition disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", boxShadow: "0 4px 12px rgba(251,191,36,0.3)" }}>
-              {loading ? "Starting…" : "Start Game"}
-            </motion.button>
-          )}
         </div>
 
         {/* ── Desktop layout ── */}
