@@ -397,6 +397,7 @@ export default function ChickenRoadPage() {
   const [crashLane, setCrashLane] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cashoutAmt, setCashoutAmt] = useState<number | null>(null);
+  const [wonAll, setWonAll] = useState(false);
   const [loading, setLoading] = useState(false);
   const errorTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -510,8 +511,10 @@ export default function ChickenRoadPage() {
         return;
       }
       if (r.status === "CASHED_OUT") {
-        setSession(prev => (prev ? { ...prev, multiplier: r.multiplier ?? prev.multiplier } : prev));
+        // Completed all lanes: advance chicken to the end sidewalk, then walk off.
+        setSession(prev => prev ? { ...prev, currentLane: prev.lanes, multiplier: r.multiplier ?? prev.multiplier } : prev);
         setCashoutAmt(r.payout ?? 0);
+        setWonAll(true);
         setPhase("cashed");
         sounds.cashout();
         return;
@@ -579,6 +582,7 @@ export default function ChickenRoadPage() {
   const handleStart = () => {
     if (!user) { showError("Please log in to play"); return; }
     if (loading) return;
+    setWonAll(false);
     setLoading(true);
     socket.current?.emit("chickenRoad:start", { betAmount, difficulty, clientSeed });
   };
@@ -607,6 +611,7 @@ export default function ChickenRoadPage() {
     setSession(null);
     setCrashLane(null);
     setCashoutAmt(null);
+    setWonAll(false);
     setClientSeed(newSeed);
     setLoading(true);
     socket.current?.emit("chickenRoad:start", { betAmount, difficulty, clientSeed: newSeed });
@@ -633,20 +638,27 @@ export default function ChickenRoadPage() {
     return () => clearTimeout(t);
   }, [currentLane, phase]);
 
-  // Chicken geometry. At the start (lane 0) it stands on the sidewalk edge; once
-  // moving it sits in the CENTER of the lane cell it just entered (between the two
-  // dashed dividers), not on top of a divider line.
+  // Chicken geometry. At idle the chicken sits in the CENTRE of the start sidewalk.
+  // Once moving it sits in the centre of the lane cell it just entered.
   const isMobile = containerW < 640;
-  const chickenShift = currentLane === 0 ? 0 : -laneW / 2;
+  const chickenShift = currentLane === 0 ? -(SIDEWALK_W / 2) : -laneW / 2;
   const chickenCenterTrack = SIDEWALK_W + currentLane * laneW + chickenShift;
 
-  // Camera: on mobile anchor the chicken near the middle; on desktop keep ~2 crossed
-  // lanes visible behind it. After crash, slide right to reveal the crash lane and the
-  // full death-path (future lanes with their multipliers).
-  const cameraTarget = phase === "crashed" && crashLane !== null
-    ? SIDEWALK_W + crashLane * laneW + laneW * 0.5   // centre of crash lane
-    : chickenCenterTrack;
-  const anchorX = phase === "crashed" && crashLane !== null
+  // When the player clears every lane the chicken walks into the end sidewalk.
+  const endSidewalkCenter = SIDEWALK_W + lanes * laneW + laneW * 0.5;
+  const chickenLeft = wonAll
+    ? SIDEWALK_W + lanes * laneW             // container flush with end sidewalk start
+    : phase === "crashed" && crashLane !== null
+      ? SIDEWALK_W + crashLane * laneW
+      : chickenCenterTrack - laneW / 2;
+
+  // Camera: track the chicken; after crash pan to crash lane; after full win pan to end.
+  const cameraTarget = wonAll
+    ? endSidewalkCenter
+    : phase === "crashed" && crashLane !== null
+      ? SIDEWALK_W + crashLane * laneW + laneW * 0.5
+      : chickenCenterTrack;
+  const anchorX = (wonAll || (phase === "crashed" && crashLane !== null))
     ? (isMobile ? containerW * 0.48 : containerW * 0.38)
     : (isMobile ? containerW * 0.42 : SIDEWALK_W + 2 * laneW);
   const cameraX = Math.min(0, anchorX - cameraTarget);
@@ -856,35 +868,34 @@ export default function ChickenRoadPage() {
             <div className="absolute top-0 bottom-0 left-0" style={{ width: laneW * 0.4, background: "repeating-linear-gradient(180deg,#d7d3e4,#d7d3e4 26px,#c8c3da 26px,#c8c3da 52px)" }} />
           </div>
 
-          {/* Chicken — hidden on cashout, replaced with dead sprite on crash */}
+          {/* Chicken — replaced with dead sprite on crash; walks to end on full win */}
           <motion.div
             className="absolute z-20"
             style={{ width: laneW, top: 0, bottom: 0 }}
-            animate={{
-              left: phase === "crashed" && crashLane !== null
-                ? SIDEWALK_W + crashLane * laneW
-                : chickenCenterTrack - laneW / 2,
-            }}
+            animate={{ left: chickenLeft }}
             transition={{ type: "spring", stiffness: 260, damping: 22 }}
           >
             <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: Math.round(boardH * 0.08), gap: 8 }}>
 
-              {/* Alive chicken — hidden instantly on crash, flies off on cashout */}
+              {/* Alive chicken — scale smoothly at idle, walk off on full win, fly up on cashout */}
               {phase !== "crashed" && (
                 <motion.div
                   animate={
-                    phase === "cashed"
+                    wonAll
+                      ? { opacity: [1, 1, 0], x: [0, laneW * 0.6], scale: 1.05 }
+                      : phase === "cashed"
                       ? { opacity: 0, y: -Math.round(chickenSize * 0.6), scale: 1.1 }
-                      : loading
-                      ? { y: [0, -boardH * 0.06, 0], opacity: 1 }
-                      : { y: 0, opacity: 1 }
+                      : { opacity: 1, y: 0, scale: phase === "idle" ? 1.28 : 1 }
                   }
                   transition={
-                    phase === "cashed" ? { duration: 0.3, ease: "easeIn" }
-                      : { duration: 0.3, repeat: loading ? Infinity : 0 }
+                    wonAll
+                      ? { duration: 0.7, ease: "easeIn", times: [0, 0.6, 1] }
+                      : phase === "cashed"
+                      ? { duration: 0.3, ease: "easeIn" }
+                      : { duration: 0.35, ease: "easeOut" }
                   }
                 >
-                  <Chicken size={phase === "idle" ? Math.round(chickenSize * 1.3) : chickenSize} walking={phase === "running"} />
+                  <Chicken size={chickenSize} walking={phase === "running" || wonAll} />
                 </motion.div>
               )}
 
