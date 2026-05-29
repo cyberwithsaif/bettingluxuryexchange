@@ -27,8 +27,21 @@ export default function MinesControls({ isLoggedIn, gameState, setGameState, han
     setGameState(prev => ({ ...prev, minesCount: parseInt(e.target.value) }));
   };
 
+  const cashoutBtn = isPlaying && (
+    <button
+      onClick={handleCashout}
+      disabled={loading || gameState.clickedTiles.length === 0}
+      className="w-full bg-[#00e701] hover:bg-[#1fff20] text-[#0f212e] font-bold text-base md:text-lg py-2.5 md:py-3 rounded shadow-[0_0_10px_rgba(0,231,1,0.3)] transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {loading ? "Cashing out..." : `Cashout ${gameState.clickedTiles.length > 0 ? (gameState.betAmount * gameState.multiplier).toFixed(2) : ""}`}
+    </button>
+  );
+
   return (
     <div className="space-y-3 md:space-y-4">
+      {/* Cashout first on mobile when playing */}
+      {isPlaying && <div className="md:hidden">{cashoutBtn}</div>}
+
       {/* Bet Amount */}
       <div>
         <div className="flex justify-between text-xs md:text-sm text-gray-400 mb-1 font-semibold">
@@ -121,13 +134,8 @@ export default function MinesControls({ isLoggedIn, gameState, setGameState, han
             {loading ? "Starting..." : "Bet"}
           </button>
         ) : (
-          <button
-            onClick={handleCashout}
-            disabled={loading || gameState.clickedTiles.length === 0}
-            className="w-full bg-[#00e701] hover:bg-[#1fff20] text-[#0f212e] font-bold text-base md:text-lg py-2.5 md:py-3 rounded shadow-[0_0_10px_rgba(0,231,1,0.3)] transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "Cashing out..." : `Cashout ${gameState.clickedTiles.length > 0 ? (gameState.betAmount * gameState.multiplier).toFixed(2) : ""}`}
-          </button>
+          /* Desktop: cashout sits here in the natural flow; mobile: hidden (shown at top) */
+          <div className="hidden md:block">{cashoutBtn}</div>
         )}
       </div>
 
