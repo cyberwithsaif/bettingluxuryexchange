@@ -862,10 +862,9 @@ export default function ChickenRoadPage() {
             );
           })}
 
-          {/* Finish sidewalk */}
+          {/* Finish sidewalk — animated crowd of chicks waiting */}
           <div className="absolute top-0 bottom-0" style={{ left: SIDEWALK_W + lanes * laneW, width: laneW }}>
-            <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,#3cb371,#2f9e5e)" }} />
-            <div className="absolute top-0 bottom-0 left-0" style={{ width: laneW * 0.4, background: "repeating-linear-gradient(180deg,#d7d3e4,#d7d3e4 26px,#c8c3da 26px,#c8c3da 52px)" }} />
+            <FinishScene width={laneW} height={boardH} won={wonAll} />
           </div>
 
           {/* Chicken — replaced with dead sprite on crash; walks to end on full win */}
@@ -1125,6 +1124,145 @@ export default function ChickenRoadPage() {
       <AnimatePresence>
         {showFair && <ProvablyFairModal session={session} onClose={() => setShowFair(false)} />}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Mini Chick (tiny bobbing chick for end-zone crowd) ─────────────────────────
+
+function MiniChick({ size, delay, bobAmp, speed, flip }: { size: number; delay: number; bobAmp: number; speed: number; flip?: boolean }) {
+  const s = size / 40;
+  const p = (n: number) => Math.round(n * s);
+  return (
+    <motion.div
+      style={{ position: "relative", width: p(40), height: p(44), display: "inline-block", transform: flip ? "scaleX(-1)" : undefined }}
+      animate={{ y: [0, -bobAmp, 0, -bobAmp * 0.5, 0] }}
+      transition={{ duration: speed, repeat: Infinity, ease: "easeInOut", delay }}
+    >
+      {/* shadow */}
+      <div style={{ position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)", width: p(26), height: p(5), background: "rgba(0,0,0,.18)", borderRadius: "50%", filter: "blur(1px)" }} />
+      {/* tail */}
+      <div style={{ position: "absolute", left: p(2), top: p(18) }}>
+        <span style={{ position: "absolute", width: p(8), height: p(4), background: "#eef1ff", border: `${Math.max(1, p(1))}px solid #c5cae8`, borderRadius: "50%", transform: "rotate(-30deg)" }} />
+        <span style={{ position: "absolute", top: p(4), left: p(1), width: p(8), height: p(4), background: "#eef1ff", border: `${Math.max(1, p(1))}px solid #c5cae8`, borderRadius: "50%", transform: "rotate(10deg)" }} />
+      </div>
+      {/* body */}
+      <div style={{ position: "absolute", width: p(30), height: p(26), background: "#f8f8ff", borderRadius: "45% 45% 40% 40%", left: p(6), top: p(10), border: `${Math.max(1, p(1.5))}px solid #c7cce7`, boxShadow: `0 ${p(3)}px ${p(6)}px rgba(0,0,0,.15)` }} />
+      {/* wing */}
+      <div style={{ position: "absolute", width: p(12), height: p(9), borderRadius: "50%", background: "#eef0ff", left: p(10), top: p(20), border: `${Math.max(1, p(1))}px solid #d7dbf4` }} />
+      {/* head */}
+      <div style={{ position: "absolute", width: p(20), height: p(18), background: "#fff", borderRadius: "50%", top: p(2), left: p(14), border: `${Math.max(1, p(1.5))}px solid #d6dbf6` }}>
+        {/* comb */}
+        <div style={{ position: "absolute", top: p(-4), left: p(5), display: "flex", gap: p(1) }}>
+          <span style={{ width: p(4), height: p(6), background: "#ff5b5b", borderRadius: "50%", transform: "rotate(-20deg)" }} />
+          <span style={{ width: p(4), height: p(7), background: "#ff5b5b", borderRadius: "50%", transform: "rotate(-20deg)" }} />
+        </div>
+        {/* eye */}
+        <div style={{ position: "absolute", width: p(3), height: p(3), background: "#1f2758", borderRadius: "50%", top: p(7), left: p(5) }} />
+        {/* beak */}
+        <div style={{ position: "absolute", width: p(6), height: p(4), background: "#f5a623", top: p(9), left: p(6), clipPath: "polygon(0 50%,100% 0,100% 100%)" }} />
+      </div>
+      {/* legs */}
+      <motion.div
+        style={{ position: "absolute", width: p(3), height: p(7), background: "#f5a623", bottom: p(3), left: p(15), borderRadius: p(4), transformOrigin: "top center" }}
+        animate={{ rotate: [-8, 8, -8] }}
+        transition={{ duration: speed * 0.5, repeat: Infinity, ease: "easeInOut", delay }}
+      >
+        <div style={{ position: "absolute", width: p(6), height: p(2.5), background: "#e89612", bottom: p(-1), left: p(-1.5), borderRadius: p(4) }} />
+      </motion.div>
+      <motion.div
+        style={{ position: "absolute", width: p(3), height: p(7), background: "#f5a623", bottom: p(3), right: p(12), borderRadius: p(4), transformOrigin: "top center" }}
+        animate={{ rotate: [8, -8, 8] }}
+        transition={{ duration: speed * 0.5, repeat: Infinity, ease: "easeInOut", delay }}
+      >
+        <div style={{ position: "absolute", width: p(6), height: p(2.5), background: "#e89612", bottom: p(-1), right: p(-1.5), borderRadius: p(4) }} />
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─── Finish end-zone scene ───────────────────────────────────────────────────────
+
+const CHICK_CROWD: { topPct: number; leftPct: number; size: number; delay: number; bob: number; speed: number; flip?: boolean }[] = [
+  { topPct: 12, leftPct: 20, size: 30, delay: 0,    bob: 5, speed: 1.1 },
+  { topPct: 18, leftPct: 55, size: 26, delay: 0.3,  bob: 4, speed: 0.95, flip: true },
+  { topPct: 28, leftPct: 10, size: 34, delay: 0.15, bob: 6, speed: 1.25 },
+  { topPct: 34, leftPct: 60, size: 28, delay: 0.5,  bob: 5, speed: 1.05, flip: true },
+  { topPct: 44, leftPct: 30, size: 32, delay: 0.7,  bob: 7, speed: 1.3 },
+  { topPct: 50, leftPct: 65, size: 24, delay: 0.2,  bob: 4, speed: 0.85 },
+  { topPct: 58, leftPct: 5,  size: 30, delay: 0.9,  bob: 5, speed: 1.1,  flip: true },
+  { topPct: 63, leftPct: 50, size: 36, delay: 0.4,  bob: 8, speed: 1.4 },
+  { topPct: 72, leftPct: 20, size: 28, delay: 0.6,  bob: 5, speed: 1.0 },
+  { topPct: 78, leftPct: 62, size: 26, delay: 0.1,  bob: 4, speed: 0.9,  flip: true },
+  { topPct: 84, leftPct: 35, size: 32, delay: 0.8,  bob: 6, speed: 1.2 },
+];
+
+function FinishScene({ width, height, won }: { width: number; height: number; won: boolean }) {
+  const curbW = Math.round(width * 0.38);
+  const grassW = width - curbW;
+  return (
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+      {/* grass */}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(270deg,#2c9457 0%,#37ab6b 55%,#3cb371 100%)" }} />
+      {/* curb stripe */}
+      <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: curbW, background: "repeating-linear-gradient(180deg,#d7d3e4,#d7d3e4 26px,#c8c3da 26px,#c8c3da 52px)" }} />
+      <div style={{ position: "absolute", top: 0, bottom: 0, left: curbW - 2, width: 4, background: "linear-gradient(90deg,#a7cfa0,#79a96d)", boxShadow: "-1px 0 3px rgba(0,0,0,.2)" }} />
+
+      {/* finish flag pole */}
+      <div style={{ position: "absolute", top: height * 0.04, left: curbW + grassW * 0.42 }}>
+        {/* pole */}
+        <div style={{ width: 4, height: height * 0.28, background: "linear-gradient(90deg,#aaa,#fff,#aaa)", borderRadius: 2, boxShadow: "1px 0 3px rgba(0,0,0,.3)" }} />
+        {/* checkered flag */}
+        <div style={{
+          position: "absolute", top: 2, left: 4,
+          width: 36, height: 22,
+          borderRadius: 3,
+          background: "repeating-conic-gradient(#000 0 25%, #fff 0 50%) 0 0 / 9px 11px",
+          boxShadow: "0 2px 6px rgba(0,0,0,.4)",
+        }} />
+      </div>
+
+      {/* star burst behind crowd when won */}
+      {won && (
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: [0, 1.4, 1.1], opacity: [0, 0.35, 0.18] }}
+          transition={{ duration: 0.55, ease: "easeOut" }}
+          style={{
+            position: "absolute", inset: 0,
+            background: "radial-gradient(circle at 60% 50%, #ffe97a 0%, transparent 70%)",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+
+      {/* chick crowd */}
+      {CHICK_CROWD.map((c, i) => (
+        <div key={i} style={{ position: "absolute", left: curbW + grassW * (c.leftPct / 100), top: height * (c.topPct / 100) }}>
+          <MiniChick size={c.size} delay={c.delay} bobAmp={c.bob} speed={c.speed} flip={c.flip} />
+        </div>
+      ))}
+
+      {/* "SAFE!" label on win */}
+      {won && (
+        <motion.div
+          initial={{ scale: 0.4, opacity: 0, y: -10 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, type: "spring", stiffness: 380, damping: 22 }}
+          style={{
+            position: "absolute", top: height * 0.41, left: "50%", transform: "translateX(-50%)",
+            background: "linear-gradient(135deg,#16a34a,#22c55e)",
+            border: "2px solid #bbf7d0",
+            borderRadius: 10, padding: "4px 10px",
+            color: "#fff", fontWeight: 900, fontSize: 13,
+            letterSpacing: 1, whiteSpace: "nowrap",
+            boxShadow: "0 0 18px rgba(34,197,94,.55)",
+            zIndex: 10,
+          }}
+        >
+          🏁 SAFE!
+        </motion.div>
+      )}
     </div>
   );
 }
