@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { ArrowLeft, Volume2, VolumeX, ShieldCheck, ChevronDown, RotateCcw } from "lucide-react";
+import { ArrowLeft, Volume2, VolumeX, ShieldCheck, ChevronDown, RotateCcw, Zap, Trophy, History } from "lucide-react";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import useSWR from "swr";
@@ -36,14 +36,11 @@ interface Config {
   stepMultiplier: number; maxFlips: number; multiplierTable: number[];
 }
 
-interface RecentGame {
-  id: string; username: string; betAmount: number;
-  multiplier: number; payout: number; streak: number;
-  status: "CASHED_OUT" | "LOST"; createdAt: string;
-}
-
 const FLIP_DUR = 1.4; // seconds — coin spin animation length
 const inr = (n: number) => "₹" + n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+
+// Ladder pill accent colors — warm → purple → pink → blue, like the design.
+const LADDER_COLORS = ["#f3c431", "#c084fc", "#a855f7", "#d946ef", "#ec4899", "#8b5cf6", "#6366f1", "#3b82f6", "#38bdf8", "#22d3ee"];
 
 // ─── Sounds (tiny WebAudio synth — no asset files) ─────────────────────────────
 
@@ -76,62 +73,70 @@ function useSounds(enabled: boolean) {
   }), [tone]);
 }
 
-// ─── Coin faces (inline SVG) ───────────────────────────────────────────────────
+// ─── Coin faces ────────────────────────────────────────────────────────────────
 
-function HeadsFace() {
+// HEADS — the website logo set in a gold coin.
+function HeadsFace({ ghost = false }: { ghost?: boolean }) {
   return (
-    <svg viewBox="0 0 200 200" className="w-full h-full block">
-      <defs>
-        <radialGradient id="cfH" cx="36%" cy="30%" r="80%">
-          <stop offset="0%" stopColor="#fff6cf" />
-          <stop offset="38%" stopColor="#ffd84d" />
-          <stop offset="72%" stopColor="#e3a818" />
-          <stop offset="100%" stopColor="#9a6d06" />
-        </radialGradient>
-        <linearGradient id="cfHr" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#ffe79a" />
-          <stop offset="50%" stopColor="#c8961e" />
-          <stop offset="100%" stopColor="#7c5604" />
-        </linearGradient>
-      </defs>
-      <circle cx="100" cy="100" r="98" fill="url(#cfHr)" />
-      <circle cx="100" cy="100" r="86" fill="url(#cfH)" />
-      <circle cx="100" cy="100" r="76" fill="none" stroke="rgba(122,82,0,0.4)" strokeWidth="3" strokeDasharray="4 8" />
-      {/* crown */}
-      <path d="M72 66 L80 52 L92 62 L100 46 L108 62 L120 52 L128 66 L124 74 L76 74 Z" fill="#8a5d00" opacity="0.85" />
-      <text x="100" y="143" textAnchor="middle" fontSize="74" fontWeight="900" fontFamily="Arial Black, sans-serif" fill="#7c5604">H</text>
-      <text x="100" y="140" textAnchor="middle" fontSize="74" fontWeight="900" fontFamily="Arial Black, sans-serif" fill="#fff3c2">H</text>
-      <text x="100" y="172" textAnchor="middle" fontSize="13" fontWeight="800" letterSpacing="4" fontFamily="Arial, sans-serif" fill="rgba(110,72,0,0.75)">HEADS</text>
-    </svg>
+    <div
+      className="w-full h-full rounded-full relative select-none"
+      style={{
+        background: "radial-gradient(circle at 36% 28%, #fff6cf 0%, #ffd84d 34%, #e3a818 68%, #9a6d06 100%)",
+        boxShadow: ghost ? "none" : "inset 0 -10px 24px rgba(110,70,0,0.45), inset 0 8px 18px rgba(255,250,220,0.55), 0 0 40px rgba(255,180,40,0.35)",
+        border: "6px solid",
+        borderColor: "#c8961e",
+      }}
+    >
+      {/* dotted inner ring */}
+      <div className="absolute rounded-full" style={{ inset: "7%", border: "3px dashed rgba(122,82,0,0.45)" }} />
+      {/* website logo as the head */}
+      <div
+        className="absolute left-1/2 -translate-x-1/2 rounded-full overflow-hidden"
+        style={{
+          top: "15%", width: "54%", height: "54%",
+          border: "4px solid rgba(140,95,5,0.55)",
+          boxShadow: "inset 0 4px 10px rgba(0,0,0,0.35), 0 2px 8px rgba(120,80,0,0.4)",
+        }}
+      >
+        <img src="/logo.png" alt="Heads" draggable={false}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+      </div>
+      <span
+        className="absolute left-0 right-0 text-center font-black"
+        style={{ bottom: "9%", fontSize: "11%", letterSpacing: "0.45em", color: "rgba(110,72,0,0.85)", textShadow: "0 1px 0 rgba(255,243,194,0.7)" }}
+      >
+        HEADS
+      </span>
+    </div>
   );
 }
 
-function TailsFace() {
+// TAILS — deep purple coin with the big T, like the design.
+function TailsFace({ ghost = false }: { ghost?: boolean }) {
   return (
-    <svg viewBox="0 0 200 200" className="w-full h-full block">
-      <defs>
-        <radialGradient id="cfT" cx="36%" cy="30%" r="80%">
-          <stop offset="0%" stopColor="#f3ecff" />
-          <stop offset="38%" stopColor="#c0a3f7" />
-          <stop offset="72%" stopColor="#8456e0" />
-          <stop offset="100%" stopColor="#3d2380" />
-        </radialGradient>
-        <linearGradient id="cfTr" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#dcc8ff" />
-          <stop offset="50%" stopColor="#7a4fd0" />
-          <stop offset="100%" stopColor="#2c1763" />
-        </linearGradient>
-      </defs>
-      <circle cx="100" cy="100" r="98" fill="url(#cfTr)" />
-      <circle cx="100" cy="100" r="86" fill="url(#cfT)" />
-      <circle cx="100" cy="100" r="76" fill="none" stroke="rgba(46,20,110,0.45)" strokeWidth="3" strokeDasharray="4 8" />
-      {/* diamond */}
-      <path d="M100 46 L122 66 L100 90 L78 66 Z" fill="#2c1763" opacity="0.85" />
-      <path d="M100 52 L116 66 L100 83 L84 66 Z" fill="#b794f6" opacity="0.9" />
-      <text x="100" y="143" textAnchor="middle" fontSize="74" fontWeight="900" fontFamily="Arial Black, sans-serif" fill="#2c1763">T</text>
-      <text x="100" y="140" textAnchor="middle" fontSize="74" fontWeight="900" fontFamily="Arial Black, sans-serif" fill="#f0e6ff">T</text>
-      <text x="100" y="172" textAnchor="middle" fontSize="13" fontWeight="800" letterSpacing="4" fontFamily="Arial, sans-serif" fill="rgba(36,16,90,0.8)">TAILS</text>
-    </svg>
+    <div
+      className="w-full h-full rounded-full relative select-none"
+      style={{
+        background: "radial-gradient(circle at 36% 28%, #9d77ea 0%, #6a3fd0 40%, #3b2080 72%, #1d0e44 100%)",
+        boxShadow: ghost ? "none" : "inset 0 -10px 24px rgba(20,8,60,0.6), inset 0 8px 18px rgba(220,200,255,0.35), 0 0 40px rgba(140,90,240,0.35)",
+        border: "6px solid",
+        borderColor: "#7a4fd0",
+      }}
+    >
+      <div className="absolute rounded-full" style={{ inset: "7%", border: "3px dashed rgba(200,170,255,0.3)" }} />
+      <span
+        className="absolute left-1/2 -translate-x-1/2 font-black leading-none"
+        style={{ top: "16%", fontSize: "52%", color: "#c9aaff", textShadow: "0 5px 0 #2a1463, 0 0 26px rgba(170,120,255,0.55)", fontFamily: "Arial Black, Arial, sans-serif" }}
+      >
+        T
+      </span>
+      <span
+        className="absolute left-0 right-0 text-center font-black"
+        style={{ bottom: "9%", fontSize: "11%", letterSpacing: "0.45em", color: "rgba(205,180,255,0.75)", textShadow: "0 1px 0 rgba(20,8,60,0.8)" }}
+      >
+        TAILS
+      </span>
+    </div>
   );
 }
 
@@ -141,8 +146,8 @@ function Coin({ rotation, flipping }: { rotation: number; flipping: boolean }) {
   return (
     <div className="relative flex flex-col items-center" style={{ perspective: 1300 }}>
       <motion.div
-        className="relative w-[200px] h-[200px] md:w-[250px] md:h-[250px]"
-        animate={{ y: flipping ? [0, -60, 0] : 0 }}
+        className="relative w-[190px] h-[190px] md:w-[250px] md:h-[250px]"
+        animate={{ y: flipping ? [0, -64, 0] : 0 }}
         transition={{ duration: FLIP_DUR, times: [0, 0.42, 1], ease: ["easeOut", "easeIn"] }}
       >
         <motion.div
@@ -159,13 +164,79 @@ function Coin({ rotation, flipping }: { rotation: number; flipping: boolean }) {
           </div>
         </motion.div>
       </motion.div>
-      {/* ground shadow */}
-      <motion.div
-        className="mt-3 h-4 w-[150px] md:w-[190px] rounded-[50%] bg-black/55 blur-md"
-        animate={{ scaleX: flipping ? [1, 0.5, 1] : 1, opacity: flipping ? [0.55, 0.25, 0.55] : 0.55 }}
-        transition={{ duration: FLIP_DUR, times: [0, 0.42, 1] }}
-      />
     </div>
+  );
+}
+
+// ─── Stage podium (SVG) ────────────────────────────────────────────────────────
+
+function Podium() {
+  return (
+    <svg viewBox="0 0 380 130" className="w-[280px] md:w-[380px] -mt-5 md:-mt-7 block" aria-hidden>
+      <defs>
+        <linearGradient id="pdSide" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#332551" />
+          <stop offset="100%" stopColor="#150e29" />
+        </linearGradient>
+        <radialGradient id="pdTop" cx="50%" cy="42%" r="70%">
+          <stop offset="0%" stopColor="#3d2d63" />
+          <stop offset="70%" stopColor="#251a44" />
+          <stop offset="100%" stopColor="#1a1131" />
+        </radialGradient>
+        <filter id="pdBlur" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="5" />
+        </filter>
+      </defs>
+
+      {/* base */}
+      <ellipse cx="190" cy="112" rx="172" ry="16" fill="#0d0918" />
+      <ellipse cx="190" cy="108" rx="160" ry="15" fill="url(#pdSide)" />
+      {/* body */}
+      <path d="M70 50 L70 96 A120 14 0 0 0 310 96 L310 50 Z" fill="url(#pdSide)" />
+      {/* glow ring around top edge */}
+      <ellipse cx="190" cy="50" rx="121" ry="19" fill="none" stroke="#8b5cf6" strokeWidth="5" opacity="0.5" filter="url(#pdBlur)" />
+      {/* top disc */}
+      <ellipse cx="190" cy="50" rx="120" ry="18" fill="url(#pdTop)" stroke="#4b3878" strokeWidth="1.5" />
+      <ellipse cx="190" cy="50" rx="92" ry="13" fill="none" stroke="rgba(160,120,255,0.25)" strokeWidth="1.5" strokeDasharray="3 8" />
+      {/* spotlight under the coin */}
+      <ellipse cx="190" cy="47" rx="62" ry="9" fill="rgba(255,190,70,0.30)" filter="url(#pdBlur)" />
+      {/* rim lights */}
+      {[-100, -64, -28, 8, 44, 80, 108].map((dx, i) => (
+        <g key={i}>
+          <circle cx={190 + dx} cy={50 + Math.sqrt(Math.max(0, 1 - (dx / 120) ** 2)) * 16} r="5" fill="rgba(180,130,255,0.35)" filter="url(#pdBlur)" />
+          <circle cx={190 + dx} cy={50 + Math.sqrt(Math.max(0, 1 - (dx / 120) ** 2)) * 16} r="2.2" fill="#d9c2ff" />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+// ─── Floating decorative coins ─────────────────────────────────────────────────
+
+const FLOATERS = [
+  { left: "8%",  top: "14%", size: 34, dur: 4.2, delay: 0,   rot: -18, mobile: false },
+  { left: "20%", top: "58%", size: 22, dur: 3.6, delay: 0.8, rot: 10,  mobile: true  },
+  { left: "30%", top: "8%",  size: 18, dur: 3.2, delay: 1.6, rot: 24,  mobile: true  },
+  { left: "72%", top: "10%", size: 26, dur: 4.6, delay: 0.4, rot: -8,  mobile: true  },
+  { left: "86%", top: "30%", size: 38, dur: 5.0, delay: 1.2, rot: 18,  mobile: false },
+  { left: "78%", top: "66%", size: 24, dur: 3.8, delay: 2.0, rot: -22, mobile: true  },
+  { left: "12%", top: "40%", size: 16, dur: 4.4, delay: 2.6, rot: 6,   mobile: false },
+];
+
+function FloatCoin({ left, top, size, dur, delay, rot, mobile }: typeof FLOATERS[number]) {
+  return (
+    <motion.div
+      className={`absolute pointer-events-none ${mobile ? "" : "hidden md:block"}`}
+      style={{ left, top, width: size, height: size, zIndex: 1 }}
+      animate={{ y: [0, -14, 0], rotate: [rot, rot + 10, rot] }}
+      transition={{ duration: dur, repeat: Infinity, ease: "easeInOut", delay }}
+    >
+      <div className="w-full h-full rounded-full" style={{
+        background: "radial-gradient(circle at 35% 30%, #ffeaa6 0%, #f3c431 55%, #b8860b 100%)",
+        border: "2px solid #8a6508",
+        boxShadow: "0 6px 14px rgba(0,0,0,0.45), inset 0 2px 4px rgba(255,250,220,0.6)",
+      }} />
+    </motion.div>
   );
 }
 
@@ -205,11 +276,8 @@ export default function CoinflipPage() {
   const errorTimer = useRef<NodeJS.Timeout | null>(null);
   const sounds = useSounds(soundOn);
 
-  // Config + live feed
   const { data: cfg } = useSWR<Config>("/api/casino/coinflip/config",
     (url: string) => fetch(url).then(r => r.ok ? r.json() : null), { revalidateOnFocus: false });
-  const { data: recent, mutate: refreshRecent } = useSWR<RecentGame[]>("/api/casino/coinflip/history",
-    (url: string) => fetch(url).then(r => r.ok ? r.json() : []), { refreshInterval: 15_000 });
 
   const minBet = cfg?.minBet ?? 10;
   const maxBet = cfg?.maxBet ?? 100_000;
@@ -254,16 +322,14 @@ export default function CoinflipPage() {
       setFinalSeed(r.serverSeed ?? null);
       setPhase("cashed");
       sounds.cashout();
-      refreshRecent();
     } else {
       setMultiplier(0);
       setPayout(0);
       setFinalSeed(r.serverSeed ?? null);
       setPhase("lost");
       sounds.lose();
-      refreshRecent();
     }
-  }, [sounds, refreshRecent]);
+  }, [sounds]);
 
   const animateThenSettle = useCallback((r: FlipResult) => {
     pendingRef.current = r;
@@ -300,7 +366,7 @@ export default function CoinflipPage() {
         setSeedHash(s.serverSeedHash ?? null);
         const last = (s.flips ?? [])[(s.flips ?? []).length - 1] as FlipRecord | undefined;
         if (last) setRotation(last.result === "HEADS" ? 0 : 180);
-        setPhase(s.streak > 0 ? "choice" : "choice");
+        setPhase("choice");
         return true;
       }
       return false;
@@ -351,7 +417,6 @@ export default function CoinflipPage() {
       setFinalSeed(r.serverSeed ?? null);
       setPhase("cashed");
       sounds.cashout();
-      refreshRecent();
     };
 
     const onError = (data: { message: string }) => {
@@ -372,7 +437,7 @@ export default function CoinflipPage() {
       s.off("coinflip:cashoutResponse", onCashout);
       s.off("coinflip:error",           onError);
     };
-  }, [animateThenSettle, restoreActive, showError, sounds, refreshRecent, phase]);
+  }, [animateThenSettle, restoreActive, showError, sounds, phase]);
 
   // ── Actions ──────────────────────────────────────────────────────────────────
   const handleFlip = () => {
@@ -428,7 +493,7 @@ export default function CoinflipPage() {
         <button
           onClick={handleCashout}
           disabled={loading || flipping}
-          className="w-full bg-[#00e701] hover:bg-[#1fff20] text-[#0f212e] font-black text-base md:text-lg py-3 rounded-lg shadow-[0_0_14px_rgba(0,231,1,0.35)] transition active:scale-95 disabled:opacity-50"
+          className="w-full bg-[#00e701] hover:bg-[#1fff20] text-[#0f212e] font-black text-base md:text-lg py-3 rounded-xl shadow-[0_0_18px_rgba(0,231,1,0.4)] transition active:scale-95 disabled:opacity-50"
         >
           {loading ? "…" : <>CASHOUT&nbsp;&nbsp;{inr(payout)}</>}
         </button>
@@ -437,11 +502,12 @@ export default function CoinflipPage() {
         <button
           onClick={handleFlip}
           disabled={loading || flipping || cfg?.enabled === false}
-          className="w-full font-black text-base md:text-lg py-3 rounded-lg transition active:scale-95 disabled:opacity-60 text-white"
+          className="w-full font-black text-lg md:text-xl py-3.5 rounded-xl transition active:scale-95 disabled:opacity-60 tracking-wide"
           style={{
-            background: "linear-gradient(135deg,#f3c431 0%,#e08a00 100%)",
-            color: "#3a2400",
-            boxShadow: "0 0 16px rgba(243,196,49,0.3)",
+            background: "linear-gradient(180deg,#ffc63a 0%,#ff9000 55%,#ff7a00 100%)",
+            color: "#fff",
+            textShadow: "0 1px 3px rgba(120,50,0,0.5)",
+            boxShadow: "0 0 28px rgba(255,150,0,0.45), inset 0 2px 0 rgba(255,240,180,0.55), inset 0 -3px 0 rgba(150,60,0,0.35)",
           }}
         >
           {!user ? "LOGIN TO PLAY"
@@ -454,10 +520,15 @@ export default function CoinflipPage() {
       {(phase === "lost" || phase === "cashed") && (
         <button
           onClick={handleReset}
-          className="w-full font-black text-base md:text-lg py-3 rounded-lg transition active:scale-95 text-white flex items-center justify-center gap-2"
-          style={{ background: "linear-gradient(135deg,#f3c431 0%,#e08a00 100%)", color: "#3a2400", boxShadow: "0 0 16px rgba(243,196,49,0.3)" }}
+          className="w-full font-black text-lg py-3.5 rounded-xl transition active:scale-95 flex items-center justify-center gap-2 tracking-wide"
+          style={{
+            background: "linear-gradient(180deg,#ffc63a 0%,#ff9000 55%,#ff7a00 100%)",
+            color: "#fff",
+            textShadow: "0 1px 3px rgba(120,50,0,0.5)",
+            boxShadow: "0 0 28px rgba(255,150,0,0.45), inset 0 2px 0 rgba(255,240,180,0.55), inset 0 -3px 0 rgba(150,60,0,0.35)",
+          }}
         >
-          <RotateCcw size={17} /> PLAY AGAIN
+          <RotateCcw size={18} /> PLAY AGAIN
         </button>
       )}
     </div>
@@ -465,11 +536,14 @@ export default function CoinflipPage() {
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="bg-[#0a0b12] text-white flex flex-col font-sans w-full min-h-screen md:min-h-0 md:overflow-hidden md:h-[calc(100vh-74px)]">
+    <div className="bg-[#0a0712] text-white flex flex-col font-sans w-full min-h-screen md:min-h-0 md:overflow-hidden md:h-[calc(100vh-74px)]">
 
       {/* Mobile header */}
-      <div className="md:hidden flex items-center justify-between gap-2 px-4 py-3 bg-[#0F1923] border-b border-white/10">
-        <h1 className="font-black text-base tracking-wide">🪙 COINFLIP</h1>
+      <div className="md:hidden flex items-center justify-between gap-2 px-4 py-3 bg-[#0d0918] border-b border-white/10">
+        <h1 className="font-black text-base tracking-wide flex items-center gap-2">
+          <span className="w-5 h-5 rounded-full inline-block border border-[#8a6508]" style={{ background: "radial-gradient(circle at 35% 30%, #fff6cf, #e3a818)" }} />
+          COINFLIP
+        </h1>
         <Link href="/" className="flex items-center gap-1.5 text-white/60 hover:text-white text-sm font-semibold transition">
           <ArrowLeft size={16} /> Back
         </Link>
@@ -487,42 +561,46 @@ export default function CoinflipPage() {
         )}
       </AnimatePresence>
 
-      <div className="flex-1 md:overflow-hidden flex flex-col-reverse md:flex-row md:p-3 w-full max-w-7xl mx-auto md:gap-3 min-h-0">
+      <div className="flex-1 md:overflow-hidden flex flex-col-reverse md:flex-row md:p-3 w-full max-w-[1500px] mx-auto md:gap-3 min-h-0">
 
         {/* ── Controls panel ── */}
-        <div className="md:w-80 shrink-0 bg-[#141826] md:rounded-xl p-4 flex flex-col gap-4 md:h-full md:overflow-y-auto border-t border-white/10 md:border md:border-white/5">
+        <div className="md:w-[330px] shrink-0 md:rounded-2xl p-4 flex flex-col gap-4 md:h-full md:overflow-y-auto border-t border-white/10 md:border md:border-white/8"
+          style={{ background: "linear-gradient(180deg,#120d20 0%,#0d0918 100%)" }}>
 
           {/* Mobile: primary actions on top */}
           <div className="md:hidden">{actionButtons}</div>
 
           {/* Bet amount */}
           <div>
-            <div className="flex justify-between text-xs text-gray-400 mb-1 font-semibold">
-              <span>Bet Amount</span>
-              <span>Min {inr(minBet)} · Max {inr(maxBet)}</span>
+            <div className="flex justify-between items-center mb-1.5">
+              <span className="text-[11px] font-black uppercase tracking-widest text-white/45">Bet Amount</span>
+              <span className="text-[11px] text-white/35 font-semibold">Min {inr(minBet)} · Max {inr(maxBet)}</span>
             </div>
-            <div className="flex bg-[#0f1320] rounded-lg border border-white/10 overflow-hidden focus-within:border-yellow-400/50 transition">
+            <div className="flex rounded-xl border border-white/10 overflow-hidden focus-within:border-yellow-400/50 transition" style={{ background: "#0a0712" }}>
               <input
                 type="number"
                 min={minBet} max={maxBet}
-                className="w-full bg-transparent text-white p-2.5 outline-none font-bold"
+                className="w-full bg-transparent text-white px-3.5 py-3 outline-none font-bold text-base"
                 value={betAmount || ""}
                 onChange={(e) => setBetAmount(e.target.value === "" ? 0 : Number(e.target.value))}
                 onBlur={() => setBetAmount(prev => Math.min(maxBet, Math.max(minBet, prev || minBet)))}
                 disabled={inGame}
               />
-              <button className="px-3 bg-white/5 hover:bg-white/10 text-sm font-bold disabled:opacity-40" disabled={inGame}
+              <button className="px-4 bg-white/6 hover:bg-white/12 text-sm font-black disabled:opacity-40 border-l border-white/8" disabled={inGame}
                 onClick={() => setBetAmount(p => Math.max(minBet, Math.round(p / 2)))}>½</button>
-              <div className="w-px bg-white/10" />
-              <button className="px-3 bg-white/5 hover:bg-white/10 text-sm font-bold disabled:opacity-40" disabled={inGame}
+              <button className="px-4 bg-white/6 hover:bg-white/12 text-sm font-black disabled:opacity-40 border-l border-white/8" disabled={inGame}
                 onClick={() => setBetAmount(p => Math.min(maxBet, Math.round(p * 2)))}>2×</button>
             </div>
             <div className="flex flex-wrap gap-1.5 mt-2">
               {[100, 500, 1000, 2500, 5000, 10000].map(v => {
                 const c = Math.min(maxBet, Math.max(minBet, v));
+                const active = betAmount === c;
                 return (
                   <button key={v} onClick={() => setBetAmount(c)} disabled={inGame}
-                    className={`px-2.5 py-1 rounded text-[11px] font-bold transition disabled:opacity-40 ${betAmount === c ? "bg-yellow-500/80 text-black" : "bg-white/8 text-gray-300 hover:bg-white/15"}`}>
+                    className="px-3 py-1.5 rounded-lg text-[11px] font-black transition disabled:opacity-40"
+                    style={active
+                      ? { background: "linear-gradient(135deg,#ffd84d,#e3a818)", color: "#3a2400", boxShadow: "0 0 10px rgba(255,200,60,0.35)" }
+                      : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.65)" }}>
                     ₹{v.toLocaleString("en-IN")}
                   </button>
                 );
@@ -532,36 +610,38 @@ export default function CoinflipPage() {
 
           {/* Side selector */}
           <div>
-            <p className="text-xs text-gray-400 mb-1.5 font-semibold">
-              {phase === "choice" ? "Pick side for next flip" : "Pick your side"}
+            <p className="text-[11px] font-black uppercase tracking-widest text-white/45 mb-1.5">
+              {phase === "choice" ? "Pick side for next flip" : "Pick Your Side"}
             </p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setSide("HEADS")}
                 disabled={flipping || loading}
-                className="py-3 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                className="py-3.5 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                 style={{
-                  background: side === "HEADS" ? "linear-gradient(135deg,#ffd84d,#c8961e)" : "rgba(255,255,255,0.05)",
-                  color: side === "HEADS" ? "#3a2400" : "rgba(255,255,255,0.55)",
-                  border: `2px solid ${side === "HEADS" ? "#ffd84d" : "rgba(255,255,255,0.1)"}`,
-                  boxShadow: side === "HEADS" ? "0 0 14px rgba(255,216,77,0.35)" : "none",
+                  background: side === "HEADS" ? "linear-gradient(135deg,#ffd84d,#e3a818)" : "rgba(255,255,255,0.04)",
+                  color: side === "HEADS" ? "#3a2400" : "rgba(255,255,255,0.6)",
+                  border: `2px solid ${side === "HEADS" ? "#ffd84d" : "rgba(255,255,255,0.12)"}`,
+                  boxShadow: side === "HEADS" ? "0 0 18px rgba(255,216,77,0.4)" : "none",
                 }}
               >
-                <span className="w-5 h-5 rounded-full inline-block border" style={{ background: "radial-gradient(circle at 35% 30%, #fff6cf, #e3a818)", borderColor: "#9a6d06" }} />
+                <span className="w-5 h-5 rounded-full inline-block border shrink-0 overflow-hidden relative" style={{ borderColor: "#9a6d06", background: "radial-gradient(circle at 35% 30%, #fff6cf, #e3a818)" }}>
+                  <img src="/logo.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-90" draggable={false} />
+                </span>
                 HEADS
               </button>
               <button
                 onClick={() => setSide("TAILS")}
                 disabled={flipping || loading}
-                className="py-3 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                className="py-3.5 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                 style={{
-                  background: side === "TAILS" ? "linear-gradient(135deg,#c0a3f7,#6d40d8)" : "rgba(255,255,255,0.05)",
-                  color: side === "TAILS" ? "#1c0e44" : "rgba(255,255,255,0.55)",
-                  border: `2px solid ${side === "TAILS" ? "#b794f6" : "rgba(255,255,255,0.1)"}`,
-                  boxShadow: side === "TAILS" ? "0 0 14px rgba(183,148,246,0.35)" : "none",
+                  background: side === "TAILS" ? "linear-gradient(135deg,#3b2080,#241055)" : "rgba(255,255,255,0.04)",
+                  color: side === "TAILS" ? "#d8c5ff" : "rgba(255,255,255,0.6)",
+                  border: `2px solid ${side === "TAILS" ? "#8b5cf6" : "rgba(255,255,255,0.12)"}`,
+                  boxShadow: side === "TAILS" ? "0 0 18px rgba(139,92,246,0.4)" : "none",
                 }}
               >
-                <span className="w-5 h-5 rounded-full inline-block border" style={{ background: "radial-gradient(circle at 35% 30%, #f3ecff, #8456e0)", borderColor: "#3d2380" }} />
+                <span className="w-5 h-5 rounded-full inline-block border shrink-0" style={{ background: "radial-gradient(circle at 35% 30%, #c9aaff, #5b34b8)", borderColor: "#3d2380" }} />
                 TAILS
               </button>
             </div>
@@ -572,86 +652,102 @@ export default function CoinflipPage() {
 
           {/* Game stats */}
           <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-lg bg-white/4 border border-white/8 py-2">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500">Per Flip</p>
-              <p className="text-sm font-black text-yellow-400">{stepMult}×</p>
+            <div className="rounded-xl border border-white/8 py-2.5" style={{ background: "rgba(255,255,255,0.03)" }}>
+              <p className="text-[9px] uppercase tracking-widest text-white/35 font-bold">Per Flip</p>
+              <p className="text-sm font-black text-yellow-400 mt-0.5">{stepMult}×</p>
             </div>
-            <div className="rounded-lg bg-white/4 border border-white/8 py-2">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500">Streak</p>
-              <p className="text-sm font-black">{streak}<span className="text-gray-500 font-bold">/{maxFlips}</span></p>
+            <div className="rounded-xl border border-white/8 py-2.5" style={{ background: "rgba(255,255,255,0.03)" }}>
+              <p className="text-[9px] uppercase tracking-widest text-white/35 font-bold">Streak</p>
+              <p className="text-sm font-black mt-0.5">{streak}<span className="text-white/35 font-bold">/{maxFlips}</span></p>
             </div>
-            <div className="rounded-lg bg-white/4 border border-white/8 py-2">
-              <p className="text-[10px] uppercase tracking-wider text-gray-500">Max Win</p>
-              <p className="text-sm font-black text-green-400">{ladder[ladder.length - 1]}×</p>
+            <div className="rounded-xl border border-white/8 py-2.5" style={{ background: "rgba(255,255,255,0.03)" }}>
+              <p className="text-[9px] uppercase tracking-widest text-white/35 font-bold">Max Win</p>
+              <p className="text-sm font-black text-green-400 mt-0.5">{ladder[ladder.length - 1]}×</p>
             </div>
           </div>
 
           {/* Provably fair */}
-          <div className="rounded-lg border border-white/8 bg-white/3">
-            <button onClick={() => setShowFair(v => !v)} className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-bold text-gray-300">
-              <span className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-green-400" /> Provably Fair</span>
+          <div className="rounded-xl border border-white/8" style={{ background: "rgba(255,255,255,0.03)" }}>
+            <button onClick={() => setShowFair(v => !v)} className="w-full flex items-center justify-between px-3.5 py-3 text-xs font-bold text-white/80">
+              <span className="flex items-center gap-2"><ShieldCheck size={14} className="text-green-400" /> Provably Fair</span>
               <ChevronDown size={14} className={`transition-transform ${showFair ? "rotate-180" : ""}`} />
             </button>
             {showFair && (
-              <div className="px-3 pb-3 space-y-2 text-[11px]">
+              <div className="px-3.5 pb-3.5 space-y-2 text-[11px]">
                 <div>
-                  <p className="text-gray-500 mb-0.5">Client Seed {inGame ? "(locked during game)" : "(editable)"}</p>
+                  <p className="text-white/40 mb-0.5">Client Seed {inGame ? "(locked during game)" : "(editable)"}</p>
                   <input
                     value={clientSeed}
                     onChange={e => setClientSeed(e.target.value.slice(0, 64))}
                     disabled={inGame}
-                    className="w-full bg-[#0f1320] border border-white/10 rounded px-2 py-1.5 font-mono text-gray-300 outline-none focus:border-yellow-400/40 disabled:opacity-50"
+                    className="w-full bg-[#0a0712] border border-white/10 rounded-lg px-2.5 py-2 font-mono text-white/70 outline-none focus:border-yellow-400/40 disabled:opacity-50"
                   />
                 </div>
                 {seedHash && (
                   <div>
-                    <p className="text-gray-500 mb-0.5">Server Seed Hash (SHA-256)</p>
-                    <p className="font-mono text-gray-400 break-all bg-[#0f1320] rounded px-2 py-1.5 border border-white/10">{seedHash}</p>
+                    <p className="text-white/40 mb-0.5">Server Seed Hash (SHA-256)</p>
+                    <p className="font-mono text-white/50 break-all bg-[#0a0712] rounded-lg px-2.5 py-2 border border-white/10">{seedHash}</p>
                   </div>
                 )}
                 {finalSeed && (
                   <div>
                     <p className="text-green-400/80 mb-0.5">Server Seed (revealed)</p>
-                    <p className="font-mono text-green-300/80 break-all bg-green-950/30 rounded px-2 py-1.5 border border-green-500/20">{finalSeed}</p>
+                    <p className="font-mono text-green-300/80 break-all bg-green-950/30 rounded-lg px-2.5 py-2 border border-green-500/20">{finalSeed}</p>
                   </div>
                 )}
-                <p className="text-gray-600 leading-relaxed">
+                <p className="text-white/30 leading-relaxed">
                   Each flip = HMAC-SHA256(serverSeed, clientSeed:nonce:flip:i). Verify the hash matches after the game ends.
                 </p>
               </div>
             )}
           </div>
 
-          {/* Recent games */}
-          <div className="hidden md:block flex-1 min-h-0">
-            <p className="text-xs text-gray-400 mb-1.5 font-semibold">Recent Games</p>
-            <div className="space-y-1">
-              {(recent ?? []).slice(0, 8).map(g => (
-                <div key={g.id} className="flex items-center justify-between rounded-md bg-white/4 px-2.5 py-1.5 text-[11px]">
-                  <span className="text-gray-400 truncate max-w-[80px]">{g.username}</span>
-                  <span className="text-gray-500">{g.streak}🔥</span>
-                  <span className={`font-bold ${g.status === "CASHED_OUT" ? "text-green-400" : "text-red-400"}`}>
-                    {g.status === "CASHED_OUT" ? `+${inr(g.payout)}` : `-${inr(g.betAmount)}`}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* View all games */}
+          <Link
+            href="/casino"
+            className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-black text-white/70 hover:text-white border border-white/10 hover:border-white/25 transition"
+            style={{ background: "rgba(255,255,255,0.03)" }}
+          >
+            <History size={15} /> VIEW ALL GAMES
+          </Link>
         </div>
 
         {/* ── Game arena ── */}
-        <div className="flex-1 relative md:rounded-xl overflow-hidden flex flex-col min-h-[480px] md:min-h-0"
-          style={{ background: "radial-gradient(ellipse 90% 70% at 50% 30%, #181d33 0%, #0c0f1c 70%)" }}>
+        <div className="flex-1 relative md:rounded-2xl overflow-hidden flex flex-col min-h-[520px] md:min-h-0 border-b border-white/10 md:border md:border-white/8"
+          style={{ background: "radial-gradient(ellipse 100% 80% at 50% 30%, #1b1230 0%, #0d081a 60%, #080510 100%)" }}>
 
-          {/* side glows */}
-          <div className="absolute inset-y-0 left-0 w-1/2 pointer-events-none transition-opacity duration-300"
-            style={{ background: "radial-gradient(ellipse 70% 55% at 18% 50%, rgba(243,196,49,0.13) 0%, transparent 65%)", opacity: side === "HEADS" ? 1 : 0.25 }} />
-          <div className="absolute inset-y-0 right-0 w-1/2 pointer-events-none transition-opacity duration-300"
-            style={{ background: "radial-gradient(ellipse 70% 55% at 82% 50%, rgba(132,86,224,0.16) 0%, transparent 65%)", opacity: side === "TAILS" ? 1 : 0.25 }} />
+          {/* ambience: gold core + purple right, like the design */}
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 46% 52% at 46% 46%, rgba(255,160,40,0.22) 0%, transparent 70%)" }} />
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 44% 64% at 88% 55%, rgba(140,80,255,0.25) 0%, transparent 70%)" }} />
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 30% 42% at 8% 60%, rgba(243,180,49,0.10) 0%, transparent 70%)" }} />
+
+          {/* ghost coins flanking the stage */}
+          <div className="absolute left-[-60px] md:left-[1%] top-[46%] -translate-y-1/2 w-[230px] h-[230px] md:w-[300px] md:h-[300px] opacity-[0.16] pointer-events-none hidden sm:block" style={{ filter: "saturate(0.7)" }}>
+            <HeadsFace ghost />
+          </div>
+          <div className="absolute right-[-60px] md:right-[1%] top-[46%] -translate-y-1/2 w-[230px] h-[230px] md:w-[300px] md:h-[300px] opacity-[0.22] pointer-events-none hidden sm:block" style={{ filter: "saturate(0.85)" }}>
+            <TailsFace ghost />
+          </div>
+
+          {/* floating coins */}
+          {FLOATERS.map((f, i) => <FloatCoin key={i} {...f} />)}
+
+          {/* sparkles */}
+          {[["16%", "22%"], ["64%", "12%"], ["90%", "20%"], ["6%", "74%"], ["82%", "78%"]].map(([l, t], i) => (
+            <motion.span key={i} className="absolute text-white/60 pointer-events-none text-xs"
+              style={{ left: l, top: t }}
+              animate={{ opacity: [0.15, 0.8, 0.15], scale: [0.8, 1.15, 0.8] }}
+              transition={{ duration: 2.6 + i * 0.5, repeat: Infinity, delay: i * 0.4 }}>✦</motion.span>
+          ))}
 
           {/* desktop title + sound */}
           <div className="hidden md:flex items-center justify-between px-5 pt-4 relative z-10">
-            <h1 className="font-black text-lg tracking-wide">🪙 COINFLIP</h1>
+            <h1 className="font-black text-lg tracking-wide flex items-center gap-2.5">
+              <span className="w-6 h-6 rounded-full inline-block border border-[#8a6508] overflow-hidden relative" style={{ background: "radial-gradient(circle at 35% 30%, #fff6cf, #e3a818)" }}>
+                <img src="/logo.png" alt="" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
+              </span>
+              COINFLIP
+            </h1>
             <button onClick={() => setSoundOn(v => !v)} className="text-white/40 hover:text-white transition" title="Sound">
               {soundOn ? <Volume2 size={18} /> : <VolumeX size={18} />}
             </button>
@@ -659,16 +755,17 @@ export default function CoinflipPage() {
 
           {/* Multiplier ladder */}
           <div className="relative z-10 px-3 md:px-5 pt-3">
-            <div className="flex gap-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="flex gap-1.5 md:gap-2 overflow-x-auto pb-1 md:justify-center [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {ladder.map((m, i) => {
+                const color = LADDER_COLORS[i] ?? "#3b82f6";
                 const reached = streak >= i + 1;
                 const isNext  = streak === i && inGame;
                 return (
                   <div key={i}
-                    className={`shrink-0 px-2.5 py-1.5 rounded-md text-[11px] md:text-xs font-black border transition-all ${
-                      reached ? "bg-green-500/20 border-green-400/60 text-green-300"
-                      : isNext ? "bg-yellow-500/15 border-yellow-400/60 text-yellow-300 animate-pulse"
-                      : "bg-white/4 border-white/8 text-gray-500"}`}>
+                    className={`shrink-0 px-2.5 md:px-3 py-1.5 rounded-lg text-[11px] md:text-xs font-black border-[1.5px] transition-all ${isNext ? "animate-pulse" : ""}`}
+                    style={reached
+                      ? { background: "rgba(34,197,94,0.15)", borderColor: "rgba(74,222,128,0.7)", color: "#86efac" }
+                      : { background: isNext ? `${color}26` : "rgba(255,255,255,0.03)", borderColor: isNext ? color : `${color}55`, color: isNext ? color : `${color}cc`, boxShadow: isNext ? `0 0 12px ${color}55` : "none" }}>
                     {m}×
                   </div>
                 );
@@ -676,9 +773,12 @@ export default function CoinflipPage() {
             </div>
           </div>
 
-          {/* Coin center */}
-          <div className="flex-1 flex flex-col items-center justify-center relative z-10 py-6">
-            <Coin rotation={rotation} flipping={flipping} />
+          {/* Stage */}
+          <div className="flex-1 flex flex-col items-center justify-center relative z-10 py-4">
+            <div className="relative flex flex-col items-center">
+              <div className="relative z-10"><Coin rotation={rotation} flipping={flipping} /></div>
+              <Podium />
+            </div>
 
             {/* floating win text */}
             <AnimatePresence>
@@ -688,27 +788,16 @@ export default function CoinflipPage() {
                   initial={{ opacity: 0, y: 10, scale: 0.8 }}
                   animate={{ opacity: 1, y: -16, scale: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute top-[16%] text-2xl md:text-3xl font-black text-green-400 drop-shadow-[0_0_12px_rgba(74,222,128,0.5)]"
+                  className="absolute top-[10%] text-2xl md:text-3xl font-black text-green-400 drop-shadow-[0_0_12px_rgba(74,222,128,0.5)]"
                 >
                   +{inr(lastWin)} · {multiplier}×
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* status line under coin */}
-            <div className="mt-5 text-center min-h-[44px]">
-              {phase === "idle" && <p className="text-white/40 text-sm font-semibold">Pick a side, set your bet & flip — each win pays {stepMult}×</p>}
-              {phase === "flipping" && <p className="text-yellow-300/80 text-sm font-bold animate-pulse">Flipping…</p>}
-              {phase === "choice" && (
-                <p className="text-white/70 text-sm font-semibold">
-                  <span className="text-green-400 font-black">{inr(payout)}</span> locked — flip again for <span className="text-yellow-300 font-black">{inr(nextWin)}</span> or cash out
-                </p>
-              )}
-            </div>
-
             {/* Session flip chips */}
             {flips.length > 0 && (
-              <div className="flex gap-1.5 flex-wrap justify-center px-4 mt-1">
+              <div className="flex gap-1.5 flex-wrap justify-center px-4 mt-3">
                 {flips.map((f, i) => (
                   <div key={i}
                     className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black border-2 ${
@@ -716,14 +805,46 @@ export default function CoinflipPage() {
                     style={{
                       background: f.result === "HEADS"
                         ? "radial-gradient(circle at 35% 30%, #fff6cf, #e3a818)"
-                        : "radial-gradient(circle at 35% 30%, #f3ecff, #8456e0)",
-                      color: f.result === "HEADS" ? "#5c4100" : "#241055",
+                        : "radial-gradient(circle at 35% 30%, #c9aaff, #5b34b8)",
+                      color: f.result === "HEADS" ? "#5c4100" : "#f0e6ff",
                     }}>
                     {f.result === "HEADS" ? "H" : "T"}
                   </div>
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Bottom info bar */}
+          <div className="relative z-10 mx-3 md:mx-10 mb-3 md:mb-5 rounded-2xl px-4 py-3.5 md:px-6 md:py-4"
+            style={{ background: "rgba(12,8,22,0.78)", border: "1px solid rgba(255,255,255,0.07)", backdropFilter: "blur(10px)" }}>
+            <p className="text-center text-sm md:text-[15px] text-white/70 font-semibold min-h-[20px]">
+              {phase === "flipping" ? <span className="text-yellow-300/90 animate-pulse">Flipping…</span>
+                : phase === "choice" ? <>
+                    <span className="text-green-400 font-black">{inr(payout)}</span> locked — flip again for{" "}
+                    <span className="text-yellow-300 font-black">{inr(nextWin)}</span> or cash out
+                  </>
+                : <>Pick a side, set your bet &amp; flip — each win pays <b className="text-white">{stepMult}×</b></>}
+            </p>
+            <div className="flex justify-center gap-2 md:gap-3 mt-3 flex-wrap">
+              {[
+                { icon: Zap,         color: "#22c55e", title: "FAST & FAIR", sub: "Instant results" },
+                { icon: ShieldCheck, color: "#3b82f6", title: "SECURE",      sub: "Provably Fair" },
+                { icon: Trophy,      color: "#a855f7", title: "BEST ODDS",   sub: "High Payouts" },
+              ].map(({ icon: Icon, color, title, sub }) => (
+                <div key={title} className="flex items-center gap-2.5 rounded-xl px-3.5 py-2 md:px-4 md:py-2.5"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <span className="w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: `${color}1c`, border: `1px solid ${color}45` }}>
+                    <Icon size={15} style={{ color }} />
+                  </span>
+                  <span className="text-left">
+                    <span className="block text-[11px] md:text-xs font-black text-white leading-tight">{title}</span>
+                    <span className="block text-[10px] md:text-[11px] text-white/40 leading-tight">{sub}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Result banners */}
@@ -741,8 +862,8 @@ export default function CoinflipPage() {
                   <p className="text-3xl md:text-4xl font-black text-green-400 mb-1">{inr(payout)}</p>
                   <p className="text-white/50 text-sm font-semibold mb-5">{multiplier}× · {streak} flip{streak > 1 ? "s" : ""} streak</p>
                   <button onClick={handleReset}
-                    className="px-7 py-2.5 rounded-lg font-black text-sm transition active:scale-95"
-                    style={{ background: "linear-gradient(135deg,#f3c431,#e08a00)", color: "#3a2400" }}>
+                    className="px-7 py-2.5 rounded-xl font-black text-sm transition active:scale-95 text-white"
+                    style={{ background: "linear-gradient(180deg,#ffc63a,#ff7a00)", textShadow: "0 1px 3px rgba(120,50,0,0.5)" }}>
                     PLAY AGAIN
                   </button>
                 </div>
@@ -761,8 +882,8 @@ export default function CoinflipPage() {
                     {streak > 0 ? `Streak ended at ${streak} — the coin landed ${flips[flips.length - 1]?.result}` : `The coin landed ${flips[flips.length - 1]?.result}`}
                   </p>
                   <button onClick={handleReset}
-                    className="px-7 py-2.5 rounded-lg font-black text-sm transition active:scale-95"
-                    style={{ background: "linear-gradient(135deg,#f3c431,#e08a00)", color: "#3a2400" }}>
+                    className="px-7 py-2.5 rounded-xl font-black text-sm transition active:scale-95 text-white"
+                    style={{ background: "linear-gradient(180deg,#ffc63a,#ff7a00)", textShadow: "0 1px 3px rgba(120,50,0,0.5)" }}>
                     TRY AGAIN
                   </button>
                 </div>
