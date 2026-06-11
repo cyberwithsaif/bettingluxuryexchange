@@ -5,14 +5,14 @@ import Image from "next/image";
 import { useEffect, useRef } from "react";
 
 const CASINO_GAMES = [
-  { name: "Roulette", href: "/roulette", thumb: "/game-thumbs/roulette2.png" },
-  { name: "Mines",    href: "/mines",    thumb: "/game-thumbs/mines2.png" },
-  { name: "Plinko",   href: "/plinko",   thumb: "/game-thumbs/plinko2.png" },
-  { name: "Pump",     href: "/pump",     thumb: "/game-thumbs/pump.png" },
-  { name: "Dice",     href: "/dice",     thumb: "/game-thumbs/dice.png" },
-  { name: "Towers",   href: "/towers",   thumb: "/game-thumbs/towers.png" },
-  { name: "Chicken Road", href: "/chicken-road", thumb: "/game-thumbs/chick.png" },
-  { name: "Coinflip", href: "/coinflip", thumb: "/game-thumbs/coinflip.png" },
+  { name: "Roulette", href: "/roulette", thumb: "/game-thumbs/opt/roulette.webp" },
+  { name: "Mines",    href: "/mines",    thumb: "/game-thumbs/opt/mines.webp" },
+  { name: "Plinko",   href: "/plinko",   thumb: "/game-thumbs/opt/plinko.webp" },
+  { name: "Pump",     href: "/pump",     thumb: "/game-thumbs/opt/baloon.webp" },
+  { name: "Dice",     href: "/dice",     thumb: "/game-thumbs/opt/dice.webp" },
+  { name: "Towers",   href: "/towers",   thumb: "/game-thumbs/opt/towers.webp" },
+  { name: "Chicken Road", href: "/chicken-road", thumb: "/game-thumbs/opt/chicken-road.webp" },
+  { name: "Coinflip", href: "/coinflip", thumb: "/game-thumbs/opt/coin.webp" },
 ];
 
 export function GameCarousel() {
