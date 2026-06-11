@@ -73,70 +73,62 @@ function useSounds(enabled: boolean) {
   }), [tone]);
 }
 
-// ─── Coin faces ────────────────────────────────────────────────────────────────
+// ─── Coin faces (SVG — everything scales with the coin size) ──────────────────
 
-// HEADS — the website logo set in a gold coin.
-function HeadsFace({ ghost = false }: { ghost?: boolean }) {
+// HEADS — the website logo fills the coin face inside a gold rim.
+function HeadsFace() {
   return (
-    <div
-      className="w-full h-full rounded-full relative select-none"
-      style={{
-        background: "radial-gradient(circle at 36% 28%, #fff6cf 0%, #ffd84d 34%, #e3a818 68%, #9a6d06 100%)",
-        boxShadow: ghost ? "none" : "inset 0 -10px 24px rgba(110,70,0,0.45), inset 0 8px 18px rgba(255,250,220,0.55), 0 0 40px rgba(255,180,40,0.35)",
-        border: "6px solid",
-        borderColor: "#c8961e",
-      }}
-    >
-      {/* dotted inner ring */}
-      <div className="absolute rounded-full" style={{ inset: "7%", border: "3px dashed rgba(122,82,0,0.45)" }} />
-      {/* website logo as the head */}
-      <div
-        className="absolute left-1/2 -translate-x-1/2 rounded-full overflow-hidden"
-        style={{
-          top: "15%", width: "54%", height: "54%",
-          border: "4px solid rgba(140,95,5,0.55)",
-          boxShadow: "inset 0 4px 10px rgba(0,0,0,0.35), 0 2px 8px rgba(120,80,0,0.4)",
-        }}
-      >
-        <img src="/logo.png" alt="Heads" draggable={false}
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-      </div>
-      <span
-        className="absolute left-0 right-0 text-center font-black"
-        style={{ bottom: "9%", fontSize: "11%", letterSpacing: "0.45em", color: "rgba(110,72,0,0.85)", textShadow: "0 1px 0 rgba(255,243,194,0.7)" }}
-      >
-        HEADS
-      </span>
-    </div>
+    <svg viewBox="0 0 200 200" className="w-full h-full block select-none">
+      <defs>
+        <radialGradient id="cfHFace" cx="36%" cy="28%" r="80%">
+          <stop offset="0%" stopColor="#fff6cf" />
+          <stop offset="38%" stopColor="#ffd84d" />
+          <stop offset="75%" stopColor="#e3a818" />
+          <stop offset="100%" stopColor="#9a6d06" />
+        </radialGradient>
+        <linearGradient id="cfHRim" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#ffe79a" />
+          <stop offset="55%" stopColor="#c8961e" />
+          <stop offset="100%" stopColor="#7c5604" />
+        </linearGradient>
+        <clipPath id="cfHClip"><circle cx="100" cy="100" r="75" /></clipPath>
+      </defs>
+      <circle cx="100" cy="100" r="99" fill="url(#cfHRim)" />
+      <circle cx="100" cy="100" r="90" fill="url(#cfHFace)" />
+      <circle cx="100" cy="100" r="84" fill="none" stroke="rgba(122,82,0,0.45)" strokeWidth="2.5" strokeDasharray="5 9" />
+      {/* logo fills the face */}
+      <image href="/logo.png" x="25" y="25" width="150" height="150" clipPath="url(#cfHClip)" preserveAspectRatio="xMidYMid slice" />
+      <circle cx="100" cy="100" r="75" fill="none" stroke="rgba(140,95,5,0.7)" strokeWidth="4" />
+      <circle cx="100" cy="100" r="75" fill="none" stroke="rgba(255,243,194,0.35)" strokeWidth="1.5" />
+    </svg>
   );
 }
 
 // TAILS — deep purple coin with the big T, like the design.
-function TailsFace({ ghost = false }: { ghost?: boolean }) {
+function TailsFace() {
   return (
-    <div
-      className="w-full h-full rounded-full relative select-none"
-      style={{
-        background: "radial-gradient(circle at 36% 28%, #9d77ea 0%, #6a3fd0 40%, #3b2080 72%, #1d0e44 100%)",
-        boxShadow: ghost ? "none" : "inset 0 -10px 24px rgba(20,8,60,0.6), inset 0 8px 18px rgba(220,200,255,0.35), 0 0 40px rgba(140,90,240,0.35)",
-        border: "6px solid",
-        borderColor: "#7a4fd0",
-      }}
-    >
-      <div className="absolute rounded-full" style={{ inset: "7%", border: "3px dashed rgba(200,170,255,0.3)" }} />
-      <span
-        className="absolute left-1/2 -translate-x-1/2 font-black leading-none"
-        style={{ top: "16%", fontSize: "52%", color: "#c9aaff", textShadow: "0 5px 0 #2a1463, 0 0 26px rgba(170,120,255,0.55)", fontFamily: "Arial Black, Arial, sans-serif" }}
-      >
-        T
-      </span>
-      <span
-        className="absolute left-0 right-0 text-center font-black"
-        style={{ bottom: "9%", fontSize: "11%", letterSpacing: "0.45em", color: "rgba(205,180,255,0.75)", textShadow: "0 1px 0 rgba(20,8,60,0.8)" }}
-      >
-        TAILS
-      </span>
-    </div>
+    <svg viewBox="0 0 200 200" className="w-full h-full block select-none">
+      <defs>
+        <radialGradient id="cfTFace" cx="36%" cy="28%" r="80%">
+          <stop offset="0%" stopColor="#9d77ea" />
+          <stop offset="40%" stopColor="#6a3fd0" />
+          <stop offset="74%" stopColor="#3b2080" />
+          <stop offset="100%" stopColor="#1d0e44" />
+        </radialGradient>
+        <linearGradient id="cfTRim" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#c9aaff" />
+          <stop offset="55%" stopColor="#7a4fd0" />
+          <stop offset="100%" stopColor="#2c1763" />
+        </linearGradient>
+      </defs>
+      <circle cx="100" cy="100" r="99" fill="url(#cfTRim)" />
+      <circle cx="100" cy="100" r="90" fill="url(#cfTFace)" />
+      <circle cx="100" cy="100" r="84" fill="none" stroke="rgba(200,170,255,0.35)" strokeWidth="2.5" strokeDasharray="5 9" />
+      {/* big embossed T */}
+      <text x="100" y="135" textAnchor="middle" fontSize="100" fontWeight="900" fontFamily="Arial Black, Arial, sans-serif" fill="#1d0e44">T</text>
+      <text x="100" y="130" textAnchor="middle" fontSize="100" fontWeight="900" fontFamily="Arial Black, Arial, sans-serif" fill="#c9aaff">T</text>
+      <text x="100" y="166" textAnchor="middle" fontSize="13" fontWeight="800" letterSpacing="6" fontFamily="Arial, sans-serif" fill="rgba(215,195,255,0.85)">TAILS</text>
+    </svg>
   );
 }
 
@@ -144,10 +136,11 @@ function TailsFace({ ghost = false }: { ghost?: boolean }) {
 
 function Coin({ rotation, flipping }: { rotation: number; flipping: boolean }) {
   return (
-    <div className="relative flex flex-col items-center" style={{ perspective: 1300 }}>
+    <div className="relative flex flex-col items-center" style={{ perspective: 1400 }}>
       <motion.div
-        className="relative w-[190px] h-[190px] md:w-[250px] md:h-[250px]"
-        animate={{ y: flipping ? [0, -64, 0] : 0 }}
+        className="relative w-[240px] h-[240px] md:w-[310px] md:h-[310px]"
+        style={{ filter: "drop-shadow(0 20px 28px rgba(0,0,0,0.55)) drop-shadow(0 0 42px rgba(255,175,45,0.28))" }}
+        animate={{ y: flipping ? [0, -70, 0] : 0 }}
         transition={{ duration: FLIP_DUR, times: [0, 0.42, 1], ease: ["easeOut", "easeIn"] }}
       >
         <motion.div
@@ -172,7 +165,7 @@ function Coin({ rotation, flipping }: { rotation: number; flipping: boolean }) {
 
 function Podium() {
   return (
-    <svg viewBox="0 0 380 130" className="w-[280px] md:w-[380px] -mt-5 md:-mt-7 block" aria-hidden>
+    <svg viewBox="0 0 380 130" className="w-[310px] md:w-[430px] -mt-6 md:-mt-9 block" aria-hidden>
       <defs>
         <linearGradient id="pdSide" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#332551" />
@@ -723,10 +716,10 @@ export default function CoinflipPage() {
 
           {/* ghost coins flanking the stage */}
           <div className="absolute left-[-60px] md:left-[1%] top-[46%] -translate-y-1/2 w-[230px] h-[230px] md:w-[300px] md:h-[300px] opacity-[0.16] pointer-events-none hidden sm:block" style={{ filter: "saturate(0.7)" }}>
-            <HeadsFace ghost />
+            <HeadsFace />
           </div>
           <div className="absolute right-[-60px] md:right-[1%] top-[46%] -translate-y-1/2 w-[230px] h-[230px] md:w-[300px] md:h-[300px] opacity-[0.22] pointer-events-none hidden sm:block" style={{ filter: "saturate(0.85)" }}>
-            <TailsFace ghost />
+            <TailsFace />
           </div>
 
           {/* floating coins */}
