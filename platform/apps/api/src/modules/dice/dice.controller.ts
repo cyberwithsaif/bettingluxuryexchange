@@ -5,7 +5,9 @@ import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { UserRole } from "@prisma/client";
 
-@Controller("api/casino/dice")
+// NOTE: global prefix already adds /api — declaring "api/..." here doubled it
+// to /api/api/casino/dice and silently 404'd the frontend's history/seeds calls.
+@Controller("casino/dice")
 export class DiceController {
   constructor(private readonly diceService: DiceService) {}
 

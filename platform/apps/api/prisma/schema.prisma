@@ -89,6 +89,7 @@ model User {
   diceBets        DiceBet[]
   towersSessions  TowersSession[]
   chickenRoadSessions ChickenRoadSession[]
+  coinflipSessions CoinflipSession[]
 
   // VIP tier (nullable — most users have no tier assigned)
   vipLevelId      String?
@@ -890,6 +891,43 @@ model ChickenRoadSession {
   settledAt      DateTime?
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ─── Coinflip ──────────────────────────────────────────────────────────────────
+
+enum CoinflipStatus {
+  IN_PROGRESS
+  CASHED_OUT
+  LOST
+}
+
+model CoinflipSession {
+  id             String         @id @default(cuid())
+  userId         String
+  user           User           @relation(fields: [userId], references: [id])
+  betAmount      Decimal        @db.Decimal(20, 4)
+
+  serverSeed     String
+  serverSeedHash String
+  clientSeed     String
+  nonce          Int
+
+  status         CoinflipStatus @default(IN_PROGRESS)
+  // Consecutive correct calls so far. Multiplier = stepMultiplier^streak.
+  streak         Int            @default(0)
+  multiplier     Decimal        @default(1.00) @db.Decimal(12, 4)
+  payout         Decimal        @default(0)    @db.Decimal(20, 4)
+
+  // [{ side: "HEADS"|"TAILS", result: "HEADS"|"TAILS", won: boolean }]
+  flips          Json           @default("[]")
+
+  settledAt      DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   @@index([userId])
   @@index([status])

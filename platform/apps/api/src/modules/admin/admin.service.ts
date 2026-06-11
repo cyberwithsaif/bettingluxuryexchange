@@ -395,11 +395,12 @@ export class AdminService {
     };
 
     const p = this.prisma;
-    const [dice, mines, towers, chicken, plinko, pump, roulette] = await Promise.all([
+    const [dice, mines, towers, chicken, coinflip, plinko, pump, roulette] = await Promise.all([
       stat(p.diceBet, {}, { won: true }),
       stat(p.minesSession, { status: { not: "IN_PROGRESS" } }, { status: "CASHED_OUT" }),
       stat(p.towersSession, { status: { not: "IN_PROGRESS" } }, { status: "CASHED_OUT" }),
       stat(p.chickenRoadSession, { status: { not: "IN_PROGRESS" } }, { status: "CASHED_OUT" }),
+      stat(p.coinflipSession, { status: { not: "IN_PROGRESS" } }, { status: "CASHED_OUT" }),
       stat(p.plinkoBet, {}, { profit: { gte: 0 } }),
       stat(p.pumpBet, { status: { not: "ACTIVE" } }, { status: "CASHED" }),
       stat(p.rouletteBet, { settledAt: { not: null } }, { isWin: true }, "amount"),
@@ -418,6 +419,9 @@ export class AdminService {
       { id: "chicken-road", name: "Chicken Road", emoji: "🐔", controlType: "edge", target: "platform",
         config: { houseEdge: n(s.chickenRoadHouseEdge, 0.03), minBet: n(s.chickenRoadMinBet, 10), maxBet: n(s.chickenRoadMaxBet, 100_000), enabled: s.chickenRoadEnabled !== false },
         keys: { houseEdge: "chickenRoadHouseEdge", minBet: "chickenRoadMinBet", maxBet: "chickenRoadMaxBet", enabled: "chickenRoadEnabled" }, stats: chicken },
+      { id: "coinflip", name: "Coinflip", emoji: "🪙", controlType: "edge", target: "platform",
+        config: { houseEdge: n(s.coinflipHouseEdge, 0.01), minBet: n(s.coinflipMinBet, 10), maxBet: n(s.coinflipMaxBet, 100_000), enabled: s.coinflipEnabled !== false },
+        keys: { houseEdge: "coinflipHouseEdge", minBet: "coinflipMinBet", maxBet: "coinflipMaxBet", enabled: "coinflipEnabled" }, stats: coinflip },
       { id: "plinko", name: "Plinko", emoji: "🔻", controlType: "rtp", target: "endpoint", endpoint: "/plinko/admin/config",
         config: { rtpPercent: n(plinkoCfg.rtpPercent, 97), maxPayout: n(plinkoCfg.maxPayout, 1000), minBet: n(plinkoCfg.minBet, 10), maxBet: n(plinkoCfg.maxBet, 100_000), enabled: plinkoCfg.enabled !== false }, stats: plinko },
       { id: "pump", name: "Pump", emoji: "🎈", controlType: "rtp", target: "endpoint", endpoint: "/casino/pump/admin/config", hasForce: true,

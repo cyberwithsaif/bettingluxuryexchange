@@ -144,6 +144,11 @@ class PlatformSettingsDto {
   @IsOptional() @IsNumber() chickenRoadMinBet?: number;
   @IsOptional() @IsNumber() chickenRoadMaxBet?: number;
   @IsOptional() @IsBoolean() chickenRoadEnabled?: boolean;
+  // Coinflip game config
+  @IsOptional() @IsNumber() coinflipHouseEdge?: number;
+  @IsOptional() @IsNumber() coinflipMinBet?: number;
+  @IsOptional() @IsNumber() coinflipMaxBet?: number;
+  @IsOptional() @IsBoolean() coinflipEnabled?: boolean;
   // Security config
   @IsOptional() @IsBoolean() antiDdosEnabled?: boolean;
   @IsOptional() securityIpAllowlist?: any[];
@@ -534,7 +539,7 @@ export class AdminController {
       { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",     href: "/pump",     thumbnail: "/game-thumbs/opt/baloon.webp",   emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", sortOrder: 3 },
       { id: "dice",     name: "Dice",     description: "Dice Game",              href: "/dice",     thumbnail: "/game-thumbs/opt/dice.webp",     emoji: "🎲", bg: "linear-gradient(135deg,#4a0030 0%,#db2777 50%,#1a0011 100%)", sortOrder: 4 },
       { id: "towers",   name: "Towers",   description: "Towers Game",            href: "/towers",   thumbnail: "/game-thumbs/opt/towers.webp",   emoji: "🗼", bg: "linear-gradient(135deg,#06283d 0%,#0ea5e9 50%,#021018 100%)", sortOrder: 5 },
-      { id: "coin",     name: "Coinflip", description: "Coin Flip",              href: "/coinflip", thumbnail: "/game-thumbs/opt/coin.webp",     emoji: "🪙", bg: "linear-gradient(135deg,#3a2a00 0%,#eab308 50%,#1a1300 100%)", sortOrder: 6 },
+      { id: "coin",     name: "Coinflip", description: "Coin Flip",              href: "/coinflip", thumbnail: "/game-thumbs/opt/coinflip-v2.webp",     emoji: "🪙", bg: "linear-gradient(135deg,#3a2a00 0%,#eab308 50%,#1a1300 100%)", sortOrder: 6 },
       { id: "chicken-road", name: "Chicken Road", description: "Cross & Cash Out", href: "/chicken-road", thumbnail: "/game-thumbs/opt/chicken-road.webp", emoji: "🐔", bg: "linear-gradient(135deg,#3a1c00 0%,#d97706 50%,#1a0e00 100%)", sortOrder: 7 },
     ];
     const storedGames: any[] = settings.inhouseGames ?? [];
@@ -696,7 +701,7 @@ export class PublicPlatformController {
       { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",   href: "/pump",     thumbnail: "/game-thumbs/opt/baloon.webp",   emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", sortOrder: 3 },
       { id: "dice",     name: "Dice",     description: "Dice Game",            href: "/dice",     thumbnail: "/game-thumbs/opt/dice.webp",     emoji: "🎲", bg: "linear-gradient(135deg,#4a0030 0%,#db2777 50%,#1a0011 100%)", sortOrder: 4 },
       { id: "towers",   name: "Towers",   description: "Towers Game",          href: "/towers",   thumbnail: "/game-thumbs/opt/towers.webp",   emoji: "🗼", bg: "linear-gradient(135deg,#06283d 0%,#0ea5e9 50%,#021018 100%)", sortOrder: 5 },
-      { id: "coin",     name: "Coinflip", description: "Coin Flip",            href: "/coinflip", thumbnail: "/game-thumbs/opt/coin.webp",     emoji: "🪙", bg: "linear-gradient(135deg,#3a2a00 0%,#eab308 50%,#1a1300 100%)", sortOrder: 6 },
+      { id: "coin",     name: "Coinflip", description: "Coin Flip",            href: "/coinflip", thumbnail: "/game-thumbs/opt/coinflip-v2.webp",     emoji: "🪙", bg: "linear-gradient(135deg,#3a2a00 0%,#eab308 50%,#1a1300 100%)", sortOrder: 6 },
       { id: "chicken-road", name: "Chicken Road", description: "Cross & Cash Out", href: "/chicken-road", thumbnail: "/game-thumbs/opt/chicken-road.webp", emoji: "🐔", bg: "linear-gradient(135deg,#3a1c00 0%,#d97706 50%,#1a0e00 100%)", sortOrder: 7 },
     ];
     const defaultNavItems = [
@@ -732,6 +737,9 @@ export class PublicPlatformController {
       minesMinBet:   Number((settings as any).minesMinBet  ?? 10),
       minesMaxBet:   Number((settings as any).minesMaxBet  ?? 100000),
       minesEnabled:  (settings as any).minesEnabled !== false,
+      coinflipMinBet:  Number((settings as any).coinflipMinBet ?? 10),
+      coinflipMaxBet:  Number((settings as any).coinflipMaxBet ?? 100000),
+      coinflipEnabled: (settings as any).coinflipEnabled !== false,
       navItems:      (settings as any).navItems      ?? defaultNavItems,
     };
   }
