@@ -159,6 +159,13 @@ function GameControl({ game }: { game: Game }) {
         <div className="space-y-3">
           <Slider label="Player Payout (RTP)" value={Math.round((1 - edge) * 100)} min={0} max={200} step={1}
             onChange={(v) => setEdge((100 - v) / 100)} suffix="%" hint="← house wins  ·  100% = fair  ·  players win →" tone="#34d399" />
+          {game.id === "coinflip" && (
+            <div className="rounded-lg px-3 py-2 text-[11px] leading-relaxed border" style={{ background: "rgba(251,191,36,0.06)", borderColor: "rgba(251,191,36,0.25)", color: "rgba(229,231,235,0.75)" }}>
+              At this RTP the coin lands on the player&apos;s call{" "}
+              <b style={{ color: "#fbbf24" }}>{(Math.min(1, Math.max(0, (1 - edge) / 1.98)) * 100).toFixed(1)}%</b> of flips
+              (fair coin = 50% at RTP 99). RTP is the long-run average — short streaks of losses are normal.
+            </div>
+          )}
           {game.hasHardness && (
             <Slider label="Extra Difficulty" value={hardness} min={0} max={10} step={1}
               onChange={setHardness} suffix="" hint="bias toward harder boards (0 = off)" tone="#fbbf24" />
