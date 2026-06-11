@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useRef } from "react";
 
 const CASINO_GAMES = [
@@ -90,14 +89,15 @@ export function GameCarousel() {
               className="sm:hidden relative rounded-xl overflow-hidden border border-white/10 group-hover:border-yellow-400/60 transition shadow-md"
               style={{ width: 88, aspectRatio: "4/5" }}
             >
-              <Image
+              <img
                 src={game.thumb}
                 alt={game.name}
-                fill
-                sizes="88px"
-                quality={85}
-                priority={i < 4}
-                className="object-cover"
+                width={88}
+                height={110}
+                loading={i < 4 ? "eager" : "lazy"}
+                fetchPriority={i < 4 ? "high" : "auto"}
+                decoding="async"
+                className="absolute inset-0 w-full h-full object-cover"
                 draggable={false}
               />
             </div>
@@ -105,14 +105,16 @@ export function GameCarousel() {
             {/* Tablet / Desktop: portrait card */}
             <div className="hidden sm:block relative rounded-2xl overflow-hidden bg-[#1a1433] border border-white/6 group-hover:border-purple-500/40 transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-xl shadow-black/40">
               <div className="relative aspect-[3/4] w-full">
-                <Image
+                <img
                   src={game.thumb}
                   alt={game.name}
-                  fill
-                  sizes="(max-width: 1024px) 22vw, 14vw"
-                  quality={85}
-                  priority={i < 4}
-                  className="object-cover group-hover:scale-110 transition-transform duration-500"
+                  width={300}
+                  height={400}
+                  loading={i < 4 ? "eager" : "lazy"}
+                  fetchPriority={i < 4 ? "high" : "auto"}
+                  decoding="async"
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  draggable={false}
                 />
               </div>
             </div>
