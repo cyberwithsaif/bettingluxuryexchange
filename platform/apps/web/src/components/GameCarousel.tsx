@@ -11,7 +11,7 @@ const CASINO_GAMES = [
   { name: "Dice",     href: "/dice",     thumb: "/game-thumbs/opt/dice.webp" },
   { name: "Towers",   href: "/towers",   thumb: "/game-thumbs/opt/towers.webp" },
   { name: "Chicken Road", href: "/chicken-road", thumb: "/game-thumbs/opt/chicken-road.webp" },
-  { name: "Coinflip", href: "/coinflip", thumb: "/game-thumbs/opt/coinflip-v2.webp" },
+  { name: "Coinflip", href: "/coinflip", thumb: "/game-thumbs/opt/coinflip-v3.webp" },
 ];
 
 export function GameCarousel() {
