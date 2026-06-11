@@ -3,6 +3,7 @@ import { Prisma, UserRole, UserStatus, LedgerKind } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 import { levelFromDeposits } from "@exch/shared";
 import { PrismaService } from "../../common/prisma/prisma.service";
+import { WalletService } from "../wallet/wallet.service";
 
 const ROLE_RANK: Record<UserRole, number> = {
   SUPER_ADMIN: 100, ADMIN: 80, SUPER_MASTER: 60, MASTER: 40, AGENT: 20, BOOKIE: 30, USER: 0,
@@ -20,19 +21,115 @@ const CHILD_ROLES: Record<UserRole, UserRole[]> = {
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly wallet: WalletService,
+  ) {}
 
-  /** Referral / earnings summary for the logged-in user (synced with admin affiliates view). */
+  /** Referral commission rate in basis points (admin-tunable platform setting). */
+  private async referralRateBps(): Promise<number> {
+    const row = await this.prisma.systemConfig.findUnique({ where: { key: "platform" } });
+    const v = (row?.value ?? {}) as Record<string, unknown>;
+    const bps = Number(v.referralCommissionBps ?? 50); // default 0.5% of wagers
+    return Math.max(0, Math.min(10_000, Math.round(bps)));
+  }
+
+  // Per-worker cooldown so a polling/refresh-spamming client can't turn every
+  // page view into N aggregate queries. 60s staleness on accrual is fine.
+  private lastReconcileAt = new Map<string, number>();
+
+  /**
+   * Accrue referral commission for everyone this user referred: rate% of each
+   * referred user's lifetime wagered amount (casino bets net of refunds +
+   * settled sports losses), high-water marked on the referred user so each
+   * rupee wagered is commissioned exactly once. The optimistic guard on the
+   * mark makes concurrent calls (PM2 cluster) safe. No-throw: must never
+   * break the page read.
+   */
+  private async reconcileReferralCommission(referrerId: string, rateBps: number) {
+    if (rateBps <= 0) return;
+    const last = this.lastReconcileAt.get(referrerId) ?? 0;
+    if (Date.now() - last < 60_000) return;
+    this.lastReconcileAt.set(referrerId, Date.now());
+
+    const referred = await this.prisma.user.findMany({
+      where: { referredById: referrerId },
+      select: { id: true, username: true, refCommissionedWager: true },
+      take: 500,
+    });
+    for (const r of referred) {
+      try {
+        const [bets, refunds] = await Promise.all([
+          this.prisma.ledgerEntry.aggregate({
+            _sum: { amount: true },
+            where: {
+              userId: r.id,
+              amount: { lt: 0 },
+              kind: { in: [LedgerKind.CASINO_BET, LedgerKind.BET_SETTLE_LOSS] },
+            },
+          }),
+          // Refunded/voided casino bets are not real turnover — net them out.
+          this.prisma.ledgerEntry.aggregate({
+            _sum: { amount: true },
+            where: { userId: r.id, amount: { gt: 0 }, kind: LedgerKind.CASINO_REFUND },
+          }),
+        ]);
+        const wagered = Math.max(0,
+          Math.abs(Number(bets._sum.amount ?? 0)) - Number(refunds._sum.amount ?? 0));
+        const marked = Number(r.refCommissionedWager);
+        if (wagered <= marked) continue;
+
+        const commission = Math.round(((wagered - marked) * rateBps / 10_000) * 100) / 100;
+        // Below a paisa: leave the mark untouched so small deltas accrue
+        // until they round to something payable, instead of being burned.
+        if (commission < 0.01) continue;
+
+        // Advance the mark first; only the writer that wins this race pays out.
+        const guard = await this.prisma.user.updateMany({
+          where: { id: r.id, refCommissionedWager: r.refCommissionedWager },
+          data: { refCommissionedWager: new Prisma.Decimal(wagered) },
+        });
+        if (guard.count !== 1) continue;
+
+        await this.wallet.applyLedger({
+          userId: referrerId,
+          amount: commission,
+          kind: LedgerKind.COMMISSION_PAYOUT,
+          refType: "referral",
+          refId: r.id,
+          note: `Referral commission from ${r.username}`,
+        });
+      } catch { /* skip this child; never break the read */ }
+    }
+  }
+
+  /**
+   * Referral / earnings summary for the logged-in user.
+   * Only refType="referral" COMMISSION_PAYOUT credits count here — the same
+   * ledger kind is also used for bookie→admin commission collection
+   * (refType="commission"), which is internal and must NOT appear as
+   * player referral earnings.
+   */
   async getReferral(userId: string) {
     const u = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { username: true, partnershipBps: true },
+      select: { username: true },
     });
+    const rateBps = await this.referralRateBps();
+    await this.reconcileReferralCommission(userId, rateBps);
+
+    const referralWhere = {
+      userId,
+      kind: LedgerKind.COMMISSION_PAYOUT,
+      refType: "referral",
+      amount: { gt: 0 },
+    } as const;
+
     const [referralCount, commission, recent] = await Promise.all([
-      this.prisma.user.count({ where: { parentId: userId } }),
-      this.prisma.ledgerEntry.aggregate({ _sum: { amount: true }, where: { userId, kind: LedgerKind.COMMISSION_PAYOUT } }),
+      this.prisma.user.count({ where: { referredById: userId } }),
+      this.prisma.ledgerEntry.aggregate({ _sum: { amount: true }, where: referralWhere }),
       this.prisma.ledgerEntry.findMany({
-        where: { userId, kind: LedgerKind.COMMISSION_PAYOUT },
+        where: referralWhere,
         orderBy: { createdAt: "desc" }, take: 12,
         select: { id: true, amount: true, createdAt: true, note: true },
       }),
@@ -42,7 +139,7 @@ export class UsersService {
       code,
       referralCount,
       totalCommission: Number(commission._sum.amount ?? 0),
-      partnershipPct: (u?.partnershipBps ?? 0) / 100,
+      commissionPct: rateBps / 100,
       recent: recent.map(r => ({ id: r.id, amount: Number(r.amount), createdAt: r.createdAt, note: r.note })),
     };
   }

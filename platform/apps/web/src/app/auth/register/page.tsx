@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, User, Lock, Mail, Phone, Gift, ShieldCheck, Zap } from "lucide-react";
+import { Eye, EyeOff, User, Lock, Mail, Phone, Gift, ShieldCheck, Zap, Ticket } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth";
 
@@ -27,16 +27,29 @@ function PasswordStrength({ password }: { password: string }) {
 export default function RegisterPage() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.set);
-  const [form, setForm] = useState({ username: "", password: "", email: "", phone: "" });
+  const [form, setForm] = useState({ username: "", password: "", email: "", phone: "", referralCode: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Prefill the referral code from ?ref= or one captured earlier on landing.
+  useEffect(() => {
+    try {
+      const fromUrl = new URLSearchParams(window.location.search).get("ref");
+      const code = fromUrl || localStorage.getItem("refCode");
+      if (code) setForm(f => f.referralCode ? f : { ...f, referralCode: code.slice(0, 40) });
+    } catch { /* ignore */ }
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true); setError(null);
     try {
-      const { data } = await api.post("/auth/register", form);
+      const payload = { ...form, referralCode: form.referralCode.trim() || undefined };
+      const { data } = await api.post("/auth/register", payload);
+      // One signup per captured code — don't attribute future accounts on
+      // this browser to the same referrer.
+      try { localStorage.removeItem("refCode"); } catch { /* ignore */ }
       setAuth({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
       router.replace("/");
     } catch (e: any) {
@@ -173,6 +186,16 @@ export default function RegisterPage() {
                   <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 pointer-events-none" />
                   <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
                     placeholder="+91 9876543210" className="auth-input pl-9" inputMode="tel" />
+                </div>
+              </div>
+
+              {/* Referral code */}
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-widest text-white/40 mb-1.5">Referral Code <span className="text-white/20 font-normal normal-case">(optional)</span></label>
+                <div className="relative">
+                  <Ticket size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 pointer-events-none" />
+                  <input value={form.referralCode} onChange={e => setForm({ ...form, referralCode: e.target.value.slice(0, 40) })}
+                    placeholder="Friend's code" className="auth-input pl-9" />
                 </div>
               </div>
 

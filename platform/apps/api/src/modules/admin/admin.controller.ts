@@ -149,6 +149,9 @@ class PlatformSettingsDto {
   @IsOptional() @IsNumber() coinflipMinBet?: number;
   @IsOptional() @IsNumber() coinflipMaxBet?: number;
   @IsOptional() @IsBoolean() coinflipEnabled?: boolean;
+  // Refer & Earn — commission paid to referrers, in basis points of referred
+  // users' wagers (50 = 0.5%).
+  @IsOptional() @IsNumber() @Min(0) @Max(10000) referralCommissionBps?: number;
   // Security config
   @IsOptional() @IsBoolean() antiDdosEnabled?: boolean;
   @IsOptional() securityIpAllowlist?: any[];

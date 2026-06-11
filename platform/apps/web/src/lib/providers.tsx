@@ -110,6 +110,16 @@ export function Providers({ children, initialSettings }: { children: React.React
     connectSocket(token);
   }, [token]);
 
+  // Capture a referral code from any landing URL (/?ref=CODE) so the signup
+  // page can attribute the registration even if the user navigates around first.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const ref = new URLSearchParams(window.location.search).get("ref");
+      if (ref && ref.length <= 40) localStorage.setItem("refCode", ref);
+    } catch { /* ignore */ }
+  }, []);
+
   // Proactive token refresh: schedule refresh 2 min before expiry
   useEffect(() => {
     if (refreshTimer.current) clearTimeout(refreshTimer.current);

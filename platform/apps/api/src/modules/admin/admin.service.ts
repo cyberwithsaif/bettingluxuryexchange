@@ -812,23 +812,30 @@ export class AdminService {
   // ── Affiliates / Referrals ────────────────────────────────────────────────────
   async listAffiliates(opts: { limit?: number } = {}) {
     const take = Math.min(opts.limit ?? 100, 500);
-    // An affiliate is any user that has at least one referral (child) in the hierarchy.
+    // An affiliate is any user with hierarchy children (agents/bookies) OR
+    // player referrals from the Refer & Earn programme.
     const agents = await this.prisma.user.findMany({
-      where: { children: { some: {} } },
+      where: { OR: [{ children: { some: {} } }, { referredUsers: { some: {} } }] },
       take,
       select: {
         id: true, username: true, role: true, partnershipBps: true, createdAt: true,
-        _count: { select: { children: true } },
+        _count: { select: { children: true, referredUsers: true } },
       },
     });
     const ids = agents.map((a) => a.id);
+    // Only referral commission credits — bookie/agent collection transfers
+    // (refType "commission") are internal money movement, not affiliate earnings.
     const commissions = ids.length
-      ? await this.prisma.ledgerEntry.groupBy({ by: ["userId"], where: { userId: { in: ids }, kind: "COMMISSION_PAYOUT" }, _sum: { amount: true } })
+      ? await this.prisma.ledgerEntry.groupBy({
+          by: ["userId"],
+          where: { userId: { in: ids }, kind: "COMMISSION_PAYOUT", refType: "referral", amount: { gt: 0 } },
+          _sum: { amount: true },
+        })
       : [];
     const cm: Record<string, number> = {};
     for (const c of commissions) cm[c.userId] = Math.abs(Number((c._sum.amount ?? new Prisma.Decimal(0)).toString()));
 
-    const totalReferrals = agents.reduce((s, a) => s + a._count.children, 0);
+    const totalReferrals = agents.reduce((s, a) => s + a._count.children + a._count.referredUsers, 0);
     const totalCommission = Object.values(cm).reduce((s, v) => s + v, 0);
 
     return {
@@ -840,7 +847,7 @@ export class AdminService {
       rows: agents
         .map((a) => ({
           id: a.id, username: a.username, role: a.role,
-          referrals: a._count.children,
+          referrals: a._count.children + a._count.referredUsers,
           partnershipBps: a.partnershipBps,
           commissionEarned: cm[a.id] ?? 0,
           createdAt: a.createdAt,

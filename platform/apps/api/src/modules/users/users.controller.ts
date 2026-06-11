@@ -50,7 +50,10 @@ export class UsersController {
     return this.users.listDownline(actor.id, { q, role });
   }
 
-  @UseGuards(JwtAuthGuard)
+  // Method-level @Roles overrides the class-level AGENT+ requirement — every
+  // authenticated role (USER rank 0 upward) may read their own referral stats.
+  // Without this override, players got 403 and the page silently broke.
+  @Roles(UserRole.USER)
   @Get("me/referral")
   referral(@CurrentUser() actor: AuthUser) {
     return this.users.getReferral(actor.id);

@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 interface Referral {
-  code: string; referralCount: number; totalCommission: number; partnershipPct: number;
+  code: string; referralCount: number; totalCommission: number; commissionPct: number;
   recent: { id: string; amount: number; createdAt: string; note: string | null }[];
 }
 interface Promo {
@@ -150,7 +150,7 @@ function MyEarnings({ data }: { data?: Referral }) {
       <div className="grid grid-cols-3 gap-3">
         <Stat label="Referrals" value={String(data?.referralCount ?? 0)} Icon={Users} tone="#a855f7" />
         <Stat label="Commission Earned" value={inr(data?.totalCommission ?? 0)} Icon={Wallet} tone="#34d399" />
-        <Stat label="Your Partnership" value={`${data?.partnershipPct ?? 0}%`} Icon={Percent} tone="#f3c431" />
+        <Stat label="Commission Rate" value={`${data?.commissionPct ?? 0}%`} Icon={Percent} tone="#f3c431" />
       </div>
 
       <div className="rounded-2xl p-5" style={{ background: "linear-gradient(135deg,#12183a,#0d1224)", border: "1px solid rgba(255,255,255,0.07)" }}>

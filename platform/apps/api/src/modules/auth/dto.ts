@@ -13,6 +13,11 @@ export class RegisterDto {
 
   @IsOptional() @IsString() @MaxLength(20)
   phone?: string;
+
+  // Refer & Earn code of the inviting user (e.g. "RAHUL9x3kf"). Invalid or
+  // missing codes are silently ignored — registration must never fail on it.
+  @IsOptional() @IsString() @MaxLength(40)
+  referralCode?: string;
 }
 
 export class LoginDto {

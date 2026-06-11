@@ -24,6 +24,28 @@ export class AuthService {
     };
   }
 
+  /**
+   * Resolve a Refer & Earn code back to the referring user. Codes are derived
+   * (not stored): UPPERCASE(username[0..6]) + last 4 chars of the user id —
+   * see UsersService.getReferral. Returns null for unknown/invalid codes.
+   */
+  private async resolveReferralCode(code?: string): Promise<string | null> {
+    const c = (code ?? "").trim();
+    if (c.length < 5 || c.length > 40) return null;
+    const idTail = c.slice(-4).toLowerCase();
+    const prefix = c.slice(0, -4).toUpperCase();
+    // orderBy makes a (vanishingly unlikely) id-tail + username-prefix
+    // collision resolve deterministically to the older account.
+    const candidates = await this.prisma.user.findMany({
+      where: { id: { endsWith: idTail } },
+      select: { id: true, username: true },
+      orderBy: { createdAt: "asc" },
+      take: 10,
+    });
+    const match = candidates.find(u => u.username.toUpperCase().slice(0, 6) === prefix);
+    return match?.id ?? null;
+  }
+
   async register(dto: RegisterDto, ip?: string) {
     const flags = await this.platformFlags();
     if (flags.maintenanceMode) throw new ForbiddenException("Site is under maintenance. Please try again later.");
@@ -31,6 +53,8 @@ export class AuthService {
 
     const exists = await this.prisma.user.findUnique({ where: { username: dto.username } });
     if (exists) throw new ConflictException("Username already taken");
+
+    const referredById = await this.resolveReferralCode(dto.referralCode).catch(() => null);
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const user = await this.prisma.user.create({
@@ -40,6 +64,7 @@ export class AuthService {
         phone: dto.phone,
         passwordHash,
         lastLoginIp: ip,
+        referredById: referredById ?? undefined,
         wallet: { create: {} },
         limits: { create: {} },
       },

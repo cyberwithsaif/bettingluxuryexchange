@@ -48,6 +48,15 @@ model User {
   parent          User?       @relation("UserHierarchy", fields: [parentId], references: [id])
   children        User[]      @relation("UserHierarchy")
 
+  // Player referrals (Refer & Earn) — separate from the agent hierarchy above.
+  // Set once at signup when a valid referral code is supplied.
+  referredById    String?
+  referredBy      User?       @relation("UserReferrals", fields: [referredById], references: [id])
+  referredUsers   User[]      @relation("UserReferrals")
+  // High-water mark of this user's total wagered amount that has already been
+  // commissioned to their referrer (optimistic guard against double-payouts).
+  refCommissionedWager Decimal @default(0) @db.Decimal(20, 4)
+
   // Partnership the parent retains from this user's net P&L (basis points: 1000 = 10%).
   partnershipBps  Int         @default(0)
   // Credit reference shown in agent dashboards (does not affect wallet balance).
@@ -102,6 +111,7 @@ model User {
   updatedAt       DateTime    @updatedAt
 
   @@index([parentId])
+  @@index([referredById])
   @@index([role, status])
   @@index([vipLevelId])
 }
