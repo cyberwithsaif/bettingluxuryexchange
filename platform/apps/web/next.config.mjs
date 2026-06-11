@@ -5,6 +5,11 @@ const nextConfig = {
   typedRoutes: false,
   compress: true,
   poweredByHeader: false,
+  images: {
+    // Next.js 16 rejects any quality not listed here (default is [75]).
+    // GameCarousel and other <Image> usages request q=85 → must be allowed.
+    qualities: [50, 75, 85, 90, 100],
+  },
   generateBuildId: async () => {
     return `build-${Date.now()}`;
   },
