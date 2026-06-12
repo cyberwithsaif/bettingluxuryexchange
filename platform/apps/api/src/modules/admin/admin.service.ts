@@ -753,11 +753,14 @@ export class AdminService {
   async getUserProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { wallet: true, limits: true },
+      include: { wallet: true, limits: true, referredBy: { select: { id: true, username: true } } },
     });
     if (!user) throw new BadRequestException("User not found");
 
-    const [ledgerGroups, betGroups, minesAgg, minesGroups, recentLogins, recentTxns, recentBets, adminNotes, payoutMethods] =
+    const [
+      ledgerGroups, betGroups, minesAgg, minesGroups, recentLogins, recentTxns, recentBets, adminNotes, payoutMethods,
+      ledgerRows, exposureMoves, marketExposures, casinoGameRows, referredUsers, referralEarnedAgg,
+    ] =
       await Promise.all([
         this.prisma.ledgerEntry.groupBy({
           by: ["kind"],
@@ -810,6 +813,45 @@ export class AdminService {
         this.prisma.userPayoutMethod.findMany({
           where: { userId },
           orderBy: { createdAt: "desc" },
+        }),
+        // ── Wallet ledger (every balance movement) ──
+        this.prisma.ledgerEntry.findMany({
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+          take: 50,
+          select: { id: true, kind: true, amount: true, balanceAfter: true, exposureDelta: true, exposureAfter: true, refType: true, note: true, createdAt: true },
+        }),
+        // ── Exposure movement history (locks & releases) ──
+        this.prisma.ledgerEntry.findMany({
+          where: { userId, NOT: { exposureDelta: 0 } },
+          orderBy: { createdAt: "desc" },
+          take: 40,
+          select: { id: true, kind: true, exposureDelta: true, exposureAfter: true, refType: true, note: true, createdAt: true },
+        }),
+        // ── Current exposure breakdown by market ──
+        this.prisma.marketExposure.findMany({
+          where: { userId },
+          include: { market: { select: { id: true, name: true, status: true } } },
+          orderBy: { updatedAt: "desc" },
+          take: 50,
+        }),
+        // ── Casino activity per game (from ledger refType) ──
+        this.prisma.ledgerEntry.groupBy({
+          by: ["refType", "kind"],
+          _sum: { amount: true },
+          _count: true,
+          where: { userId, kind: { in: [LedgerKind.CASINO_BET, LedgerKind.CASINO_WIN, LedgerKind.CASINO_REFUND] } },
+        }),
+        // ── Referrals ──
+        this.prisma.user.findMany({
+          where: { referredById: userId },
+          select: { id: true, username: true, createdAt: true },
+          orderBy: { createdAt: "desc" },
+          take: 50,
+        }),
+        this.prisma.ledgerEntry.aggregate({
+          _sum: { amount: true },
+          where: { userId, kind: LedgerKind.COMMISSION_PAYOUT, refType: "referral", amount: { gt: 0 } },
         }),
       ]);
 
@@ -905,6 +947,65 @@ export class AdminService {
       recentBets,
       adminNotes,
       payoutMethods,
+
+      // ── Wallet ledger (full money trail) ──
+      ledger: ledgerRows.map((l) => ({
+        id: l.id, kind: l.kind, amount: Number(l.amount), balanceAfter: Number(l.balanceAfter),
+        exposureDelta: Number(l.exposureDelta), exposureAfter: Number(l.exposureAfter),
+        refType: l.refType, note: l.note, createdAt: l.createdAt,
+      })),
+
+      // ── Exposure: live breakdown + movement history ──
+      exposure: (() => {
+        const UNSETTLED = AdminService.UNSETTLED_MARKETS;
+        const markets = marketExposures.map((m) => ({
+          marketId: m.market.id, name: m.market.name, status: m.market.status,
+          live: UNSETTLED.includes(m.market.status), worstCase: Number(m.worstCase), updatedAt: m.updatedAt,
+        }));
+        const live = Math.round(markets.filter((m) => m.live).reduce((s, m) => s + m.worstCase, 0) * 100) / 100;
+        const current = Number(user.wallet?.exposure ?? 0);
+        return {
+          current: Math.round(current * 100) / 100,
+          live,
+          mismatch: Math.round((current - live) * 100) / 100,
+          markets,
+          moves: exposureMoves.map((m) => ({
+            id: m.id, kind: m.kind, delta: Number(m.exposureDelta), after: Number(m.exposureAfter),
+            refType: m.refType, note: m.note, createdAt: m.createdAt,
+          })),
+        };
+      })(),
+
+      // ── Casino per-game breakdown ──
+      casinoByGame: (() => {
+        const map = new Map<string, { wagered: number; payout: number; bets: number }>();
+        for (const r of casinoGameRows) {
+          const game = (r.refType ?? "other").replace(/_(bet|win|refund|cashout)s?$/i, "").replace(/_/g, " ");
+          const g = map.get(game) ?? { wagered: 0, payout: 0, bets: 0 };
+          const amt = Number(r._sum.amount ?? 0);
+          if (r.kind === "CASINO_BET") { g.wagered += Math.abs(amt); g.bets += r._count as number; }
+          else g.payout += Math.max(0, amt);
+          map.set(game, g);
+        }
+        return [...map.entries()]
+          .map(([game, g]) => ({
+            game,
+            bets: g.bets,
+            wagered: Math.round(g.wagered * 100) / 100,
+            payout: Math.round(g.payout * 100) / 100,
+            net: Math.round((g.payout - g.wagered) * 100) / 100, // player P/L (negative = house won)
+          }))
+          .sort((a, b) => b.wagered - a.wagered);
+      })(),
+
+      // ── Referral ──
+      referral: {
+        code: `${user.username.toUpperCase().slice(0, 6)}${user.id.slice(-4)}`,
+        referredBy: user.referredBy ? { id: user.referredBy.id, username: user.referredBy.username } : null,
+        count: referredUsers.length,
+        earned: Math.round(Number(referralEarnedAgg._sum.amount ?? 0) * 100) / 100,
+        users: referredUsers,
+      },
     };
   }
 

@@ -42,6 +42,14 @@ interface ProfileData {
   recentBets:   { id: string; side: string; stake: string | number; status: string; createdAt: string; market: { name: string; type: string } | null; runner: { name: string } | null }[];
   adminNotes:   { id: string; createdAt: string; metadata: any; actor: { username: string } | null }[];
   payoutMethods: { id: string; type: string; label: string; details: string; createdAt: string }[];
+  ledger: { id: string; kind: string; amount: number; balanceAfter: number; exposureDelta: number; exposureAfter: number; refType: string | null; note: string | null; createdAt: string }[];
+  exposure: {
+    current: number; live: number; mismatch: number;
+    markets: { marketId: string; name: string; status: string; live: boolean; worstCase: number; updatedAt: string }[];
+    moves: { id: string; kind: string; delta: number; after: number; refType: string | null; note: string | null; createdAt: string }[];
+  };
+  casinoByGame: { game: string; bets: number; wagered: number; payout: number; net: number }[];
+  referral: { code: string; referredBy: { id: string; username: string } | null; count: number; earned: number; users: { id: string; username: string; createdAt: string }[] };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -172,7 +180,7 @@ function FlagToggle({ label, desc, active, activeColor, onToggle }: {
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
 
-const TABS = ["Overview", "Wallet & Finance", "Betting", "Casino", "Security", "Admin Controls"] as const;
+const TABS = ["Overview", "Wallet & Finance", "Betting", "Casino", "Exposure", "Security", "Admin Controls"] as const;
 type Tab = typeof TABS[number];
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -216,7 +224,7 @@ export default function UserProfilePage() {
     </div>
   );
 
-  const { user, wallet, limits, vip, financials, bettingStats, casinoStats, recentLogins, recentTxns, recentBets, adminNotes, payoutMethods } = data;
+  const { user, wallet, limits, vip, financials, bettingStats, casinoStats, recentLogins, recentTxns, recentBets, adminNotes, payoutMethods, ledger, exposure, casinoByGame, referral } = data;
   const avatarLetter = user.username[0]?.toUpperCase() ?? "U";
   const totalWinnings = financials.casinoWins + financials.betWins;
   const totalLosses   = financials.casinoBets + financials.betLosses;
@@ -554,6 +562,43 @@ export default function UserProfilePage() {
             )}
           </SectionCard>
 
+          <SectionCard title="Wallet Ledger" icon={Activity} badge={`last ${ledger.length}`}>
+            {ledger.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">No ledger entries.</p>
+            ) : (
+              <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-gray-800">
+                    <tr className="border-b border-gray-700">
+                      <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Kind</th>
+                      <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Amount</th>
+                      <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Balance After</th>
+                      <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Exp Δ</th>
+                      <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Note</th>
+                      <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ledger.map(l => (
+                      <tr key={l.id} className="border-b border-gray-800 hover:bg-gray-800/40 transition">
+                        <td className="py-1.5 px-2"><span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-700/60 text-gray-300">{l.kind}</span></td>
+                        <td className={cn("py-1.5 px-2 tabular-nums text-right font-bold", l.amount > 0 ? "text-emerald-400" : l.amount < 0 ? "text-red-400" : "text-gray-500")}>
+                          {l.amount > 0 ? "+" : ""}{fmt(l.amount)}
+                        </td>
+                        <td className="py-1.5 px-2 tabular-nums text-right text-gray-300">{fmt(l.balanceAfter)}</td>
+                        <td className={cn("py-1.5 px-2 tabular-nums text-right", l.exposureDelta > 0 ? "text-orange-300" : l.exposureDelta < 0 ? "text-sky-300" : "text-gray-600")}>
+                          {l.exposureDelta !== 0 ? `${l.exposureDelta > 0 ? "+" : ""}${fmt(l.exposureDelta)}` : "—"}
+                        </td>
+                        <td className="py-1.5 px-2 text-gray-400 max-w-[220px] truncate" title={l.note ?? ""}>{l.note ?? l.refType ?? "—"}</td>
+                        <td className="py-1.5 px-2 text-gray-500 whitespace-nowrap">{fmtDate(l.createdAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </SectionCard>
+
           <div className="grid md:grid-cols-2 gap-5">
             <SectionCard title="Banking Details" icon={Building2} badge={`${payoutMethods.filter(m => m.type !== "CRYPTO").length} saved`}>
               <PayoutList methods={payoutMethods.filter((m) => m.type !== "CRYPTO")} empty="No UPI / bank methods saved by this user." />
@@ -666,10 +711,44 @@ export default function UserProfilePage() {
             </div>
           </SectionCard>
 
+          <SectionCard title="All Games Breakdown" icon={Gamepad2} badge={`${casinoByGame.length} games played`}>
+            {casinoByGame.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">No casino activity.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-700">
+                      <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Game</th>
+                      <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Bets</th>
+                      <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Wagered</th>
+                      <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Paid Out</th>
+                      <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Player Net</th>
+                      <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">House Net</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {casinoByGame.map(g => (
+                      <tr key={g.game} className="border-b border-gray-800 hover:bg-gray-800/40 transition">
+                        <td className="py-2 px-2 font-bold text-gray-200 capitalize">{g.game}</td>
+                        <td className="py-2 px-2 tabular-nums text-right text-gray-300">{g.bets.toLocaleString("en-IN")}</td>
+                        <td className="py-2 px-2 tabular-nums text-right text-gray-300">{fmt(g.wagered)}</td>
+                        <td className="py-2 px-2 tabular-nums text-right text-gray-300">{fmt(g.payout)}</td>
+                        <td className={cn("py-2 px-2 tabular-nums text-right font-bold", g.net >= 0 ? "text-emerald-400" : "text-red-400")}>
+                          {g.net >= 0 ? "+" : ""}{fmt(g.net)}
+                        </td>
+                        <td className={cn("py-2 px-2 tabular-nums text-right font-bold", g.net <= 0 ? "text-emerald-400" : "text-red-400")}>
+                          {g.net <= 0 ? "+" : "-"}{fmt(Math.abs(g.net))}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </SectionCard>
+
           <div className="grid md:grid-cols-2 gap-5">
-            <SectionCard title="Roulette Statistics" icon={Gamepad2} badge="Coming Soon">
-              <UnavailableSection label="Roulette game stats not yet aggregated" />
-            </SectionCard>
             <SectionCard title="Bonuses & Rewards" icon={Gift} badge="Not Implemented">
               <UnavailableSection label="Welcome Bonus" />
               <UnavailableSection label="Cashback Balance" />
@@ -700,12 +779,111 @@ export default function UserProfilePage() {
                 </div>
               ) : <p className="text-sm text-gray-400">No VIP tier assigned. Assign one from the Admin Controls tab.</p>}
             </SectionCard>
-            <SectionCard title="Referral System" icon={ChevronRight} badge="Not Implemented">
-              <UnavailableSection label="Referral Code" />
-              <UnavailableSection label="Invited Users" />
-              <UnavailableSection label="Referral Earnings / Commission" />
+            <SectionCard title="Referral System" icon={ChevronRight} badge={`${referral.count} referred`}>
+              <DataRow label="Referral Code" value={<span className="font-mono text-yellow-300">{referral.code}</span>} />
+              <DataRow label="Referred By" value={referral.referredBy ? referral.referredBy.username : <NA label="Organic signup" />} />
+              <DataRow label="Users Referred" value={referral.count} mono />
+              <DataRow label="Commission Earned" value={fmt(referral.earned)} mono />
+              {referral.users.length > 0 && (
+                <div className="pt-2 space-y-1 max-h-40 overflow-y-auto">
+                  <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Referred Users</p>
+                  {referral.users.map(u => (
+                    <div key={u.id} className="flex items-center justify-between text-xs bg-gray-800/60 border border-gray-700 rounded-lg px-2.5 py-1.5">
+                      <span className="font-semibold text-gray-300">{u.username}</span>
+                      <span className="text-gray-500">{fmtShort(u.createdAt)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </SectionCard>
           </div>
+        </div>
+      )}
+
+      {/* ══ TAB: Exposure ══ */}
+      {tab === "Exposure" && (
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <StatCard label="Current Exposure" value={fmt(exposure.current)} color={exposure.current > 0 ? "text-red-400" : "text-gray-200"} />
+            <StatCard label="Backed by Open Bets" value={fmt(exposure.live)} color="text-sky-300" sub="unsettled market liability" />
+            <StatCard label="Leaked / Mismatch" value={fmt(exposure.mismatch)} color={Math.abs(exposure.mismatch) > 0.009 ? "text-amber-300" : "text-emerald-400"}
+              sub={Math.abs(exposure.mismatch) > 0.009 ? "settle it from the Exposure page" : "healthy"} />
+            <div className="bg-gray-800 rounded-xl p-3.5 border border-gray-700 flex flex-col justify-between">
+              <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Actions</p>
+              <a href="/admin/exposure" className="flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg border border-amber-500/40 text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 transition">
+                <ShieldAlert size={12} /> Open Exposure Control
+              </a>
+            </div>
+          </div>
+
+          <SectionCard title="Exposure by Market" icon={BarChart3} badge={`${exposure.markets.length} markets`}>
+            {exposure.markets.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">No market exposure rows for this user.</p>
+            ) : (
+              <div className="overflow-x-auto max-h-72 overflow-y-auto">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-gray-800">
+                    <tr className="border-b border-gray-700">
+                      <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Market</th>
+                      <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Status</th>
+                      <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Worst Case Held</th>
+                      <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Updated</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {exposure.markets.map(m => (
+                      <tr key={m.marketId} className="border-b border-gray-800 hover:bg-gray-800/40 transition">
+                        <td className="py-2 px-2 font-semibold text-gray-200 max-w-[260px] truncate">{m.name}</td>
+                        <td className="py-2 px-2">
+                          <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold",
+                            m.live ? "bg-emerald-500/15 text-emerald-300" : "bg-gray-700/60 text-gray-400")}>{m.status}</span>
+                        </td>
+                        <td className="py-2 px-2 tabular-nums text-right font-bold text-orange-300">{fmt(m.worstCase)}</td>
+                        <td className="py-2 px-2 text-gray-500 whitespace-nowrap">{fmtDate(m.updatedAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </SectionCard>
+
+          <SectionCard title="Exposure History" icon={Activity} badge={`last ${exposure.moves.length} movements`}>
+            {exposure.moves.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">No exposure movements recorded.</p>
+            ) : (
+              <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-gray-800">
+                    <tr className="border-b border-gray-700">
+                      <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Kind</th>
+                      <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Exposure Δ</th>
+                      <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">After</th>
+                      <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Note</th>
+                      <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wider text-gray-400">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {exposure.moves.map(m => (
+                      <tr key={m.id} className="border-b border-gray-800 hover:bg-gray-800/40 transition">
+                        <td className="py-1.5 px-2"><span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-700/60 text-gray-300">{m.kind}</span></td>
+                        <td className={cn("py-1.5 px-2 tabular-nums text-right font-bold", m.delta > 0 ? "text-orange-300" : "text-sky-300")}>
+                          {m.delta > 0 ? "+" : ""}{fmt(m.delta)}
+                        </td>
+                        <td className="py-1.5 px-2 tabular-nums text-right text-gray-300">{fmt(m.after)}</td>
+                        <td className="py-1.5 px-2 text-gray-400 max-w-[240px] truncate" title={m.note ?? ""}>{m.note ?? m.refType ?? "—"}</td>
+                        <td className="py-1.5 px-2 text-gray-500 whitespace-nowrap">{fmtDate(m.createdAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="text-[10px] text-gray-600 mt-2">
+              <span className="text-orange-300 font-bold">+ orange</span> = exposure locked (bet placed) ·{" "}
+              <span className="text-sky-300 font-bold">− blue</span> = exposure released (settled / voided / reconciled)
+            </p>
+          </SectionCard>
         </div>
       )}
 
