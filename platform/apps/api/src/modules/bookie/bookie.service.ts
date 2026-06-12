@@ -573,6 +573,140 @@ export class BookieService {
     return user;
   }
 
+  // ── Read-only player profile (bookie view) ─────────────────────────────────
+  /** Full profile for one of the bookie's own players — read only. */
+  async userProfile(bookieId: string, userId: string) {
+    await this.assertOwnsUser(bookieId, userId);
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { wallet: true, limits: true },
+    });
+    if (!user) throw new NotFoundException("User not found");
+
+    const [ledgerGroups, betGroups, casinoGameRows, recentTxns, recentBets, recentLedger, pendingReqs] = await Promise.all([
+      this.prisma.ledgerEntry.groupBy({ by: ["kind"], where: { userId }, _sum: { amount: true } }),
+      this.prisma.bet.groupBy({ by: ["status"], where: { userId }, _count: { _all: true }, _sum: { stake: true } }),
+      this.prisma.ledgerEntry.groupBy({
+        by: ["refType", "kind"], _sum: { amount: true }, _count: true,
+        where: { userId, kind: { in: [LedgerKind.CASINO_BET, LedgerKind.CASINO_WIN, LedgerKind.CASINO_REFUND] } },
+      }),
+      this.prisma.transaction.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 15,
+        select: { id: true, kind: true, method: true, amount: true, status: true, reference: true, createdAt: true } }),
+      this.prisma.bet.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 15,
+        include: { market: { select: { name: true } }, runner: { select: { name: true } } } }),
+      this.prisma.ledgerEntry.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 40,
+        select: { id: true, kind: true, amount: true, balanceAfter: true, exposureDelta: true, note: true, createdAt: true } }),
+      this.prisma.supportTicket.count({ where: { userId: bookieId, status: { in: ["OPEN", "PENDING"] }, subject: { contains: `::${userId}` } } }),
+    ]);
+
+    const lm: Record<string, number> = {};
+    for (const g of ledgerGroups) lm[g.kind] = num(g._sum.amount);
+    const bm: Record<string, number> = {};
+    for (const g of betGroups) bm[g.status] = g._count._all;
+    const totalBets = betGroups.reduce((s, b) => s + b._count._all, 0);
+    const wonBets = bm["SETTLED_WON"] ?? 0, lostBets = bm["SETTLED_LOST"] ?? 0;
+
+    const gameMap = new Map<string, { wagered: number; payout: number; bets: number }>();
+    for (const r of casinoGameRows) {
+      const game = (r.refType ?? "other").replace(/_(bet|win|refund|cashout)s?$/i, "").replace(/_/g, " ");
+      const g = gameMap.get(game) ?? { wagered: 0, payout: 0, bets: 0 };
+      const amt = num(r._sum.amount);
+      if (r.kind === "CASINO_BET") { g.wagered += Math.abs(amt); g.bets += r._count as number; }
+      else g.payout += Math.max(0, amt);
+      gameMap.set(game, g);
+    }
+
+    return {
+      user: {
+        id: user.id, username: user.username, email: user.email, phone: user.phone,
+        status: user.status, createdAt: user.createdAt, lastLoginAt: user.lastLoginAt, lastLoginIp: user.lastLoginIp,
+      },
+      wallet: { balance: round2(num(user.wallet?.balance)), exposure: round2(num(user.wallet?.exposure)), bonus: round2(num(user.wallet?.bonus)), available: round2(num(user.wallet?.balance) - num(user.wallet?.exposure)) },
+      limits: user.limits ? {
+        minStake: num(user.limits.minStake), maxStake: num(user.limits.maxStake),
+        maxMarketExposure: num(user.limits.maxMarketExposure), maxDailyLoss: num(user.limits.maxDailyLoss),
+        casinoEnabled: user.limits.casinoEnabled, fancyEnabled: user.limits.fancyEnabled,
+      } : null,
+      financials: {
+        totalDeposits: Math.max(0, lm["DEPOSIT"] ?? 0),
+        totalWithdrawals: Math.abs(Math.min(0, lm["WITHDRAWAL"] ?? 0)),
+        casinoWins: Math.max(0, lm["CASINO_WIN"] ?? 0),
+        casinoBets: Math.abs(Math.min(0, lm["CASINO_BET"] ?? 0)),
+        betWins: Math.max(0, lm["BET_SETTLE_WIN"] ?? 0),
+        betLosses: Math.abs(Math.min(0, lm["BET_SETTLE_LOSS"] ?? 0)),
+      },
+      bettingStats: {
+        total: totalBets, won: wonBets, lost: lostBets, open: bm["OPEN"] ?? 0,
+        totalStake: round2(betGroups.reduce((s, b) => s + num(b._sum.stake), 0)),
+        winRate: (wonBets + lostBets) > 0 ? Number(((wonBets / (wonBets + lostBets)) * 100).toFixed(1)) : 0,
+      },
+      casinoByGame: [...gameMap.entries()].map(([game, g]) => ({
+        game, bets: g.bets, wagered: round2(g.wagered), payout: round2(g.payout), net: round2(g.payout - g.wagered),
+      })).sort((a, b) => b.wagered - a.wagered),
+      recentTxns: recentTxns.map((t) => ({ ...t, amount: num(t.amount) })),
+      recentBets: recentBets.map((b) => ({
+        id: b.id, side: b.side, stake: num(b.stake), status: b.status, createdAt: b.createdAt,
+        market: b.market?.name ?? null, runner: b.runner?.name ?? null,
+      })),
+      ledger: recentLedger.map((l) => ({
+        id: l.id, kind: l.kind, amount: num(l.amount), balanceAfter: num(l.balanceAfter),
+        exposureDelta: num(l.exposureDelta), note: l.note, createdAt: l.createdAt,
+      })),
+      pendingRequests: pendingReqs,
+    };
+  }
+
+  // ── Request flow: bookie asks admin to act on a player ─────────────────────
+  private static readonly REQUEST_TYPES = ["BLOCK", "UNBLOCK", "RESET_PASSWORD", "ADJUST_LIMIT", "CLOSE_ACCOUNT", "OTHER"] as const;
+
+  /** A bookie can't modify a player directly — they file a request that lands
+   *  in the admin Support queue (ticket owned by the bookie, subject tags the target). */
+  async submitUserRequest(bookieId: string, userId: string, type: string, reason: string, ip?: string) {
+    const target = await this.assertOwnsUser(bookieId, userId);
+    const t = (type ?? "").toUpperCase();
+    if (!(BookieService.REQUEST_TYPES as readonly string[]).includes(t)) throw new BadRequestException("Unknown request type");
+    if (!reason?.trim()) throw new BadRequestException("Please describe the request");
+    const bookie = await this.prisma.user.findUnique({ where: { id: bookieId }, select: { username: true } });
+
+    const label: Record<string, string> = {
+      BLOCK: "Block / suspend player", UNBLOCK: "Unblock player", RESET_PASSWORD: "Reset player password",
+      ADJUST_LIMIT: "Adjust player limits", CLOSE_ACCOUNT: "Close player account", OTHER: "Other change",
+    };
+    // The ::<userId> tag lets the admin (and our pending count) tie the ticket to the player.
+    const ticket = await this.prisma.supportTicket.create({
+      data: {
+        userId: bookieId,
+        subject: `[Bookie Request] ${label[t]} — ${target.username} ::${userId}`,
+        priority: t === "BLOCK" || t === "CLOSE_ACCOUNT" ? "HIGH" : "NORMAL",
+        status: "OPEN",
+        messages: {
+          create: {
+            authorId: bookieId, isAdmin: false,
+            body: `Bookie "${bookie?.username ?? bookieId}" requests: ${label[t]} for player "${target.username}" (id ${userId}).\n\nReason: ${reason.trim()}`,
+          },
+        },
+      },
+    });
+    await this.audit(bookieId, "bookie.user_request", { type: "user", id: userId }, { requestType: t, ticketId: ticket.id }, ip);
+    return { ok: true, ticketId: ticket.id };
+  }
+
+  /** The bookie's own submitted requests (read-only history). */
+  async myRequests(bookieId: string) {
+    const tickets = await this.prisma.supportTicket.findMany({
+      where: { userId: bookieId, subject: { startsWith: "[Bookie Request]" } },
+      orderBy: { updatedAt: "desc" }, take: 100,
+      include: { messages: { orderBy: { createdAt: "desc" }, take: 1, select: { body: true, isAdmin: true, createdAt: true } } },
+    });
+    return tickets.map((t) => ({
+      id: t.id,
+      subject: t.subject.replace(/ ::[a-z0-9]+$/i, ""),
+      status: t.status, priority: t.priority,
+      lastReply: t.messages[0]?.isAdmin ? t.messages[0] : null,
+      createdAt: t.createdAt, updatedAt: t.updatedAt,
+    }));
+  }
+
   /** Roll up bet count + users' net ledger across a set of user ids. */
   private async rollup(userIds: string[]) {
     if (userIds.length === 0) return { totalBets: 0, usersNet: 0 };

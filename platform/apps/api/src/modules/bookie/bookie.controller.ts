@@ -1,15 +1,19 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
 import type { Request } from "express";
-import { IsString, MinLength } from "class-validator";
+import { IsIn, IsString, MaxLength, MinLength } from "class-validator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { CurrentUser, AuthUser } from "../../common/decorators/current-user.decorator";
 import { UserRole } from "@prisma/client";
 import { BookieService } from "./bookie.service";
-import { CreateBookieUserDto, TransferDto, SetStatusDto } from "./dto";
+import { CreateBookieUserDto, TransferDto } from "./dto";
 
-class ResetPwdDto { @IsString() @MinLength(8) password!: string; }
+class UserRequestDto {
+  @IsIn(["BLOCK", "UNBLOCK", "RESET_PASSWORD", "ADJUST_LIMIT", "CLOSE_ACCOUNT", "OTHER"])
+  type!: string;
+  @IsString() @MinLength(3) @MaxLength(500) reason!: string;
+}
 
 /**
  * Bookie self-service surface. Guarded for BOOKIE and above. Every method is
@@ -57,13 +61,20 @@ export class BookieController {
     return this.bookies.transfer(me.id, dto, req.ip);
   }
 
-  @Patch("users/:id/status")
-  setUserStatus(@CurrentUser() me: AuthUser, @Param("id") id: string, @Body() dto: SetStatusDto, @Req() req: Request) {
-    return this.bookies.setUserStatus(me.id, id, dto.status, req.ip);
+  // Read-only player profile (bookies can view everything, modify nothing).
+  @Get("users/:id/profile")
+  userProfile(@CurrentUser() me: AuthUser, @Param("id") id: string) {
+    return this.bookies.userProfile(me.id, id);
   }
 
-  @Patch("users/:id/password")
-  resetPwd(@CurrentUser() me: AuthUser, @Param("id") id: string, @Body() dto: ResetPwdDto, @Req() req: Request) {
-    return this.bookies.resetUserPassword(me.id, id, dto.password, req.ip);
+  // Bookies request changes; an admin actions them from the Support queue.
+  @Post("users/:id/request")
+  submitRequest(@CurrentUser() me: AuthUser, @Param("id") id: string, @Body() dto: UserRequestDto, @Req() req: Request) {
+    return this.bookies.submitUserRequest(me.id, id, dto.type, dto.reason, req.ip);
+  }
+
+  @Get("requests")
+  myRequests(@CurrentUser() me: AuthUser) {
+    return this.bookies.myRequests(me.id);
   }
 }

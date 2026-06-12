@@ -1,9 +1,10 @@
 "use client";
 import useSWR, { mutate } from "swr";
 import { useState } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { PageHeader, Badge, DataTable, Column, Modal, Field } from "@/components/ui";
-import { Plus, ArrowUpCircle, ArrowDownCircle, UserX, UserCheck, KeyRound, Save } from "lucide-react";
+import { Plus, ArrowUpCircle, ArrowDownCircle, Save, Eye } from "lucide-react";
 
 const KEY = "/bookie/users";
 const inr = (n: number) => "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -19,23 +20,10 @@ export default function MyUsersPage() {
   const [creating, setCreating] = useState(false);
   const [xfer, setXfer] = useState<{ user: U; dir: "credit" | "debit" } | null>(null);
 
-  async function act(u: U, action: "suspend" | "activate" | "resetpwd") {
-    try {
-      if (action === "resetpwd") {
-        const pwd = prompt("New password (min 8 chars):");
-        if (!pwd) return;
-        if (pwd.length < 8) { alert("Min 8 characters."); return; }
-        await api.patch(`${KEY}/${u.id}/password`, { password: pwd });
-        alert("Password reset.");
-        return;
-      }
-      await api.patch(`${KEY}/${u.id}/status`, { status: action === "suspend" ? "SUSPENDED" : "ACTIVE" });
-      mutate(KEY);
-    } catch (e: any) { alert(e?.response?.data?.message || "Action failed"); }
-  }
-
   const columns: Column<U>[] = [
-    { key: "username", header: "Username", sortValue: (u) => u.username, render: (u) => <span className="font-semibold text-gray-100">{u.username}</span> },
+    { key: "username", header: "Username", sortValue: (u) => u.username, render: (u) => (
+      <Link href={`/users/${u.id}`} className="font-semibold text-emerald-300 hover:text-emerald-200 hover:underline">{u.username}</Link>
+    ) },
     { key: "balance", header: "Balance", align: "right", sortValue: (u) => u.wallet?.balance ?? 0, exportValue: (u) => u.wallet?.balance ?? 0,
       render: (u) => <span className="tabular-nums text-emerald-300 font-semibold">{inr(u.wallet?.balance ?? 0)}</span> },
     { key: "exposure", header: "Exposure", align: "right", sortValue: (u) => u.wallet?.exposure ?? 0,
@@ -44,19 +32,16 @@ export default function MyUsersPage() {
     { key: "created", header: "Joined", sortValue: (u) => u.createdAt, render: (u) => <span className="text-xs text-gray-500">{new Date(u.createdAt).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span> },
     { key: "actions", header: "Actions", align: "center", render: (u) => (
       <div className="flex items-center justify-center gap-1">
+        <Link href={`/users/${u.id}`} title="View profile" className="p-1.5 rounded-lg border border-gray-700 text-gray-500 bg-gray-900/40 transition hover:border-sky-400 hover:text-sky-400"><Eye size={14} /></Link>
         <IconBtn title="Add funds" onClick={() => setXfer({ user: u, dir: "credit" })} className="hover:border-emerald-400 hover:text-emerald-400"><ArrowUpCircle size={14} /></IconBtn>
         <IconBtn title="Withdraw funds" onClick={() => setXfer({ user: u, dir: "debit" })} className="hover:border-amber-400 hover:text-amber-400"><ArrowDownCircle size={14} /></IconBtn>
-        {u.status === "ACTIVE"
-          ? <IconBtn title="Suspend" onClick={() => act(u, "suspend")} className="hover:border-red-400 hover:text-red-400"><UserX size={14} /></IconBtn>
-          : <IconBtn title="Activate" onClick={() => act(u, "activate")} className="hover:border-emerald-400 hover:text-emerald-400"><UserCheck size={14} /></IconBtn>}
-        <IconBtn title="Reset password" onClick={() => act(u, "resetpwd")} className="hover:border-sky-400 hover:text-sky-400"><KeyRound size={14} /></IconBtn>
       </div>
     ) },
   ];
 
   return (
     <div>
-      <PageHeader title="My Users" subtitle="Players you created. Fund or withdraw straight from your wallet."
+      <PageHeader title="My Users" subtitle="Players you created. Click a name to view their full profile. Fund or withdraw straight from your wallet."
         right={<button onClick={() => setCreating(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow-[0_2px_12px_rgba(0,200,83,0.4)] hover:brightness-110 transition"><Plus size={16} /> Create User</button>} />
 
       <DataTable columns={columns} rows={data ?? []} loading={isLoading} rowKey={(u) => u.id}
