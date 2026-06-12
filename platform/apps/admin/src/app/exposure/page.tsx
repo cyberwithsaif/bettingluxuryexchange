@@ -77,6 +77,42 @@ export default function ExposurePage() {
     finally { setBusy(null); }
   }
 
+  // ── Settle dialog ──
+  const [settleFor, setSettleFor] = useState<Row | null>(null);
+  const [outcome, setOutcome] = useState<"LOSS" | "WIN" | "VOID">("LOSS");
+  const [amount, setAmount] = useState(0);
+  const [profit, setProfit] = useState(0);
+
+  function openSettle(r: Row) {
+    setSettleFor(r);
+    setOutcome("LOSS");
+    const def = r.mismatch > 0.009 ? r.mismatch : r.exposure;
+    setAmount(Math.round(def * 100) / 100);
+    setProfit(Math.round(def * 100) / 100);
+  }
+
+  async function applySettle() {
+    if (!settleFor) return;
+    setBusy(settleFor.userId); setMsg(null);
+    try {
+      const body: Record<string, unknown> = { outcome, amount };
+      if (outcome === "WIN") body.profit = profit;
+      const { data: r } = await api.post(`/admin/exposure/${settleFor.userId}/settle`, body);
+      setMsg({
+        ok: true,
+        text: r.outcome === "LOSS"
+          ? `Settled as LOSS — ₹${r.released} taken from ${settleFor.username}'s balance, exposure released.`
+          : r.outcome === "WIN"
+          ? `Settled as WIN — ₹${r.profit} paid to ${settleFor.username}, ₹${r.released} exposure released.`
+          : `Released ₹${r.released} exposure (void) — balance untouched.`,
+      });
+      setSettleFor(null);
+      globalMutate(KEY);
+      if (openUser === settleFor.userId) { const { data: d } = await api.get(`/admin/exposure/${settleFor.userId}`); setDetail(d); }
+    } catch (e: any) { setMsg({ ok: false, text: e?.response?.data?.message || "Settle failed" }); }
+    finally { setBusy(null); }
+  }
+
   async function reconcileAll() {
     if (!window.confirm("Reconcile every mismatched wallet? Exposure will be reset to the live open-bet liability for each user.")) return;
     setBusy("ALL"); setMsg(null);
@@ -183,12 +219,21 @@ export default function ExposurePage() {
                     </td>
                     <td className={`px-3 py-2.5 text-right tabular-nums font-bold ${r.available < 0 ? "text-red-400" : "text-emerald-300"}`}>{inr(r.available)}</td>
                     <td className="px-4 py-2.5 text-right">
-                      <button onClick={() => reconcile(r.userId)} disabled={busy !== null || (!leaked && !negative)}
-                        title={leaked || negative ? "Reset exposure to the live open-bet liability" : "Exposure matches open bets — nothing to fix"}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition disabled:opacity-30 border-amber-500/50 text-amber-300 hover:bg-amber-500/10">
-                        {busy === r.userId ? <RefreshCw size={11} className="animate-spin" /> : <Wrench size={11} />}
-                        Settle
-                      </button>
+                      {negative ? (
+                        <button onClick={() => reconcile(r.userId)} disabled={busy !== null}
+                          title="Negative exposure is corrupt state — reset it to the live liability"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition disabled:opacity-30 border-red-500/50 text-red-300 hover:bg-red-500/10">
+                          {busy === r.userId ? <RefreshCw size={11} className="animate-spin" /> : <Wrench size={11} />}
+                          Fix
+                        </button>
+                      ) : (
+                        <button onClick={() => openSettle(r)} disabled={busy !== null || r.exposure <= 0.009}
+                          title="Settle this exposure — choose player win, player loss, or release"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition disabled:opacity-30 border-amber-500/50 text-amber-300 hover:bg-amber-500/10">
+                          <Wrench size={11} />
+                          Settle
+                        </button>
+                      )}
                     </td>
                   </tr>
 
@@ -261,10 +306,84 @@ export default function ExposurePage() {
       <p className="text-[11px] text-gray-600 leading-relaxed max-w-3xl">
         <b className="text-gray-400">How settle works:</b> a wallet&apos;s exposure should equal the worst-case liability of its
         open bets on unsettled markets (&ldquo;Backed&rdquo;). <b className="text-amber-400">Leaked</b> exposure was orphaned by
-        deleted/settled markets; <b className="text-red-400">negative</b> exposure is corrupt state. Settle resets the wallet to the
-        backed amount via an audited ledger entry — balances are never touched. Voiding a bet refunds the stake and releases its
-        share of exposure.
+        deleted/settled markets; <b className="text-red-400">negative</b> exposure is corrupt state. Settle lets you resolve held
+        exposure as a <b className="text-red-300">player loss</b> (amount moves out of their balance — house wins), a{" "}
+        <b className="text-emerald-300">player win</b> (profit paid to their balance), or a plain <b className="text-gray-300">release</b>{" "}
+        (void, balance untouched). Every action is an audited ledger entry. Voiding a bet refunds the stake and releases its share.
       </p>
+
+      {/* ── Settle dialog ── */}
+      {settleFor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-[2px]" onClick={() => busy === null && setSettleFor(null)} />
+          <div className="relative w-full max-w-md rounded-2xl border border-yellow-500/25 bg-gray-800 p-5 shadow-2xl">
+            <h3 className="text-base font-black text-gray-100">Settle Exposure — {settleFor.username}</h3>
+            <p className="text-[11px] text-gray-500 mt-1">
+              Exposure {inr(settleFor.exposure)} · backed {inr(settleFor.liveExposure)} ·{" "}
+              {settleFor.mismatch > 0.009 ? <span className="text-amber-400 font-bold">leaked {inr(settleFor.mismatch)}</span> : "fully backed"}
+              {" "}· balance {inr(settleFor.balance)}
+            </p>
+
+            {/* Outcome */}
+            <div className="mt-4 space-y-2">
+              {([
+                { key: "LOSS", title: "Player Loses", desc: "Amount is deducted from the player's balance (house wins) and released from exposure.", tone: "border-red-500/50 bg-red-500/5", active: "ring-2 ring-red-400/60" },
+                { key: "WIN",  title: "Player Wins",  desc: "Profit is credited to the player's balance; the exposure amount is released.",          tone: "border-emerald-500/50 bg-emerald-500/5", active: "ring-2 ring-emerald-400/60" },
+                { key: "VOID", title: "Release Only (Void)", desc: "Exposure is unlocked; balance untouched. Use for leaked/orphaned exposure.",     tone: "border-gray-600 bg-gray-700/20", active: "ring-2 ring-gray-400/60" },
+              ] as const).map(o => (
+                <button key={o.key} onClick={() => setOutcome(o.key)}
+                  className={`w-full text-left rounded-xl border px-3.5 py-2.5 transition ${o.tone} ${outcome === o.key ? o.active : "opacity-75 hover:opacity-100"}`}>
+                  <p className="text-sm font-black text-gray-100">{o.title}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">{o.desc}</p>
+                </button>
+              ))}
+            </div>
+
+            {/* Amounts */}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-gray-500 block mb-1">
+                  {outcome === "LOSS" ? "Loss amount (₹)" : "Exposure to release (₹)"}
+                </label>
+                <input type="number" min={0.01} max={settleFor.exposure} value={amount || ""}
+                  onChange={e => setAmount(Number(e.target.value) || 0)}
+                  className="w-full bg-gray-900/60 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 outline-none focus:border-yellow-400/60" />
+                <p className="text-[9px] text-gray-600 mt-0.5">max {inr(settleFor.exposure)}</p>
+              </div>
+              {outcome === "WIN" && (
+                <div>
+                  <label className="text-[10px] uppercase tracking-wider text-emerald-400 block mb-1">Profit to pay (₹)</label>
+                  <input type="number" min={0} value={profit || ""}
+                    onChange={e => setProfit(Number(e.target.value) || 0)}
+                    className="w-full bg-gray-900/60 border border-emerald-700/60 rounded-lg px-3 py-2 text-sm text-gray-200 outline-none focus:border-emerald-400/60" />
+                </div>
+              )}
+            </div>
+
+            {outcome === "LOSS" && amount > settleFor.balance && (
+              <p className="mt-3 text-[11px] text-red-300 flex items-start gap-1.5">
+                <AlertTriangle size={12} className="shrink-0 mt-0.5" />
+                Loss amount exceeds the player&apos;s balance ({inr(settleFor.balance)}) — their balance will go negative.
+              </p>
+            )}
+
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button onClick={() => setSettleFor(null)} disabled={busy !== null}
+                className="px-4 py-2 rounded-lg text-xs font-bold text-gray-400 border border-gray-700 hover:text-white transition">Cancel</button>
+              <button onClick={applySettle} disabled={busy !== null || amount <= 0}
+                className={`px-5 py-2 rounded-lg text-xs font-black text-white transition disabled:opacity-40 ${
+                  outcome === "LOSS" ? "bg-gradient-to-r from-red-500 to-red-600" :
+                  outcome === "WIN" ? "bg-gradient-to-r from-emerald-500 to-emerald-600" :
+                  "bg-gradient-to-r from-gray-500 to-gray-600"}`}>
+                {busy !== null ? "Applying…" :
+                  outcome === "LOSS" ? `Settle as LOSS — take ${inr(amount)}` :
+                  outcome === "WIN" ? `Settle as WIN — pay ${inr(profit)}` :
+                  `Release ${inr(amount)}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

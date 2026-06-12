@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { extname, join } from "path";
 import { randomBytes } from "crypto";
@@ -90,6 +90,14 @@ class TicketStatusDto {
 
 class RevokeUserDto {
   @IsString() userId!: string;
+}
+
+class ExposureSettleDto {
+  @IsIn(["WIN", "LOSS", "VOID"]) outcome!: "WIN" | "LOSS" | "VOID";
+  // Exposure amount to release (clamped to the wallet's current exposure).
+  @IsNumber() @Min(0.01) amount!: number;
+  // For WIN: profit credited to the player (defaults to `amount`).
+  @IsOptional() @IsNumber() @Min(0) profit?: number;
 }
 
 class SecurityConfigDto {
@@ -533,6 +541,49 @@ export class AdminController {
 
   @Get("exposure/:userId")
   exposureDetail(@Param("userId") userId: string) { return this.admin.exposureDetail(userId); }
+
+  /**
+   * Manually settle held exposure with an explicit outcome:
+   *  LOSS — player loses: the amount is deducted from balance (house wins) and released from exposure.
+   *  WIN  — player wins: `profit` is credited to balance and `amount` released from exposure.
+   *  VOID — release only: exposure unlocked, balance untouched.
+   */
+  @Post("exposure/:userId/settle")
+  async settleExposure(
+    @CurrentUser() actor: AuthUser, @Param("userId") userId: string,
+    @Body() dto: ExposureSettleDto, @Req() req: Request,
+  ) {
+    const fix = await this.admin.exposureFix(userId);
+    const round2 = (n: number) => Math.round(n * 100) / 100;
+    const amt = round2(Math.min(dto.amount, Math.max(0, fix.current)));
+    if (amt <= 0) throw new BadRequestException("This wallet has no positive exposure to settle");
+
+    if (dto.outcome === "LOSS") {
+      await this.wallet.applyLedger({
+        userId, amount: -amt, exposureDelta: -amt,
+        kind: LedgerKind.BET_SETTLE_LOSS, allowNegative: true,
+        refType: "exposure_manual_settle", refId: userId,
+        note: `Manual exposure settle — player LOSS ₹${amt}`,
+      });
+    } else if (dto.outcome === "WIN") {
+      const profit = round2(dto.profit ?? amt);
+      await this.wallet.applyLedger({
+        userId, amount: profit, exposureDelta: -amt,
+        kind: LedgerKind.BET_SETTLE_WIN,
+        refType: "exposure_manual_settle", refId: userId,
+        note: `Manual exposure settle — player WIN ₹${profit} (released ₹${amt})`,
+      });
+    } else {
+      await this.wallet.applyLedger({
+        userId, amount: 0, exposureDelta: -amt,
+        kind: LedgerKind.ROLLBACK,
+        refType: "exposure_reconcile", refId: userId,
+        note: `Manual exposure settle — released ₹${amt} (void)`,
+      });
+    }
+    await this.admin.writeAudit(actor.id, `exposure.settle.${dto.outcome.toLowerCase()}`, { type: "user", id: userId }, { ...dto, released: amt }, req.ip);
+    return { ok: true, outcome: dto.outcome, released: amt, profit: dto.outcome === "WIN" ? round2(dto.profit ?? amt) : 0 };
+  }
 
   @Post("exposure/:userId/reconcile")
   async reconcileExposure(@CurrentUser() actor: AuthUser, @Param("userId") userId: string, @Req() req: Request) {
