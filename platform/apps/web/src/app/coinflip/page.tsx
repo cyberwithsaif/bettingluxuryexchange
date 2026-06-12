@@ -687,7 +687,7 @@ export default function CoinflipPage() {
               <button
                 onClick={() => setSide("TAILS")}
                 disabled={flipping || loading}
-                className="relative h-[76px] rounded-2xl transition-all flex items-center gap-2.5 px-3 disabled:opacity-60 active:scale-[0.98]"
+                className="relative h-[48px] md:h-[58px] rounded-xl transition-all flex items-center gap-2 px-2.5 disabled:opacity-60 active:scale-[0.98]"
                 style={{
                   background: "linear-gradient(135deg,#1c0e38 0%,#120825 100%)",
                   border: `2px solid ${side === "TAILS" ? "#c026d3" : "rgba(160,90,240,0.30)"}`,
@@ -698,13 +698,13 @@ export default function CoinflipPage() {
                   style={{ borderColor: "#3d2380", background: "radial-gradient(circle at 35% 30%, #c9aaff 0%, #8456e0 55%, #4a2aa0 100%)", boxShadow: "0 0 12px rgba(170,110,255,0.55)" }}>
                   <Crown size={15} className="text-[#efe2ff]" fill="currentColor" />
                 </span>
-                <span className="font-black text-lg tracking-wide"
+                <span className="font-black text-sm md:text-base tracking-wide"
                   style={{ backgroundImage: "linear-gradient(180deg,#f0d9ff,#b04ae8)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", filter: side === "TAILS" ? "drop-shadow(0 0 8px rgba(192,80,230,0.6))" : "none" }}>
                   TAILS
                 </span>
                 {side === "TAILS"
-                  ? <span className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "#e879f9", boxShadow: "0 0 8px rgba(232,121,249,0.8)" }}><Check size={13} strokeWidth={3.5} className="text-[#3a0a45]" /></span>
-                  : <span className="absolute top-2 right-2 w-5 h-5 rounded-full border-2" style={{ borderColor: "rgba(200,130,255,0.5)" }} />}
+                  ? <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: "#e879f9", boxShadow: "0 0 8px rgba(232,121,249,0.8)" }}><Check size={11} strokeWidth={3.5} className="text-[#3a0a45]" /></span>
+                  : <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full border-2" style={{ borderColor: "rgba(200,130,255,0.5)" }} />}
               </button>
             </div>
           </div>
