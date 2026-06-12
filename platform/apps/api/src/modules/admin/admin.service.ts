@@ -380,31 +380,54 @@ export class AdminService {
   async getReports(opts: { days?: number } = {}) {
     const days = Math.min(opts.days ?? 30, 365);
     const since = new Date(Date.now() - days * 24 * 60 * 60_000);
+    since.setUTCHours(0, 0, 0, 0);
 
-    const [totalBets, openBets, settledBets, ledger] = await Promise.all([
+    // Sports AND casino — the old report only read the sports bet table, so a
+    // casino-heavy platform showed all zeros.
+    const PL_KINDS: LedgerKind[] = [
+      LedgerKind.BET_SETTLE_WIN, LedgerKind.BET_SETTLE_LOSS,
+      LedgerKind.CASINO_BET, LedgerKind.CASINO_WIN, LedgerKind.CASINO_REFUND,
+    ];
+
+    const [
+      sportsBets, casinoBets, openSportsBets, settledBets, ledger,
+      mInP, tInP, cInP, cfInP, pumpActive,
+    ] = await Promise.all([
       this.prisma.bet.count({ where: { createdAt: { gte: since } } }),
+      this.prisma.ledgerEntry.count({ where: { kind: "CASINO_BET", createdAt: { gte: since } } }),
       this.prisma.bet.count({ where: { status: { in: [BetStatus.OPEN, BetStatus.MATCHED] } } }),
       this.prisma.bet.count({ where: { status: { in: [BetStatus.SETTLED_WON, BetStatus.SETTLED_LOST] }, createdAt: { gte: since } } }),
       this.prisma.ledgerEntry.findMany({
-        where: {
-          kind: { in: [LedgerKind.BET_SETTLE_WIN, LedgerKind.BET_SETTLE_LOSS, LedgerKind.ADMIN_CREDIT, LedgerKind.ADMIN_DEBIT] },
-          createdAt: { gte: since },
-        },
+        where: { kind: { in: PL_KINDS }, createdAt: { gte: since } },
         select: { amount: true, kind: true, createdAt: true },
       }),
+      this.prisma.minesSession.count({ where: { status: "IN_PROGRESS" } }),
+      this.prisma.towersSession.count({ where: { status: "IN_PROGRESS" } }),
+      this.prisma.chickenRoadSession.count({ where: { status: "IN_PROGRESS" } }),
+      this.prisma.coinflipSession.count({ where: { status: "IN_PROGRESS" } }),
+      this.prisma.pumpBet.count({ where: { status: "ACTIVE" } }),
     ]);
 
-    // Daily buckets
+    // Daily buckets, zero-filled across the whole window so the chart axis
+    // has no gaps on inactive days.
     const daily: Record<string, { volume: number; pl: number }> = {};
+    for (let t = since.getTime(); t <= Date.now(); t += 86_400_000) {
+      daily[new Date(t).toISOString().slice(0, 10)] = { volume: 0, pl: 0 };
+    }
     let totalWin = 0;
-    let totalLoss = 0;
+    let totalPL = 0;
     for (const e of ledger) {
       const day = e.createdAt.toISOString().slice(0, 10);
-      if (!daily[day]) daily[day] = { volume: 0, pl: 0 };
+      const d = daily[day] ?? (daily[day] = { volume: 0, pl: 0 });
       const amt = Number(e.amount.toString());
-      daily[day].volume += Math.abs(amt);
-      if (e.kind === "BET_SETTLE_WIN") { totalWin += amt; daily[day].pl -= amt; }
-      if (e.kind === "BET_SETTLE_LOSS") { totalLoss += Math.abs(amt); daily[day].pl += Math.abs(amt); }
+      // wagered/turnover: casino stakes + sports settlement legs
+      if (e.kind === "CASINO_BET" || e.kind === "BET_SETTLE_WIN" || e.kind === "BET_SETTLE_LOSS") {
+        d.volume += Math.abs(amt);
+      }
+      // operator P/L per entry = -(player balance delta) for every PL kind
+      d.pl -= amt;
+      totalPL -= amt;
+      if (e.kind === "BET_SETTLE_WIN" || e.kind === "CASINO_WIN") totalWin += amt;
     }
 
     const series = Object.entries(daily)
@@ -413,11 +436,13 @@ export class AdminService {
 
     return {
       days,
-      totalBets,
-      openBets,
+      totalBets: sportsBets + casinoBets,
+      sportsBets,
+      casinoBets,
+      openBets: openSportsBets + mInP + tInP + cInP + cfInP + pumpActive,
       settledBets,
       totalUserWin: Math.round(totalWin * 100) / 100,
-      totalOperatorPL: Math.round((totalLoss - totalWin) * 100) / 100,
+      totalOperatorPL: Math.round(totalPL * 100) / 100,
       series,
     };
   }
