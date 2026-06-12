@@ -495,7 +495,7 @@ export default function CoinflipPage() {
         <button
           onClick={handleFlip}
           disabled={loading || flipping || cfg?.enabled === false}
-          className="relative w-full py-2.5 rounded-2xl transition active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2.5 overflow-hidden"
+          className="relative w-full py-2 md:py-2.5 rounded-xl md:rounded-2xl transition active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2 md:gap-2.5 overflow-hidden"
           style={{
             background: "linear-gradient(180deg,#ffd23a 0%,#ffa200 50%,#ff7e00 100%)",
             border: "2px solid rgba(255,233,160,0.7)",
@@ -505,11 +505,11 @@ export default function CoinflipPage() {
           {/* glossy shine */}
           <span className="absolute inset-x-0 top-0 h-1/2 pointer-events-none" style={{ background: "linear-gradient(180deg,rgba(255,255,255,0.32),transparent)" }} />
           {/* flying coin */}
-          <span className="relative w-7 h-7 rounded-full shrink-0 overflow-hidden border-2"
+          <span className="relative w-6 h-6 md:w-7 md:h-7 rounded-full shrink-0 overflow-hidden border-2"
             style={{ borderColor: "#8a5400", background: "radial-gradient(circle at 35% 30%, #fff6cf, #e3a818)", boxShadow: "-6px 4px 10px rgba(120,60,0,0.45), 0 0 12px rgba(255,230,150,0.8)" }}>
             <img src="/logo.png" alt="" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
           </span>
-          <span className="relative font-black text-lg md:text-xl tracking-wide" style={{ color: "#3c1f00", textShadow: "0 1px 0 rgba(255,240,190,0.6)" }}>
+          <span className="relative font-black text-base md:text-xl tracking-wide" style={{ color: "#3c1f00", textShadow: "0 1px 0 rgba(255,240,190,0.6)" }}>
             {!user ? "LOGIN TO PLAY"
               : flipping ? "FLIPPING…"
               : phase === "choice" ? `FLIP AGAIN · ${inr(nextWin)}`
@@ -532,6 +532,40 @@ export default function CoinflipPage() {
           <RotateCcw size={18} /> PLAY AGAIN
         </button>
       )}
+    </div>
+  );
+
+  // ── Info bar (status + feature chips) — desktop: inside arena; mobile: page bottom ──
+  const infoBar = (
+    <div className="rounded-2xl px-3.5 py-3 md:px-6 md:py-4"
+      style={{ background: "rgba(12,8,22,0.78)", border: "1px solid rgba(255,255,255,0.07)", backdropFilter: "blur(10px)" }}>
+      <p className="text-center text-[13px] md:text-[15px] text-white/70 font-semibold min-h-[18px]">
+        {phase === "flipping" ? <span className="text-yellow-300/90 animate-pulse">Flipping…</span>
+          : phase === "choice" ? <>
+              <span className="text-green-400 font-black">{inr(payout)}</span> locked — flip again for{" "}
+              <span className="text-yellow-300 font-black">{inr(nextWin)}</span> or cash out
+            </>
+          : <>Pick a side, set your bet &amp; flip — each win pays <b className="text-white">{stepMult}×</b></>}
+      </p>
+      <div className="flex justify-center gap-1.5 md:gap-3 mt-2.5 md:mt-3 flex-wrap">
+        {[
+          { icon: Zap,         color: "#22c55e", title: "FAST & FAIR", sub: "Instant results" },
+          { icon: ShieldCheck, color: "#3b82f6", title: "SECURE",      sub: "Provably Fair" },
+          { icon: Trophy,      color: "#a855f7", title: "BEST ODDS",   sub: "High Payouts" },
+        ].map(({ icon: Icon, color, title, sub }) => (
+          <div key={title} className="flex items-center gap-2 md:gap-2.5 rounded-lg md:rounded-xl px-2.5 py-1.5 md:px-4 md:py-2.5"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <span className="w-6 h-6 md:w-8 md:h-8 rounded-md md:rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: `${color}1c`, border: `1px solid ${color}45` }}>
+              <Icon size={13} style={{ color }} />
+            </span>
+            <span className="text-left">
+              <span className="block text-[10px] md:text-xs font-black text-white leading-tight">{title}</span>
+              <span className="block text-[9px] md:text-[11px] text-white/40 leading-tight">{sub}</span>
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 
@@ -564,8 +598,12 @@ export default function CoinflipPage() {
 
       <div className="flex-1 md:overflow-hidden flex flex-col-reverse md:flex-row md:p-3 w-full max-w-[1500px] mx-auto md:gap-3 min-h-0">
 
+        {/* Mobile: info bar at the very bottom of the page (col-reverse puts the
+            first DOM child last visually) */}
+        <div className="md:hidden px-3 pt-2 pb-4">{infoBar}</div>
+
         {/* ── Controls panel ── */}
-        <div className="md:w-[350px] shrink-0 md:rounded-3xl p-3.5 flex flex-col gap-2.5 md:h-full md:overflow-y-auto border-t md:border"
+        <div className="md:w-[350px] shrink-0 md:rounded-3xl p-3 md:p-3.5 flex flex-col gap-2 md:gap-2.5 md:h-full md:overflow-y-auto border-t md:border"
           style={{ background: "linear-gradient(180deg,#15102a 0%,#0d0918 100%)", borderColor: "rgba(140,110,255,0.28)", boxShadow: "0 0 26px rgba(120,80,255,0.10)" }}>
 
           {/* Mobile: primary actions on top */}
@@ -587,15 +625,15 @@ export default function CoinflipPage() {
               <input
                 type="number"
                 min={minBet} max={maxBet}
-                className="w-full bg-transparent text-white px-3.5 py-2.5 outline-none font-black text-lg"
+                className="w-full bg-transparent text-white px-3 py-2 md:py-2.5 outline-none font-black text-base md:text-lg"
                 value={betAmount || ""}
                 onChange={(e) => setBetAmount(e.target.value === "" ? 0 : Number(e.target.value))}
                 onBlur={() => setBetAmount(prev => Math.min(maxBet, Math.max(minBet, prev || minBet)))}
                 disabled={inGame}
               />
-              <button className="px-3.5 text-base font-black text-white/85 hover:bg-white/8 disabled:opacity-40 border-l border-white/12" disabled={inGame}
+              <button className="px-3 text-sm md:text-base font-black text-white/85 hover:bg-white/8 disabled:opacity-40 border-l border-white/12" disabled={inGame}
                 onClick={() => setBetAmount(p => Math.max(minBet, Math.round(p / 2)))}>½</button>
-              <button className="px-3.5 text-base font-black text-yellow-400 hover:bg-white/8 disabled:opacity-40 border-l border-white/12" disabled={inGame}
+              <button className="px-3 text-sm md:text-base font-black text-yellow-400 hover:bg-white/8 disabled:opacity-40 border-l border-white/12" disabled={inGame}
                 onClick={() => setBetAmount(p => Math.min(maxBet, Math.round(p * 2)))}>2×</button>
             </div>
             <div className="flex flex-wrap gap-1.5 mt-2">
@@ -604,7 +642,7 @@ export default function CoinflipPage() {
                 const active = betAmount === c;
                 return (
                   <button key={v} onClick={() => setBetAmount(c)} disabled={inGame}
-                    className="px-3 py-1.5 rounded-lg text-[11px] font-black transition disabled:opacity-40"
+                    className="px-2.5 py-1 md:px-3 md:py-1.5 rounded-lg text-[10px] md:text-[11px] font-black transition disabled:opacity-40"
                     style={active
                       ? { background: "linear-gradient(180deg,#ffe066,#f0a818)", color: "#3a2400", border: "1px solid #ffe9a0", boxShadow: "0 0 14px rgba(255,200,60,0.45), inset 0 1px 0 rgba(255,250,220,0.7)" }
                       : { background: "rgba(122,90,248,0.08)", color: "rgba(255,255,255,0.8)", border: "1px solid rgba(140,110,255,0.22)" }}>
@@ -617,7 +655,7 @@ export default function CoinflipPage() {
 
           {/* Side selector — big cards like the design */}
           <div>
-            <p className="text-[12px] font-black uppercase tracking-widest text-white mb-1.5">
+            <p className="text-[11px] md:text-[12px] font-black uppercase tracking-widest text-white mb-1.5">
               {phase === "choice" ? "Pick Side for Next Flip" : "Pick Your Side"}
             </p>
             <div className="grid grid-cols-2 gap-2.5">
@@ -625,18 +663,18 @@ export default function CoinflipPage() {
               <button
                 onClick={() => setSide("HEADS")}
                 disabled={flipping || loading}
-                className="relative h-[58px] rounded-xl transition-all flex items-center gap-2 px-2.5 disabled:opacity-60 active:scale-[0.98]"
+                className="relative h-[48px] md:h-[58px] rounded-xl transition-all flex items-center gap-2 px-2.5 disabled:opacity-60 active:scale-[0.98]"
                 style={{
                   background: "linear-gradient(135deg,#0c1a3a 0%,#0a1228 100%)",
                   border: `2px solid ${side === "HEADS" ? "#38bdf8" : "rgba(56,140,248,0.30)"}`,
                   boxShadow: side === "HEADS" ? "0 0 20px rgba(56,189,248,0.45), inset 0 0 24px rgba(56,140,248,0.10)" : "none",
                 }}
               >
-                <span className="relative w-8 h-8 rounded-full shrink-0 overflow-hidden border-2"
+                <span className="relative w-7 h-7 md:w-8 md:h-8 rounded-full shrink-0 overflow-hidden border-2"
                   style={{ borderColor: "#9a6d06", background: "radial-gradient(circle at 35% 30%, #fff6cf, #e3a818)", boxShadow: "0 0 12px rgba(255,210,90,0.5)" }}>
                   <img src="/logo.png" alt="" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
                 </span>
-                <span className="font-black text-base tracking-wide"
+                <span className="font-black text-sm md:text-base tracking-wide"
                   style={{ backgroundImage: "linear-gradient(180deg,#bfe8ff,#3b82f6)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", filter: side === "HEADS" ? "drop-shadow(0 0 8px rgba(56,189,248,0.6))" : "none" }}>
                   HEADS
                 </span>
@@ -656,7 +694,7 @@ export default function CoinflipPage() {
                   boxShadow: side === "TAILS" ? "0 0 20px rgba(192,38,211,0.5), inset 0 0 24px rgba(160,90,240,0.12)" : "none",
                 }}
               >
-                <span className="relative w-8 h-8 rounded-full shrink-0 flex items-center justify-center border-2"
+                <span className="relative w-7 h-7 md:w-8 md:h-8 rounded-full shrink-0 flex items-center justify-center border-2"
                   style={{ borderColor: "#3d2380", background: "radial-gradient(circle at 35% 30%, #c9aaff 0%, #8456e0 55%, #4a2aa0 100%)", boxShadow: "0 0 12px rgba(170,110,255,0.55)" }}>
                   <Crown size={15} className="text-[#efe2ff]" fill="currentColor" />
                 </span>
@@ -676,7 +714,7 @@ export default function CoinflipPage() {
 
           {/* Game stats — themed cards like the design */}
           <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-xl py-1.5 px-1" style={{ background: "linear-gradient(135deg,#1a1030,#120a22)", border: "1.5px solid rgba(168,85,247,0.35)" }}>
+            <div className="rounded-xl py-1 md:py-1.5 px-1" style={{ background: "linear-gradient(135deg,#1a1030,#120a22)", border: "1.5px solid rgba(168,85,247,0.35)" }}>
               <p className="text-[9px] uppercase tracking-[0.14em] text-white/45 font-black">Per Flip</p>
               <p className="text-sm font-black text-yellow-400 mt-0.5 flex items-center justify-center gap-1">
                 <Rocket size={13} className="text-purple-400 shrink-0" /> {stepMult}×
@@ -858,37 +896,8 @@ export default function CoinflipPage() {
             )}
           </div>
 
-          {/* Bottom info bar */}
-          <div className="relative z-10 mx-3 md:mx-10 mb-3 md:mb-5 rounded-2xl px-4 py-3.5 md:px-6 md:py-4"
-            style={{ background: "rgba(12,8,22,0.78)", border: "1px solid rgba(255,255,255,0.07)", backdropFilter: "blur(10px)" }}>
-            <p className="text-center text-sm md:text-[15px] text-white/70 font-semibold min-h-[20px]">
-              {phase === "flipping" ? <span className="text-yellow-300/90 animate-pulse">Flipping…</span>
-                : phase === "choice" ? <>
-                    <span className="text-green-400 font-black">{inr(payout)}</span> locked — flip again for{" "}
-                    <span className="text-yellow-300 font-black">{inr(nextWin)}</span> or cash out
-                  </>
-                : <>Pick a side, set your bet &amp; flip — each win pays <b className="text-white">{stepMult}×</b></>}
-            </p>
-            <div className="flex justify-center gap-2 md:gap-3 mt-3 flex-wrap">
-              {[
-                { icon: Zap,         color: "#22c55e", title: "FAST & FAIR", sub: "Instant results" },
-                { icon: ShieldCheck, color: "#3b82f6", title: "SECURE",      sub: "Provably Fair" },
-                { icon: Trophy,      color: "#a855f7", title: "BEST ODDS",   sub: "High Payouts" },
-              ].map(({ icon: Icon, color, title, sub }) => (
-                <div key={title} className="flex items-center gap-2.5 rounded-xl px-3.5 py-2 md:px-4 md:py-2.5"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                  <span className="w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ background: `${color}1c`, border: `1px solid ${color}45` }}>
-                    <Icon size={15} style={{ color }} />
-                  </span>
-                  <span className="text-left">
-                    <span className="block text-[11px] md:text-xs font-black text-white leading-tight">{title}</span>
-                    <span className="block text-[10px] md:text-[11px] text-white/40 leading-tight">{sub}</span>
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Bottom info bar — desktop only; on mobile it renders below the controls */}
+          <div className="relative z-10 mx-10 mb-5 hidden md:block">{infoBar}</div>
 
           {/* Result banners */}
           <AnimatePresence>
