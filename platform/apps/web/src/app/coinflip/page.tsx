@@ -486,7 +486,7 @@ export default function CoinflipPage() {
         <button
           onClick={handleCashout}
           disabled={loading || flipping}
-          className="w-full bg-[#00e701] hover:bg-[#1fff20] text-[#0f212e] font-black text-base md:text-lg py-3 rounded-xl shadow-[0_0_18px_rgba(0,231,1,0.4)] transition active:scale-95 disabled:opacity-50"
+          className="w-full bg-[#00e701] hover:bg-[#1fff20] text-[#0f212e] font-black text-base md:text-lg py-2.5 rounded-xl shadow-[0_0_18px_rgba(0,231,1,0.4)] transition active:scale-95 disabled:opacity-50"
         >
           {loading ? "…" : <>CASHOUT&nbsp;&nbsp;{inr(payout)}</>}
         </button>
@@ -495,7 +495,7 @@ export default function CoinflipPage() {
         <button
           onClick={handleFlip}
           disabled={loading || flipping || cfg?.enabled === false}
-          className="relative w-full py-3.5 rounded-2xl transition active:scale-95 disabled:opacity-60 flex items-center justify-center gap-3 overflow-hidden"
+          className="relative w-full py-2.5 rounded-2xl transition active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2.5 overflow-hidden"
           style={{
             background: "linear-gradient(180deg,#ffd23a 0%,#ffa200 50%,#ff7e00 100%)",
             border: "2px solid rgba(255,233,160,0.7)",
@@ -505,11 +505,11 @@ export default function CoinflipPage() {
           {/* glossy shine */}
           <span className="absolute inset-x-0 top-0 h-1/2 pointer-events-none" style={{ background: "linear-gradient(180deg,rgba(255,255,255,0.32),transparent)" }} />
           {/* flying coin */}
-          <span className="relative w-8 h-8 rounded-full shrink-0 overflow-hidden border-2"
+          <span className="relative w-7 h-7 rounded-full shrink-0 overflow-hidden border-2"
             style={{ borderColor: "#8a5400", background: "radial-gradient(circle at 35% 30%, #fff6cf, #e3a818)", boxShadow: "-6px 4px 10px rgba(120,60,0,0.45), 0 0 12px rgba(255,230,150,0.8)" }}>
             <img src="/logo.png" alt="" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
           </span>
-          <span className="relative font-black text-xl md:text-2xl tracking-wide" style={{ color: "#3c1f00", textShadow: "0 1px 0 rgba(255,240,190,0.6)" }}>
+          <span className="relative font-black text-lg md:text-xl tracking-wide" style={{ color: "#3c1f00", textShadow: "0 1px 0 rgba(255,240,190,0.6)" }}>
             {!user ? "LOGIN TO PLAY"
               : flipping ? "FLIPPING…"
               : phase === "choice" ? `FLIP AGAIN · ${inr(nextWin)}`
@@ -565,7 +565,7 @@ export default function CoinflipPage() {
       <div className="flex-1 md:overflow-hidden flex flex-col-reverse md:flex-row md:p-3 w-full max-w-[1500px] mx-auto md:gap-3 min-h-0">
 
         {/* ── Controls panel ── */}
-        <div className="md:w-[350px] shrink-0 md:rounded-3xl p-4 flex flex-col gap-4 md:h-full md:overflow-y-auto border-t md:border"
+        <div className="md:w-[350px] shrink-0 md:rounded-3xl p-3.5 flex flex-col gap-2.5 md:h-full md:overflow-y-auto border-t md:border"
           style={{ background: "linear-gradient(180deg,#15102a 0%,#0d0918 100%)", borderColor: "rgba(140,110,255,0.28)", boxShadow: "0 0 26px rgba(120,80,255,0.10)" }}>
 
           {/* Mobile: primary actions on top */}
@@ -573,7 +573,7 @@ export default function CoinflipPage() {
 
           {/* Bet amount */}
           <div>
-            <div className="flex justify-between items-center mb-2">
+            <div className="flex justify-between items-center mb-1.5">
               <span className="text-[12px] font-black uppercase tracking-widest text-white">Bet Amount</span>
               <span className="text-[11px] text-white/45 font-bold">Min <span className="text-yellow-400">{inr(minBet)}</span> · Max <span className="text-yellow-400">{inr(maxBet)}</span></span>
             </div>
@@ -587,24 +587,24 @@ export default function CoinflipPage() {
               <input
                 type="number"
                 min={minBet} max={maxBet}
-                className="w-full bg-transparent text-white px-4 py-3.5 outline-none font-black text-xl"
+                className="w-full bg-transparent text-white px-3.5 py-2.5 outline-none font-black text-lg"
                 value={betAmount || ""}
                 onChange={(e) => setBetAmount(e.target.value === "" ? 0 : Number(e.target.value))}
                 onBlur={() => setBetAmount(prev => Math.min(maxBet, Math.max(minBet, prev || minBet)))}
                 disabled={inGame}
               />
-              <button className="px-4 text-lg font-black text-white/85 hover:bg-white/8 disabled:opacity-40 border-l border-white/12" disabled={inGame}
+              <button className="px-3.5 text-base font-black text-white/85 hover:bg-white/8 disabled:opacity-40 border-l border-white/12" disabled={inGame}
                 onClick={() => setBetAmount(p => Math.max(minBet, Math.round(p / 2)))}>½</button>
-              <button className="px-4 text-lg font-black text-yellow-400 hover:bg-white/8 disabled:opacity-40 border-l border-white/12" disabled={inGame}
+              <button className="px-3.5 text-base font-black text-yellow-400 hover:bg-white/8 disabled:opacity-40 border-l border-white/12" disabled={inGame}
                 onClick={() => setBetAmount(p => Math.min(maxBet, Math.round(p * 2)))}>2×</button>
             </div>
-            <div className="flex flex-wrap gap-2 mt-2.5">
+            <div className="flex flex-wrap gap-1.5 mt-2">
               {[100, 500, 1000, 2500, 5000, 10000].map(v => {
                 const c = Math.min(maxBet, Math.max(minBet, v));
                 const active = betAmount === c;
                 return (
                   <button key={v} onClick={() => setBetAmount(c)} disabled={inGame}
-                    className="px-3.5 py-2 rounded-xl text-[12px] font-black transition disabled:opacity-40"
+                    className="px-3 py-1.5 rounded-lg text-[11px] font-black transition disabled:opacity-40"
                     style={active
                       ? { background: "linear-gradient(180deg,#ffe066,#f0a818)", color: "#3a2400", border: "1px solid #ffe9a0", boxShadow: "0 0 14px rgba(255,200,60,0.45), inset 0 1px 0 rgba(255,250,220,0.7)" }
                       : { background: "rgba(122,90,248,0.08)", color: "rgba(255,255,255,0.8)", border: "1px solid rgba(140,110,255,0.22)" }}>
@@ -617,7 +617,7 @@ export default function CoinflipPage() {
 
           {/* Side selector — big cards like the design */}
           <div>
-            <p className="text-[12px] font-black uppercase tracking-widest text-white mb-2">
+            <p className="text-[12px] font-black uppercase tracking-widest text-white mb-1.5">
               {phase === "choice" ? "Pick Side for Next Flip" : "Pick Your Side"}
             </p>
             <div className="grid grid-cols-2 gap-2.5">
@@ -625,24 +625,24 @@ export default function CoinflipPage() {
               <button
                 onClick={() => setSide("HEADS")}
                 disabled={flipping || loading}
-                className="relative h-[76px] rounded-2xl transition-all flex items-center gap-2.5 px-3 disabled:opacity-60 active:scale-[0.98]"
+                className="relative h-[58px] rounded-xl transition-all flex items-center gap-2 px-2.5 disabled:opacity-60 active:scale-[0.98]"
                 style={{
                   background: "linear-gradient(135deg,#0c1a3a 0%,#0a1228 100%)",
                   border: `2px solid ${side === "HEADS" ? "#38bdf8" : "rgba(56,140,248,0.30)"}`,
                   boxShadow: side === "HEADS" ? "0 0 20px rgba(56,189,248,0.45), inset 0 0 24px rgba(56,140,248,0.10)" : "none",
                 }}
               >
-                <span className="relative w-10 h-10 rounded-full shrink-0 overflow-hidden border-2"
+                <span className="relative w-8 h-8 rounded-full shrink-0 overflow-hidden border-2"
                   style={{ borderColor: "#9a6d06", background: "radial-gradient(circle at 35% 30%, #fff6cf, #e3a818)", boxShadow: "0 0 12px rgba(255,210,90,0.5)" }}>
                   <img src="/logo.png" alt="" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
                 </span>
-                <span className="font-black text-lg tracking-wide"
+                <span className="font-black text-base tracking-wide"
                   style={{ backgroundImage: "linear-gradient(180deg,#bfe8ff,#3b82f6)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", filter: side === "HEADS" ? "drop-shadow(0 0 8px rgba(56,189,248,0.6))" : "none" }}>
                   HEADS
                 </span>
                 {side === "HEADS"
-                  ? <span className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "#38bdf8", boxShadow: "0 0 8px rgba(56,189,248,0.8)" }}><Check size={13} strokeWidth={3.5} className="text-[#06203f]" /></span>
-                  : <span className="absolute top-2 right-2 w-5 h-5 rounded-full border-2" style={{ borderColor: "rgba(120,170,255,0.5)" }} />}
+                  ? <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: "#38bdf8", boxShadow: "0 0 8px rgba(56,189,248,0.8)" }}><Check size={11} strokeWidth={3.5} className="text-[#06203f]" /></span>
+                  : <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full border-2" style={{ borderColor: "rgba(120,170,255,0.5)" }} />}
               </button>
 
               {/* TAILS */}
@@ -656,9 +656,9 @@ export default function CoinflipPage() {
                   boxShadow: side === "TAILS" ? "0 0 20px rgba(192,38,211,0.5), inset 0 0 24px rgba(160,90,240,0.12)" : "none",
                 }}
               >
-                <span className="relative w-10 h-10 rounded-full shrink-0 flex items-center justify-center border-2"
+                <span className="relative w-8 h-8 rounded-full shrink-0 flex items-center justify-center border-2"
                   style={{ borderColor: "#3d2380", background: "radial-gradient(circle at 35% 30%, #c9aaff 0%, #8456e0 55%, #4a2aa0 100%)", boxShadow: "0 0 12px rgba(170,110,255,0.55)" }}>
-                  <Crown size={18} className="text-[#efe2ff]" fill="currentColor" />
+                  <Crown size={15} className="text-[#efe2ff]" fill="currentColor" />
                 </span>
                 <span className="font-black text-lg tracking-wide"
                   style={{ backgroundImage: "linear-gradient(180deg,#f0d9ff,#b04ae8)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent", filter: side === "TAILS" ? "drop-shadow(0 0 8px rgba(192,80,230,0.6))" : "none" }}>
@@ -676,25 +676,25 @@ export default function CoinflipPage() {
 
           {/* Game stats — themed cards like the design */}
           <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-2xl py-2.5 px-1" style={{ background: "linear-gradient(135deg,#1a1030,#120a22)", border: "1.5px solid rgba(168,85,247,0.35)" }}>
+            <div className="rounded-xl py-1.5 px-1" style={{ background: "linear-gradient(135deg,#1a1030,#120a22)", border: "1.5px solid rgba(168,85,247,0.35)" }}>
               <p className="text-[9px] uppercase tracking-[0.14em] text-white/45 font-black">Per Flip</p>
-              <p className="text-base font-black text-yellow-400 mt-1 flex items-center justify-center gap-1">
+              <p className="text-sm font-black text-yellow-400 mt-0.5 flex items-center justify-center gap-1">
                 <Rocket size={13} className="text-purple-400 shrink-0" /> {stepMult}×
               </p>
             </div>
             <div className="rounded-2xl py-2.5 px-1" style={{ background: "linear-gradient(135deg,#0e142e,#0a0e20)", border: "1.5px solid rgba(110,140,255,0.25)" }}>
               <p className="text-[9px] uppercase tracking-[0.14em] text-white/45 font-black">Streak</p>
-              <p className="text-base font-black mt-0.5"><span className="text-[#7db5ff]">{streak}</span><span className="text-white/35">/{maxFlips}</span></p>
-              <div className="flex justify-center gap-[3px] mt-1">
+              <p className="text-sm font-black mt-0.5"><span className="text-[#7db5ff]">{streak}</span><span className="text-white/35">/{maxFlips}</span></p>
+              <div className="flex justify-center gap-[2px] mt-0.5">
                 {Array.from({ length: maxFlips }).map((_, i) => (
-                  <span key={i} className="w-[6px] h-[6px] rounded-full"
+                  <span key={i} className="w-[5px] h-[5px] rounded-full"
                     style={{ background: i < streak ? "#22c55e" : "rgba(255,255,255,0.14)", boxShadow: i < streak ? "0 0 5px rgba(34,197,94,0.8)" : "none" }} />
                 ))}
               </div>
             </div>
             <div className="rounded-2xl py-2.5 px-1" style={{ background: "linear-gradient(135deg,#0a2316,#07180f)", border: "1.5px solid rgba(34,197,94,0.4)" }}>
               <p className="text-[9px] uppercase tracking-[0.14em] text-white/45 font-black">Max Win</p>
-              <p className="text-base font-black text-green-400 mt-1 flex items-center justify-center gap-1">
+              <p className="text-sm font-black text-green-400 mt-0.5 flex items-center justify-center gap-1">
                 <Trophy size={13} className="text-green-400 shrink-0" /> {ladder[ladder.length - 1]}×
               </p>
             </div>
@@ -702,12 +702,12 @@ export default function CoinflipPage() {
 
           {/* Provably fair */}
           <div className="rounded-2xl" style={{ background: "linear-gradient(135deg,#0a2014,#07160d)", border: "1.5px solid rgba(34,197,94,0.45)" }}>
-            <button onClick={() => setShowFair(v => !v)} className="w-full flex items-center justify-between px-4 py-3">
+            <button onClick={() => setShowFair(v => !v)} className="w-full flex items-center justify-between px-3.5 py-2">
               <span className="flex items-center gap-3">
-                <ShieldCheck size={20} className="text-green-400 shrink-0" />
+                <ShieldCheck size={17} className="text-green-400 shrink-0" />
                 <span className="text-left">
-                  <span className="block text-sm font-black text-white leading-tight">Provably Fair</span>
-                  <span className="block text-[11px] text-green-400/80 font-semibold leading-tight">100% Fair · Verified</span>
+                  <span className="block text-[13px] font-black text-white leading-tight">Provably Fair</span>
+                  <span className="block text-[10px] text-green-400/80 font-semibold leading-tight">100% Fair · Verified</span>
                 </span>
               </span>
               {showFair
@@ -747,7 +747,7 @@ export default function CoinflipPage() {
           {/* View all games */}
           <Link
             href="/casino"
-            className="w-full flex items-center justify-between rounded-2xl px-4 py-3.5 text-sm font-black text-white/85 hover:text-white transition group"
+            className="w-full flex items-center justify-between rounded-xl px-3.5 py-2 text-[13px] font-black text-white/85 hover:text-white transition group"
             style={{ background: "linear-gradient(135deg,#151028,#0e0a1d)", border: "1.5px solid rgba(140,110,255,0.22)" }}
           >
             <span className="flex items-center gap-2.5"><History size={16} className="text-white/50" /> VIEW ALL GAMES</span>
