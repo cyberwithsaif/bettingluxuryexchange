@@ -180,24 +180,30 @@ export default function PlinkoPage() {
       .catch(() => {});
   }, [rows, risk]);
 
-  // Balance — debounced refetch so concurrent ball-lands don't race each other
-  const balanceFetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Balance is server-authoritative and version-ordered: each bet response and
+  // each summary GET carries the wallet version, and we only apply a value whose
+  // version is >= the last one shown. This kills the rapid-play race where an
+  // optimistic delta + a stale GET double-counted into a wrong/stuck balance.
+  const balVerRef = useRef(-1);
+  const applyBalance = useCallback((value: unknown, version: unknown) => {
+    const b = Number(value);
+    if (!Number.isFinite(b)) return;
+    const v = Number(version);
+    if (Number.isFinite(v)) {
+      if (v < balVerRef.current) return; // stale — ignore
+      balVerRef.current = v;
+    }
+    setBalance(b);
+  }, []);
   const fetchBalance = useCallback(async () => {
     if (!token) return;
     try {
       const r = await fetch("/api/wallet/summary", { headers: { Authorization: `Bearer ${token}` } });
-      // Throttled/error (e.g. 429 under heavy play) → keep the last good balance,
-      // never clobber it to 0. The optimistic update already keeps it live.
-      if (!r.ok) return;
+      if (!r.ok) return; // throttled/error under heavy play → keep last good value
       const d = await r.json();
-      const v = Number(d.balance ?? d.available);
-      if (Number.isFinite(v)) setBalance(v);
+      applyBalance(d.available ?? d.balance, d.version);
     } catch { /* network error — keep current balance */ }
-  }, [token]);
-  const scheduleFetchBalance = useCallback(() => {
-    if (balanceFetchTimer.current) clearTimeout(balanceFetchTimer.current);
-    balanceFetchTimer.current = setTimeout(fetchBalance, 900);
-  }, [fetchBalance]);
+  }, [token, applyBalance]);
   useEffect(() => { fetchBalance(); }, [fetchBalance]);
 
   // Live feed — own bets are added on ball-land (onBallDone); other players' bets
@@ -233,6 +239,8 @@ export default function PlinkoPage() {
     multiplier: number;
     payout:     number;
     profit:     number;
+    balance:    number;   // authoritative post-bet balance
+    walletVersion: number;
   }
   const pendingResults = useRef<Map<number, PendingResult>>(new Map());
 
@@ -260,6 +268,8 @@ export default function PlinkoPage() {
         multiplier: data.multiplier,
         payout:     data.payout,
         profit:     data.profit as number,
+        balance:        Number(data.balance),
+        walletVersion:  Number(data.walletVersion),
       });
       setQueue(prev => [...prev, { id, path: data.path, slot: data.slot, multiplier: data.multiplier }]);
       return data.profit as number;
@@ -303,12 +313,11 @@ export default function PlinkoPage() {
         history: [...prev.history.slice(-99), netGain],
       };
     });
-    // Optimistic update: adjust balance immediately so it's never stale
-    setBalance(prev => (prev !== null ? +(prev + res.profit).toFixed(2) : null));
-    // Debounced server refetch: fires 900ms after the last ball lands (avoids race)
-    scheduleFetchBalance();
+    // Apply the authoritative post-bet balance from the server, version-ordered
+    // so concurrent ball-lands never double-count or regress the balance.
+    applyBalance(res.balance, res.walletVersion);
     if (res.multiplier >= 5) notify(`${res.multiplier}× — Won ₹${res.payout.toLocaleString()}!`, "ok");
-  }, [scheduleFetchBalance, notify]);
+  }, [applyBalance, notify]);
 
   const startAuto = useCallback(async () => {
     autoRef.current = true;

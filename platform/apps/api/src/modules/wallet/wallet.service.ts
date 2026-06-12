@@ -54,6 +54,9 @@ export class WalletService {
       bonus,
       available: round4(balance - exposure),
       currency: w.currency,
+      // Monotonic per-wallet write counter — lets the client order balance
+      // updates and discard stale ones during rapid play.
+      version: w.version,
     };
   }
 
@@ -115,14 +118,18 @@ export class WalletService {
             balance: toNum(newBalance),
             exposure: toNum(newExposure),
             available: round4(toNum(newBalance) - toNum(newExposure)),
+            // Post-write version (the updateMany incremented it by 1).
+            version: wallet.version + 1,
           };
         });
 
-        // Notify the user's socket room with the new wallet state.
+        // Notify the user's socket room with the new wallet state. The version
+        // lets the client apply updates in order and ignore stale ones.
         await this.redis.publish(`wallet.${input.userId}`, {
           balance: out.balance,
           exposure: out.exposure,
           available: out.available,
+          version: out.version,
         });
 
         return out;

@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownToLine, ArrowUpToLine, LogOut, Bell,
   ChevronDown, Search, Zap, Plus,
@@ -78,34 +78,52 @@ export function TopBar() {
     clear();
   }
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { data: wallet, mutate } = useSWR(user ? "/wallet/summary" : null, {
-    refreshInterval: 1000,      // poll every second so the balance never stays stuck
-    dedupingInterval: 0,        // override the global 5s dedup so the 1s poll actually fires
-    keepPreviousData: true,     // a throttled/failed tick keeps the last balance (no blank/0)
+
+  // Displayed balance is driven by a monotonic version counter so a stale poll
+  // or out-of-order socket push can never overwrite a fresher value (the bug
+  // during rapid Plinko-style play). The highest version always wins.
+  const [displayBalance, setDisplayBalance] = useState<number | null>(null);
+  const verRef = useRef(-1);
+  const applyBalance = useCallback((available: unknown, version: unknown) => {
+    const a = Number(available);
+    if (!Number.isFinite(a)) return;
+    const v = Number(version);
+    // No version (legacy push) → treat as newest so we still update.
+    if (Number.isFinite(v)) {
+      if (v < verRef.current) return; // stale — ignore
+      verRef.current = v;
+    }
+    setDisplayBalance(a);
+  }, []);
+
+  const { data: wallet } = useSWR(user ? "/wallet/summary" : null, {
+    refreshInterval: 5000,      // gentle safety poll; live updates come via socket
+    dedupingInterval: 0,
+    keepPreviousData: true,
+    onSuccess: (d: any) => applyBalance(d?.available, d?.version),
   });
+
+  // Reset the version gate when the logged-in user changes (login / switch).
+  useEffect(() => { verRef.current = -1; setDisplayBalance(null); }, [user?.id]);
+
   /* Same SWR key as account/page.tsx — shared cache, no double request */
   const { data: depositData } = useSWR<number>(user ? "/wallet/total-deposited" : null);
 
   useEffect(() => {
     if (!user) return;
     const s = getSocket();
-    // wallet:update — fired by the realtime gateway on deposits/withdrawals.
-    const onUpdate = () => mutate();
-    // wallet:balance — fired by EACH game gateway after a bet/win/cashout. The
-    // header was missing this, so balance only refreshed via the 1s poll. Now
-    // it updates instantly with the new available + revalidates from the server.
-    const onBalance = (d: { available?: number }) => {
-      if (typeof d?.available === "number") {
-        mutate((prev: any) => ({ ...(prev ?? {}), available: d.available }), { revalidate: false });
-      }
-      mutate(); // confirm with server
-    };
+    // wallet:update — authoritative push from applyLedger after EVERY wallet
+    // write (deposits, bets, wins, plinko HTTP bets, admin credits…). Carries
+    // the new balance + version, so apply it directly — no racing GET.
+    const onUpdate = (d: { available?: number; version?: number }) => applyBalance(d?.available, d?.version);
+    // wallet:balance — legacy per-game gateway push (no version).
+    const onBalance = (d: { available?: number }) => applyBalance(d?.available, undefined);
     s.on("wallet:update", onUpdate);
     s.on("wallet:balance", onBalance);
     return () => { s.off("wallet:update", onUpdate); s.off("wallet:balance", onBalance); };
-  }, [user, mutate]);
+  }, [user, applyBalance]);
 
-  const balance = Number(wallet?.available ?? 0);
+  const balance = displayBalance ?? Number(wallet?.available ?? 0);
 
   /* Compute VIP rank + progress-to-next-tier from lifetime deposit total
      (DEPOSIT + ADMIN_CREDIT) — same math as the account page VIP card. */

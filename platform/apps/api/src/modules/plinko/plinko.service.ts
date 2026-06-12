@@ -183,8 +183,9 @@ export class PlinkoService implements OnModuleInit {
     if (input.betAmount > config.maxBet) throw new BadRequestException(`Maximum bet is ${config.maxBet}`);
     if (!input.clientSeed?.trim()) throw new BadRequestException("Client seed required");
 
-    // Deduct bet from wallet first
-    await this.wallet.applyLedger({
+    // Deduct bet from wallet first. Track the latest authoritative wallet
+    // state (balance + version) so the client can apply it in order.
+    let walletState = await this.wallet.applyLedger({
       userId,
       amount: -input.betAmount,
       kind: LedgerKind.CASINO_BET,
@@ -209,7 +210,7 @@ export class PlinkoService implements OnModuleInit {
 
     // Credit winnings
     if (payout > 0) {
-      await this.wallet.applyLedger({
+      walletState = await this.wallet.applyLedger({
         userId,
         amount: payout,
         kind: LedgerKind.CASINO_WIN,
@@ -254,6 +255,9 @@ export class PlinkoService implements OnModuleInit {
       profit,
       serverSeedHash,
       nonce,
+      // Authoritative post-bet wallet state for in-order client display.
+      balance:        walletState.balance,
+      walletVersion:  walletState.version,
     };
 
     // Broadcast to live feed
