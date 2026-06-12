@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { GameCarousel } from "@/components/GameCarousel";
 
 export default async function HomePage() {
@@ -8,8 +9,9 @@ export default async function HomePage() {
 
       {/* Ads Banners */}
       <div className="grid grid-cols-2 gap-3 md:gap-4">
-        {/* Casino Banner */}
-        <div className="group relative rounded-2xl md:rounded-3xl overflow-visible border border-white/10 hover:border-white/20 transition-all duration-300 min-h-[90px] md:min-h-[175px] hover:shadow-2xl hover:scale-[1.02] cursor-pointer">
+        {/* Casino Banner → /casino */}
+        <Link href="/casino" aria-label="Open Casino"
+          className="group relative rounded-2xl md:rounded-3xl overflow-visible border border-white/10 hover:border-white/20 transition-all duration-300 min-h-[90px] md:min-h-[175px] hover:shadow-2xl hover:scale-[1.02] cursor-pointer block">
           {/* Background */}
           <div className="absolute inset-0 rounded-2xl md:rounded-3xl overflow-hidden" style={{ backgroundImage: "url('/images/bgping-hd.webp')", backgroundSize: "cover", backgroundPosition: "center" }} />
 
@@ -24,13 +26,14 @@ export default async function HomePage() {
           </div>
 
           {/* Float chips — desktop only */}
-          <div className="hidden md:block absolute -right-8 top-0 w-full h-full z-10">
+          <div className="hidden md:block absolute -right-8 top-0 w-full h-full z-10 pointer-events-none">
             <Image src="/images/float-hd.webp" alt="Floating Chips" fill sizes="50vw" className="object-contain object-right" priority />
           </div>
-        </div>
+        </Link>
 
-        {/* Sports Banner */}
-        <div className="group relative rounded-2xl md:rounded-3xl overflow-visible border border-white/10 hover:border-white/20 transition-all duration-300 min-h-[90px] md:min-h-[175px] hover:shadow-2xl hover:scale-[1.02] cursor-pointer">
+        {/* Sports Banner → /sportsbook */}
+        <Link href="/sportsbook" aria-label="Open Sportsbook"
+          className="group relative rounded-2xl md:rounded-3xl overflow-visible border border-white/10 hover:border-white/20 transition-all duration-300 min-h-[90px] md:min-h-[175px] hover:shadow-2xl hover:scale-[1.02] cursor-pointer block">
           {/* Background — clipped */}
           <div className="absolute inset-0 rounded-2xl md:rounded-3xl overflow-hidden">
             <Image src="/images/bannercric-hd.webp" alt="Sports Banner Background" fill sizes="50vw" className="object-cover object-center" priority />
@@ -40,7 +43,7 @@ export default async function HomePage() {
             style={{ left: "-28%", right: "-28%", top: "-30%", bottom: "-45%" }}>
             <Image src="/images/sports-hd.webp" alt="Sports" fill sizes="50vw" className="object-contain object-center" priority />
           </div>
-        </div>
+        </Link>
       </div>
 
       <style>{`

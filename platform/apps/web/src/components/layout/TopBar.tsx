@@ -107,10 +107,17 @@ export function TopBar() {
 
   const balance = Number(wallet?.available ?? 0);
 
-  /* Compute VIP rank from lifetime deposit total (DEPOSIT + ADMIN_CREDIT) */
-  const rank: Rank = useMemo(() => {
-    const idx = getTierIndex(Number(depositData ?? 0));
-    return VIP_TIERS[idx]!.rank;
+  /* Compute VIP rank + progress-to-next-tier from lifetime deposit total
+     (DEPOSIT + ADMIN_CREDIT) — same math as the account page VIP card. */
+  const { rank, progress } = useMemo(() => {
+    const total = Number(depositData ?? 0);
+    const idx = getTierIndex(total);
+    const tier = VIP_TIERS[idx]!;
+    const next = VIP_TIERS[idx + 1];
+    const pct = next
+      ? Math.min(100, Math.max(0, Math.round(((total - tier.min) / (next.min - tier.min)) * 100)))
+      : 100;
+    return { rank: tier.rank as Rank, progress: pct };
   }, [depositData]);
 
   return (
@@ -249,7 +256,7 @@ export function TopBar() {
             <NotificationBell />
 
             {/* Profile menu — all viewports */}
-            <ProfileMenu username={user.username} onLogout={handleLogout} rank={rank} />
+            <ProfileMenu username={user.username} onLogout={handleLogout} rank={rank} progress={progress} />
           </div>
         )}
       </div>
@@ -283,10 +290,9 @@ function NotificationBell() {
 }
 
 /* ── Profile Menu ───────────────────────────────────────────── */
-function ProfileMenu({ username, onLogout, rank }: { username: string; onLogout: () => void; rank: Rank }) {
+function ProfileMenu({ username, onLogout, rank, progress }: { username: string; onLogout: () => void; rank: Rank; progress: number }) {
   const [open, setOpen] = useState(false);
 
-  const progress = 0;
   const barColor = RANK_BAR_COLOR[rank];
 
   return (
