@@ -672,11 +672,12 @@ export class BookieService {
       BLOCK: "Block / suspend player", UNBLOCK: "Unblock player", RESET_PASSWORD: "Reset player password",
       ADJUST_LIMIT: "Adjust player limits", CLOSE_ACCOUNT: "Close player account", OTHER: "Other change",
     };
-    // The ::<userId> tag lets the admin (and our pending count) tie the ticket to the player.
+    // The ::<userId>::<TYPE> tag lets the admin (and our pending count) tie the
+    // ticket to the player and recover the request type for auto-execution.
     const ticket = await this.prisma.supportTicket.create({
       data: {
         userId: bookieId,
-        subject: `[Bookie Request] ${label[t]} — ${target.username} ::${userId}`,
+        subject: `[Bookie Request] ${label[t]} — ${target.username} ::${userId}::${t}`,
         priority: t === "BLOCK" || t === "CLOSE_ACCOUNT" ? "HIGH" : "NORMAL",
         status: "OPEN",
         messages: {
@@ -691,6 +692,13 @@ export class BookieService {
     return { ok: true, ticketId: ticket.id };
   }
 
+  // Parse the "::userId::TYPE" tag off a bookie-request subject.
+  private static parseRequestSubject(subject: string) {
+    const m = subject.match(/::([a-z0-9]+)(?:::([A-Z_]+))?$/i);
+    const clean = subject.replace(/ ::[a-z0-9]+(?:::[A-Z_]+)?$/i, "").replace(/^\[Bookie Request\]\s*/, "");
+    return { targetUserId: m?.[1] ?? null, type: m?.[2] ?? null, title: clean };
+  }
+
   /** The bookie's own submitted requests (read-only history). */
   async myRequests(bookieId: string) {
     const tickets = await this.prisma.supportTicket.findMany({
@@ -698,13 +706,80 @@ export class BookieService {
       orderBy: { updatedAt: "desc" }, take: 100,
       include: { messages: { orderBy: { createdAt: "desc" }, take: 1, select: { body: true, isAdmin: true, createdAt: true } } },
     });
-    return tickets.map((t) => ({
-      id: t.id,
-      subject: t.subject.replace(/ ::[a-z0-9]+$/i, ""),
-      status: t.status, priority: t.priority,
-      lastReply: t.messages[0]?.isAdmin ? t.messages[0] : null,
-      createdAt: t.createdAt, updatedAt: t.updatedAt,
-    }));
+    return tickets.map((t) => {
+      const p = BookieService.parseRequestSubject(t.subject);
+      return {
+        id: t.id, title: p.title, type: p.type, targetUserId: p.targetUserId,
+        status: t.status, priority: t.priority,
+        adminReply: t.messages[0]?.isAdmin ? t.messages[0] : null,
+        createdAt: t.createdAt, updatedAt: t.updatedAt,
+      };
+    });
+  }
+
+  // ── Admin side: review & action bookie requests ────────────────────────────
+  /** All bookie requests across every bookie (admin view). */
+  async listBookieRequests(opts: { status?: string } = {}) {
+    const where: Prisma.SupportTicketWhereInput = { subject: { startsWith: "[Bookie Request]" } };
+    if (opts.status && opts.status !== "ALL") where.status = opts.status as Prisma.EnumSupportStatusFilter;
+    const tickets = await this.prisma.supportTicket.findMany({
+      where, orderBy: [{ status: "asc" }, { updatedAt: "desc" }], take: 300,
+      include: {
+        user: { select: { id: true, username: true } }, // requesting bookie
+        messages: { orderBy: { createdAt: "asc" } },
+      },
+    });
+    // Resolve target usernames in one query.
+    const targetIds = [...new Set(tickets.map((t) => BookieService.parseRequestSubject(t.subject).targetUserId).filter(Boolean) as string[])];
+    const targets = targetIds.length
+      ? await this.prisma.user.findMany({ where: { id: { in: targetIds } }, select: { id: true, username: true, status: true } })
+      : [];
+    const tmap = new Map(targets.map((u) => [u.id, u]));
+
+    const rows = tickets.map((t) => {
+      const p = BookieService.parseRequestSubject(t.subject);
+      const tgt = p.targetUserId ? tmap.get(p.targetUserId) : null;
+      return {
+        id: t.id, type: p.type, title: p.title, status: t.status, priority: t.priority,
+        bookie: t.user ? { id: t.user.id, username: t.user.username } : null,
+        target: tgt ? { id: tgt.id, username: tgt.username, status: tgt.status } : (p.targetUserId ? { id: p.targetUserId, username: "(deleted)", status: "—" } : null),
+        reason: t.messages.find((m) => !m.isAdmin)?.body ?? null,
+        messages: t.messages.map((m) => ({ id: m.id, body: m.body, isAdmin: m.isAdmin, createdAt: m.createdAt })),
+        createdAt: t.createdAt, updatedAt: t.updatedAt,
+      };
+    });
+    const pending = rows.filter((r) => r.status === "OPEN" || r.status === "PENDING").length;
+    return { summary: { total: rows.length, pending }, rows };
+  }
+
+  /**
+   * Approve or reject a bookie request. Approving a BLOCK/UNBLOCK/CLOSE_ACCOUNT
+   * applies the status change to the target player automatically; password /
+   * limit / other requests are marked approved for the admin to finish on the
+   * user profile. Always posts an admin reply and resolves the ticket.
+   */
+  async actionBookieRequest(adminId: string, ticketId: string, action: "approve" | "reject", note?: string, ip?: string) {
+    const ticket = await this.prisma.supportTicket.findUnique({ where: { id: ticketId } });
+    if (!ticket || !ticket.subject.startsWith("[Bookie Request]")) throw new NotFoundException("Request not found");
+    const p = BookieService.parseRequestSubject(ticket.subject);
+
+    let executed = "";
+    if (action === "approve" && p.targetUserId) {
+      const target = await this.prisma.user.findUnique({ where: { id: p.targetUserId } });
+      if (target) {
+        if (p.type === "BLOCK")        { await this.prisma.user.update({ where: { id: target.id }, data: { status: UserStatus.SUSPENDED } }); await this.killSessions(target.id); executed = "Player suspended."; }
+        else if (p.type === "UNBLOCK") { await this.prisma.user.update({ where: { id: target.id }, data: { status: UserStatus.ACTIVE } });    executed = "Player re-activated."; }
+        else if (p.type === "CLOSE_ACCOUNT") { await this.prisma.user.update({ where: { id: target.id }, data: { status: UserStatus.CLOSED } }); await this.killSessions(target.id); executed = "Player account closed."; }
+        else executed = "Approved — apply the change from the user profile.";
+      }
+    }
+
+    const verdict = action === "approve" ? "APPROVED" : "REJECTED";
+    const body = `Admin ${verdict} this request.${executed ? ` ${executed}` : ""}${note?.trim() ? `\n\nNote: ${note.trim()}` : ""}`;
+    await this.prisma.supportMessage.create({ data: { ticketId, authorId: adminId, isAdmin: true, body } });
+    await this.prisma.supportTicket.update({ where: { id: ticketId }, data: { status: action === "approve" ? "RESOLVED" : "CLOSED" } });
+    await this.audit(adminId, "bookie.request.action", { type: "ticket", id: ticketId }, { action, type: p.type, target: p.targetUserId, executed }, ip);
+    return { ok: true, action, executed: executed || null };
   }
 
   /** Roll up bet count + users' net ledger across a set of user ids. */

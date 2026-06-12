@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import type { Request } from "express";
+import { IsIn, IsOptional, IsString, MaxLength } from "class-validator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
@@ -7,6 +8,11 @@ import { CurrentUser, AuthUser } from "../../common/decorators/current-user.deco
 import { UserRole } from "@prisma/client";
 import { BookieService } from "./bookie.service";
 import { CreateBookieDto, UpdateBookieDto, RechargeDto, SetStatusDto, DefaultCommissionDto } from "./dto";
+
+class RequestActionDto {
+  @IsIn(["approve", "reject"]) action!: "approve" | "reject";
+  @IsOptional() @IsString() @MaxLength(500) note?: string;
+}
 
 /**
  * Admin → Bookie management. Guarded for ADMIN and above (rank-based guard, so
@@ -33,6 +39,17 @@ export class AdminBookieController {
   @Get("settings")
   getSettings() {
     return this.bookies.getSettings();
+  }
+
+  // ── Bookie player-change requests ──
+  @Get("requests")
+  requests(@Query("status") status?: string) {
+    return this.bookies.listBookieRequests({ status });
+  }
+
+  @Post("requests/:ticketId/action")
+  actionRequest(@CurrentUser() actor: AuthUser, @Param("ticketId") ticketId: string, @Body() dto: RequestActionDto, @Req() req: Request) {
+    return this.bookies.actionBookieRequest(actor.id, ticketId, dto.action, dto.note, req.ip);
   }
 
   @Patch("settings")

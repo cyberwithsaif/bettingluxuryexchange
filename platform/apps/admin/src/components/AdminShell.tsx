@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, ArrowDownToLine, ArrowUpToLine,
   Settings, Key, ListChecks, ShieldAlert, LogOut, Trophy,
   Ticket, BarChart3, Bell, Menu, X, CreditCard, Gamepad2,
-  ShieldCheck, Activity, Share2, UserCog, Crown, Gift, LifeBuoy, Lock, Gauge, Store, Dices, Scale,
+  ShieldCheck, Activity, Share2, UserCog, Crown, Gift, LifeBuoy, Lock, Gauge, Store, Dices, Scale, Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/lib/stores/auth";
@@ -16,6 +16,7 @@ const NAV = [
   { href: "/",                         label: "Dashboard",       Icon: LayoutDashboard },
   { href: "/users",                    label: "Users",           Icon: Users },
   { href: "/bookies",                  label: "Manage Bookies",  Icon: Store, green: true },
+  { href: "/bookie-requests",          label: "Bookie Requests", Icon: Inbox, green: true },
   { href: "/bets",                     label: "All Bets",        Icon: Ticket },
   { href: "/casino-bets",             label: "Casino Bets",     Icon: Gamepad2 },
   { href: "/games",                    label: "Casino Games",    Icon: Dices },

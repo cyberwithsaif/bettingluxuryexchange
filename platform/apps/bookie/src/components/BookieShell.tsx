@@ -2,13 +2,14 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
-import { LayoutDashboard, Users, Wallet, ArrowLeftRight, UserCircle, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, Wallet, ArrowLeftRight, UserCircle, LogOut, Menu, X, Inbox } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/lib/stores/auth";
 
 const NAV = [
   { href: "/",             label: "Dashboard",    Icon: LayoutDashboard },
   { href: "/users",        label: "My Users",     Icon: Users },
+  { href: "/requests",     label: "My Requests",  Icon: Inbox },
   { href: "/wallet",       label: "Wallet",       Icon: Wallet },
   { href: "/transactions", label: "Transactions", Icon: ArrowLeftRight },
   { href: "/profile",      label: "Profile",      Icon: UserCircle },
