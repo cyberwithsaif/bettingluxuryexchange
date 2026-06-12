@@ -15,19 +15,21 @@ export const viewport: Viewport = {
 export const dynamic = "force-dynamic";
 
 async function fetchPlatformSettings(): Promise<Record<string, unknown> | null> {
-  try {
-    const base = process.env.INTERNAL_API_URL ?? "http://localhost:4000";
-    const res = await fetch(`${base}/api/platform/settings`, { cache: "no-store" });
-    if (!res.ok) return null;
-    return res.json() as Promise<Record<string, unknown>>;
-  } catch {
-    return null;
+  const base = process.env.INTERNAL_API_URL ?? "http://localhost:4000";
+  // Retry once — a single transient SSR fetch failure used to drop the page to
+  // the hardcoded fallback brand ("Future9") and skip the real settings.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(`${base}/api/platform/settings`, { cache: "no-store", signal: AbortSignal.timeout(2500) });
+      if (res.ok) return res.json() as Promise<Record<string, unknown>>;
+    } catch { /* retry */ }
   }
+  return null;
 }
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = await fetchPlatformSettings();
-  const siteName = (s?.siteName as string | undefined) ?? "Future9";
+  const siteName = (s?.siteName as string | undefined) ?? "DiamondPlay";
   const tagline  = (s?.siteTagline as string | undefined) ?? "Premium Betting Exchange & Casino";
   return {
     title: `${siteName} — ${tagline}`,

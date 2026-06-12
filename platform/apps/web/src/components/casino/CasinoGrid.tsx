@@ -56,15 +56,21 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
     : category === "LOTTERY" ? "LOTTERY"
     : undefined;
 
+  // Retry transient fetch failures + keep previous data so a single network
+  // blip never leaves the casino page stuck on an empty "no games" state.
+  const RESILIENT = { shouldRetryOnError: true, errorRetryCount: 4, errorRetryInterval: 1500, keepPreviousData: true } as const;
+
   const { data: siteSettings } = useSWR<{ inhouseGames?: InHouseGame[] }>(
     "/api/platform/settings",
-    (url: string) => fetch(url).then(r => r.ok ? r.json() : {}),
+    (url: string) => fetch(url).then(r => { if (!r.ok) throw new Error(String(r.status)); return r.json(); }),
+    RESILIENT,
   );
   const inhouseGames = (siteSettings?.inhouseGames ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder);
 
   const { data: rawGames } = useSWR<ApiGame[]>(
     `/api/casino/games${apiCategory ? `?category=${apiCategory}` : ""}`,
-    (url: string) => fetch(url).then(r => r.ok ? r.json() : []),
+    (url: string) => fetch(url).then(r => { if (!r.ok) throw new Error(String(r.status)); return r.json(); }),
+    RESILIENT,
   );
   const apiGames: ApiGame[] = Array.isArray(rawGames) ? rawGames : [];
   const providers = Array.from(new Set(apiGames.map(g => g.provider.name)));

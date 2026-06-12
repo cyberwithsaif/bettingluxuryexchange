@@ -837,8 +837,8 @@ export class PublicPlatformController {
 
     return {
       subBanner:     (settings as any).subBanner     ?? "Bet Now in Line Market and Get Commission Upto 2%",
-      siteName:      (settings as any).siteName      ?? "Future9",
-      siteTagline:   (settings as any).siteTagline   ?? "Sports & Casino",
+      siteName:      (settings as any).siteName      ?? "DiamondPlay",
+      siteTagline:   (settings as any).siteTagline   ?? "Premium Betting Exchange & Casino",
       marqueeText:   (settings as any).marqueeText   ?? "📢 Live Markets Now Available — Play Smart, Win Big! • Bet Now in Line Markets and Get Commission Upto 2%",
       inhouseGames:  mergedGames,
       heroBanners:   (settings as any).heroBanners   ?? [],
