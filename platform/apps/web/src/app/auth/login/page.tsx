@@ -74,7 +74,7 @@ export default function LoginPage() {
           <div className="flex-1 flex flex-col justify-center">
             <h1 className="text-5xl xl:text-6xl font-black text-white leading-[1.08] mb-5">
               India&apos;s Premier<br />
-              <span style={{ WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", background: "linear-gradient(90deg,#2563eb,#38bdf8 70%)" }}>
+              <span style={{ backgroundImage: "linear-gradient(90deg,#2563eb,#38bdf8 70%)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent" }}>
                 Gaming Destination
               </span>
             </h1>
