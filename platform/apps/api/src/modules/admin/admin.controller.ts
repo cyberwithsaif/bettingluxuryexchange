@@ -503,6 +503,54 @@ export class AdminController {
     return r;
   }
 
+  // -- Exposure management --
+
+  @Get("exposure")
+  exposureOverview() { return this.admin.exposureOverview(); }
+
+  @Post("exposure/reconcile-all")
+  async reconcileAllExposure(@CurrentUser() actor: AuthUser, @Req() req: Request) {
+    const { rows } = await this.admin.exposureOverview();
+    let fixed = 0;
+    let released = 0;
+    for (const r of rows) {
+      if (Math.abs(r.mismatch) < 0.01) continue;
+      await this.wallet.applyLedger({
+        userId: r.userId,
+        amount: 0,
+        exposureDelta: -r.mismatch, // current + delta = liveExposure
+        kind: LedgerKind.ROLLBACK,
+        refType: "exposure_reconcile",
+        refId: r.userId,
+        note: `Admin exposure reconcile (₹${r.exposure} → ₹${r.liveExposure})`,
+      });
+      fixed++;
+      released += r.mismatch;
+    }
+    await this.admin.writeAudit(actor.id, "exposure.reconcile_all", undefined, { fixed, released }, req.ip);
+    return { fixed, released: Math.round(released * 100) / 100 };
+  }
+
+  @Get("exposure/:userId")
+  exposureDetail(@Param("userId") userId: string) { return this.admin.exposureDetail(userId); }
+
+  @Post("exposure/:userId/reconcile")
+  async reconcileExposure(@CurrentUser() actor: AuthUser, @Param("userId") userId: string, @Req() req: Request) {
+    const fix = await this.admin.exposureFix(userId);
+    if (Math.abs(fix.delta) < 0.01) return { ok: true, changed: 0, ...fix };
+    await this.wallet.applyLedger({
+      userId,
+      amount: 0,
+      exposureDelta: fix.delta,
+      kind: LedgerKind.ROLLBACK,
+      refType: "exposure_reconcile",
+      refId: userId,
+      note: `Admin exposure reconcile (₹${fix.current} → ₹${fix.live})`,
+    });
+    await this.admin.writeAudit(actor.id, "exposure.reconcile", { type: "user", id: userId }, fix, req.ip);
+    return { ok: true, changed: fix.delta, ...fix };
+  }
+
   // -- Bet void / cancel --
 
   @Patch("bets/:id")

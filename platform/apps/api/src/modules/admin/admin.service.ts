@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from "@nestjs/common";
-import { BetStatus, LedgerKind, Prisma, TransactionStatus, UserRole } from "@prisma/client";
+import { BetStatus, LedgerKind, MarketStatus, Prisma, TransactionStatus, UserRole } from "@prisma/client";
 import { VIP_TIERS, getTierIndex, levelFromDeposits } from "@exch/shared";
 import * as os from "os";
 import { PrismaService } from "../../common/prisma/prisma.service";
@@ -243,6 +243,161 @@ export class AdminService {
       pl7d: buckets.slice(-7).map((b, i0) => { const i = bucketCount - Math.min(7, bucketCount) + i0; return { date: b.date, pl: round2(revenueB[i]) }; }),
       },
     };
+  }
+
+  // ── Exposure management ─────────────────────────────────────────────────────
+  // Markets whose liability is still real: anything not yet SETTLED/VOID.
+  private static readonly UNSETTLED_MARKETS: MarketStatus[] = [
+    MarketStatus.OPEN, MarketStatus.SUSPENDED, MarketStatus.CLOSED,
+  ];
+
+  /**
+   * Every wallet holding exposure, with the LIVE exposure it should hold
+   * (sum of MarketExposure.worstCase over unsettled markets). The difference
+   * is leaked (orphaned by deleted/settled markets) or corrupt (negative) and
+   * can be reconciled.
+   */
+  async exposureOverview() {
+    const wallets = await this.prisma.wallet.findMany({
+      where: { NOT: { exposure: 0 } },
+      include: { user: { select: { id: true, username: true, role: true, status: true, lastLoginAt: true } } },
+      orderBy: { exposure: "desc" },
+    });
+    const ids = wallets.map((w) => w.userId);
+    const [liveRows, betAgg] = await Promise.all([
+      ids.length
+        ? this.prisma.marketExposure.findMany({
+            where: { userId: { in: ids }, market: { status: { in: AdminService.UNSETTLED_MARKETS } } },
+            select: { userId: true, worstCase: true },
+          })
+        : Promise.resolve([] as Array<{ userId: string; worstCase: Prisma.Decimal }>),
+      ids.length
+        ? this.prisma.bet.groupBy({
+            by: ["userId"],
+            _count: { _all: true },
+            _sum: { liability: true },
+            where: { userId: { in: ids }, status: { in: [BetStatus.OPEN, BetStatus.MATCHED] } },
+          })
+        : Promise.resolve([] as any[]),
+    ]);
+
+    const num = (d: Prisma.Decimal | null | undefined) => Number((d ?? new Prisma.Decimal(0)).toString());
+    const round2 = (n: number) => Math.round(n * 100) / 100;
+
+    const liveMap = new Map<string, number>();
+    for (const r of liveRows) liveMap.set(r.userId, (liveMap.get(r.userId) ?? 0) + num(r.worstCase));
+    const betMap = new Map<string, { count: number; liability: number }>();
+    for (const b of betAgg) betMap.set(b.userId, { count: b._count._all as number, liability: num(b._sum.liability) });
+
+    const rows = wallets.map((w) => {
+      const exposure = round2(num(w.exposure));
+      const live = round2(liveMap.get(w.userId) ?? 0);
+      return {
+        userId: w.userId,
+        username: w.user.username,
+        role: w.user.role,
+        userStatus: w.user.status,
+        lastLoginAt: w.user.lastLoginAt,
+        balance: round2(num(w.balance)),
+        exposure,
+        liveExposure: live,
+        mismatch: round2(exposure - live),
+        available: round2(num(w.balance) - exposure),
+        openBets: betMap.get(w.userId)?.count ?? 0,
+        openLiability: round2(betMap.get(w.userId)?.liability ?? 0),
+      };
+    });
+
+    const leakedRows = rows.filter((r) => r.mismatch > 0.009);
+    return {
+      summary: {
+        wallets: rows.length,
+        totalExposure: Math.round(rows.reduce((s, r) => s + r.exposure, 0) * 100) / 100,
+        liveExposure: Math.round(rows.reduce((s, r) => s + r.liveExposure, 0) * 100) / 100,
+        leaked: Math.round(leakedRows.reduce((s, r) => s + r.mismatch, 0) * 100) / 100,
+        leakedWallets: leakedRows.length,
+        negativeWallets: rows.filter((r) => r.exposure < 0).length,
+        openBets: rows.reduce((s, r) => s + r.openBets, 0),
+      },
+      rows,
+    };
+  }
+
+  /** Full exposure breakdown for one user: markets holding it + open bets. */
+  async exposureDetail(userId: string) {
+    const [user, wallet, markets, bets] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, username: true, role: true, status: true, createdAt: true, lastLoginAt: true },
+      }),
+      this.prisma.wallet.findUnique({ where: { userId } }),
+      this.prisma.marketExposure.findMany({
+        where: { userId },
+        include: { market: { select: { id: true, name: true, status: true } } },
+        orderBy: { updatedAt: "desc" },
+        take: 100,
+      }),
+      this.prisma.bet.findMany({
+        where: { userId, status: { in: [BetStatus.OPEN, BetStatus.MATCHED] } },
+        include: { market: { select: { name: true, status: true } }, runner: { select: { name: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 200,
+      }),
+    ]);
+    if (!user) throw new BadRequestException("User not found");
+
+    const num = (d: Prisma.Decimal | null | undefined) => Number((d ?? new Prisma.Decimal(0)).toString());
+    const round2 = (n: number) => Math.round(n * 100) / 100;
+    const exposure = round2(num(wallet?.exposure));
+    const balance = round2(num(wallet?.balance));
+    const live = round2(
+      markets
+        .filter((m) => AdminService.UNSETTLED_MARKETS.includes(m.market.status))
+        .reduce((s, m) => s + num(m.worstCase), 0),
+    );
+
+    return {
+      user,
+      wallet: { balance, exposure, available: round2(balance - exposure) },
+      liveExposure: live,
+      mismatch: round2(exposure - live),
+      markets: markets.map((m) => ({
+        marketId: m.market.id,
+        name: m.market.name,
+        status: m.market.status,
+        live: AdminService.UNSETTLED_MARKETS.includes(m.market.status),
+        worstCase: round2(num(m.worstCase)),
+        updatedAt: m.updatedAt,
+      })),
+      openBets: bets.map((b) => ({
+        id: b.id,
+        market: b.market.name,
+        marketStatus: b.market.status,
+        runner: b.runner.name,
+        side: b.side,
+        odds: Number(b.odds),
+        stake: round2(num(b.stake)),
+        liability: round2(num(b.liability)),
+        potentialProfit: round2(num(b.potentialProfit)),
+        createdAt: b.createdAt,
+      })),
+    };
+  }
+
+  /** What a reconcile would change for this wallet (current vs live exposure). */
+  async exposureFix(userId: string) {
+    const [wallet, liveRows] = await Promise.all([
+      this.prisma.wallet.findUnique({ where: { userId } }),
+      this.prisma.marketExposure.findMany({
+        where: { userId, market: { status: { in: AdminService.UNSETTLED_MARKETS } } },
+        select: { worstCase: true },
+      }),
+    ]);
+    if (!wallet) throw new BadRequestException("Wallet not found");
+    const num = (d: Prisma.Decimal) => Number(d.toString());
+    const current = Math.round(num(wallet.exposure) * 100) / 100;
+    const live = Math.round(liveRows.reduce((s, r) => s + num(r.worstCase), 0) * 100) / 100;
+    return { current, live, delta: Math.round((live - current) * 100) / 100 };
   }
 
   /** Top exposed users (real-time risk monitor). */
