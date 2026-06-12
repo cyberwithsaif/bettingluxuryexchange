@@ -1,5 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useLiveData } from "@/lib/hooks";
 import {
   Users, UserCheck, UserPlus, Target, Percent, Clock,
@@ -165,23 +166,23 @@ export default function AdminDashboard() {
           <h2 className="text-sm font-black uppercase tracking-wider text-gray-400">Performance — <span className="text-yellow-400">{rangeLabel}</span></h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          <Stat label="Profit / Loss" value={moneySigned(rs?.pl)} Icon={TrendingUp} loading={isLoading}
+          <Stat label="Profit / Loss" href="/reports" value={moneySigned(rs?.pl)} Icon={TrendingUp} loading={isLoading}
                 accent={(rs?.pl ?? 0) >= 0 ? "emerald" : "red"} sub="operator P/L in range" />
-          <Stat label="Casino GGR" value={moneySigned(rs?.casinoPL)} Icon={Dices} loading={isLoading}
+          <Stat label="Casino GGR" href="/pl-control" value={moneySigned(rs?.casinoPL)} Icon={Dices} loading={isLoading}
                 accent={(rs?.casinoPL ?? 0) >= 0 ? "emerald" : "red"} sub={`${fmtCompact(rs?.casinoBets)} casino bets`} />
-          <Stat label="Sports P/L" value={moneySigned(rs?.sportsPL)} Icon={Trophy} loading={isLoading}
+          <Stat label="Sports P/L" href="/bets" value={moneySigned(rs?.sportsPL)} Icon={Trophy} loading={isLoading}
                 accent={(rs?.sportsPL ?? 0) >= 0 ? "emerald" : "red"} sub={`${fmtCompact(rs?.sportsBets)} sports bets`} />
-          <Stat label="Deposits" value={money(rs?.deposits)} Icon={ArrowDownToLine} loading={isLoading} accent="emerald"
+          <Stat label="Deposits" href="/deposits" value={money(rs?.deposits)} Icon={ArrowDownToLine} loading={isLoading} accent="emerald"
                 sub={`${fmtFull(rs?.depositCount)} approved · avg ${money(rs?.avgDeposit)}`} />
-          <Stat label="Withdrawals" value={money(rs?.withdrawals)} Icon={ArrowUpToLine} loading={isLoading} accent="orange"
+          <Stat label="Withdrawals" href="/withdrawals" value={money(rs?.withdrawals)} Icon={ArrowUpToLine} loading={isLoading} accent="orange"
                 sub={`${fmtFull(rs?.withdrawalCount)} approved`} />
-          <Stat label="Net Cashflow" value={moneySigned(rs?.netCashflow)} Icon={Scale} loading={isLoading}
+          <Stat label="Net Cashflow" href="/reports" value={moneySigned(rs?.netCashflow)} Icon={Scale} loading={isLoading}
                 accent={(rs?.netCashflow ?? 0) >= 0 ? "emerald" : "red"} sub="deposits − withdrawals" />
-          <Stat label="New Users" value={fmtFull(rs?.newUsers)} Icon={UserPlus} loading={isLoading} accent="sky" />
-          <Stat label="Total Bets" value={fmtFull((rs?.sportsBets ?? 0) + (rs?.casinoBets ?? 0))} Icon={Target} loading={isLoading} accent="violet"
+          <Stat label="New Users" href="/users" value={fmtFull(rs?.newUsers)} Icon={UserPlus} loading={isLoading} accent="sky" />
+          <Stat label="Total Bets" href="/bets" value={fmtFull((rs?.sportsBets ?? 0) + (rs?.casinoBets ?? 0))} Icon={Target} loading={isLoading} accent="violet"
                 sub={`${fmtCompact(rs?.sportsBets)} sports · ${fmtCompact(rs?.casinoBets)} casino`} />
-          <Stat label="Referral Paid" value={money(rs?.referralPaid)} Icon={Share2} loading={isLoading} accent="amber" />
-          <Stat label="Avg Deposit" value={money(rs?.avgDeposit)} Icon={Coins} loading={isLoading} accent="slate" />
+          <Stat label="Referral Paid" href="/affiliates" value={money(rs?.referralPaid)} Icon={Share2} loading={isLoading} accent="amber" />
+          <Stat label="Avg Deposit" href="/deposits" value={money(rs?.avgDeposit)} Icon={Coins} loading={isLoading} accent="slate" />
         </div>
       </div>
 
@@ -189,34 +190,34 @@ export default function AdminDashboard() {
       <div>
         <h2 className="text-sm font-black uppercase tracking-wider text-gray-400 mb-3">Platform Totals</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-          <Stat label="Total Users"          value={fmtFull(data?.users)}                Icon={Users}          loading={isLoading} accent="violet" />
-          <Stat label="Active Online"        value={fmtFull(data?.onlineUsers)}          Icon={UserCheck}      loading={isLoading} accent="emerald"
+          <Stat label="Total Users" href="/users"          value={fmtFull(data?.users)}                Icon={Users}          loading={isLoading} accent="violet" />
+          <Stat label="Active Online" href="/users"        value={fmtFull(data?.onlineUsers)}          Icon={UserCheck}      loading={isLoading} accent="emerald"
                 sub={`${fmtFull(data?.activeUsers24h)} in last 24h`} />
-          <Stat label="New Today"            value={fmtFull(data?.newRegistrationsToday)} Icon={UserPlus}      loading={isLoading} accent="sky" />
-          <Stat label="Total Deposits"       value={money(data?.totalDeposits)}          Icon={ArrowDownToLine} loading={isLoading} accent="emerald" />
-          <Stat label="Total Withdrawals"    value={money(data?.totalWithdrawals)}       Icon={ArrowUpToLine}  loading={isLoading} accent="orange" />
-          <Stat label="Total Profit"         value={money(data?.totalProfit)}            Icon={TrendingUp}     loading={isLoading}
+          <Stat label="New Today" href="/users"            value={fmtFull(data?.newRegistrationsToday)} Icon={UserPlus}      loading={isLoading} accent="sky" />
+          <Stat label="Total Deposits" href="/deposits"       value={money(data?.totalDeposits)}          Icon={ArrowDownToLine} loading={isLoading} accent="emerald" />
+          <Stat label="Total Withdrawals" href="/withdrawals"    value={money(data?.totalWithdrawals)}       Icon={ArrowUpToLine}  loading={isLoading} accent="orange" />
+          <Stat label="Total Profit" href="/reports"         value={money(data?.totalProfit)}            Icon={TrendingUp}     loading={isLoading}
                 accent={(data?.totalProfit ?? 0) >= 0 ? "emerald" : "red"} />
-          <Stat label="Today P/L"            value={money(data?.todayPL)}                Icon={Activity}       loading={isLoading}
+          <Stat label="Today P/L" href="/reports"            value={money(data?.todayPL)}                Icon={Activity}       loading={isLoading}
                 accent={(data?.todayPL ?? 0) >= 0 ? "emerald" : "red"} />
-          <Stat label="Total Bets"           value={fmtFull(data?.totalBets)}            Icon={Target}         loading={isLoading} accent="violet" />
-          <Stat label="Win / Loss Ratio"     value={`${winRate.toFixed(1)}%`}            Icon={Percent}        loading={isLoading} accent="sky"
+          <Stat label="Total Bets" href="/bets"           value={fmtFull(data?.totalBets)}            Icon={Target}         loading={isLoading} accent="violet" />
+          <Stat label="Win / Loss Ratio" href="/bets"     value={`${winRate.toFixed(1)}%`}            Icon={Percent}        loading={isLoading} accent="sky"
                 sub={`${fmtCompact(data?.betsWon)}W · ${fmtCompact(data?.betsLost)}L`} />
-          <Stat label="Pending Withdrawals"  value={fmtFull(data?.pendingWithdrawals)}   Icon={Clock}          loading={isLoading}
+          <Stat label="Pending Withdrawals" href="/withdrawals"  value={fmtFull(data?.pendingWithdrawals)}   Icon={Clock}          loading={isLoading}
                 accent={(data?.pendingWithdrawals ?? 0) > 0 ? "amber" : "slate"}
                 sub={money(data?.pendingWithdrawalAmount)} />
-          <Stat label="Game Revenue"         value={money(data?.gameRevenue)}            Icon={Gamepad2}       loading={isLoading}
+          <Stat label="Game Revenue" href="/pl-control"         value={money(data?.gameRevenue)}            Icon={Gamepad2}       loading={isLoading}
                 accent={(data?.gameRevenue ?? 0) >= 0 ? "emerald" : "red"} />
-          <Stat label="Affiliate Revenue"    value={money(data?.affiliateRevenue)}       Icon={Share2}         loading={isLoading} accent="amber" />
+          <Stat label="Affiliate Revenue" href="/affiliates"    value={money(data?.affiliateRevenue)}       Icon={Share2}         loading={isLoading} accent="amber" />
         </div>
       </div>
 
       {/* ── Secondary money row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MiniStat label="Player Balances"  value={money(data?.totalBalance, false)}  Icon={Wallet}      loading={isLoading} />
-        <MiniStat label="Platform Exposure" value={money(data?.totalExposure, false)} Icon={ShieldAlert} loading={isLoading} tone="bad" />
-        <MiniStat label="Open Bets"        value={fmtFull(data?.openBets)}           Icon={Target}      loading={isLoading} />
-        <MiniStat label="Live Markets"     value={fmtFull(data?.activeMarkets)}      Icon={Activity}    loading={isLoading} />
+        <MiniStat label="Player Balances" href="/users"  value={money(data?.totalBalance, false)}  Icon={Wallet}      loading={isLoading} />
+        <MiniStat label="Platform Exposure" href="/risk" value={money(data?.totalExposure, false)} Icon={ShieldAlert} loading={isLoading} tone="bad" />
+        <MiniStat label="Open Bets" href="/bets"        value={fmtFull(data?.openBets)}           Icon={Target}      loading={isLoading} />
+        <MiniStat label="Live Markets" href="/markets"     value={fmtFull(data?.activeMarkets)}      Icon={Activity}    loading={isLoading} />
       </div>
 
       {/* ── Charts ── */}
@@ -319,12 +320,12 @@ const ACCENT: Record<string, AccentStyle> = {
   slate:   { icon: "text-gray-400",    bg: "bg-gray-700/40",    value: "text-gray-200" },
 };
 
-function Stat({ label, value, Icon, accent = "violet", sub, loading }: {
-  label: string; value: string; Icon: any; accent?: keyof typeof ACCENT | string; sub?: string; loading?: boolean;
+function Stat({ label, value, Icon, accent = "violet", sub, loading, href }: {
+  label: string; value: string; Icon: any; accent?: keyof typeof ACCENT | string; sub?: string; loading?: boolean; href?: string;
 }) {
   const a: AccentStyle = ACCENT[accent] ?? VIOLET;
-  return (
-    <div className="bg-gray-800 rounded-xl border border-yellow-500/20 p-4 shadow-sm hover:border-yellow-400/60 transition-all duration-200">
+  const inner = (
+    <div className={`bg-gray-800 rounded-xl border border-yellow-500/20 p-4 shadow-sm hover:border-yellow-400/60 transition-all duration-200 h-full ${href ? "cursor-pointer hover:bg-gray-800/80 active:scale-[0.99]" : ""}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <p className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold mb-2 truncate">{label}</p>
@@ -341,13 +342,14 @@ function Stat({ label, value, Icon, accent = "violet", sub, loading }: {
       </div>
     </div>
   );
+  return href ? <Link href={href} className="block h-full">{inner}</Link> : inner;
 }
 
-function MiniStat({ label, value, Icon, tone, loading }: {
-  label: string; value: string; Icon: any; tone?: "bad"; loading?: boolean;
+function MiniStat({ label, value, Icon, tone, loading, href }: {
+  label: string; value: string; Icon: any; tone?: "bad"; loading?: boolean; href?: string;
 }) {
-  return (
-    <div className="bg-gray-800/60 rounded-xl border border-gray-700 p-3 flex items-center gap-3">
+  const inner = (
+    <div className={`bg-gray-800/60 rounded-xl border border-gray-700 p-3 flex items-center gap-3 h-full ${href ? "cursor-pointer hover:border-gray-500 active:scale-[0.99] transition" : ""}`}>
       <div className={`p-2 rounded-lg shrink-0 ${tone === "bad" ? "bg-red-500/10" : "bg-gray-700/50"}`}>
         <Icon size={15} className={tone === "bad" ? "text-red-400" : "text-yellow-500"} />
       </div>
@@ -358,6 +360,7 @@ function MiniStat({ label, value, Icon, tone, loading }: {
       </div>
     </div>
   );
+  return href ? <Link href={href} className="block h-full">{inner}</Link> : inner;
 }
 
 /* ─── Chart shell ────────────────────────────────────────────────────────── */
