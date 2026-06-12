@@ -78,9 +78,10 @@ api.interceptors.response.use(
         return api(original);
       } catch (refreshErr) {
         processQueue(refreshErr, null);
-        // Only clear when refresh has truly failed — this is the real
-        // "session is dead" signal. AdminShell's effect will then redirect.
-        clear();
+        // Only clear on a definitive auth rejection — a network blip, timeout
+        // or 5xx (e.g. a pm2 reload gap) must NOT log the admin out.
+        const status = (refreshErr as AxiosError)?.response?.status;
+        if (status === 401 || status === 403) clear();
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

@@ -48,7 +48,10 @@ api.interceptors.response.use(
         return api(original);
       } catch (refreshErr) {
         processQueue(refreshErr, null);
-        clear();
+        // Only clear on a definitive auth rejection — transient network/5xx
+        // failures must NOT log the bookie out.
+        const status = (refreshErr as AxiosError)?.response?.status;
+        if (status === 401 || status === 403) clear();
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;
