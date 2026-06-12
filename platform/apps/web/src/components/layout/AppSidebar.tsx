@@ -38,7 +38,7 @@ const EXTRA_NAV = [
   { href: "/refer-earn", label: "Refer & Earn",    icon: <Share2     size={20} strokeWidth={2.5} className="text-white shrink-0" /> },
   { href: "/redeem",     label: "Redeem",          icon: <GiftBox    size={20} strokeWidth={2.5} className="text-white shrink-0" /> },
   { href: "/vip-club",   label: "VIP Club",        icon: <Crown      size={20} strokeWidth={2.5} className="text-white shrink-0" /> },
-  { href: "/responsible",label: "Roo Responsibly", icon: <Heart      size={20} strokeWidth={2.5} className="text-white shrink-0" /> },
+  { href: "/responsible",label: "Our Responsibly", icon: <Heart      size={20} strokeWidth={2.5} className="text-white shrink-0" /> },
   { href: "/language",   label: "English",         icon: <Globe      size={20} strokeWidth={2.5} className="text-white shrink-0" /> },
   { href: "/contact",    label: "Live Support",    icon: <Headphones size={20} strokeWidth={2.5} className="text-white shrink-0" /> },
 ];
