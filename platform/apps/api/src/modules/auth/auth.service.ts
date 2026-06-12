@@ -109,24 +109,36 @@ export class AuthService {
   async refresh(refreshToken: string) {
     const tokenHash = sha256(refreshToken);
     const stored = await this.prisma.refreshToken.findUnique({ where: { tokenHash } });
-    if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
+    if (!stored || stored.expiresAt < new Date()) {
+      throw new UnauthorizedException("Invalid refresh token");
+    }
+    // Rotation grace window: concurrent refreshes (second browser tab, the
+    // proactive timer racing the 401 interceptor) send the SAME token; the
+    // first caller rotates it. Rejecting the second caller logged users out
+    // at random — so a just-rotated token stays acceptable for 60s.
+    const GRACE_MS = 60_000;
+    if (stored.revokedAt && Date.now() - stored.revokedAt.getTime() > GRACE_MS) {
       throw new UnauthorizedException("Invalid refresh token");
     }
     const user = await this.prisma.user.findUnique({ where: { id: stored.userId } });
     if (!user || user.status !== "ACTIVE") throw new UnauthorizedException();
 
-    // Rotate: revoke old, issue new.
-    await this.prisma.refreshToken.update({
-      where: { tokenHash },
-      data: { revokedAt: new Date() },
-    });
+    // Rotate: revoke old (idempotent under the grace window), issue new.
+    if (!stored.revokedAt) {
+      await this.prisma.refreshToken.update({
+        where: { tokenHash },
+        data: { revokedAt: new Date() },
+      });
+    }
     return this.issueTokens(user.id, user.username, user.role, user.tokenVersion);
   }
 
   async logout(refreshToken: string) {
     const tokenHash = sha256(refreshToken);
+    // Hard-expire (not just revoke) so the rotation grace window can never
+    // resurrect an explicitly logged-out session.
     await this.prisma.refreshToken
-      .update({ where: { tokenHash }, data: { revokedAt: new Date() } })
+      .update({ where: { tokenHash }, data: { revokedAt: new Date(), expiresAt: new Date() } })
       .catch(() => undefined);
     return { ok: true };
   }
@@ -206,7 +218,7 @@ export class AuthService {
   async revokeSession(userId: string, sessionId: string) {
     const s = await this.prisma.refreshToken.findFirst({ where: { id: sessionId, userId } });
     if (!s) throw new BadRequestException("Session not found");
-    await this.prisma.refreshToken.update({ where: { id: sessionId }, data: { revokedAt: new Date() } });
+    await this.prisma.refreshToken.update({ where: { id: sessionId }, data: { revokedAt: new Date(), expiresAt: new Date() } });
     return { ok: true };
   }
 
@@ -220,7 +232,8 @@ export class AuthService {
       data: { tokenVersion: { increment: 1 } },
       select: { tokenVersion: true },
     });
-    const r = await this.prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
+    // Hard-expire so the rotation grace window can't re-auth other devices.
+    const r = await this.prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date(), expiresAt: new Date() } });
     const tokens = await this.issueTokens(u.id, u.username, u.role, updated.tokenVersion, ip, ua);
     return { ...tokens, revoked: r.count };
   }

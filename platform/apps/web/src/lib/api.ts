@@ -23,57 +23,50 @@ api.interceptors.request.use((cfg) => {
   return cfg;
 });
 
-// Auto-refresh on 401 using refresh token
-let isRefreshing = false;
-let pendingQueue: Array<{ resolve: (v: any) => void; reject: (e: any) => void }> = [];
+// ─── Token refresh — ONE single-flight shared by every caller ─────────────────
+// The proactive timer (providers.tsx) and the 401 interceptor below both go
+// through here, so concurrent refreshes can never race each other with the
+// same (rotating) refresh token. The user is logged out ONLY when the server
+// definitively rejects the refresh token (401/403) — never on network blips,
+// timeouts or 5xx (e.g. a pm2 reload gap), which previously caused the
+// random "always logged out" problem.
+let refreshPromise: Promise<string | null> | null = null;
 
-function processQueue(error: any, token: string | null) {
-  pendingQueue.forEach(({ resolve, reject }) => {
-    if (error) reject(error);
-    else resolve(token);
-  });
-  pendingQueue = [];
+export function refreshTokens(): Promise<string | null> {
+  const { refreshToken, set, clear } = useAuthStore.getState();
+  if (!refreshToken) return Promise.resolve(null);
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = axios
+    .post("/api/auth/refresh", { refreshToken }, { timeout: 15_000 })
+    .then(({ data }) => {
+      set({ accessToken: data.accessToken, refreshToken: data.refreshToken ?? refreshToken, user: data.user });
+      api.defaults.headers.common.Authorization = `Bearer ${data.accessToken}`;
+      return data.accessToken as string;
+    })
+    .catch((e) => {
+      const status = (e as AxiosError)?.response?.status;
+      if (status === 401 || status === 403) clear(); // real rejection → sign out
+      return null;                                   // transient → stay signed in
+    })
+    .finally(() => { refreshPromise = null; });
+
+  return refreshPromise;
 }
 
+// Auto-refresh on 401, then retry the original request once.
 api.interceptors.response.use(
   (r) => r,
   async (err: AxiosError) => {
     const original = err.config as any;
 
     if (err.response?.status === 401 && !original._retry) {
-      const { refreshToken, set, clear } = useAuthStore.getState();
-
-      if (!refreshToken) {
-        clear();
-        return Promise.reject(err);
-      }
-
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          pendingQueue.push({ resolve, reject });
-        }).then((token) => {
-          original.headers.Authorization = `Bearer ${token}`;
-          return api(original);
-        });
-      }
-
       original._retry = true;
-      isRefreshing = true;
-
-      try {
-        const { data } = await axios.post("/api/auth/refresh", { refreshToken });
-        const newToken = data.accessToken;
-        set({ accessToken: newToken, refreshToken: data.refreshToken ?? refreshToken, user: data.user });
-        api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
-        processQueue(null, newToken);
-        original.headers.Authorization = `Bearer ${newToken}`;
+      const token = await refreshTokens(); // single-flight; null on failure
+      if (token) {
+        original.headers = original.headers ?? {};
+        original.headers.Authorization = `Bearer ${token}`;
         return api(original);
-      } catch (refreshErr) {
-        processQueue(refreshErr, null);
-        clear();
-        return Promise.reject(refreshErr);
-      } finally {
-        isRefreshing = false;
       }
     }
 
