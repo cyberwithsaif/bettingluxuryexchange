@@ -3,15 +3,9 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, User, Lock, ShieldCheck, Zap, Trophy, ChevronRight, ArrowRight, Gem } from "lucide-react";
+import { Eye, EyeOff, User, Lock, ArrowRight, Gem } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth";
-
-const FEATURES = [
-  { icon: ShieldCheck, color: "#22c55e", title: "Provably Fair Games",  sub: "Every outcome verifiable on-chain" },
-  { icon: Zap,         color: "#a855f7", title: "Instant Withdrawals",  sub: "UPI payouts in under 5 minutes" },
-  { icon: Trophy,      color: "#f59e0b", title: "Live Sports Exchange", sub: "Back & Lay on cricket, football & more" },
-];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,75 +31,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: "#04060f" }}>
+    <div className="min-h-screen flex" style={{ background: "#04060f url('/images/auth-bg.webp') center / cover no-repeat fixed" }}>
 
       {/* ── Left branding panel (hidden on mobile) ── */}
-      <div className="hidden lg:flex lg:w-[54%] xl:w-[55%] flex-col relative overflow-hidden">
-        {/* deep blue layered background */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(118deg,#050c26 0%,#081e5e 45%,#0a2472 72%,#071a4a 100%)" }} />
-        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 78% 30%, rgba(59,130,246,0.32) 0%, transparent 65%)" }} />
-        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 55% 45% at 90% 85%, rgba(168,85,247,0.20) 0%, transparent 60%)" }} />
-        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 45% 35% at 60% 100%, rgba(245,158,11,0.12) 0%, transparent 60%)" }} />
-        {/* stadium floodlight beams */}
-        <div className="absolute -top-24 right-[6%] w-[480px] h-[640px] pointer-events-none" style={{ background: "conic-gradient(from 200deg at 85% 0%, transparent 0deg, rgba(125,180,255,0.10) 14deg, transparent 30deg, rgba(125,180,255,0.07) 44deg, transparent 60deg)" }} />
-        {/* light streaks */}
-        <div className="absolute right-[-80px] top-[30%] w-[420px] h-[3px] rotate-[-24deg] pointer-events-none" style={{ background: "linear-gradient(90deg, transparent, rgba(96,165,250,0.55), transparent)" }} />
-        <div className="absolute right-[-40px] top-[42%] w-[340px] h-[2px] rotate-[-24deg] pointer-events-none" style={{ background: "linear-gradient(90deg, transparent, rgba(168,85,247,0.40), transparent)" }} />
-        <div className="absolute right-[30px] top-[24%] w-[260px] h-[2px] rotate-[-24deg] pointer-events-none" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)" }} />
-        {/* grid lines */}
-        <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: "linear-gradient(rgba(150,190,255,0.8) 1px,transparent 1px),linear-gradient(90deg,rgba(150,190,255,0.8) 1px,transparent 1px)", backgroundSize: "64px 64px" }} />
-
-        <div className="relative z-10 flex flex-col h-full px-12 xl:px-16 py-10">
-          {/* Logo */}
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full overflow-hidden border border-white/15 shadow-lg">
-                <Image src="/logo.png" alt="Logo" width={44} height={44} className="object-cover w-full h-full" />
-              </div>
-              <span className="text-white font-black text-2xl tracking-tight">DiamondPlay</span>
-            </div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mt-4" style={{ border: "1px solid rgba(56,189,248,0.45)", background: "rgba(8,30,94,0.55)" }}>
-              <span className="w-2 h-2 rounded-full bg-[#38bdf8] animate-pulse shadow-[0_0_8px_#38bdf8]" />
-              <span className="text-[12px] font-black uppercase tracking-[0.18em] text-[#38bdf8]">Live Games Available</span>
-            </div>
-          </div>
-
-          {/* Center content */}
-          <div className="flex-1 flex flex-col justify-center">
-            <h1 className="text-5xl xl:text-6xl font-black text-white leading-[1.08] mb-5">
-              India&apos;s Premier<br />
-              <span style={{ backgroundImage: "linear-gradient(90deg,#2563eb,#38bdf8 70%)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent" }}>
-                Gaming Destination
-              </span>
-            </h1>
-            <p className="text-white/65 text-lg leading-relaxed max-w-md mb-10">
-              Live cricket, sports exchange, casino games and provably fair originals — all on one platform.
-            </p>
-
-            {/* Feature cards */}
-            <div className="flex flex-col gap-3 max-w-xl">
-              {FEATURES.map(({ icon: Icon, color, title, sub }) => (
-                <div key={title} className="flex items-center gap-4 rounded-2xl px-5 py-4 backdrop-blur-[2px]"
-                  style={{ background: "linear-gradient(90deg, rgba(13,30,80,0.55), rgba(10,22,60,0.35))", border: "1px solid rgba(120,160,255,0.14)" }}>
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: `${color}1a`, border: `1.5px solid ${color}66`, boxShadow: `0 0 16px ${color}33` }}>
-                    <Icon size={21} style={{ color }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-bold text-[17px]">{title}</p>
-                    <p className="text-white/50 text-sm mt-0.5">{sub}</p>
-                  </div>
-                  <ChevronRight size={20} className="text-white/35 shrink-0" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+      <div className="hidden lg:flex lg:w-[54%] xl:w-[55%] items-center justify-center relative overflow-hidden p-8 xl:p-12">
+        <img
+          src="/images/auth-side.webp"
+          alt="DiamondPlay — join 10,000+ winners"
+          className="max-w-full max-h-[90vh] w-auto object-contain drop-shadow-[0_24px_60px_rgba(0,0,0,0.55)]"
+          draggable={false}
+        />
       </div>
 
       {/* ── Right form panel ── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-5 py-12 relative overflow-hidden" style={{ background: "linear-gradient(180deg,#05070f 0%,#070b1d 100%)" }}>
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 70% 45% at 50% 0%, rgba(37,99,235,0.10) 0%, transparent 70%)" }} />
+      <div className="flex-1 flex flex-col items-center justify-center px-5 py-12 relative overflow-hidden">
 
         <div className="w-full max-w-[460px] relative z-10">
           {/* Mobile-only logo */}

@@ -3,15 +3,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, User, Lock, Mail, Phone, Gift, ShieldCheck, Zap, ChevronRight, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, User, Lock, Mail, Phone, Gift, ArrowRight, CheckCircle2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth";
-
-const FEATURES = [
-  { icon: Gift,        color: "#22d3ee", title: "Welcome Bonus",   sub: "Get bonus on your first deposit" },
-  { icon: ShieldCheck, color: "#22c55e", title: "Safe & Secure",   sub: "KYC verified, encrypted transactions" },
-  { icon: Zap,         color: "#a855f7", title: "Instant Account", sub: "Start playing within 60 seconds" },
-];
 
 function PasswordStrength({ password }: { password: string }) {
   const score = [/.{8,}/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter(r => r.test(password)).length;
@@ -27,66 +21,6 @@ function PasswordStrength({ password }: { password: string }) {
       </div>
       {score > 0 && <span className="text-[11px] font-bold" style={{ color: colors[score - 1] }}>{labels[score - 1]}</span>}
     </div>
-  );
-}
-
-// Neon faceted diamond illustration (pure SVG — matches the design hero).
-function NeonDiamond() {
-  return (
-    <svg viewBox="0 0 400 380" className="w-full h-full" aria-hidden>
-      <defs>
-        <linearGradient id="dgFill" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.34" />
-          <stop offset="55%" stopColor="#3b82f6" stopOpacity="0.30" />
-          <stop offset="100%" stopColor="#a855f7" stopOpacity="0.36" />
-        </linearGradient>
-        <linearGradient id="dgEdge" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#67e8f9" />
-          <stop offset="60%" stopColor="#60a5fa" />
-          <stop offset="100%" stopColor="#c084fc" />
-        </linearGradient>
-        <filter id="dgGlow" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="7" result="b" />
-          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-        <filter id="dgSoft" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="14" />
-        </filter>
-      </defs>
-
-      {/* pedestal glow rings */}
-      <ellipse cx="200" cy="330" rx="120" ry="20" fill="rgba(34,211,238,0.18)" filter="url(#dgSoft)" />
-      <ellipse cx="200" cy="328" rx="78" ry="11" fill="none" stroke="rgba(103,232,249,0.5)" strokeWidth="2" />
-      <ellipse cx="200" cy="334" rx="105" ry="14" fill="none" stroke="rgba(96,165,250,0.25)" strokeWidth="1.5" />
-      <ellipse cx="200" cy="326" rx="40" ry="6" fill="rgba(165,243,252,0.5)" filter="url(#dgSoft)" />
-
-      {/* light pillar under the gem */}
-      <polygon points="178,318 222,318 212,250 188,250" fill="rgba(103,232,249,0.10)" filter="url(#dgSoft)" />
-
-      {/* diamond body */}
-      <g filter="url(#dgGlow)">
-        {/* crown */}
-        <polygon points="118,140 162,86 238,86 282,140" fill="url(#dgFill)" stroke="url(#dgEdge)" strokeWidth="3" strokeLinejoin="round" />
-        {/* pavilion */}
-        <polygon points="118,140 282,140 200,280" fill="url(#dgFill)" stroke="url(#dgEdge)" strokeWidth="3" strokeLinejoin="round" />
-        {/* facets */}
-        <path d="M162 86 L182 140 M238 86 L218 140 M200 86 L182 140 M200 86 L218 140 M118 140 L182 140 M282 140 L218 140 M182 140 L200 280 M218 140 L200 280"
-          stroke="rgba(165,225,255,0.55)" strokeWidth="1.6" fill="none" />
-        <path d="M162 86 L138 140 M238 86 L262 140" stroke="rgba(165,225,255,0.35)" strokeWidth="1.4" fill="none" />
-      </g>
-
-      {/* inner shine */}
-      <polygon points="170,100 196,94 178,128" fill="rgba(255,255,255,0.35)" />
-
-      {/* sparkles */}
-      {[[96, 70, 1.1], [318, 96, 0.9], [330, 220, 1.2], [80, 230, 0.8], [262, 50, 0.7]].map(([x, y, s], i) => (
-        <path key={i} transform={`translate(${x},${y}) scale(${s})`} d="M0 -10 L2.4 -2.4 L10 0 L2.4 2.4 L0 10 L-2.4 2.4 L-10 0 L-2.4 -2.4 Z" fill="rgba(190,235,255,0.85)" />
-      ))}
-      {/* starfield dots */}
-      {[[40, 120], [70, 40], [150, 30], [250, 22], [340, 60], [360, 160], [350, 290], [60, 300], [120, 340]].map(([x, y], i) => (
-        <circle key={`d${i}`} cx={x} cy={y} r={i % 3 === 0 ? 2 : 1.3} fill="rgba(160,200,255,0.5)" />
-      ))}
-    </svg>
   );
 }
 
@@ -126,75 +60,20 @@ export default function RegisterPage() {
   const usernameOk = form.username.trim().length >= 3;
 
   return (
-    <div className="min-h-screen flex" style={{ background: "#04060f" }}>
+    <div className="min-h-screen flex" style={{ background: "#04060f url('/images/auth-bg.webp') center / cover no-repeat fixed" }}>
 
       {/* ── Left branding panel ── */}
-      <div className="hidden lg:flex lg:w-[54%] xl:w-[55%] flex-col relative overflow-hidden">
-        {/* deep blue layered background */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(118deg,#050c26 0%,#081e5e 48%,#0a2472 78%,#071a4a 100%)" }} />
-        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 65% 55% at 72% 38%, rgba(56,189,248,0.22) 0%, transparent 65%)" }} />
-        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 50% 45% at 90% 80%, rgba(168,85,247,0.18) 0%, transparent 60%)" }} />
-        {/* grid lines */}
-        <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: "linear-gradient(rgba(150,190,255,0.8) 1px,transparent 1px),linear-gradient(90deg,rgba(150,190,255,0.8) 1px,transparent 1px)", backgroundSize: "64px 64px" }} />
-
-        {/* hero diamond */}
-        <div className="absolute right-[2%] top-1/2 -translate-y-1/2 w-[380px] h-[380px] xl:w-[430px] xl:h-[430px] pointer-events-none">
-          <NeonDiamond />
-        </div>
-
-        <div className="relative z-10 flex flex-col h-full px-12 xl:px-16 py-10">
-          {/* Logo */}
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full overflow-hidden border border-white/15 shadow-lg">
-                <Image src="/logo.png" alt="Logo" width={44} height={44} className="object-cover w-full h-full" />
-              </div>
-              <span className="font-black text-2xl tracking-tight">
-                <span className="text-white">Diamond</span><span className="text-[#3b82f6]">Play</span>
-              </span>
-            </div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mt-5" style={{ border: "1px solid rgba(56,189,248,0.45)", background: "rgba(8,30,94,0.55)" }}>
-              <Gift size={13} className="text-[#22d3ee]" />
-              <span className="text-[12px] font-black uppercase tracking-[0.16em] text-[#22d3ee]">Welcome Bonus on First Deposit</span>
-            </div>
-          </div>
-
-          {/* Center content */}
-          <div className="flex-1 flex flex-col justify-center max-w-xl">
-            <h1 className="text-5xl xl:text-6xl font-black text-white leading-[1.1] mb-5">
-              Join 10,000+<br />
-              <span style={{ backgroundImage: "linear-gradient(90deg,#3b82f6,#a855f7 80%)", WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent", color: "transparent" }}>
-                Winners Today
-              </span>
-            </h1>
-            <p className="text-white/65 text-lg leading-relaxed max-w-md mb-10">
-              Create your free account in seconds and start playing provably fair casino games and live exchange bets.
-            </p>
-
-            {/* Feature cards */}
-            <div className="flex flex-col gap-3">
-              {FEATURES.map(({ icon: Icon, color, title, sub }) => (
-                <div key={title} className="flex items-center gap-4 rounded-2xl px-5 py-4 backdrop-blur-[2px]"
-                  style={{ background: "linear-gradient(90deg, rgba(13,30,80,0.55), rgba(10,22,60,0.35))", border: `1px solid ${color}2e` }}>
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: `${color}1a`, border: `1.5px solid ${color}66`, boxShadow: `0 0 16px ${color}33` }}>
-                    <Icon size={21} style={{ color }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-bold text-[17px]">{title}</p>
-                    <p className="text-white/50 text-sm mt-0.5">{sub}</p>
-                  </div>
-                  <ChevronRight size={20} className="shrink-0" style={{ color: `${color}99` }} />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+      <div className="hidden lg:flex lg:w-[54%] xl:w-[55%] items-center justify-center relative overflow-hidden p-8 xl:p-12">
+        <img
+          src="/images/auth-side.webp"
+          alt="DiamondPlay — join 10,000+ winners"
+          className="max-w-full max-h-[90vh] w-auto object-contain drop-shadow-[0_24px_60px_rgba(0,0,0,0.55)]"
+          draggable={false}
+        />
       </div>
 
       {/* ── Right form panel ── */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden" style={{ background: "linear-gradient(180deg,#05070f 0%,#070b1d 100%)" }}>
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 70% 45% at 50% 0%, rgba(37,99,235,0.10) 0%, transparent 70%)" }} />
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 relative overflow-hidden">
 
         <div className="w-full max-w-[480px] relative z-10">
           {/* Mobile-only logo */}
