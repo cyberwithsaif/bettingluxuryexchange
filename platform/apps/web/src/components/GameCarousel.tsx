@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import useSWR from "swr";
 
-const CASINO_GAMES = [
+// Fallback when settings haven't loaded — mirrors the API defaults.
+const DEFAULT_GAMES = [
   { name: "Roulette", href: "/roulette", thumb: "/game-thumbs/opt/roulette.webp" },
   { name: "Mines",    href: "/mines",    thumb: "/game-thumbs/opt/mines.webp" },
   { name: "Plinko",   href: "/plinko",   thumb: "/game-thumbs/opt/plinko.webp" },
@@ -14,7 +16,25 @@ const CASINO_GAMES = [
   { name: "Coinflip", href: "/coinflip", thumb: "/game-thumbs/opt/coinflip-v3.webp" },
 ];
 
+interface InHouseGame {
+  id: string; name: string; href: string; thumbnail: string | null;
+  sortOrder: number; featured?: boolean;
+}
+
 export function GameCarousel() {
+  // Admin-managed list: featured games only, in the admin-set order.
+  // The Providers SWR fallback seeds this key with server-fetched settings,
+  // so there's no client-side flash of the fallback list.
+  const { data: settings } = useSWR<{ inhouseGames?: InHouseGame[] }>(
+    "/api/platform/settings",
+    (url: string) => fetch(url).then(r => r.ok ? r.json() : {}),
+    { refreshInterval: 300_000, revalidateOnFocus: false },
+  );
+  const managed = (settings?.inhouseGames ?? [])
+    .filter(g => g.featured !== false && g.thumbnail)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map(g => ({ name: g.name, href: g.href, thumb: g.thumbnail as string }));
+  const CASINO_GAMES = managed.length ? managed : DEFAULT_GAMES;
   const scrollRef   = useRef<HTMLDivElement>(null);
   const isTouching  = useRef(false);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

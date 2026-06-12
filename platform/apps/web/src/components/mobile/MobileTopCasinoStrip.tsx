@@ -6,6 +6,7 @@ import { ChevronRight } from "lucide-react";
 interface InHouseGame {
   id: string; name: string; description: string;
   href: string; thumbnail: string | null; emoji: string; bg: string; sortOrder: number;
+  featured?: boolean;
 }
 
 export function MobileTopCasinoStrip() {
@@ -14,7 +15,10 @@ export function MobileTopCasinoStrip() {
     (url: string) => fetch(url).then(r => r.ok ? r.json() : {}),
     { refreshInterval: 300_000 },
   );
-  const games = (data?.inhouseGames ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder);
+  // Homepage strip shows only admin-featured games, in admin order.
+  const games = (data?.inhouseGames ?? [])
+    .filter(g => g.featured !== false)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
   if (!games.length) return null;
 
   return (
