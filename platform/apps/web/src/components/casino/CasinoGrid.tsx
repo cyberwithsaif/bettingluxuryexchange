@@ -4,15 +4,17 @@ import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
 import useSWR from "swr";
 import Link from "next/link";
 
-function seededRand(seed: number): number {
-  const x = Math.sin(seed + 1) * 43758.5453123;
-  return x - Math.floor(x);
+function initCount(): number {
+  return Math.floor(Math.random() * 9001) + 3000;
 }
-function initCount(seed: number): number {
-  return Math.floor(seededRand(seed) * 9001) + 3000;
-}
+// Small organic movement: most games drift a little each tick, some hold still,
+// and occasionally one jumps as if a burst of players joined/left.
 function nudge(n: number): number {
-  const delta = Math.floor(Math.random() * 401) - 200;
+  const r = Math.random();
+  if (r < 0.30) return n;
+  const delta = r > 0.93
+    ? Math.floor(Math.random() * 601) - 300   // occasional bigger swing
+    : Math.floor(Math.random() * 121) - 60;   // normal drift
   return Math.min(12000, Math.max(3000, n + delta));
 }
 
@@ -80,16 +82,17 @@ export function CasinoGrid({ category, title }: { category?: string; title: stri
 
   const totalCount = (showInHouse ? filteredInhouse.length : 0) + filtered.length;
 
-  // Init counts when total changes, then nudge every 60s
+  // Init counts when total changes, then drift every few seconds so the
+  // numbers feel live (previously seeded + 60s ticks = looked frozen).
   useEffect(() => {
     if (totalCount === 0) return;
     if (totalRef.current !== totalCount) {
       totalRef.current = totalCount;
-      setCounts(Array.from({ length: totalCount }, (_, i) => initCount(i + (category?.charCodeAt(0) ?? 0))));
+      setCounts(Array.from({ length: totalCount }, () => initCount()));
     }
     const id = setInterval(() => {
       setCounts(prev => prev.map(nudge));
-    }, 60_000);
+    }, 3500 + Math.floor(Math.random() * 2500));
     return () => clearInterval(id);
   }, [totalCount, category]);
 
