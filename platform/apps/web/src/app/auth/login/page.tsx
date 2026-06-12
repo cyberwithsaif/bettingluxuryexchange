@@ -152,7 +152,7 @@ export default function LoginPage() {
                       value={form.username}
                       onChange={e => setForm({ ...form, username: e.target.value })}
                       placeholder="Enter your username"
-                      className="auth-input pl-11"
+                      className="auth-input with-icon"
                     />
                   </div>
                 </div>
@@ -168,7 +168,7 @@ export default function LoginPage() {
                       value={form.password}
                       onChange={e => setForm({ ...form, password: e.target.value })}
                       placeholder="••••••••"
-                      className="auth-input pl-11 pr-12"
+                      className="auth-input with-icon with-trail"
                     />
                     <button type="button" tabIndex={-1} onClick={() => setShowPassword(v => !v)}
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-white/35 hover:text-white/75 transition">
@@ -256,6 +256,8 @@ export default function LoginPage() {
           outline: none;
           transition: border-color 0.2s, box-shadow 0.2s;
         }
+        .auth-input.with-icon { padding-left: 46px; }
+        .auth-input.with-trail { padding-right: 48px; }
         .auth-input::placeholder { color: rgba(190,205,255,0.25); }
         .auth-input:focus {
           border-color: rgba(59,130,246,0.65);

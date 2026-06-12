@@ -235,7 +235,7 @@ export default function RegisterPage() {
                 <div className="relative">
                   <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
                   <input required minLength={3} value={form.username} onChange={e => setForm({ ...form, username: e.target.value })}
-                    placeholder="Choose a username" className="auth-input pl-11 pr-11" />
+                    placeholder="Choose a username" className="auth-input with-icon with-trail" />
                   {usernameOk && <CheckCircle2 size={17} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#22c55e]" />}
                 </div>
               </div>
@@ -247,7 +247,7 @@ export default function RegisterPage() {
                   <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
                   <input required minLength={8} type={showPassword ? "text" : "password"} value={form.password}
                     onChange={e => setForm({ ...form, password: e.target.value })}
-                    placeholder="Min. 8 characters" className="auth-input pl-11 pr-12" />
+                    placeholder="Min. 8 characters" className="auth-input with-icon with-trail" />
                   <button type="button" tabIndex={-1} onClick={() => setShowPassword(v => !v)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-white/35 hover:text-white/75 transition">
                     {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
@@ -262,7 +262,7 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
                   <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
-                    placeholder="your@email.com" className="auth-input pl-11" />
+                    placeholder="your@email.com" className="auth-input with-icon" />
                 </div>
               </div>
 
@@ -272,7 +272,7 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
                   <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })}
-                    placeholder="+91 9876543210" className="auth-input pl-11" inputMode="tel" />
+                    placeholder="+91 9876543210" className="auth-input with-icon" inputMode="tel" />
                 </div>
               </div>
 
@@ -282,7 +282,7 @@ export default function RegisterPage() {
                 <div className="relative">
                   <Gift size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
                   <input value={form.referralCode} onChange={e => setForm({ ...form, referralCode: e.target.value.slice(0, 40) })}
-                    placeholder="Friend's code" className="auth-input pl-11" />
+                    placeholder="Friend's code" className="auth-input with-icon" />
                 </div>
               </div>
 
@@ -350,6 +350,8 @@ export default function RegisterPage() {
           outline: none;
           transition: border-color 0.2s, box-shadow 0.2s;
         }
+        .auth-input.with-icon { padding-left: 46px; }
+        .auth-input.with-trail { padding-right: 48px; }
         .auth-input::placeholder { color: rgba(190,205,255,0.25); }
         .auth-input:focus {
           border-color: rgba(59,130,246,0.65);
