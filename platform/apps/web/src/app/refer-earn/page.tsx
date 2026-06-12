@@ -91,7 +91,7 @@ function ReferFriends({ code, link }: { code: string; link: string }) {
           style={{ background: "radial-gradient(60% 80% at 85% 50%, rgba(255,255,255,0.18), transparent)" }} />
         {/* chips art */}
         <div className="absolute right-2 bottom-0 top-0 w-1/2 hidden sm:block pointer-events-none">
-          <Image src="/images/float.png" alt="" fill sizes="50vw" className="object-contain object-right" />
+          <Image src="/images/float-hd.webp" alt="" fill sizes="50vw" className="object-contain object-right" />
         </div>
         <div className="relative max-w-md">
           <h2 className="font-display text-3xl md:text-4xl text-white leading-tight">Refer Your Friends</h2>
