@@ -15,15 +15,52 @@ export class AdminService {
     private readonly redis: RedisService,
   ) {}
 
-  async dashboard() {
+  async dashboard(rangeOpt?: { from?: Date; to?: Date }) {
     const now = Date.now();
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
     const online15 = new Date(now - 15 * 60_000);
     const active24h = new Date(now - 24 * 60 * 60_000);
+
+    // ── Date range (filter) ─────────────────────────────────────────────────
+    // With a range: every "rangeStats" figure + all chart series cover [from, to].
+    // Without one (All Time): rangeStats cover all time, charts show last 14 days.
+    const hasRange = !!(rangeOpt?.from || rangeOpt?.to);
+    const rangeFrom = rangeOpt?.from ?? null;
+    const rangeTo = rangeOpt?.to ?? null;
+    const inRange = hasRange
+      ? { ...(rangeFrom ? { gte: rangeFrom } : {}), ...(rangeTo ? { lte: rangeTo } : {}) }
+      : undefined;
+
     const WINDOW_DAYS = 14;
-    const windowStart = new Date(now - (WINDOW_DAYS - 1) * 24 * 60 * 60_000);
-    windowStart.setHours(0, 0, 0, 0);
+    const defaultStart = new Date(now - (WINDOW_DAYS - 1) * 24 * 60 * 60_000);
+    defaultStart.setUTCHours(0, 0, 0, 0);
+    const seriesStart = rangeFrom ?? defaultStart;
+    const seriesEnd = rangeTo ?? new Date(now);
+
+    // Bucket granularity scales with the span: hours for 1-2 days, days up to
+    // ~6 weeks, weeks beyond that — so charts stay readable at any range.
+    const spanMs = Math.max(1, seriesEnd.getTime() - seriesStart.getTime());
+    const spanDays = spanMs / 86_400_000;
+    const bucket: "hour" | "day" | "week" = spanDays <= 2.05 ? "hour" : spanDays <= 45 ? "day" : "week";
+    const bucketMs = bucket === "hour" ? 3_600_000 : bucket === "day" ? 86_400_000 : 7 * 86_400_000;
+    const startMs = bucket === "hour"
+      ? Math.floor(seriesStart.getTime() / 3_600_000) * 3_600_000
+      : Math.floor(seriesStart.getTime() / 86_400_000) * 86_400_000;
+    const bucketCount = Math.min(120, Math.max(1, Math.ceil((seriesEnd.getTime() - startMs) / bucketMs)));
+    const bucketLabel = (ms: number) => {
+      const d = new Date(ms);
+      if (bucket === "hour") return `${String(d.getUTCHours()).padStart(2, "0")}:00`;
+      return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    };
+    const buckets = Array.from({ length: bucketCount }, (_, i) => ({
+      date: new Date(startMs + i * bucketMs).toISOString(),
+      label: bucketLabel(startMs + i * bucketMs),
+    }));
+    const idxOf = (d: Date) => {
+      const i = Math.floor((d.getTime() - startMs) / bucketMs);
+      return i >= 0 && i < bucketCount ? i : -1;
+    };
 
     // All ledger kinds that contribute to operator P/L. Operator P/L per entry is
     // the negative of the player's balance delta (zero-sum exchange + casino edge).
@@ -32,7 +69,9 @@ export class AdminService {
       LedgerKind.CASINO_BET, LedgerKind.CASINO_WIN, LedgerKind.CASINO_REFUND,
     ];
     const CASINO_PL_KINDS = ["CASINO_BET", "CASINO_WIN", "CASINO_REFUND"];
+    const SPORTS_PL_KINDS = ["BET_SETTLE_WIN", "BET_SETTLE_LOSS"];
     const APPROVED = [TransactionStatus.APPROVED, TransactionStatus.COMPLETED];
+    const seriesWhere = { gte: new Date(startMs), lte: seriesEnd };
 
     const [
       users, openBets, activeMarkets, pendingDeposits, pendingWithdrawals, totals,
@@ -41,6 +80,9 @@ export class AdminService {
       sportsBetsCount, sportsWon, sportsLost, casinoBetCount, casinoWinCount,
       plAllTime, plToday, commissionAgg,
       recentLedger, recentBets, recentUsers, recentTx,
+      // range-scoped
+      depositAggR, withdrawalAggR, plRange, newUsersRange, sportsBetsRange, casinoBetsRange, referralPaidRange,
+      casinoByGameRows,
     ] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.bet.count({ where: { status: "OPEN" } }),
@@ -62,10 +104,22 @@ export class AdminService {
       this.prisma.ledgerEntry.groupBy({ by: ["kind"], _sum: { amount: true }, where: { kind: { in: PL_KINDS } } }),
       this.prisma.ledgerEntry.groupBy({ by: ["kind"], _sum: { amount: true }, where: { kind: { in: PL_KINDS }, createdAt: { gte: startOfToday } } }),
       this.prisma.ledgerEntry.aggregate({ _sum: { amount: true }, where: { kind: "COMMISSION_PAYOUT" } }),
-      this.prisma.ledgerEntry.findMany({ where: { createdAt: { gte: windowStart }, kind: { in: PL_KINDS } }, select: { amount: true, kind: true, createdAt: true } }),
-      this.prisma.bet.findMany({ where: { createdAt: { gte: windowStart } }, select: { createdAt: true } }),
-      this.prisma.user.findMany({ where: { createdAt: { gte: windowStart } }, select: { createdAt: true } }),
-      this.prisma.transaction.findMany({ where: { createdAt: { gte: windowStart }, status: { in: APPROVED } }, select: { amount: true, kind: true, createdAt: true } }),
+      this.prisma.ledgerEntry.findMany({ where: { createdAt: seriesWhere, kind: { in: PL_KINDS } }, select: { amount: true, kind: true, createdAt: true } }),
+      this.prisma.bet.findMany({ where: { createdAt: seriesWhere }, select: { createdAt: true } }),
+      this.prisma.user.findMany({ where: { createdAt: seriesWhere }, select: { createdAt: true } }),
+      this.prisma.transaction.findMany({ where: { createdAt: seriesWhere, status: { in: APPROVED } }, select: { amount: true, kind: true, createdAt: true } }),
+      // ── Range-scoped stats (fall back to all-time when no range is set) ──
+      this.prisma.transaction.aggregate({ _sum: { amount: true }, _count: true, where: { kind: "DEPOSIT",    status: { in: APPROVED }, ...(inRange ? { createdAt: inRange } : {}) } }),
+      this.prisma.transaction.aggregate({ _sum: { amount: true }, _count: true, where: { kind: "WITHDRAWAL", status: { in: APPROVED }, ...(inRange ? { createdAt: inRange } : {}) } }),
+      this.prisma.ledgerEntry.groupBy({ by: ["kind"], _sum: { amount: true }, where: { kind: { in: PL_KINDS }, ...(inRange ? { createdAt: inRange } : {}) } }),
+      this.prisma.user.count({ where: inRange ? { createdAt: inRange } : {} }),
+      this.prisma.bet.count({ where: inRange ? { createdAt: inRange } : {} }),
+      this.prisma.ledgerEntry.count({ where: { kind: "CASINO_BET", ...(inRange ? { createdAt: inRange } : {}) } }),
+      this.prisma.ledgerEntry.aggregate({ _sum: { amount: true }, where: { kind: "COMMISSION_PAYOUT", refType: "referral", amount: { gt: 0 }, ...(inRange ? { createdAt: inRange } : {}) } }),
+      this.prisma.ledgerEntry.groupBy({
+        by: ["refType", "kind"], _sum: { amount: true }, _count: true,
+        where: { kind: { in: [LedgerKind.CASINO_BET, LedgerKind.CASINO_WIN, LedgerKind.CASINO_REFUND] }, ...(inRange ? { createdAt: inRange } : {}) },
+      }),
     ]);
 
     const num = (d: Prisma.Decimal | null | undefined) => Number((d ?? new Prisma.Decimal(0)).toString());
@@ -79,43 +133,80 @@ export class AdminService {
     };
     const allTime = foldKinds(plAllTime);
     const today = foldKinds(plToday);
+    const rangeKinds = foldKinds(plRange);
 
     // Operator P/L = negation of net player balance delta across the PL kinds.
     const operatorPL = (m: Record<string, number>) =>
       round2(-PL_KINDS.reduce((s, k) => s + (m[k] ?? 0), 0));
     const gameRevenue = round2(-CASINO_PL_KINDS.reduce((s, k) => s + (allTime[k] ?? 0), 0));
+    const rangeCasinoPL = round2(-CASINO_PL_KINDS.reduce((s, k) => s + (rangeKinds[k] ?? 0), 0));
+    const rangeSportsPL = round2(-SPORTS_PL_KINDS.reduce((s, k) => s + (rangeKinds[k] ?? 0), 0));
 
-    // ── Build 14-day daily buckets so charts always show the full window ──
-    const dayKeys: string[] = [];
-    for (let i = WINDOW_DAYS - 1; i >= 0; i--) {
-      dayKeys.push(new Date(now - i * 24 * 60 * 60_000).toISOString().slice(0, 10));
+    // ── Casino P/L by game (from ledger refType, e.g. "mines_bet"/"dice_win") ──
+    const gameMap = new Map<string, { pl: number; wagered: number; bets: number }>();
+    for (const r of casinoByGameRows) {
+      const game = (r.refType ?? "other").replace(/_(bet|win|refund|cashout)s?$/i, "").replace(/_/g, " ");
+      const g = gameMap.get(game) ?? { pl: 0, wagered: 0, bets: 0 };
+      const amt = num(r._sum.amount);
+      g.pl -= amt;
+      if (r.kind === "CASINO_BET") { g.wagered += Math.abs(amt); g.bets += r._count as number; }
+      gameMap.set(game, g);
     }
-    const inWindow = (day: string) => dayKeys.includes(day);
-    const dayOf = (d: Date) => d.toISOString().slice(0, 10);
+    const casinoByGame = [...gameMap.entries()]
+      .map(([game, g]) => ({ game, pl: round2(g.pl), wagered: round2(g.wagered), bets: g.bets }))
+      .sort((a, b) => b.wagered - a.wagered)
+      .slice(0, 12);
 
-    const revenue: Record<string, number> = Object.fromEntries(dayKeys.map(k => [k, 0]));
-    const betSports: Record<string, number> = Object.fromEntries(dayKeys.map(k => [k, 0]));
-    const betCasino: Record<string, number> = Object.fromEntries(dayKeys.map(k => [k, 0]));
-    const growth: Record<string, number> = Object.fromEntries(dayKeys.map(k => [k, 0]));
-    const dep: Record<string, number> = Object.fromEntries(dayKeys.map(k => [k, 0]));
-    const wd: Record<string, number> = Object.fromEntries(dayKeys.map(k => [k, 0]));
+    // ── Fill chart buckets ──
+    const revenueB   = new Array(bucketCount).fill(0);
+    const betSportsB = new Array(bucketCount).fill(0);
+    const betCasinoB = new Array(bucketCount).fill(0);
+    const growthB    = new Array(bucketCount).fill(0);
+    const depB       = new Array(bucketCount).fill(0);
+    const wdB        = new Array(bucketCount).fill(0);
 
     for (const e of recentLedger) {
-      const day = dayOf(e.createdAt);
-      if (!inWindow(day)) continue;
-      revenue[day] -= num(e.amount);           // operator PL per entry = -player delta
-      if (e.kind === "CASINO_BET") betCasino[day] += 1;
+      const i = idxOf(e.createdAt);
+      if (i < 0) continue;
+      revenueB[i] -= num(e.amount);            // operator PL per entry = -player delta
+      if (e.kind === "CASINO_BET") betCasinoB[i] += 1;
     }
-    for (const b of recentBets) { const day = dayOf(b.createdAt); if (inWindow(day)) betSports[day] += 1; }
-    for (const u of recentUsers) { const day = dayOf(u.createdAt); if (inWindow(day)) growth[day] += 1; }
+    for (const b of recentBets) { const i = idxOf(b.createdAt); if (i >= 0) betSportsB[i] += 1; }
+    for (const u of recentUsers) { const i = idxOf(u.createdAt); if (i >= 0) growthB[i] += 1; }
     for (const t of recentTx) {
-      const day = dayOf(t.createdAt);
-      if (!inWindow(day)) continue;
-      if (t.kind === "DEPOSIT") dep[day] += num(t.amount);
-      else wd[day] += num(t.amount);
+      const i = idxOf(t.createdAt);
+      if (i < 0) continue;
+      if (t.kind === "DEPOSIT") depB[i] += num(t.amount);
+      else wdB[i] += num(t.amount);
     }
 
+    const rangeDeposits = round2(num(depositAggR._sum.amount));
+    const rangeWithdrawals = round2(num(withdrawalAggR._sum.amount));
+
     return {
+      // ── Range echo + bucket info ──
+      range: hasRange ? { from: rangeFrom?.toISOString() ?? null, to: rangeTo?.toISOString() ?? null } : null,
+      bucket,
+
+      // ── Range-scoped stats (all-time when no range selected) ──
+      rangeStats: {
+        pl: operatorPL(rangeKinds),
+        casinoPL: rangeCasinoPL,
+        sportsPL: rangeSportsPL,
+        deposits: rangeDeposits,
+        depositCount: depositAggR._count as number,
+        avgDeposit: (depositAggR._count as number) > 0 ? round2(rangeDeposits / (depositAggR._count as number)) : 0,
+        withdrawals: rangeWithdrawals,
+        withdrawalCount: withdrawalAggR._count as number,
+        netCashflow: round2(rangeDeposits - rangeWithdrawals),
+        newUsers: newUsersRange,
+        sportsBets: sportsBetsRange,
+        casinoBets: casinoBetsRange,
+        referralPaid: round2(num(referralPaidRange._sum.amount)),
+      },
+      casinoByGame,
+
+      ...{
       // ── Headline counts ──
       users,
       onlineUsers,
@@ -142,14 +233,15 @@ export class AdminService {
       betsWon: sportsWon + casinoWinCount,
       betsLost: sportsLost + Math.max(0, casinoBetCount - casinoWinCount),
 
-      // ── Charts (14-day daily series) ──
-      revenueSeries:  dayKeys.map(d => ({ date: d, pl: round2(revenue[d]) })),
-      betActivitySeries: dayKeys.map(d => ({ date: d, sports: betSports[d], casino: betCasino[d], total: betSports[d] + betCasino[d] })),
-      userGrowthSeries: dayKeys.map(d => ({ date: d, count: growth[d] })),
-      depositWithdrawalSeries: dayKeys.map(d => ({ date: d, deposits: round2(dep[d]), withdrawals: round2(wd[d]) })),
+      // ── Charts (bucketed by hour/day/week to fit the selected range) ──
+      revenueSeries:  buckets.map((b, i) => ({ date: b.date, label: b.label, pl: round2(revenueB[i]) })),
+      betActivitySeries: buckets.map((b, i) => ({ date: b.date, label: b.label, sports: betSportsB[i], casino: betCasinoB[i], total: betSportsB[i] + betCasinoB[i] })),
+      userGrowthSeries: buckets.map((b, i) => ({ date: b.date, label: b.label, count: growthB[i] })),
+      depositWithdrawalSeries: buckets.map((b, i) => ({ date: b.date, label: b.label, deposits: round2(depB[i]), withdrawals: round2(wdB[i]) })),
 
       // ── Back-compat: existing 7-day P/L slice ──
-      pl7d: dayKeys.slice(-7).map(d => ({ date: d, pl: round2(revenue[d]) })),
+      pl7d: buckets.slice(-7).map((b, i0) => { const i = bucketCount - Math.min(7, bucketCount) + i0; return { date: b.date, pl: round2(revenueB[i]) }; }),
+      },
     };
   }
 

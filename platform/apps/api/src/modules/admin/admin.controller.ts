@@ -212,7 +212,15 @@ export class AdminController {
   ) {}
 
   @Get("dashboard")
-  dashboard() { return this.admin.dashboard(); }
+  dashboard(@Query("from") from?: string, @Query("to") to?: string) {
+    // from/to are YYYY-MM-DD; from = start of that day, to = end of that day (UTC).
+    const parse = (s: string | undefined, end: boolean): Date | undefined => {
+      if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return undefined;
+      const d = new Date(`${s}T${end ? "23:59:59.999" : "00:00:00.000"}Z`);
+      return Number.isFinite(d.getTime()) ? d : undefined;
+    };
+    return this.admin.dashboard({ from: parse(from, false), to: parse(to, true) });
+  }
 
   @Get("pl-control")
   plControl() { return this.admin.getPlControl(); }
