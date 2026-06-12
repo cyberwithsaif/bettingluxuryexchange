@@ -34,11 +34,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex" style={{ background: "#04060f url('/images/auth-bg.webp') center / cover no-repeat fixed" }}>
 
       {/* ── Left branding panel (hidden on mobile) ── */}
-      <div className="hidden lg:flex lg:w-[54%] xl:w-[55%] items-center justify-center relative overflow-hidden p-8 xl:p-12">
+      <div className="hidden lg:flex lg:w-[52%] items-center justify-center relative overflow-hidden px-3 py-4">
         <img
           src="/images/auth-side.webp"
           alt="DiamondPlay — join 10,000+ winners"
-          className="max-w-full max-h-[90vh] w-auto object-contain drop-shadow-[0_24px_60px_rgba(0,0,0,0.55)]"
+          className="w-full max-h-[96vh] object-contain drop-shadow-[0_24px_60px_rgba(0,0,0,0.55)]"
           draggable={false}
         />
       </div>
