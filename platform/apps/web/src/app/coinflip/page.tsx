@@ -138,9 +138,9 @@ function Coin({ rotation, flipping }: { rotation: number; flipping: boolean }) {
   return (
     <div className="relative flex flex-col items-center" style={{ perspective: 1400 }}>
       <motion.div
-        className="relative w-[240px] h-[240px] md:w-[310px] md:h-[310px]"
+        className="relative w-[160px] h-[160px] md:w-[310px] md:h-[310px]"
         style={{ filter: "drop-shadow(0 20px 28px rgba(0,0,0,0.55)) drop-shadow(0 0 42px rgba(255,175,45,0.28))" }}
-        animate={{ y: flipping ? [0, -70, 0] : 0 }}
+        animate={{ y: flipping ? [0, typeof window !== "undefined" && window.innerWidth < 768 ? -40 : -70, 0] : 0 }}
         transition={{ duration: FLIP_DUR, times: [0, 0.42, 1], ease: ["easeOut", "easeIn"] }}
       >
         <motion.div
@@ -165,7 +165,7 @@ function Coin({ rotation, flipping }: { rotation: number; flipping: boolean }) {
 
 function Podium() {
   return (
-    <svg viewBox="0 0 380 130" className="w-[310px] md:w-[430px] -mt-6 md:-mt-9 block" aria-hidden>
+    <svg viewBox="0 0 380 130" className="w-[210px] md:w-[430px] -mt-4 md:-mt-9 block" aria-hidden>
       <defs>
         <linearGradient id="pdSide" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#332551" />
@@ -574,7 +574,7 @@ export default function CoinflipPage() {
     <div className="bg-[#0a0712] text-white flex flex-col font-sans w-full min-h-screen md:min-h-0 md:overflow-hidden md:h-[calc(100vh-74px)]">
 
       {/* Mobile header */}
-      <div className="md:hidden flex items-center justify-between gap-2 px-4 py-3 bg-[#0d0918] border-b border-white/10">
+      <div className="md:hidden flex items-center justify-between gap-2 px-4 py-2 bg-[#0d0918] border-b border-white/10">
         <h1 className="font-black text-base tracking-wide flex items-center gap-2">
           <span className="w-5 h-5 rounded-full inline-block border border-[#8a6508]" style={{ background: "radial-gradient(circle at 35% 30%, #fff6cf, #e3a818)" }} />
           COINFLIP
@@ -794,7 +794,7 @@ export default function CoinflipPage() {
         </div>
 
         {/* ── Game arena ── */}
-        <div className="flex-1 relative md:rounded-2xl overflow-hidden flex flex-col min-h-[520px] md:min-h-0 border-b border-white/10 md:border md:border-white/8"
+        <div className="flex-1 relative md:rounded-2xl overflow-hidden flex flex-col min-h-[360px] md:min-h-0 border-b border-white/10 md:border md:border-white/8"
           style={{ background: "radial-gradient(ellipse 100% 80% at 50% 30%, #1b1230 0%, #0d081a 60%, #080510 100%)" }}>
 
           {/* ambience: gold core + purple right, like the design */}
@@ -835,7 +835,7 @@ export default function CoinflipPage() {
           </div>
 
           {/* Multiplier ladder */}
-          <div className="relative z-10 px-3 md:px-5 pt-3">
+          <div className="relative z-10 px-2.5 md:px-5 pt-2 md:pt-3">
             <div className="flex gap-1.5 md:gap-2 overflow-x-auto pb-1 md:justify-center [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {ladder.map((m, i) => {
                 const color = LADDER_COLORS[i] ?? "#3b82f6";
@@ -843,7 +843,7 @@ export default function CoinflipPage() {
                 const isNext  = streak === i && inGame;
                 return (
                   <div key={i}
-                    className={`shrink-0 px-2.5 md:px-3 py-1.5 rounded-lg text-[11px] md:text-xs font-black border-[1.5px] transition-all ${isNext ? "animate-pulse" : ""}`}
+                    className={`shrink-0 px-2 md:px-3 py-1 md:py-1.5 rounded-md md:rounded-lg text-[10px] md:text-xs font-black border-[1.5px] transition-all ${isNext ? "animate-pulse" : ""}`}
                     style={reached
                       ? { background: "rgba(34,197,94,0.15)", borderColor: "rgba(74,222,128,0.7)", color: "#86efac" }
                       : { background: isNext ? `${color}26` : "rgba(255,255,255,0.03)", borderColor: isNext ? color : `${color}55`, color: isNext ? color : `${color}cc`, boxShadow: isNext ? `0 0 12px ${color}55` : "none" }}>
@@ -855,7 +855,7 @@ export default function CoinflipPage() {
           </div>
 
           {/* Stage */}
-          <div className="flex-1 flex flex-col items-center justify-center relative z-10 py-4">
+          <div className="flex-1 flex flex-col items-center justify-center relative z-10 py-2 md:py-4">
             <div className="relative flex flex-col items-center">
               <div className="relative z-10"><Coin rotation={rotation} flipping={flipping} /></div>
               <Podium />
@@ -869,7 +869,7 @@ export default function CoinflipPage() {
                   initial={{ opacity: 0, y: 10, scale: 0.8 }}
                   animate={{ opacity: 1, y: -16, scale: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute top-[10%] text-2xl md:text-3xl font-black text-green-400 drop-shadow-[0_0_12px_rgba(74,222,128,0.5)]"
+                  className="absolute top-[6%] text-lg md:text-3xl font-black text-green-400 drop-shadow-[0_0_12px_rgba(74,222,128,0.5)]"
                 >
                   +{inr(lastWin)} · {multiplier}×
                 </motion.div>
@@ -878,7 +878,7 @@ export default function CoinflipPage() {
 
             {/* Session flip chips */}
             {flips.length > 0 && (
-              <div className="flex gap-1.5 flex-wrap justify-center px-4 mt-3">
+              <div className="flex gap-1 md:gap-1.5 flex-wrap justify-center px-4 mt-1.5 md:mt-3">
                 {flips.map((f, i) => (
                   <div key={i}
                     className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black border-2 ${
