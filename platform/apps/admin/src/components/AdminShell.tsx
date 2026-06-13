@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/cn";
 import { useAuthStore } from "@/lib/stores/auth";
 import { TopLoader } from "@/components/TopLoader";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV = [
   { href: "/",                         label: "Dashboard",       Icon: LayoutDashboard },
@@ -180,11 +181,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <Menu size={18} />
           </button>
           <div className="flex-1" />
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-yellow-400 flex items-center justify-center text-gray-100 font-black text-xs">
-              {user.username[0]?.toUpperCase()}
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-yellow-400 flex items-center justify-center text-gray-100 font-black text-xs">
+                {user.username[0]?.toUpperCase()}
+              </div>
+              <div className="text-sm font-medium text-gray-300">{user.username}</div>
             </div>
-            <div className="text-sm font-medium text-gray-300">{user.username}</div>
           </div>
         </div>
 

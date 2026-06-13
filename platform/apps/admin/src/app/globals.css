@@ -11,6 +11,79 @@ html, body {
   min-height: 100vh;
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+   LIGHT THEME
+   The admin uses hardcoded dark Tailwind grays everywhere (no theme tokens),
+   so light mode remaps those exact utility classes under html.light. Toggled
+   by ThemeToggle (persists in localStorage; a no-flash script in layout sets
+   the class before first paint).
+   ═══════════════════════════════════════════════════════════════════════ */
+html.light { color-scheme: light; }
+html.light, html.light body {
+  background: linear-gradient(180deg, #eef2f7 0%, #e2e8f0 100%) !important;
+  color: #1e293b !important;
+}
+
+/* Main area + top bar (arbitrary-value backgrounds) */
+html.light .bg-\[\#111827\],
+html.light .bg-\[\#111827\]\/95 { background-color: #f1f5f9 !important; }
+
+/* Dark surfaces → white cards */
+html.light .bg-gray-800,
+html.light .bg-gray-800\/30, html.light .bg-gray-800\/40, html.light .bg-gray-800\/50,
+html.light .bg-gray-800\/60, html.light .bg-gray-800\/70, html.light .bg-gray-800\/80,
+html.light .bg-gray-900\/30, html.light .bg-gray-900\/40, html.light .bg-gray-900\/60,
+html.light .bg-gray-900\/70 { background-color: #ffffff !important; }
+
+/* Secondary surfaces / inputs → light gray */
+html.light .bg-gray-700, html.light .bg-gray-600,
+html.light .bg-gray-700\/20, html.light .bg-gray-700\/40,
+html.light .bg-gray-700\/50, html.light .bg-gray-700\/60 { background-color: #e9eef5 !important; }
+
+/* Text: light → dark */
+html.light .text-white, html.light .text-gray-100, html.light .text-gray-200 { color: #0f172a !important; }
+html.light .text-gray-300 { color: #1e293b !important; }
+html.light .text-gray-400 { color: #475569 !important; }
+html.light .text-gray-500, html.light .text-slate-500 { color: #64748b !important; }
+html.light .text-gray-600 { color: #94a3b8 !important; }
+html.light .text-slate-300 { color: #1e293b !important; }
+html.light .text-slate-400 { color: #475569 !important; }
+html.light .text-white\/40 { color: rgba(15,23,42,0.45) !important; }
+html.light .text-white\/50 { color: rgba(15,23,42,0.55) !important; }
+html.light .text-white\/60 { color: rgba(15,23,42,0.6) !important; }
+html.light .text-white\/70 { color: rgba(15,23,42,0.72) !important; }
+
+/* Borders → subtle light */
+html.light .border-gray-700, html.light .border-gray-800, html.light .border-gray-600,
+html.light .border-gray-500, html.light .border-gray-400,
+html.light .border-gray-700\/40, html.light .border-gray-700\/50, html.light .border-gray-700\/60,
+html.light .border-gray-800\/40, html.light .border-gray-800\/50,
+html.light .border-gray-600\/50, html.light .border-slate-700\/50 { border-color: #d8e0ea !important; }
+html.light .border-yellow-500\/20 { border-color: rgba(0,0,0,0.08) !important; }
+html.light .border-white\/5, html.light .border-white\/10 { border-color: rgba(0,0,0,0.07) !important; }
+
+/* Placeholders */
+html.light .placeholder-gray-400::placeholder,
+html.light .placeholder-gray-300::placeholder { color: #94a3b8 !important; }
+
+/* Glass + scrollbar in light */
+html.light .glass {
+  background: linear-gradient(160deg, rgba(255,255,255,0.96), rgba(248,250,252,0.98)) !important;
+  border: 1px solid rgba(15,23,42,0.08) !important;
+  box-shadow: 0 8px 30px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.6) !important;
+}
+html.light ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #f59e0b, #d97706) !important; }
+
+/* The sidebar (bg-[#0f172a]) stays dark in light mode — classic dark-rail +
+   light-content layout. Re-light its text/borders so the global dark remaps
+   above don't make sidebar text invisible (higher specificity wins). */
+html.light aside .text-white, html.light aside .text-gray-100, html.light aside .text-gray-200 { color: #f8fafc !important; }
+html.light aside .text-slate-300 { color: #cbd5e1 !important; }
+html.light aside .text-slate-400, html.light aside .text-slate-500 { color: #94a3b8 !important; }
+html.light aside .border-slate-700\/50,
+html.light aside .border-white\/5,
+html.light aside .border-white\/10 { border-color: rgba(255,255,255,0.08) !important; }
+
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
