@@ -163,15 +163,101 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
     setTimeout(() => this.startSpin(round.id), BETTING_MS);
   }
 
+  // ── Admin RTP / force-number config (SystemConfig row "roulette_config") ──
+  private static readonly CONFIG_KEY = "roulette_config";
+
+  async getConfig() {
+    const row = await this.prisma.systemConfig.findUnique({ where: { key: RouletteService.CONFIG_KEY } });
+    const v = (row?.value ?? {}) as Record<string, unknown>;
+    const fn = Number(v.forceNumber);
+    return {
+      rtpPercent: Number(v.rtpPercent ?? 97),
+      minBet:     Number(v.minBet ?? 10),
+      maxBet:     Number(v.maxBet ?? 100_000),
+      maxPayout:  Number(v.maxPayout ?? 0),       // 0 = unlimited
+      enabled:    v.enabled !== false,
+      forceNumber: Number.isInteger(fn) && fn >= 0 && fn <= 36 ? fn : null,
+    };
+  }
+
+  /** Admin reads current config for the P/L Control card. */
+  async getAdminConfig() {
+    return this.getConfig();
+  }
+
+  /** Admin saves config — partial merge; forceNumber: number sets it, null clears it. */
+  async saveAdminConfig(dto: Record<string, unknown>) {
+    const patch: Record<string, unknown> = {};
+    if (dto.rtpPercent != null) patch.rtpPercent = Math.max(0, Math.min(200, Number(dto.rtpPercent)));
+    if (dto.minBet     != null) patch.minBet     = Math.max(1, Number(dto.minBet));
+    if (dto.maxBet     != null) patch.maxBet     = Math.max(1, Number(dto.maxBet));
+    if (dto.maxPayout  != null) patch.maxPayout  = Math.max(0, Number(dto.maxPayout));
+    if (dto.enabled    != null) patch.enabled    = !!dto.enabled;
+    if ("forceNumber" in dto) {
+      const n = Number(dto.forceNumber);
+      patch.forceNumber = dto.forceNumber === null || !Number.isInteger(n) || n < 0 || n > 36 ? null : n;
+    }
+    const cur = (await this.prisma.systemConfig.findUnique({ where: { key: RouletteService.CONFIG_KEY } }))?.value as Record<string, unknown> ?? {};
+    const merged = { ...cur, ...patch };
+    await this.prisma.systemConfig.upsert({
+      where: { key: RouletteService.CONFIG_KEY },
+      create: { key: RouletteService.CONFIG_KEY, value: merged as Prisma.InputJsonValue },
+      update: { value: merged as Prisma.InputJsonValue },
+    });
+    return this.getConfig();
+  }
+
+  private async clearForceNumber() {
+    const cur = (await this.prisma.systemConfig.findUnique({ where: { key: RouletteService.CONFIG_KEY } }))?.value as Record<string, unknown> ?? {};
+    if (cur.forceNumber == null) return;
+    await this.prisma.systemConfig.update({
+      where: { key: RouletteService.CONFIG_KEY },
+      data: { value: { ...cur, forceNumber: null } as Prisma.InputJsonValue },
+    });
+  }
+
+  /**
+   * Pick the winning number. Priority:
+   *  1. Admin forced number (one-shot — consumed after this spin).
+   *  2. RTP-biased selection: the provably-fair seed still drives the roll, but
+   *     the admin RTP steers WHICH number among the book lands — toward
+   *     cheap-for-house numbers when RTP<100, toward rich-for-player when >100.
+   *     RTP=100 (or no bets) = uniform provably-fair number.
+   */
+  private async chooseWinningNumber(serverSeed: string, bets: { betType: string; betValue: string | null; amount: Prisma.Decimal }[], cfg: { rtpPercent: number; forceNumber: number | null }): Promise<number> {
+    if (cfg.forceNumber !== null) {
+      await this.clearForceNumber();
+      this.logger.log(`Roulette forced number ${cfg.forceNumber} applied`);
+      return cfg.forceNumber;
+    }
+    const hash = crypto.createHash("sha256").update(serverSeed).digest("hex");
+    const baseN = parseInt(hash.slice(0, 8), 16) % 37;
+    if (!bets.length || cfg.rtpPercent === 100) return baseN;
+
+    // Payout the house would owe for each possible winning number, given the book.
+    const payouts = Array.from({ length: 37 }, (_, n) =>
+      bets.reduce((s, b) => s + calculatePayout(b.betType as BetType, b.betValue, Number(b.amount), n), 0),
+    );
+    // Numbers ranked cheapest-for-house first.
+    const ranked = Array.from({ length: 37 }, (_, n) => n).sort((a, b) => payouts[a]! - payouts[b]!);
+    const steer = (100 - cfg.rtpPercent) / 100;          // >0 favour house, <0 favour player
+    const k = Math.min(0.96, Math.abs(steer) * 3);        // bias strength
+    let u = parseInt(hash.slice(8, 16), 16) / 0x100000000;
+    if (steer > 0)      u = Math.pow(u, 1 + k * 10);          // push toward index 0 (cheap → house)
+    else if (steer < 0) u = 1 - Math.pow(1 - u, 1 + k * 10); // push toward index 36 (rich → player)
+    return ranked[Math.min(36, Math.floor(u * 37))]!;
+  }
+
   async startSpin(roundId: string) {
     if (this.currentRoundId !== roundId) return;
 
-    // Generate winning number from serverSeed (provably fair)
+    // Generate winning number (RTP-biased / admin-forced), seed stays the base RNG.
     const round = await this.prisma.rouletteRound.findUnique({ where: { id: roundId } });
     if (!round) return;
 
-    const hash = crypto.createHash("sha256").update(round.serverSeed).digest("hex");
-    const winningNumber = parseInt(hash.slice(0, 8), 16) % 37;
+    const cfg = await this.getConfig();
+    const bets = await this.prisma.rouletteBet.findMany({ where: { roundId }, select: { betType: true, betValue: true, amount: true } });
+    const winningNumber = await this.chooseWinningNumber(round.serverSeed, bets, cfg);
     const winningColor = getColor(winningNumber);
 
     await this.prisma.rouletteRound.update({
@@ -193,6 +279,7 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
 
   async settleRound(roundId: string, winningNumber: number, winningColor: string) {
     const bets = await this.prisma.rouletteBet.findMany({ where: { roundId } });
+    const { maxPayout } = await this.getConfig();
 
     // Update round
     await this.prisma.rouletteRound.update({
@@ -209,7 +296,8 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
     const settled = [];
     for (const bet of bets) {
       const amount = Number(bet.amount);
-      const payout = calculatePayout(bet.betType as BetType, bet.betValue, amount, winningNumber);
+      let payout = calculatePayout(bet.betType as BetType, bet.betValue, amount, winningNumber);
+      if (maxPayout > 0 && payout > maxPayout) payout = maxPayout; // admin cap (0 = unlimited)
       const isWin = payout > 0;
 
       await this.prisma.rouletteBet.update({
@@ -297,8 +385,10 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
       throw new BadRequestException("Betting is closed for this round");
     }
 
-    if (input.amount < 10) throw new BadRequestException("Minimum bet is 10");
-    if (input.amount > 100000) throw new BadRequestException("Maximum bet is 100,000");
+    const cfg = await this.getConfig();
+    if (!cfg.enabled) throw new BadRequestException("Roulette is currently disabled");
+    if (input.amount < cfg.minBet) throw new BadRequestException(`Minimum bet is ₹${cfg.minBet.toLocaleString("en-IN")}`);
+    if (input.amount > cfg.maxBet) throw new BadRequestException(`Maximum bet is ₹${cfg.maxBet.toLocaleString("en-IN")}`);
 
     if (input.betType === "number") {
       const n = Number(input.betValue);

@@ -645,12 +645,14 @@ export class AdminService {
   // ── P/L Control: per-game win/loss & difficulty config + live P/L ──────────
   async getPlControl() {
     const s = (await this.getPlatformSettings()) as Record<string, unknown>;
-    const [plinkoRow, pumpRow] = await Promise.all([
+    const [plinkoRow, pumpRow, rouletteRow] = await Promise.all([
       this.prisma.systemConfig.findUnique({ where: { key: "plinko_config" } }),
       this.prisma.systemConfig.findUnique({ where: { key: "pump_config" } }),
+      this.prisma.systemConfig.findUnique({ where: { key: "roulette_config" } }),
     ]);
     const plinkoCfg = (plinkoRow?.value as Record<string, unknown>) ?? {};
     const pumpCfg = (pumpRow?.value as Record<string, unknown>) ?? {};
+    const rouletteCfg = (rouletteRow?.value as Record<string, unknown>) ?? {};
     const n = (v: unknown, d = 0) => (v == null ? d : Number(v));
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -698,8 +700,13 @@ export class AdminService {
         config: { rtpPercent: n(plinkoCfg.rtpPercent, 97), maxPayout: n(plinkoCfg.maxPayout, 1000), minBet: n(plinkoCfg.minBet, 10), maxBet: n(plinkoCfg.maxBet, 100_000), enabled: plinkoCfg.enabled !== false }, stats: plinko },
       { id: "pump", name: "Pump", emoji: "🎈", controlType: "rtp", target: "endpoint", endpoint: "/casino/pump/admin/config", hasForce: true,
         config: { rtpPercent: n(pumpCfg.rtpPercent, 97), maxPayout: n(pumpCfg.maxPayout, 1000), minBet: n(pumpCfg.minBet, 10), maxBet: n(pumpCfg.maxBet, 100_000), enabled: pumpCfg.enabled !== false }, stats: pump },
-      { id: "roulette", name: "Roulette", emoji: "🎡", controlType: "fixed", target: "none",
-        config: { houseEdge: 0.027 }, stats: roulette },
+      { id: "roulette", name: "Roulette", emoji: "🎡", controlType: "rtp", target: "endpoint", endpoint: "/roulette/admin/config", hasForceNumber: true,
+        config: {
+          rtpPercent: n(rouletteCfg.rtpPercent, 97), maxPayout: n(rouletteCfg.maxPayout, 0),
+          minBet: n(rouletteCfg.minBet, 10), maxBet: n(rouletteCfg.maxBet, 100_000),
+          enabled: rouletteCfg.enabled !== false,
+          forceNumber: (Number.isInteger(Number(rouletteCfg.forceNumber)) && Number(rouletteCfg.forceNumber) >= 0 && Number(rouletteCfg.forceNumber) <= 36) ? Number(rouletteCfg.forceNumber) : null,
+        }, stats: roulette },
     ];
 
     const sum = (k: "wagered" | "payout" | "pl" | "bets") => games.reduce((a, g) => a + ((g.stats as Record<string, number>)[k] ?? 0), 0);

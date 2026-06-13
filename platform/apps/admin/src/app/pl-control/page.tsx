@@ -6,7 +6,7 @@ import { useLiveData } from "@/lib/hooks";
 import { PageHeader, GlassCard, StatCard } from "@/components/ui";
 import {
   Gauge, TrendingUp, TrendingDown, Wallet, Gamepad2, Save, Skull,
-  Sparkles, Lock, Zap, AlertTriangle,
+  Sparkles, Lock, Zap, AlertTriangle, Target,
 } from "lucide-react";
 
 interface GameStats { wagered: number; payout: number; pl: number; bets: number; wins: number; winRate: number; }
@@ -15,11 +15,12 @@ interface Game {
   id: string; name: string; emoji: string;
   controlType: "edge" | "rtp" | "fixed";
   target: "platform" | "endpoint" | "none";
-  endpoint?: string; hasHardness?: boolean; hasForce?: boolean;
+  endpoint?: string; hasHardness?: boolean; hasForce?: boolean; hasForceNumber?: boolean;
   keys?: GameKeys;
   config: {
     houseEdge?: number; hardness?: number; rtpPercent?: number;
     maxPayout?: number; minBet?: number; maxBet?: number; enabled?: boolean;
+    forceNumber?: number | null;
   };
   stats: GameStats;
 }
@@ -72,6 +73,8 @@ function GameControl({ game }: { game: Game }) {
   const [forceWin, setForceWin] = useState("");
   const [forceWinPumps, setForceWinPumps] = useState(5);
   const [forceLoss, setForceLoss] = useState("");
+  const [forceNumInput, setForceNumInput] = useState("");
+  const [forcingNum, setForcingNum] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -82,6 +85,20 @@ function GameControl({ game }: { game: Game }) {
     setEnabled(c.enabled ?? true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [c.houseEdge, c.hardness, c.rtpPercent, c.maxPayout, c.minBet, c.maxBet, c.enabled]);
+
+  // Force next roulette number (one-shot). Set or clear, applied immediately.
+  async function setForceNumber(num: number | null) {
+    if (!game.endpoint) return;
+    setForcingNum(true); setMsg(null);
+    try {
+      await api.post(game.endpoint, { forceNumber: num });
+      setForceNumInput("");
+      setMsg({ ok: true, text: num === null ? "Forced number cleared." : `Next spin forced to ${num}.` });
+      globalMutate(KEY);
+    } catch (e: any) {
+      setMsg({ ok: false, text: e?.response?.data?.message || "Failed" });
+    } finally { setForcingNum(false); }
+  }
 
   const stats = game.stats;
   const houseProfit = stats.pl >= 0;
@@ -208,6 +225,34 @@ function GameControl({ game }: { game: Game }) {
                 </div>
                 <button onClick={() => clearForce("loss")} className="text-[10px] px-2 py-1.5 rounded-lg border border-gray-700 text-gray-400 hover:text-white">Clear</button>
               </div>
+            </div>
+          )}
+
+          {game.hasForceNumber && (
+            <div className="rounded-lg border border-violet-500/40 p-3 space-y-2 bg-violet-500/5">
+              <div className="text-[10px] uppercase tracking-wider text-violet-300 flex items-center gap-1"><Target size={11} /> Rig next spin</div>
+              {c.forceNumber != null ? (
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-gray-300">Next spin is forced to land on{" "}
+                    <span className="font-black text-violet-300 text-base">{c.forceNumber}</span>{" "}
+                    <span className="text-gray-500">({c.forceNumber === 0 ? "green" : ([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(c.forceNumber) ? "red" : "black")})</span></p>
+                  <button onClick={() => setForceNumber(null)} disabled={forcingNum}
+                    className="text-[10px] px-2.5 py-1.5 rounded-lg border border-gray-700 text-gray-400 hover:text-white disabled:opacity-50">Clear</button>
+                </div>
+              ) : (
+                <div className="flex gap-2 items-center">
+                  <input type="number" min={0} max={36} value={forceNumInput}
+                    onChange={(e) => setForceNumInput(e.target.value)} placeholder="0–36"
+                    className="w-24 bg-gray-900/60 border border-gray-700 rounded-lg px-2.5 py-1.5 text-sm text-gray-200 outline-none focus:border-violet-400/60" />
+                  <button
+                    onClick={() => { const v = Number(forceNumInput); if (Number.isInteger(v) && v >= 0 && v <= 36) setForceNumber(v); else setMsg({ ok: false, text: "Enter 0–36" }); }}
+                    disabled={forcingNum || forceNumInput === ""}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-violet-600 hover:brightness-110 disabled:opacity-40">
+                    {forcingNum ? "…" : "Force Next Spin"}
+                  </button>
+                  <span className="text-[10px] text-gray-500">one-shot — applies to the very next round, then auto-clears</span>
+                </div>
+              )}
             </div>
           )}
         </div>
