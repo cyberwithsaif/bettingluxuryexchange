@@ -104,7 +104,7 @@ export default function AdminDashboard() {
     : PRESETS.find(p => p.key === preset)?.label ?? "Custom";
 
   const qs = range ? `?from=${range.from}&to=${range.to}` : "";
-  const { data, isLoading } = useLiveData<DashboardData>(`/admin/dashboard${qs}`, 15000);
+  const { data, isLoading } = useLiveData<DashboardData>(`/admin/dashboard${qs}`, 10000);
 
   const rs = data?.rangeStats;
   const totalSettled = (data?.betsWon ?? 0) + (data?.betsLost ?? 0);

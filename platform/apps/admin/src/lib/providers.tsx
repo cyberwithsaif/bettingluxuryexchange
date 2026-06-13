@@ -7,7 +7,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SWRConfig
       value={{
         fetcher,
-        revalidateOnFocus: false,
+        // Live by default across the WHOLE admin panel: every useSWR auto-polls
+        // and re-fetches when the tab regains focus, so data updates without a
+        // manual refresh. SWR's deep-equal keeps the same reference when nothing
+        // changed, so this won't churn forms / cause needless re-renders.
+        refreshInterval: 10000,
+        revalidateOnFocus: true,
         revalidateOnReconnect: true,
         dedupingInterval: 4000,
         keepPreviousData: true,

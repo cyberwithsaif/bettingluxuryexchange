@@ -30,7 +30,7 @@ const KEY = "/admin/pl-control";
 const inr = (n: number) => "₹" + Math.round(n).toLocaleString("en-IN");
 
 export default function PlControlPage() {
-  const { data, isLoading } = useLiveData<PlControl>(KEY, 15000);
+  const { data, isLoading } = useLiveData<PlControl>(KEY, 4000); // live P/L — ticks every 4s
   const s = data?.summary;
 
   return (
