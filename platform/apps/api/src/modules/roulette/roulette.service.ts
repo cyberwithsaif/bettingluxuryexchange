@@ -169,7 +169,9 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
   async getConfig() {
     const row = await this.prisma.systemConfig.findUnique({ where: { key: RouletteService.CONFIG_KEY } });
     const v = (row?.value ?? {}) as Record<string, unknown>;
-    const fn = Number(v.forceNumber);
+    // Guard null/undefined BEFORE Number() — Number(null) is 0, which would
+    // otherwise read a cleared override as "force 0" (green) on the next spin.
+    const fn = v.forceNumber == null ? NaN : Number(v.forceNumber);
     return {
       rtpPercent: Number(v.rtpPercent ?? 97),
       minBet:     Number(v.minBet ?? 10),

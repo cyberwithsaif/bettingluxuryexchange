@@ -705,7 +705,8 @@ export class AdminService {
           rtpPercent: n(rouletteCfg.rtpPercent, 97), maxPayout: n(rouletteCfg.maxPayout, 0),
           minBet: n(rouletteCfg.minBet, 10), maxBet: n(rouletteCfg.maxBet, 100_000),
           enabled: rouletteCfg.enabled !== false,
-          forceNumber: (Number.isInteger(Number(rouletteCfg.forceNumber)) && Number(rouletteCfg.forceNumber) >= 0 && Number(rouletteCfg.forceNumber) <= 36) ? Number(rouletteCfg.forceNumber) : null,
+          forceNumber: rouletteCfg.forceNumber == null ? null
+            : (Number.isInteger(Number(rouletteCfg.forceNumber)) && Number(rouletteCfg.forceNumber) >= 0 && Number(rouletteCfg.forceNumber) <= 36) ? Number(rouletteCfg.forceNumber) : null,
         }, stats: roulette },
     ];
 
