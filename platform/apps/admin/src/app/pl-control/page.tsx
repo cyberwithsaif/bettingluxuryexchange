@@ -283,7 +283,7 @@ function Mini({ label, value, sub, tone }: { label: string; value: string; sub?:
   return (
     <div className="rounded-lg bg-gray-900/40 border border-gray-700/40 px-2 py-1.5">
       <div className="text-[9px] uppercase tracking-wider text-gray-500">{label}</div>
-      <div className="text-sm font-bold tabular-nums leading-tight truncate" style={{ color: tone ?? "#e5e7eb" }}>{value}</div>
+      <div className={`text-sm font-bold tabular-nums leading-tight truncate ${tone ? "" : "text-gray-100"}`} style={tone ? { color: tone } : undefined}>{value}</div>
       {sub && <div className="text-[9px] text-gray-600">{sub}</div>}
     </div>
   );
