@@ -6,63 +6,54 @@ import { RouletteGateway } from "./roulette.gateway";
 import { Prisma, LedgerKind, RouletteRoundStatus } from "@prisma/client";
 import * as crypto from "crypto";
 
-// Distributed lock so only ONE cluster worker runs the game loop.
-// TTL is long enough to absorb GC pauses but short enough that a dead
-// worker doesn't strand the loop for long.
 const LOOP_LOCK_KEY = "lock:roulette:loop";
 const LOOP_LOCK_TTL_SECS = 30;
 const LOOP_LOCK_REFRESH_MS = 10_000;
 const LOOP_RETRY_MS = 5_000;
-
-// Current-round pointer shared across ALL cluster workers. Only the worker
-// holding the loop lock drives the game, but every worker must be able to
-// answer GET /current and accept bets — so the active round id + phase
-// deadline live in Redis, not only in the loop owner's memory.
 const STATE_KEY = "roulette:current";
-const STATE_TTL_SECS = 300; // safety net; rewritten on every phase (≤20s apart)
+const STATE_TTL_SECS = 300;
 
-const RED_NUMBERS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
-const BETTING_MS  = 15000;  // 15 seconds to place bets
-const SPIN_MS     = 20000;  // 20 seconds spin animation
-const RESULT_MS   = 5000;   // 5 seconds to view result before next round
+// ── Mini Roulette: 10 numbers (0-9) ──────────────────────────────────────────
+const MINI_RED   = new Set([1, 3, 5, 7, 9]);
+const MINI_BLACK = new Set([2, 4, 6, 8]);
+const WHEEL_SIZE = 10; // 0-9
 
-export type BetType =
-  | "number" | "red" | "black" | "odd" | "even"
-  | "high"   | "low"
-  | "dozen1" | "dozen2" | "dozen3"
-  | "col1"   | "col2"   | "col3"
-  | "split"  | "street" | "corner" | "sixline";
+const BETTING_MS = 15_000; // 15 s — players place bets
+const CLOSED_MS  =  3_000; //  3 s — betting closed, "get ready" flash
+const SPIN_MS    =  5_000; //  5 s — wheel spinning animation
+const RESULT_MS  =  3_000; //  3 s — result display before next round
+// Total round: 26 s
 
-function getColor(n: number): "green" | "red" | "black" {
+export type BetType = "number" | "red" | "black" | "green" | "odd" | "even" | "high" | "low";
+
+export function getColor(n: number): "green" | "red" | "black" {
   if (n === 0) return "green";
-  return RED_NUMBERS.has(n) ? "red" : "black";
+  return MINI_RED.has(n) ? "red" : "black";
 }
 
-function parseNums(betValue: string | null): number[] {
-  return (betValue ?? "").split("/").map(Number).filter(n => !isNaN(n));
-}
-
+/**
+ * Mini Roulette payouts (return including stake):
+ *   number (straight-up) → 9x
+ *   red  → 2x
+ *   black → 2.25x
+ *   green (0) → 9x
+ *   odd  → 1.95x  (1,3,5,7,9)
+ *   even → 2.25x  (2,4,6,8)
+ *   low  → 1.95x  (0-4)
+ *   high → 1.95x  (5-9)
+ */
 function calculatePayout(betType: BetType, betValue: string | null, amount: number, n: number): number {
   const color = getColor(n);
   switch (betType) {
-    case "number":  return Number(betValue) === n ? amount * 36 : 0;
-    case "split":   return parseNums(betValue).includes(n) ? amount * 18 : 0;  // 17:1
-    case "street":  return parseNums(betValue).includes(n) ? amount * 12 : 0;  // 11:1
-    case "corner":  return parseNums(betValue).includes(n) ? amount * 9  : 0;  // 8:1
-    case "sixline": return parseNums(betValue).includes(n) ? amount * 6  : 0;  // 5:1
-    case "red":     return color === "red"   ? amount * 2 : 0;
-    case "black":   return color === "black" ? amount * 2 : 0;
-    case "odd":     return n !== 0 && n % 2 !== 0 ? amount * 2 : 0;
-    case "even":    return n !== 0 && n % 2 === 0 ? amount * 2 : 0;
-    case "high":    return n >= 19 && n <= 36 ? amount * 2 : 0;
-    case "low":     return n >= 1  && n <= 18 ? amount * 2 : 0;
-    case "dozen1":  return n >= 1  && n <= 12 ? amount * 3 : 0;
-    case "dozen2":  return n >= 13 && n <= 24 ? amount * 3 : 0;
-    case "dozen3":  return n >= 25 && n <= 36 ? amount * 3 : 0;
-    case "col1":    return n !== 0 && n % 3 === 1 ? amount * 3 : 0;
-    case "col2":    return n !== 0 && n % 3 === 2 ? amount * 3 : 0;
-    case "col3":    return n !== 0 && n % 3 === 0 ? amount * 3 : 0;
-    default:        return 0;
+    case "number": return Number(betValue) === n ? amount * 9    : 0;
+    case "green":  return color === "green"       ? amount * 9    : 0;
+    case "red":    return color === "red"         ? amount * 2    : 0;
+    case "black":  return color === "black"       ? amount * 2.25 : 0;
+    case "odd":    return MINI_RED.has(n)         ? amount * 1.95 : 0;   // 1,3,5,7,9
+    case "even":   return MINI_BLACK.has(n)       ? amount * 2.25 : 0;   // 2,4,6,8
+    case "low":    return n >= 0 && n <= 4        ? amount * 1.95 : 0;   // 0,1,2,3,4
+    case "high":   return n >= 5 && n <= 9        ? amount * 1.95 : 0;   // 5,6,7,8,9
+    default:       return 0;
   }
 }
 
@@ -83,14 +74,12 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   async onModuleInit() {
-    // Stagger so multiple workers don't slam Redis at the same instant.
     setTimeout(() => this.tryAcquireLoop(), 2000 + Math.floor(Math.random() * 1000));
   }
 
   async onModuleDestroy() {
     if (this.lockRefreshTimer) clearInterval(this.lockRefreshTimer);
     if (this.hasLock) {
-      // Release lock only if we still own it (compare-and-delete via Lua).
       await this.redis.client.eval(
         `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end`,
         1, LOOP_LOCK_KEY, this.lockValue,
@@ -102,15 +91,12 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
     try {
       const acquired = await this.redis.client.set(LOOP_LOCK_KEY, this.lockValue, "EX", LOOP_LOCK_TTL_SECS, "NX");
       if (acquired !== "OK") {
-        // Another worker is running the loop. Check back later in case it dies.
         setTimeout(() => this.tryAcquireLoop(), LOOP_RETRY_MS);
         return;
       }
       this.hasLock = true;
       this.logger.log(`Acquired roulette loop lock (worker ${this.lockValue})`);
-      // Keep refreshing so the TTL doesn't expire while we're alive.
       this.lockRefreshTimer = setInterval(async () => {
-        // CAS refresh: only extend if we still own the lock.
         const ok = await this.redis.client.eval(
           `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("expire", KEYS[1], ARGV[2]) else return 0 end`,
           1, LOOP_LOCK_KEY, this.lockValue, LOOP_LOCK_TTL_SECS.toString(),
@@ -143,14 +129,10 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
     const serverSeedHash = crypto.createHash("sha256").update(serverSeed).digest("hex");
 
     const round = await this.prisma.rouletteRound.create({
-      data: {
-        status: RouletteRoundStatus.BETTING,
-        serverSeed,
-        serverSeedHash,
-      },
+      data: { status: RouletteRoundStatus.BETTING, serverSeed, serverSeedHash },
     });
 
-    await this.publishState(round.id, Date.now() + BETTING_MS);
+    await this.publishState(round.id, Date.now() + BETTING_MS, "BETTING");
 
     this.gateway.broadcast("roulette:newRound", {
       roundId: round.id,
@@ -160,34 +142,37 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
       phaseEndsAt: this.phaseEndsAt,
     });
 
-    setTimeout(() => this.startSpin(round.id), BETTING_MS);
+    setTimeout(() => this.closeBetting(round.id), BETTING_MS);
   }
 
-  // ── Admin RTP / force-number config (SystemConfig row "roulette_config") ──
+  /** Betting-closed flash phase: 3 s before wheel spins */
+  private async closeBetting(roundId: string) {
+    if (this.currentRoundId !== roundId) return;
+    await this.publishState(roundId, Date.now() + CLOSED_MS, "CLOSED");
+    this.gateway.broadcast("roulette:bettingClosed", { roundId, phaseEndsAt: this.phaseEndsAt });
+    setTimeout(() => this.startSpin(roundId), CLOSED_MS);
+  }
+
+  // ── Admin RTP / force-number config ──────────────────────────────────────
   private static readonly CONFIG_KEY = "roulette_config";
 
   async getConfig() {
     const row = await this.prisma.systemConfig.findUnique({ where: { key: RouletteService.CONFIG_KEY } });
     const v = (row?.value ?? {}) as Record<string, unknown>;
-    // Guard null/undefined BEFORE Number() — Number(null) is 0, which would
-    // otherwise read a cleared override as "force 0" (green) on the next spin.
     const fn = v.forceNumber == null ? NaN : Number(v.forceNumber);
     return {
-      rtpPercent: Number(v.rtpPercent ?? 97),
-      minBet:     Number(v.minBet ?? 10),
-      maxBet:     Number(v.maxBet ?? 100_000),
-      maxPayout:  Number(v.maxPayout ?? 0),       // 0 = unlimited
-      enabled:    v.enabled !== false,
-      forceNumber: Number.isInteger(fn) && fn >= 0 && fn <= 36 ? fn : null,
+      rtpPercent:  Number(v.rtpPercent  ?? 97),
+      minBet:      Number(v.minBet      ?? 10),
+      maxBet:      Number(v.maxBet      ?? 100_000),
+      maxPayout:   Number(v.maxPayout   ?? 0),
+      enabled:     v.enabled !== false,
+      // force number: 0-9 only (Mini Roulette)
+      forceNumber: Number.isInteger(fn) && fn >= 0 && fn <= 9 ? fn : null,
     };
   }
 
-  /** Admin reads current config for the P/L Control card. */
-  async getAdminConfig() {
-    return this.getConfig();
-  }
+  async getAdminConfig() { return this.getConfig(); }
 
-  /** Admin saves config — partial merge; forceNumber: number sets it, null clears it. */
   async saveAdminConfig(dto: Record<string, unknown>) {
     const patch: Record<string, unknown> = {};
     if (dto.rtpPercent != null) patch.rtpPercent = Math.max(0, Math.min(200, Number(dto.rtpPercent)));
@@ -197,12 +182,12 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
     if (dto.enabled    != null) patch.enabled    = !!dto.enabled;
     if ("forceNumber" in dto) {
       const n = Number(dto.forceNumber);
-      patch.forceNumber = dto.forceNumber === null || !Number.isInteger(n) || n < 0 || n > 36 ? null : n;
+      patch.forceNumber = dto.forceNumber === null || !Number.isInteger(n) || n < 0 || n > 9 ? null : n;
     }
-    const cur = (await this.prisma.systemConfig.findUnique({ where: { key: RouletteService.CONFIG_KEY } }))?.value as Record<string, unknown> ?? {};
+    const cur = ((await this.prisma.systemConfig.findUnique({ where: { key: RouletteService.CONFIG_KEY } }))?.value as Record<string, unknown>) ?? {};
     const merged = { ...cur, ...patch };
     await this.prisma.systemConfig.upsert({
-      where: { key: RouletteService.CONFIG_KEY },
+      where:  { key: RouletteService.CONFIG_KEY },
       create: { key: RouletteService.CONFIG_KEY, value: merged as Prisma.InputJsonValue },
       update: { value: merged as Prisma.InputJsonValue },
     });
@@ -210,64 +195,71 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async clearForceNumber() {
-    const cur = (await this.prisma.systemConfig.findUnique({ where: { key: RouletteService.CONFIG_KEY } }))?.value as Record<string, unknown> ?? {};
+    const cur = ((await this.prisma.systemConfig.findUnique({ where: { key: RouletteService.CONFIG_KEY } }))?.value as Record<string, unknown>) ?? {};
     if (cur.forceNumber == null) return;
     await this.prisma.systemConfig.update({
       where: { key: RouletteService.CONFIG_KEY },
-      data: { value: { ...cur, forceNumber: null } as Prisma.InputJsonValue },
+      data:  { value: { ...cur, forceNumber: null } as Prisma.InputJsonValue },
     });
   }
 
   /**
-   * Pick the winning number. Priority:
+   * Pick winning number (0-9). Priority:
    *  1. Admin forced number (one-shot — consumed after this spin).
-   *  2. RTP-biased selection: the provably-fair seed still drives the roll, but
-   *     the admin RTP steers WHICH number among the book lands — toward
-   *     cheap-for-house numbers when RTP<100, toward rich-for-player when >100.
-   *     RTP=100 (or no bets) = uniform provably-fair number.
+   *  2. RTP-biased: provably-fair seed still drives the RNG, admin RTP steers
+   *     toward house-cheap (RTP<100) or player-rich (RTP>100) numbers.
+   *     RTP=100 = uniform fair roll.
    */
-  private async chooseWinningNumber(serverSeed: string, bets: { betType: string; betValue: string | null; amount: Prisma.Decimal }[], cfg: { rtpPercent: number; forceNumber: number | null }): Promise<number> {
+  private async chooseWinningNumber(
+    serverSeed: string,
+    bets: { betType: string; betValue: string | null; amount: Prisma.Decimal }[],
+    cfg: { rtpPercent: number; forceNumber: number | null },
+  ): Promise<number> {
     if (cfg.forceNumber !== null) {
       await this.clearForceNumber();
-      this.logger.log(`Roulette forced number ${cfg.forceNumber} applied`);
+      this.logger.log(`Mini Roulette forced number ${cfg.forceNumber}`);
       return cfg.forceNumber;
     }
-    const hash = crypto.createHash("sha256").update(serverSeed).digest("hex");
-    const baseN = parseInt(hash.slice(0, 8), 16) % 37;
+
+    const hash  = crypto.createHash("sha256").update(serverSeed).digest("hex");
+    const baseN = parseInt(hash.slice(0, 8), 16) % WHEEL_SIZE;
+
     if (!bets.length || cfg.rtpPercent === 100) return baseN;
 
-    // Payout the house would owe for each possible winning number, given the book.
-    const payouts = Array.from({ length: 37 }, (_, n) =>
+    // Payout house would owe for each possible winning number given the book.
+    const payouts = Array.from({ length: WHEEL_SIZE }, (_, n) =>
       bets.reduce((s, b) => s + calculatePayout(b.betType as BetType, b.betValue, Number(b.amount), n), 0),
     );
-    // Numbers ranked cheapest-for-house first.
-    const ranked = Array.from({ length: 37 }, (_, n) => n).sort((a, b) => payouts[a]! - payouts[b]!);
-    const steer = (100 - cfg.rtpPercent) / 100;          // >0 favour house, <0 favour player
-    const k = Math.min(0.96, Math.abs(steer) * 3);        // bias strength
-    let u = parseInt(hash.slice(8, 16), 16) / 0x100000000;
-    if (steer > 0)      u = Math.pow(u, 1 + k * 10);          // push toward index 0 (cheap → house)
-    else if (steer < 0) u = 1 - Math.pow(1 - u, 1 + k * 10); // push toward index 36 (rich → player)
-    return ranked[Math.min(36, Math.floor(u * 37))]!;
+    const ranked = Array.from({ length: WHEEL_SIZE }, (_, n) => n).sort((a, b) => payouts[a]! - payouts[b]!);
+    const steer  = (100 - cfg.rtpPercent) / 100;
+    const k      = Math.min(0.96, Math.abs(steer) * 3);
+    let u        = parseInt(hash.slice(8, 16), 16) / 0x100000000;
+    if      (steer > 0) u = Math.pow(u, 1 + k * 10);
+    else if (steer < 0) u = 1 - Math.pow(1 - u, 1 + k * 10);
+    return ranked[Math.min(WHEEL_SIZE - 1, Math.floor(u * WHEEL_SIZE))]!;
   }
 
   async startSpin(roundId: string) {
     if (this.currentRoundId !== roundId) return;
 
-    // Generate winning number (RTP-biased / admin-forced), seed stays the base RNG.
     const round = await this.prisma.rouletteRound.findUnique({ where: { id: roundId } });
     if (!round) return;
 
-    const cfg = await this.getConfig();
-    const bets = await this.prisma.rouletteBet.findMany({ where: { roundId }, select: { betType: true, betValue: true, amount: true } });
+    const cfg  = await this.getConfig();
+    const bets = await this.prisma.rouletteBet.findMany({
+      where: { roundId },
+      select: { betType: true, betValue: true, amount: true },
+    });
+
     const winningNumber = await this.chooseWinningNumber(round.serverSeed, bets, cfg);
-    const winningColor = getColor(winningNumber);
+    const winningColor  = getColor(winningNumber);
 
     await this.prisma.rouletteRound.update({
       where: { id: roundId },
-      data: { status: RouletteRoundStatus.SPINNING, spinAt: new Date() },
+      data:  { status: RouletteRoundStatus.SPINNING, spinAt: new Date() },
     });
 
-    await this.publishState(roundId, Date.now() + SPIN_MS);
+    await this.publishState(roundId, Date.now() + SPIN_MS, "SPINNING");
 
     this.gateway.broadcast("roulette:spin", {
       roundId,
@@ -283,28 +275,21 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
     const bets = await this.prisma.rouletteBet.findMany({ where: { roundId } });
     const { maxPayout } = await this.getConfig();
 
-    // Update round
     await this.prisma.rouletteRound.update({
       where: { id: roundId },
-      data: {
-        status: RouletteRoundStatus.SETTLED,
-        winningNumber,
-        winningColor,
-        settledAt: new Date(),
-      },
+      data:  { status: RouletteRoundStatus.SETTLED, winningNumber, winningColor, settledAt: new Date() },
     });
 
-    // Settle each bet — pay out winners via wallet ledger
     const settled = [];
     for (const bet of bets) {
       const amount = Number(bet.amount);
-      let payout = calculatePayout(bet.betType as BetType, bet.betValue, amount, winningNumber);
-      if (maxPayout > 0 && payout > maxPayout) payout = maxPayout; // admin cap (0 = unlimited)
-      const isWin = payout > 0;
+      let payout   = calculatePayout(bet.betType as BetType, bet.betValue, amount, winningNumber);
+      if (maxPayout > 0 && payout > maxPayout) payout = maxPayout;
+      const isWin  = payout > 0;
 
       await this.prisma.rouletteBet.update({
         where: { id: bet.id },
-        data: { payout, isWin, settledAt: new Date() },
+        data:  { payout, isWin, settledAt: new Date() },
       });
 
       if (isWin) {
@@ -312,36 +297,27 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
           await this.wallet.applyLedger({
             userId: bet.userId,
             amount: payout,
-            kind: LedgerKind.CASINO_WIN,
+            kind:    LedgerKind.CASINO_WIN,
             refType: "roulette_bet",
-            refId: bet.id,
-            note: `Roulette win #${winningNumber}`,
+            refId:   bet.id,
+            note:    `Mini Roulette win #${winningNumber} ${winningColor}`,
           });
         } catch (e) {
           this.logger.error(`Failed to pay winner ${bet.userId}: ${(e as Error).message}`);
         }
       }
 
-      settled.push({
-        betId: bet.id,
-        userId: bet.userId,
-        betType: bet.betType,
-        betValue: bet.betValue,
-        amount,
-        payout,
-        isWin,
-      });
+      settled.push({ betId: bet.id, userId: bet.userId, betType: bet.betType, betValue: bet.betValue, amount, payout, isWin });
     }
 
     const round = await this.prisma.rouletteRound.findUnique({ where: { id: roundId } });
-
-    await this.publishState(roundId, Date.now() + RESULT_MS);
+    await this.publishState(roundId, Date.now() + RESULT_MS, "SETTLED");
 
     this.gateway.broadcast("roulette:result", {
       roundId,
       winningNumber,
       winningColor,
-      serverSeed: round?.serverSeed, // reveal seed for verification
+      serverSeed: round?.serverSeed,
       bets: settled,
       phaseEndsAt: this.phaseEndsAt,
     });
@@ -349,30 +325,21 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
     setTimeout(() => this.startNewRound(), RESULT_MS);
   }
 
-  /**
-   * Mirror the active-round pointer to Redis so EVERY cluster worker can serve
-   * GET /current and accept bets — not only the worker that owns the game loop.
-   * Without this, ~half of all HTTP requests hit a worker whose in-memory
-   * currentRoundId is null, surfacing as a "stuck" wheel and "No active round"
-   * bet failures until the user happens to refresh onto the loop-owner worker.
-   */
-  private async publishState(roundId: string, phaseEndsAt: number) {
+  private async publishState(roundId: string, phaseEndsAt: number, phase: string) {
     this.currentRoundId = roundId;
-    this.phaseEndsAt = phaseEndsAt;
+    this.phaseEndsAt    = phaseEndsAt;
     try {
-      await this.redis.client.set(STATE_KEY, JSON.stringify({ roundId, phaseEndsAt }), "EX", STATE_TTL_SECS);
+      await this.redis.client.set(STATE_KEY, JSON.stringify({ roundId, phaseEndsAt, phase }), "EX", STATE_TTL_SECS);
     } catch (e) {
       this.logger.warn(`Failed to publish roulette state: ${(e as Error).message}`);
     }
   }
 
-  /** Read the shared round pointer; fall back to this worker's own memory
-   *  (set only on the loop owner) if Redis is briefly unavailable. */
-  private async readState(): Promise<{ roundId: string; phaseEndsAt: number } | null> {
+  private async readState(): Promise<{ roundId: string; phaseEndsAt: number; phase?: string } | null> {
     try {
       const raw = await this.redis.client.get(STATE_KEY);
-      if (raw) return JSON.parse(raw) as { roundId: string; phaseEndsAt: number };
-    } catch { /* fall through to in-memory */ }
+      if (raw) return JSON.parse(raw) as { roundId: string; phaseEndsAt: number; phase?: string };
+    } catch { /* fall through */ }
     if (this.currentRoundId) return { roundId: this.currentRoundId, phaseEndsAt: this.phaseEndsAt };
     return null;
   }
@@ -383,59 +350,43 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
 
     const round = await this.prisma.rouletteRound.findUnique({ where: { id: state.roundId } });
     if (!round) throw new BadRequestException("Round not found");
-    if (round.status !== RouletteRoundStatus.BETTING) {
-      throw new BadRequestException("Betting is closed for this round");
-    }
+    if (round.status !== RouletteRoundStatus.BETTING) throw new BadRequestException("Betting is closed for this round");
 
     const cfg = await this.getConfig();
     if (!cfg.enabled) throw new BadRequestException("Roulette is currently disabled");
     if (input.amount < cfg.minBet) throw new BadRequestException(`Minimum bet is ₹${cfg.minBet.toLocaleString("en-IN")}`);
     if (input.amount > cfg.maxBet) throw new BadRequestException(`Maximum bet is ₹${cfg.maxBet.toLocaleString("en-IN")}`);
 
-    if (input.betType === "number") {
-      const n = Number(input.betValue);
-      if (!Number.isInteger(n) || n < 0 || n > 36) {
-        throw new BadRequestException("Number bet must be 0-36");
-      }
+    if (input.betType === "number" || input.betType === "green") {
+      const n = Number(input.betValue ?? (input.betType === "green" ? "0" : "-1"));
+      if (!Number.isInteger(n) || n < 0 || n > 9) throw new BadRequestException("Number must be 0-9");
     }
 
-    const expectedLengths: Record<string, number> = { split: 2, street: 3, corner: 4, sixline: 6 };
-    const expectedLen = expectedLengths[input.betType];
-    if (expectedLen) {
-      const nums = (input.betValue ?? "").split("/").map(Number);
-      if (nums.length !== expectedLen || nums.some(n => isNaN(n) || n < 0 || n > 36)) {
-        throw new BadRequestException(`Invalid betValue for ${input.betType}`);
-      }
-    }
-
-    // Deduct bet from wallet
     await this.wallet.applyLedger({
       userId,
-      amount: -input.amount,
-      kind: LedgerKind.CASINO_BET,
+      amount:  -input.amount,
+      kind:    LedgerKind.CASINO_BET,
       refType: "roulette_round",
-      refId: round.id,
-      note: `Roulette ${input.betType}${input.betValue ? ` ${input.betValue}` : ""}`,
+      refId:   round.id,
+      note:    `Mini Roulette ${input.betType}${input.betValue ? ` ${input.betValue}` : ""}`,
     });
 
-    // Create bet record
     const bet = await this.prisma.rouletteBet.create({
       data: {
         userId,
-        roundId: round.id,
-        betType: input.betType,
+        roundId:  round.id,
+        betType:  input.betType,
         betValue: input.betValue ?? null,
-        amount: new Prisma.Decimal(input.amount),
+        amount:   new Prisma.Decimal(input.amount),
       },
     });
 
     this.gateway.broadcast("roulette:betPlaced", {
       roundId: round.id,
-      betId: bet.id,
+      betId:   bet.id,
       userId,
       betType: bet.betType,
-      betValue: bet.betValue,
-      amount: input.amount,
+      amount:  input.amount,
     });
 
     return { ok: true, betId: bet.id };
@@ -446,54 +397,40 @@ export class RouletteService implements OnModuleInit, OnModuleDestroy {
     if (!state) return null;
 
     const round = await this.prisma.rouletteRound.findUnique({
-      where: { id: state.roundId },
-      include: {
-        bets: {
-          select: { id: true, userId: true, betType: true, betValue: true, amount: true, payout: true, isWin: true },
-        },
-      },
+      where:   { id: state.roundId },
+      include: { bets: { select: { id: true, userId: true, betType: true, betValue: true, amount: true, payout: true, isWin: true } } },
     });
-
     if (!round) return null;
 
     return {
-      id: round.id,
-      roundNumber: round.roundNumber,
-      status: round.status,
+      id:             round.id,
+      roundNumber:    round.roundNumber,
+      status:         round.status,
+      phase:          (state as any).phase ?? round.status,
       serverSeedHash: round.serverSeedHash,
-      winningNumber: round.winningNumber,
-      winningColor: round.winningColor,
-      phaseEndsAt: state.phaseEndsAt,
-      betsCount: round.bets.length,
+      winningNumber:  round.winningNumber,
+      winningColor:   round.winningColor,
+      phaseEndsAt:    state.phaseEndsAt,
+      betsCount:      round.bets.length,
+      totalWagered:   round.bets.reduce((s, b) => s + Number(b.amount), 0),
     };
   }
 
   async getRecentResults(limit = 20) {
-    const rounds = await this.prisma.rouletteRound.findMany({
-      where: { status: RouletteRoundStatus.SETTLED },
+    return this.prisma.rouletteRound.findMany({
+      where:   { status: RouletteRoundStatus.SETTLED },
       orderBy: { settledAt: "desc" },
-      take: limit,
-      select: {
-        id: true,
-        roundNumber: true,
-        winningNumber: true,
-        winningColor: true,
-        settledAt: true,
-      },
+      take:    limit,
+      select:  { id: true, roundNumber: true, winningNumber: true, winningColor: true, settledAt: true },
     });
-    return rounds;
   }
 
   async getUserBets(userId: string, limit = 50) {
     return this.prisma.rouletteBet.findMany({
-      where: { userId },
+      where:   { userId },
       orderBy: { createdAt: "desc" },
-      take: limit,
-      include: {
-        round: {
-          select: { roundNumber: true, winningNumber: true, winningColor: true, status: true },
-        },
-      },
+      take:    limit,
+      include: { round: { select: { roundNumber: true, winningNumber: true, winningColor: true, status: true } } },
     });
   }
 }

@@ -1,202 +1,199 @@
 "use client";
-import { motion, useMotionValue, animate } from "framer-motion";
 import { useEffect, useRef } from "react";
+import { motion, useAnimation, useMotionValue } from "framer-motion";
 
-const WHEEL_ORDER = [
-  0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5,
-  24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26,
-];
+// Mini Roulette wheel order (clockwise from top): alternating high/low
+const WHEEL_ORDER = [0, 5, 1, 6, 2, 7, 3, 8, 4, 9];
+const SEG_COUNT   = 10;
+const SEG_DEG     = 360 / SEG_COUNT; // 36° each
 
-const RED = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
-const SLOT_ANGLE = 360 / 37;
-
-function color(n: number) {
-  if (n === 0) return "#0d9b3f";
-  return RED.has(n) ? "#c8102e" : "#1a1a1a";
+function segColor(n: number): string {
+  if (n === 0) return "#00c853";
+  if ([1, 3, 5, 7, 9].includes(n)) return "#e53935";
+  return "#1a1a1a";
+}
+function segGlow(n: number): string {
+  if (n === 0) return "rgba(0,200,83,0.75)";
+  if ([1, 3, 5, 7, 9].includes(n)) return "rgba(229,57,53,0.75)";
+  return "rgba(160,160,160,0.35)";
+}
+function segDark(n: number): string {
+  if (n === 0) return "#007a33";
+  if ([1, 3, 5, 7, 9].includes(n)) return "#7f0000";
+  return "#000";
 }
 
-const SPIN_DURATION = 20;
+function angleForNumber(n: number): number {
+  const idx = WHEEL_ORDER.indexOf(n);
+  return idx * SEG_DEG + SEG_DEG / 2;
+}
 
 interface Props {
+  phase:         "BETTING" | "CLOSED" | "SPINNING" | "SETTLED";
   winningNumber: number | null;
-  spinning: boolean;
-  status: "BETTING" | "SPINNING" | "SETTLED";
+  spinKey:       number;
 }
 
-export function RouletteWheel({ winningNumber, spinning, status }: Props) {
-  const wheelRotation = useMotionValue(0);
-  const ballRotation  = useMotionValue(0);
-  // ballY: Y offset from center. -175 = outer track, -145 = pocket.
-  const ballY = useMotionValue(-175);
-  const lastSpinRef = useRef<number | null>(null);
+const cx = 170, cy = 170, R = 158, RI = 50;
+
+function buildPath(segIndex: number): string {
+  const start = segIndex * SEG_DEG - 90;
+  const end   = start + SEG_DEG;
+  const rad   = (d: number) => (d * Math.PI) / 180;
+  const [x1,y1] = [cx + R  * Math.cos(rad(start)), cy + R  * Math.sin(rad(start))];
+  const [x2,y2] = [cx + R  * Math.cos(rad(end)),   cy + R  * Math.sin(rad(end))];
+  const [x3,y3] = [cx + RI * Math.cos(rad(end)),   cy + RI * Math.sin(rad(end))];
+  const [x4,y4] = [cx + RI * Math.cos(rad(start)), cy + RI * Math.sin(rad(start))];
+  return `M${x1} ${y1} A${R} ${R} 0 0 1 ${x2} ${y2} L${x3} ${y3} A${RI} ${RI} 0 0 0 ${x4} ${y4}Z`;
+}
+function labelXY(segIndex: number): [number, number] {
+  const mid = (segIndex * SEG_DEG + SEG_DEG / 2 - 90) * (Math.PI / 180);
+  const lr  = 106;
+  return [cx + lr * Math.cos(mid), cy + lr * Math.sin(mid)];
+}
+function pinXY(segIndex: number): [number, number] {
+  const deg = (segIndex * SEG_DEG - 90) * (Math.PI / 180);
+  return [cx + R * Math.cos(deg), cy + R * Math.sin(deg)];
+}
+
+export function RouletteWheel({ phase, winningNumber, spinKey }: Props) {
+  const wheelCtrl = useAnimation();
+  const ballCtrl  = useAnimation();
+  const rotVal    = useMotionValue(0);
+  const prevKey   = useRef(-1);
 
   useEffect(() => {
-    wheelRotation.stop();
-    ballRotation.stop();
-    ballY.stop();
+    if (phase !== "SPINNING" || winningNumber === null) return;
+    if (prevKey.current === spinKey) return;
+    prevKey.current = spinKey;
 
-    if (spinning) {
-      if (winningNumber !== null && winningNumber !== lastSpinRef.current) {
-        // ── STOPPING AT RESULT ─────────────────────────────────────────────
-        lastSpinRef.current = winningNumber;
-        const idx = WHEEL_ORDER.indexOf(winningNumber);
-        if (idx < 0) return;
+    const targetAngle = angleForNumber(winningNumber);
+    const totalRot    = 8 * 360 + (360 - targetAngle);
 
-        const currentWheel = wheelRotation.get();
-        const baseWheelSpins = 12;
-        const wheelEndOffset = ((winningNumber * 97 + 211) % 360);
-        const finalWheelDeg = currentWheel - baseWheelSpins * 360 - wheelEndOffset;
+    wheelCtrl.start({
+      rotate: totalRot,
+      transition: { duration: 4.6, ease: [0.04, 0.75, 0.12, 1] },
+    });
 
-        const slotCentreAngle = idx * SLOT_ANGLE + SLOT_ANGLE / 2;
-        const slotPageAngle = slotCentreAngle + finalWheelDeg;
-        const currentBall = ballRotation.get();
-        const baseBallSpins = 22;
-        const diff = ((slotPageAngle - (currentBall % 360)) + 360) % 360;
-        const finalBallDeg = currentBall + baseBallSpins * 360 + diff;
+    ballCtrl.start({
+      y: [-165, -165, -165, -148, -153, -147, -150, -148, -149, -148],
+      transition: {
+        duration: 4.6,
+        times:    [0, 0.38, 0.54, 0.63, 0.72, 0.80, 0.87, 0.92, 0.96, 1],
+        ease: "easeOut",
+      },
+    });
+  }, [phase, winningNumber, spinKey, wheelCtrl, ballCtrl]);
 
-        animate(wheelRotation, finalWheelDeg, { duration: SPIN_DURATION, ease: [0.04, 0.72, 0.12, 1] });
-        animate(ballRotation,  finalBallDeg,  { duration: SPIN_DURATION, ease: [0.03, 0.68, 0.10, 1] });
-
-        // Ball bounce: fast on outer track → bounces off frets → settles in pocket.
-        // 0–60%: stays at outer rim while spinning fast
-        // 60–100%: progressive bouncing drop with decreasing amplitude
-        animate(ballY,
-          [-175, -175, -161, -173, -150, -166, -147, -160, -147, -145],
-          {
-            duration: SPIN_DURATION,
-            times:    [0,    0.60, 0.67, 0.74, 0.80, 0.86, 0.91, 0.95, 0.98, 1.0],
-            ease: ["linear", "easeIn", "easeOut", "easeIn", "easeOut", "easeIn", "easeOut", "easeIn", "easeOut"],
-          }
-        );
-
-      } else if (winningNumber === null) {
-        // ── CONTINUOUS SPINNING ────────────────────────────────────────────
-        const currentWheel = wheelRotation.get();
-        const currentBall  = ballRotation.get();
-
-        animate(wheelRotation, currentWheel - 3600, { duration: 25, ease: "linear", repeat: Infinity });
-        animate(ballRotation,  currentBall  + 5400, { duration: 25, ease: "linear", repeat: Infinity });
-        // Subtle oscillation on outer track (alive feel while spinning)
-        animate(ballY, [-175, -178], { duration: 1.4, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" });
-      }
-    } else if (status === "BETTING") {
-      animate(ballY, -175, { duration: 0.8 });
+  useEffect(() => {
+    if (phase === "BETTING") {
+      ballCtrl.start({ y: -165, transition: { duration: 0.4 } });
     }
-    // SETTLED: ball stays wherever the stopping animation left it (-145)
-  }, [spinning, winningNumber, status, wheelRotation, ballRotation, ballY]);
+  }, [phase, ballCtrl]);
+
+  const isResult = phase === "SETTLED" && winningNumber !== null;
 
   return (
-    <div className="relative w-[440px] h-[440px] mx-auto select-none">
-      {/* Outer rim */}
-      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-700 via-yellow-500 to-yellow-800 shadow-[0_0_60px_rgba(255,180,0,0.4)]" />
-      <div className="absolute inset-[5px] rounded-full bg-gradient-to-br from-amber-900 to-amber-700" />
-      <div className="absolute inset-[12px] rounded-full bg-black" />
+    <div className="relative flex items-center justify-center select-none" style={{ width: 340, height: 340 }}>
+      {/* Outer glow */}
+      <div className="absolute inset-0 rounded-full pointer-events-none" style={{
+        boxShadow: isResult && winningNumber !== null
+          ? `0 0 70px 24px ${segGlow(winningNumber)}, 0 0 140px 50px ${segGlow(winningNumber)}`
+          : "0 0 45px 10px rgba(255,200,0,0.22)",
+        borderRadius: "50%",
+        transition: "box-shadow 0.6s ease",
+      }} />
 
-      {/* Spinning wheel */}
-      <motion.div
-        style={{ rotate: wheelRotation }}
-        className="absolute inset-[16px] rounded-full overflow-hidden"
-      >
-        <svg viewBox="-100 -100 200 200" className="w-full h-full">
+      {/* Spinning wheel SVG */}
+      <motion.div animate={wheelCtrl} style={{ rotate: rotVal, position: "absolute", width: 340, height: 340 }}>
+        <svg viewBox="0 0 340 340" width="340" height="340" style={{ overflow: "visible" }}>
+          <defs>
+            {WHEEL_ORDER.map(n => (
+              <radialGradient key={`g${n}`} id={`sg${n}`} cx="55%" cy="38%" r="72%">
+                <stop offset="0%"   stopColor={segColor(n)} />
+                <stop offset="100%" stopColor={segDark(n)} />
+              </radialGradient>
+            ))}
+            <radialGradient id="hubG" cx="50%" cy="38%" r="62%">
+              <stop offset="0%" stopColor="#303030" />
+              <stop offset="100%" stopColor="#0a0a0a" />
+            </radialGradient>
+          </defs>
+
+          {/* Outer border ring */}
+          <circle cx={cx} cy={cy} r={R+8}  fill="#0a0a0a" stroke="rgba(255,200,0,0.6)" strokeWidth="3" />
+          <circle cx={cx} cy={cy} r={R+2}  fill="none"    stroke="rgba(255,200,0,0.2)" strokeWidth="1" />
+
+          {/* Segments */}
           {WHEEL_ORDER.map((n, i) => {
-            const angle    = i * SLOT_ANGLE;
-            const angleRad = (angle - 90) * (Math.PI / 180);
-            const nextRad  = (angle + SLOT_ANGLE - 90) * (Math.PI / 180);
-            const r = 95;
-            const x1 = Math.cos(angleRad) * r;
-            const y1 = Math.sin(angleRad) * r;
-            const x2 = Math.cos(nextRad) * r;
-            const y2 = Math.sin(nextRad) * r;
-            const midAngle = angle + SLOT_ANGLE / 2 - 90;
-            const midRad   = midAngle * (Math.PI / 180);
-            const tx = Math.cos(midRad) * 75;
-            const ty = Math.sin(midRad) * 75;
-
+            const [lx, ly] = labelXY(i);
+            const [px, py] = pinXY(i);
             return (
               <g key={n}>
-                <path
-                  d={`M 0 0 L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} Z`}
-                  fill={color(n)}
-                  stroke="#f5c518"
-                  strokeWidth="0.4"
-                />
-                <text
-                  x={tx} y={ty}
-                  fill="#fff"
-                  fontSize="9"
-                  fontWeight="bold"
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  transform={`rotate(${midAngle + 90} ${tx} ${ty})`}
-                >
+                <path d={buildPath(i)} fill={`url(#sg${n})`} stroke="rgba(255,200,0,0.3)" strokeWidth="1.2" />
+                {/* Divider pin */}
+                <circle cx={px} cy={py} r={5} fill="#ffcc00" style={{ filter: "drop-shadow(0 0 3px rgba(255,200,0,0.9))" }} />
+                {/* Number */}
+                <text x={lx} y={ly} textAnchor="middle" dominantBaseline="central"
+                  fontSize="14" fontWeight="900" fill="#fff"
+                  style={{ filter: `drop-shadow(0 0 5px ${segGlow(n)})` }}>
                   {n}
                 </text>
               </g>
             );
           })}
-          {/* Center hub */}
-          <circle r="22" fill="url(#hubGrad)" stroke="#f5c518" strokeWidth="1" />
-          <circle r="8"  fill="#f5c518" />
-          <defs>
-            <radialGradient id="hubGrad">
-              <stop offset="0%"   stopColor="#3a2510" />
-              <stop offset="100%" stopColor="#0a0a0a" />
-            </radialGradient>
-          </defs>
+
+          {/* Inner hub layers */}
+          <circle cx={cx} cy={cy} r={RI+4}  fill="#0a0a0a" stroke="rgba(255,200,0,0.45)" strokeWidth="1.5" />
+          <circle cx={cx} cy={cy} r={RI}    fill="url(#hubG)" />
+          <circle cx={cx} cy={cy} r={RI-14} fill="#111" stroke="rgba(255,200,0,0.3)" strokeWidth="1" />
+          <circle cx={cx} cy={cy} r={16}    fill="#ffcc00" />
+          <circle cx={cx} cy={cy} r={7}     fill="#fff" />
+          <circle cx={cx} cy={cy} r={3}     fill="#888" />
         </svg>
       </motion.div>
 
-      {/* Ball — rotates around center at variable radius */}
-      <motion.div
-        style={{ rotate: ballRotation }}
-        className="absolute inset-0 pointer-events-none"
-      >
-        <div className="absolute left-1/2 top-1/2" style={{ width: 0, height: 0 }}>
-          <motion.div
-            className="absolute"
-            style={{ x: -8, y: ballY }}
-          >
-            <div
-              className="w-4 h-4 rounded-full"
-              style={{
-                background: "radial-gradient(circle at 30% 30%, #ffffff, #d4d4d4 55%, #707070)",
-                boxShadow: "0 0 8px rgba(255,255,255,0.9), inset 0 -1px 2px rgba(0,0,0,0.3)",
-              }}
-            />
-          </motion.div>
-        </div>
+      {/* Ball */}
+      <motion.div animate={ballCtrl} initial={{ y: -165 }}
+        style={{ position: "absolute", top: "50%", left: "50%", marginLeft: -8, marginTop: -8, zIndex: 20 }}>
+        <div style={{
+          width: 16, height: 16, borderRadius: "50%",
+          background: "radial-gradient(circle at 33% 33%, #fff 0%, #ccc 55%, #777 100%)",
+          boxShadow: "0 3px 10px rgba(0,0,0,0.9), inset 0 1px 3px rgba(255,255,255,0.7)",
+        }} />
       </motion.div>
 
-      {/* Stationary pointer at top */}
-      <div
-        className="absolute left-1/2 -translate-x-1/2 -top-2 w-0 h-0 z-10"
-        style={{
-          borderLeft:  "12px solid transparent",
-          borderRight: "12px solid transparent",
-          borderTop:   "20px solid #f5c518",
-          filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))",
-        }}
-      />
+      {/* Top pointer */}
+      <div style={{
+        position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
+        width: 0, height: 0,
+        borderLeft: "9px solid transparent", borderRight: "9px solid transparent",
+        borderTop: "22px solid #ffcc00",
+        filter: "drop-shadow(0 2px 6px rgba(255,200,0,0.9))",
+        zIndex: 30,
+      }} />
 
       {/* Result overlay */}
-      {status === "SETTLED" && winningNumber !== null && (
+      {isResult && winningNumber !== null && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 280, damping: 16, delay: 0.1 }}
+          style={{
+            position: "absolute", top: "50%", left: "50%",
+            transform: "translate(-50%, -50%)",
+            zIndex: 40,
+            width: 96, height: 96, borderRadius: "50%",
+            background: segColor(winningNumber),
+            border: "4px solid #ffcc00",
+            boxShadow: `0 0 36px 12px ${segGlow(winningNumber)}, 0 0 0 7px rgba(0,0,0,0.55)`,
+            display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column",
+          }}
         >
-          <div
-            className="bg-black/70 backdrop-blur-sm rounded-full w-32 h-32 flex flex-col items-center justify-center border-4"
-            style={{ borderColor: color(winningNumber) }}
-          >
-            <div className="text-5xl font-bold text-white">{winningNumber}</div>
-            <div
-              className="text-xs uppercase tracking-wider mt-1"
-              style={{ color: color(winningNumber) === "#1a1a1a" ? "#888" : color(winningNumber) }}
-            >
-              {winningNumber === 0 ? "Green" : RED.has(winningNumber) ? "Red" : "Black"}
-            </div>
-          </div>
+          <span style={{ fontSize: 36, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{winningNumber}</span>
+          <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.85)", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 2 }}>
+            {winningNumber === 0 ? "green" : [1,3,5,7,9].includes(winningNumber) ? "red" : "black"}
+          </span>
         </motion.div>
       )}
     </div>

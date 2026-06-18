@@ -235,17 +235,17 @@ function GameControl({ game }: { game: Game }) {
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs text-gray-300">Next spin is forced to land on{" "}
                     <span className="font-black text-violet-300 text-base">{c.forceNumber}</span>{" "}
-                    <span className="text-gray-500">({c.forceNumber === 0 ? "green" : ([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(c.forceNumber) ? "red" : "black")})</span></p>
+                    <span className="text-gray-500">({c.forceNumber === 0 ? "green" : ([1,3,5,7,9].includes(c.forceNumber ?? -1) ? "red" : "black")})</span></p>
                   <button onClick={() => setForceNumber(null)} disabled={forcingNum}
                     className="text-[10px] px-2.5 py-1.5 rounded-lg border border-gray-700 text-gray-400 hover:text-white disabled:opacity-50">Clear</button>
                 </div>
               ) : (
                 <div className="flex gap-2 items-center">
-                  <input type="number" min={0} max={36} value={forceNumInput}
-                    onChange={(e) => setForceNumInput(e.target.value)} placeholder="0–36"
-                    className="w-24 bg-gray-900/60 border border-gray-700 rounded-lg px-2.5 py-1.5 text-sm text-gray-200 outline-none focus:border-violet-400/60" />
+                  <input type="number" min={0} max={9} value={forceNumInput}
+                    onChange={(e) => setForceNumInput(e.target.value)} placeholder="0–9"
+                    className="w-20 bg-gray-900/60 border border-gray-700 rounded-lg px-2.5 py-1.5 text-sm text-gray-200 outline-none focus:border-violet-400/60" />
                   <button
-                    onClick={() => { const v = Number(forceNumInput); if (Number.isInteger(v) && v >= 0 && v <= 36) setForceNumber(v); else setMsg({ ok: false, text: "Enter 0–36" }); }}
+                    onClick={() => { const v = Number(forceNumInput); if (Number.isInteger(v) && v >= 0 && v <= 9) setForceNumber(v); else setMsg({ ok: false, text: "Enter 0–9" }); }}
                     disabled={forcingNum || forceNumInput === ""}
                     className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-violet-600 hover:brightness-110 disabled:opacity-40">
                     {forcingNum ? "…" : "Force Next Spin"}

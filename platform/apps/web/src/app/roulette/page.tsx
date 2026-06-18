@@ -1,685 +1,581 @@
 "use client";
-import Image from "next/image";
-import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Clock, Volume2, VolumeX, RotateCcw, X, Repeat, ArrowLeft, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Volume2, VolumeX, Users, TrendingUp, Clock, Zap, RotateCcw, Trophy } from "lucide-react";
 import Link from "next/link";
 import { getSocket } from "@/lib/socket";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/stores/auth";
 import { RouletteWheel } from "@/components/roulette/RouletteWheel";
-import { BettingTable, MobileBettingTable, type BetType } from "@/components/roulette/BettingTable";
-import { INDIAN_NAMES } from "@/lib/roulette-names";
 import useSWR from "swr";
 
 export const dynamic = "force-dynamic";
 
-const CHIPS = [10, 50, 100, 500, 1000, 5000];
-const RED = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+// ── Mini Roulette config ─────────────────────────────────────────────────────
+const MINI_RED   = new Set([1, 3, 5, 7, 9]);
+const MINI_BLACK = new Set([2, 4, 6, 8]);
+const CHIPS      = [10, 50, 100, 500, 1000, 5000];
 
-const CHIP_GRADIENTS: Record<number, string> = {
-  10:   "linear-gradient(145deg, #ff9a00, #ffcc00)",
-  50:   "linear-gradient(145deg, #ffffff, #b8b8b8)",
-  100:  "linear-gradient(145deg, #38bdf8, #2563eb)",
-  500:  "linear-gradient(145deg, #10b981, #065f46)",
-  1000: "linear-gradient(145deg, #a855f7, #6d28d9)",
-  5000: "linear-gradient(145deg, #ef4444, #991b1b)",
-};
-const CHIP_GLOW: Record<number, string> = {
-  10:   "rgba(255,200,0,0.6)",
-  50:   "rgba(255,255,255,0.6)",
-  100:  "rgba(56,189,248,0.6)",
-  500:  "rgba(16,185,129,0.6)",
-  1000: "rgba(168,85,247,0.6)",
-  5000: "rgba(239,68,68,0.6)",
-};
+type BetType = "number" | "red" | "black" | "green" | "odd" | "even" | "high" | "low";
+type Phase   = "BETTING" | "CLOSED" | "SPINNING" | "SETTLED";
 
 interface CurrentRound {
   id: string; roundNumber: number;
   status: "BETTING" | "SPINNING" | "SETTLED";
+  phase: Phase;
   serverSeedHash: string;
   winningNumber: number | null; winningColor: string | null;
-  phaseEndsAt: number; betsCount: number;
+  phaseEndsAt: number; betsCount: number; totalWagered: number;
 }
-interface HistoryRound {
-  id: string; roundNumber: number;
-  winningNumber: number; winningColor: string; settledAt: string;
+interface HistoryRound { id: string; roundNumber: number; winningNumber: number; winningColor: string; settledAt: string; }
+interface LocalBet { betType: BetType; betValue?: string | null; amount: number; id?: string; }
+interface WinEntry { id: string; number: number; color: string; payout: number; username: string; ts: number; }
+
+const PAYOUTS: Record<BetType, string> = {
+  number: "9×", red: "2×", black: "2.25×", green: "9×",
+  odd: "1.95×", even: "2.25×", high: "1.95×", low: "1.95×",
+};
+
+function numColor(n: number): string {
+  if (n === 0) return "#00c853";
+  return MINI_RED.has(n) ? "#e53935" : "#1a1a1a";
 }
-interface LocalBet { betType: BetType; betValue?: string | null; amount: number; }
-interface WinEntry { id: string; winningNumber: number; winningColor: string; payout: number; username: string; ts: number; }
-
-
-function color(n: number) { return n === 0 ? "#0d9b3f" : RED.has(n) ? "#c8102e" : "#1a1a1a"; }
+function numLabel(n: number) {
+  return n === 0 ? "green" : MINI_RED.has(n) ? "red" : "black";
+}
 function fmt(n: number) { return new Intl.NumberFormat("en-IN").format(n); }
 
-export default function RoulettePage() {
+const CHIP_STYLE: Record<number, { bg: string; color: string; shadow: string }> = {
+  10:   { bg: "linear-gradient(145deg,#ff9a00,#ffcc00)",   color: "#000",   shadow: "0 2px 8px rgba(255,180,0,0.5)" },
+  50:   { bg: "linear-gradient(145deg,#fff,#ccc)",          color: "#000",   shadow: "0 2px 8px rgba(200,200,200,0.5)" },
+  100:  { bg: "linear-gradient(145deg,#38bdf8,#2563eb)",   color: "#fff",   shadow: "0 2px 8px rgba(56,189,248,0.5)" },
+  500:  { bg: "linear-gradient(145deg,#10b981,#065f46)",   color: "#fff",   shadow: "0 2px 8px rgba(16,185,129,0.5)" },
+  1000: { bg: "linear-gradient(145deg,#a855f7,#6d28d9)",   color: "#fff",   shadow: "0 2px 8px rgba(168,85,247,0.5)" },
+  5000: { bg: "linear-gradient(145deg,#ef4444,#991b1b)",   color: "#fff",   shadow: "0 2px 8px rgba(239,68,68,0.5)" },
+};
+
+const FAKE_NAMES = ["Arjun","Priya","Rahul","Sneha","Vijay","Kavitha","Suresh","Ananya","Ravi","Pooja","Kiran","Deepa","Mohan","Nisha","Arun"];
+
+export default function MiniRoulettePage() {
   const user = useAuthStore(s => s.user);
-  const [round, setRound]             = useState<CurrentRound | null>(null);
-  const [chip, setChip]               = useState(50);
-  const [bets, setBets]               = useState<LocalBet[]>([]);
-  const [secondsLeft, setSecondsLeft] = useState(0);
-  const [muted, setMuted]             = useState(false);
-  const [myWin, setMyWin]             = useState<{ winningNumber: number; payout: number } | null>(null);
-  const [globalBetCount, setGlobalBetCount] = useState(0);
-  const [bettingAlert, setBettingAlert] = useState<{ type: "open" | "closed"; key: number } | null>(null);
-  const [errorToast, setErrorToast]   = useState<string | null>(null);
-  const [winFeed, setWinFeed]         = useState<WinEntry[]>([]);
-  const toastTimeoutRef               = useRef<NodeJS.Timeout | null>(null);
-  const prevStatusRef                 = useRef<string | null>(null);
-  const audioCtxRef                   = useRef<AudioContext | null>(null);
-  const spinAudioRef                  = useRef<HTMLAudioElement | null>(null);
-  const lastBetsRef                   = useRef<LocalBet[]>([]);
-  const scrollRef                     = useRef<HTMLDivElement | null>(null);
-  const namePoolRef                   = useRef<string[]>([]);
-  const nameFetchingRef               = useRef(false);
 
-  const fetchNames = useCallback(async () => {
-    if (nameFetchingRef.current) return;
-    nameFetchingRef.current = true;
-    try {
-      const r = await fetch("https://randomuser.me/api/?results=100&inc=login&noinfo");
-      const j = await r.json();
-      const names: string[] = (j.results as any[]).map(u => u.login.username as string);
-      namePoolRef.current = [...namePoolRef.current, ...names];
-    } catch {}
-    nameFetchingRef.current = false;
-  }, []);
+  // Round state
+  const [round, setRound]           = useState<CurrentRound | null>(null);
+  const [phase, setPhase]           = useState<Phase>("BETTING");
+  const [secondsLeft, setSecsLeft]  = useState(0);
+  const [spinKey, setSpinKey]       = useState(0);
+  const [winningNumber, setWinNum]  = useState<number | null>(null);
+  const [winningColor, setWinColor] = useState<string | null>(null);
 
-  const nextName = useCallback((): string => {
-    if (namePoolRef.current.length < 15) fetchNames();
-    if (namePoolRef.current.length > 0) return namePoolRef.current.shift()!;
-    return INDIAN_NAMES[Math.floor(Math.random() * INDIAN_NAMES.length)]! +
-           Math.floor(Math.random() * 90 + 10);
-  }, [fetchNames]);
+  // Betting
+  const [chip, setChip]             = useState(100);
+  const [bets, setBets]             = useState<LocalBet[]>([]);
+  const [myWin, setMyWin]           = useState<{ amount: number; number: number } | null>(null);
 
-  const fakeWinTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // UI
+  const [muted, setMuted]           = useState(false);
+  const [history, setHistory]       = useState<HistoryRound[]>([]);
+  const [winFeed, setWinFeed]       = useState<WinEntry[]>([]);
+  const [playerCount, setPlayerCount] = useState(0);
+  const [totalWagered, setTotalWagered] = useState(0);
+  const [errorMsg, setErrorMsg]     = useState<string | null>(null);
+  const [showMyBets, setShowMyBets] = useState(false);
+  const [myBetsHistory, setMyBetsHistory] = useState<any[]>([]);
 
-  const makeFakeWin = useCallback((): WinEntry => {
-    const n = Math.floor(Math.random() * 37);
-    const wc = n === 0 ? "green" : RED.has(n) ? "red" : "black";
-    const bases = [10, 50, 100, 500, 1000, 5000];
-    const mults = [2, 3, 6, 9, 12, 18, 36];
-    const payout = bases[Math.floor(Math.random() * bases.length)]! *
-                   mults[Math.floor(Math.random() * mults.length)]!;
-    return { id: `fake-${Date.now()}-${Math.random()}`, winningNumber: n,
-             winningColor: wc, payout, username: nextName(), ts: Date.now() };
-  }, [nextName]);
+  const audioCtx  = useRef<AudioContext | null>(null);
+  const spinAudio = useRef<HTMLAudioElement | null>(null);
+  const timerRef  = useRef<NodeJS.Timeout | null>(null);
 
-  const scheduleFakeWin = useCallback(() => {
-    const delay = Math.random() * 3000 + 3000; // 3–6 s
-    fakeWinTimerRef.current = setTimeout(() => {
-      setWinFeed(prev => [makeFakeWin(), ...prev].slice(0, 30));
-      scheduleFakeWin();
-    }, delay);
-  }, [makeFakeWin]);
+  // Wallet
+  const { data: wallet, mutate: mutateWallet } = useSWR<{ balance: number }>("/wallet/summary");
 
-  // Pre-fetch names on mount (no orientation lock — portrait is supported)
-  useEffect(() => {
-    fetchNames();
-    // Seed initial fake wins after 1.2 s (names likely loaded by then)
-    const seed = setTimeout(() => {
-      setWinFeed(Array.from({ length: 15 }, () => makeFakeWin()));
-      scheduleFakeWin();
-    }, 1200);
-    return () => {
-      clearTimeout(seed);
-      if (fakeWinTimerRef.current) clearTimeout(fakeWinTimerRef.current);
-    };
-  }, [fetchNames, makeFakeWin, scheduleFakeWin]);
-
-  const showError = useCallback((msg: string) => {
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    setErrorToast(msg);
-    toastTimeoutRef.current = setTimeout(() => setErrorToast(null), 4500);
-  }, []);
-
-  // Stop all audio on unmount (back navigation)
-  useEffect(() => {
-    return () => {
-      spinAudioRef.current?.pause();
-      spinAudioRef.current = null;
-      audioCtxRef.current?.close().catch(() => {});
-      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    };
-  }, []);
-
-  // Stop spin audio when wheel settles or new betting round starts
-  useEffect(() => {
-    if (round?.status === "SETTLED" || round?.status === "BETTING") {
-      spinAudioRef.current?.pause();
-      spinAudioRef.current = null;
-    }
-  }, [round?.status]);
-
-  const { data: history, mutate: mutateHistory } = useSWR<HistoryRound[]>("/roulette/history?limit=15", { refreshInterval: 30000 });
-  const { data: wallet, mutate: mutateWallet }   = useSWR<{ available: number }>(user ? "/wallet/summary" : null);
-
-  // Pull the authoritative live round from the API. Called on mount, on socket
-  // (re)connect, and when the tab becomes visible again so the wheel/table never
-  // gets stuck on a stale phase after the WS drops (common on mobile).
-  const syncRound = useCallback(() => {
-    api.get<CurrentRound>("/roulette/current").then(r => { if (r.data) setRound(r.data); }).catch(() => {});
-  }, []);
-
-  useEffect(() => { syncRound(); }, [syncRound]);
-
-  useEffect(() => {
-    const s = getSocket();
-    s.emit("roulette:subscribe");
-
-    // Mobile drops the WS when backgrounded or on a network switch; events that
-    // fire while we're offline are lost. Re-subscribe + re-sync on reconnect and
-    // on tab-visible so play resumes immediately instead of waiting a full round.
-    const onConnect = () => { s.emit("roulette:subscribe"); syncRound(); };
-    const onVisible = () => { if (document.visibilityState === "visible") syncRound(); };
-    s.on("connect", onConnect);
-    document.addEventListener("visibilitychange", onVisible);
-
-    const onNewRound = (data: any) => {
-      setRound({ id: data.roundId, roundNumber: data.roundNumber, status: "BETTING",
-        serverSeedHash: data.serverSeedHash, winningNumber: null, winningColor: null,
-        phaseEndsAt: data.phaseEndsAt, betsCount: 0 });
-      setBets([]); setGlobalBetCount(0); setMyWin(null);
-    };
-    const onSpin = (data: any) => {
-      setRound(r => r ? { ...r, status: "SPINNING", winningNumber: data.winningNumber, winningColor: data.winningColor, phaseEndsAt: data.phaseEndsAt } : null);
-      playSound("spin");
-    };
-    const onResult = (data: any) => {
-      setRound(r => r ? { ...r, status: "SETTLED", winningNumber: data.winningNumber, winningColor: data.winningColor, phaseEndsAt: data.phaseEndsAt } : null);
-      mutateHistory(); mutateWallet();
-      // Aggregate wins by user — one card per winning user
-      const byUser = new Map<string, number>();
-      (data.bets as any[]).filter(b => b.isWin && Number(b.payout) > 0).forEach(b => {
-        byUser.set(b.userId, (byUser.get(b.userId) ?? 0) + Number(b.payout));
-      });
-      const winners: WinEntry[] = Array.from(byUser.entries()).map(([uid, payout]) => ({
-        id: `${data.winningNumber}-${uid}-${Date.now()}`,
-        winningNumber: data.winningNumber, winningColor: data.winningColor,
-        payout, username: nextName(), ts: Date.now(),
-      }));
-      if (winners.length > 0) setWinFeed(prev => [...winners, ...prev].slice(0, 30));
-      if (user) {
-        const myBets = (data.bets as any[]).filter(b => b.userId === user.id);
-        const totalPayout = myBets.reduce((sum, b) => sum + Number(b.payout), 0);
-        const anyWin = myBets.some(b => b.isWin);
-        if (anyWin && totalPayout > 0) { setMyWin({ winningNumber: data.winningNumber, payout: totalPayout }); playSound("win"); setTimeout(() => setMyWin(null), 3000); }
-      }
-    };
-    const onBetPlaced = () => setGlobalBetCount(c => c + 1);
-
-    s.on("roulette:newRound", onNewRound);
-    s.on("roulette:spin", onSpin);
-    s.on("roulette:result", onResult);
-    s.on("roulette:betPlaced", onBetPlaced);
-    return () => {
-      s.off("connect", onConnect);
-      document.removeEventListener("visibilitychange", onVisible);
-      s.off("roulette:newRound", onNewRound);
-      s.off("roulette:spin", onSpin);
-      s.off("roulette:result", onResult);
-      s.off("roulette:betPlaced", onBetPlaced);
-    };
-  }, [user, mutateHistory, mutateWallet, nextName, syncRound]);
-
-  useEffect(() => {
-    if (!round) return;
-    const id = setInterval(() => {
-      setSecondsLeft(Math.max(0, Math.ceil((round.phaseEndsAt - Date.now()) / 1000)));
-    }, 200);
-    return () => clearInterval(id);
-  }, [round]);
-
-  useEffect(() => {
-    const currentStatus = round?.status ?? null;
-    const prev = prevStatusRef.current;
-    if (currentStatus !== prev) {
-      if (currentStatus === "BETTING" && prev !== null) { setBettingAlert({ type: "open", key: Date.now() }); setTimeout(() => setBettingAlert(null), 3000); }
-      else if (currentStatus === "SPINNING") { setBettingAlert({ type: "closed", key: Date.now() }); setTimeout(() => setBettingAlert(null), 3000); }
-      prevStatusRef.current = currentStatus;
-    }
-  }, [round?.status]);
-
-  function playSound(kind: "spin" | "win" | "chip") {
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function playChipSound() {
     if (muted) return;
     try {
-      if (kind === "spin") {
-        spinAudioRef.current?.pause();
-        const audio = new Audio("/sounds/spinning.mp3");
-        audio.volume = 0.6;
-        spinAudioRef.current = audio;
-        audio.play().catch(() => {});
-        return;
-      }
-      if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
-      const ctx = audioCtxRef.current;
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
+      const ctx = audioCtx.current ?? new AudioContext();
+      audioCtx.current = ctx;
+      const o = ctx.createOscillator(); const g = ctx.createGain();
       o.connect(g); g.connect(ctx.destination);
-      if (kind === "chip") {
-        o.frequency.value = 1200; g.gain.value = 0.08;
-        o.start(); o.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-        o.stop(ctx.currentTime + 0.15);
-      } else if (kind === "win") {
-        o.frequency.value = 660; g.gain.value = 0.1;
-        o.start(); o.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.3);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-        o.stop(ctx.currentTime + 0.4);
-      }
-    } catch {}
+      o.type = "sine"; o.frequency.setValueAtTime(880, ctx.currentTime);
+      g.gain.setValueAtTime(0.15, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      o.start(); o.stop(ctx.currentTime + 0.12);
+    } catch { /* ignore */ }
   }
 
-  const placeBet = useCallback(async (bet: LocalBet) => {
-    if (!user) { window.location.href = "/auth/login"; return; }
-    if (!round || round.status !== "BETTING") return;
-    setBets(b => [...b, bet]);
-    playSound("chip");
+  function playWinSound() {
+    if (muted) return;
     try {
-      await api.post("/roulette/bet", bet);
+      const ctx = audioCtx.current ?? new AudioContext();
+      audioCtx.current = ctx;
+      [523, 659, 784, 1047].forEach((f, i) => {
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = "sine"; o.frequency.value = f;
+        g.gain.setValueAtTime(0.12, ctx.currentTime + i * 0.1);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.3);
+        o.start(ctx.currentTime + i * 0.1); o.stop(ctx.currentTime + i * 0.1 + 0.3);
+      });
+    } catch { /* ignore */ }
+  }
+
+  function startTimer(endsAt: number) {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      const left = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+      setSecsLeft(left);
+      if (left === 0 && timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    }, 250);
+  }
+
+  const applyRound = useCallback((r: CurrentRound) => {
+    setRound(r);
+    setPhase((r.phase ?? r.status) as Phase);
+    setTotalWagered(r.totalWagered ?? 0);
+    setPlayerCount(r.betsCount ?? 0);
+    if (r.winningNumber != null) { setWinNum(r.winningNumber); setWinColor(r.winningColor); }
+    if (r.phaseEndsAt) startTimer(r.phaseEndsAt);
+  }, []);
+
+  // ── Fetch initial round + history ─────────────────────────────────────────
+  useEffect(() => {
+    api.get("/roulette/current").then(({ data }) => { if (data) applyRound(data); }).catch(() => {});
+    api.get("/roulette/history?limit=20").then(({ data }) => setHistory(data ?? [])).catch(() => {});
+  }, [applyRound]);
+
+  // ── Socket ────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const socket = getSocket();
+    socket.emit("joinRoom", "roulette");
+
+    socket.on("roulette:newRound", (d: any) => {
+      setPhase("BETTING");
+      setWinNum(null); setWinColor(null);
+      setBets([]); setMyWin(null);
+      applyRound({ ...d, status: "BETTING", phase: "BETTING", winningNumber: null, winningColor: null, betsCount: 0, totalWagered: 0 });
+    });
+
+    socket.on("roulette:bettingClosed", (d: any) => {
+      setPhase("CLOSED");
+      if (d.phaseEndsAt) startTimer(d.phaseEndsAt);
+    });
+
+    socket.on("roulette:betPlaced", (d: any) => {
+      setPlayerCount(p => p + 1);
+      setTotalWagered(t => t + (d.amount ?? 0));
+    });
+
+    socket.on("roulette:spin", (d: any) => {
+      setPhase("SPINNING");
+      setWinNum(d.winningNumber);
+      setWinColor(d.winningColor);
+      setSpinKey(k => k + 1);
+      if (d.phaseEndsAt) startTimer(d.phaseEndsAt);
+      if (!muted && spinAudio.current) {
+        spinAudio.current.currentTime = 0;
+        spinAudio.current.play().catch(() => {});
+      }
+    });
+
+    socket.on("roulette:result", (d: any) => {
+      setPhase("SETTLED");
+      if (d.phaseEndsAt) startTimer(d.phaseEndsAt);
+      setHistory(h => [{ id: d.roundId, roundNumber: 0, winningNumber: d.winningNumber, winningColor: d.winningColor, settledAt: new Date().toISOString() }, ...h.slice(0, 19)]);
+
+      // My win?
+      const myBet = (d.bets ?? []).find((b: any) => b.userId === user?.id && b.isWin);
+      if (myBet) {
+        setMyWin({ amount: myBet.payout, number: d.winningNumber });
+        playWinSound();
+        mutateWallet();
+      }
+
+      // Win feed
+      const winners = (d.bets ?? []).filter((b: any) => b.isWin && b.payout > 0);
+      const feedEntries: WinEntry[] = winners.map((b: any) => ({
+        id: b.betId,
+        number: d.winningNumber,
+        color: d.winningColor,
+        payout: b.payout,
+        username: b.userId === user?.id ? (user?.username ?? "You") : FAKE_NAMES[Math.floor(Math.random() * FAKE_NAMES.length)]!,
+        ts: Date.now(),
+      }));
+      if (feedEntries.length === 0 && Math.random() < 0.6) {
+        feedEntries.push({
+          id: `fake-${Date.now()}`, number: d.winningNumber, color: d.winningColor,
+          payout: [200, 450, 900, 1950, 2250][Math.floor(Math.random() * 5)]!,
+          username: FAKE_NAMES[Math.floor(Math.random() * FAKE_NAMES.length)]!,
+          ts: Date.now(),
+        });
+      }
+      setWinFeed(f => [...feedEntries, ...f].slice(0, 8));
+    });
+
+    return () => {
+      socket.off("roulette:newRound");
+      socket.off("roulette:bettingClosed");
+      socket.off("roulette:betPlaced");
+      socket.off("roulette:spin");
+      socket.off("roulette:result");
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, muted]);
+
+  // ── Place bet ─────────────────────────────────────────────────────────────
+  async function placeBet(betType: BetType, betValue?: string) {
+    if (phase !== "BETTING") { setErrorMsg("Betting is closed"); return; }
+    if (!user) { setErrorMsg("Login to bet"); return; }
+    const amount = chip;
+    playChipSound();
+    // Optimistic
+    setBets(b => [...b, { betType, betValue, amount }]);
+    try {
+      await api.post("/roulette/bet", { betType, betValue, amount });
       mutateWallet();
     } catch (e: any) {
-      setBets(b => { const idx = b.findIndex(x => x.betType === bet.betType && x.betValue === bet.betValue && x.amount === bet.amount); return idx >= 0 ? [...b.slice(0, idx), ...b.slice(idx + 1)] : b; });
-      const msg: string = e?.response?.data?.message || "Bet failed";
-      if (typeof msg === "string" && msg.toLowerCase().includes("too many")) return;
-      showError(typeof msg === "string" ? msg : "Bet failed");
+      setBets(b => b.slice(0, -1));
+      setErrorMsg(e?.response?.data?.message ?? "Bet failed");
+      setTimeout(() => setErrorMsg(null), 3000);
     }
-  }, [round, user, mutateWallet, muted]);
+  }
 
-  const totalStaked = bets.reduce((sum, b) => sum + b.amount, 0);
-  const status = round?.status ?? "BETTING";
-  const lastWin = myWin?.payout ?? 0;
+  function clearBets() { setBets([]); }
+  const totalBet = bets.reduce((s, b) => s + b.amount, 0);
 
-  const { hotNumbers, coldNumbers } = useMemo(() => {
-    const freq: Record<number, number> = {};
-    (history ?? []).forEach(h => { freq[h.winningNumber] = (freq[h.winningNumber] ?? 0) + 1; });
-    const sorted = Array.from({ length: 37 }, (_, i) => i).map(n => ({ n, count: freq[n] ?? 0 }));
-    return { hotNumbers: [...sorted].sort((a, b) => b.count - a.count).slice(0, 4), coldNumbers: [...sorted].sort((a, b) => a.count - b.count).slice(0, 4) };
-  }, [history]);
+  // Summarise my bets for display
+  const betSummary = bets.reduce<Record<string, number>>((acc, b) => {
+    const key = b.betType + (b.betValue != null ? `:${b.betValue}` : "");
+    acc[key] = (acc[key] ?? 0) + b.amount;
+    return acc;
+  }, {});
 
-  const undoBet    = () => setBets(b => b.slice(0, -1));
-  const clearBets  = () => setBets([]);
+  const canBet = phase === "BETTING";
 
-  const placeBatch = useCallback(async (newBets: LocalBet[]) => {
-    if (!user || !newBets.length) return;
-    setBets(b => [...b, ...newBets]);
-    try { await api.post("/roulette/bets-batch", { bets: newBets }); mutateWallet(); }
-    catch (e: any) { setBets(b => b.slice(0, b.length - newBets.length)); showError(e?.response?.data?.message || "Batch bet failed"); }
-  }, [user, mutateWallet, showError]);
-
-  const repeatLastBets = useCallback(() => { if (!lastBetsRef.current.length || status !== "BETTING") return; placeBatch(lastBetsRef.current.map(b => ({ ...b }))); }, [placeBatch, status]);
-  const doubleBets     = useCallback(() => { if (!bets.length || status !== "BETTING") return; placeBatch(bets.map(b => ({ ...b }))); }, [bets, placeBatch, status]);
-
-  useEffect(() => { if (status === "SPINNING" && bets.length > 0) lastBetsRef.current = [...bets]; }, [status, bets]);
-
-  // Mobile auto-scroll: when betting opens, scroll the body to the bottom so
-  // the betting table is in view; when the wheel starts spinning, jump back to
-  // the top so the wheel is the focus. Desktop is unaffected.
-  useEffect(() => {
-    if (typeof window === "undefined" || window.innerWidth >= 768) return;
-    const el = scrollRef.current;
-    if (!el) return;
-    if (status === "BETTING") {
-      // Wait a tick so layout (wheel-shrink animation) settles before scrolling.
-      const t = setTimeout(() => el.scrollTo({ top: el.scrollHeight, behavior: "smooth" }), 180);
-      return () => clearTimeout(t);
-    }
-    if (status === "SPINNING") {
-      el.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }, [status]);
-
-  // Chip + control button styles injected once
-  const chipStyle = `
-    .casino-chip { width:42px;height:42px;border-radius:50%;position:relative;cursor:pointer;transition:all .25s;display:flex;justify-content:center;align-items:center;overflow:hidden; }
-    @media(min-width:768px){ .casino-chip{width:58px;height:58px;} }
-    .casino-chip:hover { transform:translateY(-3px) scale(1.08); }
-    .casino-chip.active { transform:scale(1.1);animation:chipPulse 1s infinite; }
-    .casino-chip::before { content:'';position:absolute;inset:0;border-radius:50%;padding:3px;background:repeating-conic-gradient(#fff 0deg 18deg,transparent 18deg 36deg);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#fff calc(100% - 7px));mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#fff calc(100% - 7px)); }
-    @media(min-width:768px){ .casino-chip::before{padding:4px;-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 10px),#fff calc(100% - 10px));mask:radial-gradient(farthest-side,transparent calc(100% - 10px),#fff calc(100% - 10px));} }
-    .casino-chip::after { content:'';position:absolute;width:65%;height:65%;background:rgba(255,255,255,0.08);border-radius:50%;border:1.5px solid rgba(255,255,255,0.15);z-index:2; }
-    .casino-chip span { position:relative;z-index:3;font-size:13px;font-weight:700;color:white;text-shadow:0 0 6px rgba(255,255,255,0.6); }
-    @media(min-width:768px){ .casino-chip span{font-size:16px;} }
-    @keyframes chipPulse { 0%{box-shadow:0 0 10px currentColor}50%{box-shadow:0 0 22px currentColor}100%{box-shadow:0 0 10px currentColor} }
-    @keyframes tickerScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-    @keyframes rlWheelSpin { to { transform: rotate(360deg); } }
-    .rl-wheel-spin { animation: rlWheelSpin 3.5s linear infinite; }
-
-    /* ── Landscape mobile compact layout ── */
-    @media (orientation:landscape) and (max-height:520px) {
-      .rl-header { padding:3px 10px!important; }
-      .rl-bottom-bar { padding:3px 10px!important; }
-      .rl-casino-stage { padding:3px 4px 2px!important; }
-      .rl-status-row { margin-bottom:3px!important; }
-      .rl-layout { display:grid!important; grid-template-columns:168px 1fr!important; gap:6px!important; align-items:start; }
-      .wheel-outer { width:152px!important; height:152px!important; }
-      .wheel-inner { transform:scale(0.345)!important; }
-      .rl-below-wheel { height:22px!important; }
-      .rl-scroll { overflow:hidden!important; }
-      .rl-controls { overflow-y:auto; max-height:calc(100dvh - 74px); padding-right:2px; }
-      .rl-live-feed { display:none!important; }
-      .casino-chip { width:34px!important; height:34px!important; }
-      .casino-chip span { font-size:11px!important; }
-      .rl-ctrl { width:34px!important; height:34px!important; font-size:14px!important; }
-    }
-    .rl-ctrl { width:42px;height:42px;border:none;outline:none;border-radius:10px;background:#0f172a;color:white;font-size:16px;font-weight:700;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 1px rgba(255,255,255,.05),0 0 10px rgba(0,0,0,.4); }
-    @media(min-width:768px){ .rl-ctrl{width:52px;height:52px;font-size:20px;} }
-    .rl-ctrl:hover:not(:disabled){transform:translateY(-2px);background:#1e293b;}
-    .rl-ctrl:active:not(:disabled){transform:scale(0.95);}
-    .rl-ctrl:disabled{opacity:.35;cursor:not-allowed;}
-  `;
-
+  // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="h-[100dvh] bg-[#0F1923] text-white flex flex-col font-sans w-full overflow-hidden">
-      <style>{chipStyle}</style>
+    <div className="min-h-screen bg-[#0c0c14] text-white flex flex-col overflow-x-hidden" style={{ fontFamily: "'Inter','Segoe UI',sans-serif" }}>
+      <audio ref={spinAudio} src="/sounds/roulette-spin.mp3" preload="none" />
 
-      {/* ── Header ── */}
-      <header className="rl-header px-3 py-2 flex items-center justify-between border-b border-gray-800 bg-[#0f212e] shrink-0">
-        <Link href="/" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition font-bold text-xs">
-          <ArrowLeft size={15} /><span>Back</span>
+      {/* ── Top Bar ─────────────────────────────────────────────────────────── */}
+      <div className="sticky top-0 z-50 flex items-center gap-3 px-4 py-3 border-b border-white/5"
+        style={{ background: "rgba(12,12,20,0.95)", backdropFilter: "blur(12px)" }}>
+        <Link href="/casino" className="flex items-center gap-1.5 text-gray-400 hover:text-white transition">
+          <ArrowLeft size={16} /> <span className="text-sm hidden sm:inline">Casino</span>
         </Link>
-        <div className="font-bold tracking-widest text-xs text-yellow-400 uppercase">☸ Roulette</div>
-        <div className="flex items-center gap-1 bg-[#1a2c38] px-2 py-1 rounded-lg border border-gray-700">
-          <span className="text-xs font-bold text-white">
-            ₹{wallet ? Number(wallet.available).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
+        <div className="flex-1 text-center">
+          <span className="font-black text-base tracking-tight" style={{ background: "linear-gradient(90deg,#ff6b6b,#ffd700,#00e676)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            Mini Roulette
           </span>
         </div>
-      </header>
+        <div className="flex items-center gap-3">
+          {wallet && (
+            <span className="text-sm font-bold text-yellow-400">₹{fmt(wallet.balance)}</span>
+          )}
+          <button onClick={() => setMuted(m => !m)} className="text-gray-400 hover:text-white transition">
+            {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          </button>
+        </div>
+      </div>
 
-      {/* ── Scrollable body ── */}
-      <div ref={scrollRef} className="rl-scroll flex-1 overflow-y-auto overflow-x-hidden">
+      {/* ── Live stats strip ─────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-center gap-6 px-4 py-2 border-b border-white/5" style={{ background: "rgba(255,255,255,0.02)" }}>
+        <Stat Icon={Users}      label="Players"  value={playerCount} />
+        <Stat Icon={TrendingUp} label="Pool"     value={`₹${fmt(totalWagered)}`} />
+        <Stat Icon={Clock}      label="Round"    value={round?.roundNumber ?? "—"} />
+        <PhaseChip phase={phase} seconds={secondsLeft} />
+      </div>
 
-        {/* Casino stage */}
-        <div
-          className="rl-casino-stage px-2 pt-2 pb-3"
-          style={{ background: "radial-gradient(ellipse at top, #1a1a20 0%, #0a0a0c 70%), repeating-linear-gradient(60deg,rgba(255,255,255,0.012) 0 1px,transparent 1px 28px), repeating-linear-gradient(-60deg,rgba(255,255,255,0.012) 0 1px,transparent 1px 28px)" }}
-        >
+      {/* ── Main layout ──────────────────────────────────────────────────────── */}
+      <div className="flex flex-col lg:flex-row flex-1 gap-0 lg:gap-4 px-2 lg:px-6 py-4 lg:py-6 max-w-6xl mx-auto w-full">
 
-          {/* Status row */}
-          <div className="rl-status-row flex items-center justify-between mb-2 gap-1">
-            <div className="flex items-center gap-1.5">
-              <div className={`px-2 py-0.5 rounded text-[9px] uppercase tracking-widest font-bold border ${
-                status === "BETTING"  ? "bg-emerald-900/60 border-emerald-500/50 text-emerald-300" :
-                status === "SPINNING" ? "bg-red-900/60 border-red-500/50 text-red-300 animate-pulse" :
-                                        "bg-yellow-900/60 border-yellow-500/50 text-yellow-300"
-              }`}>
-                ● {status === "BETTING" ? "Betting" : status === "SPINNING" ? "Spinning" : "Result"}
-              </div>
-              <span className="text-white/40 text-[9px]">#{round?.roundNumber ?? "—"}</span>
-            </div>
+        {/* LEFT: Wheel + History */}
+        <div className="flex flex-col items-center gap-4 lg:w-[380px] lg:shrink-0">
+          <div className="relative">
+            <RouletteWheel phase={phase} winningNumber={winningNumber} spinKey={spinKey} />
 
-            {/* Hot/Cold — hidden on small, shown md+ */}
-            <div className="hidden md:flex items-center gap-3 bg-black/40 border border-white/10 rounded px-3 py-1">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[9px] uppercase tracking-widest text-orange-400">Hot</span>
-                {hotNumbers.slice(0, 4).map(({ n }) => (
-                  <div key={`hot-${n}`} className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: color(n), border: "1.5px solid #fca5a5" }}>{n}</div>
-                ))}
-              </div>
-              <div className="w-px h-5 bg-white/15" />
-              <div className="flex items-center gap-1.5">
-                <span className="text-[9px] uppercase tracking-widest text-blue-400">Cold</span>
-                {coldNumbers.slice(0, 4).map(({ n }) => (
-                  <div key={`cold-${n}`} className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: color(n), border: "1.5px solid rgba(255,255,255,0.4)" }}>{n}</div>
-                ))}
-              </div>
-            </div>
+            {/* Big win overlay */}
+            <AnimatePresence>
+              {myWin && phase === "SETTLED" && (
+                <motion.div
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
+                >
+                  <div className="rounded-2xl border-2 border-yellow-400 px-6 py-4 text-center"
+                    style={{ background: "rgba(0,0,0,0.85)", boxShadow: "0 0 40px rgba(255,200,0,0.5)" }}>
+                    <div className="text-xs uppercase tracking-widest text-yellow-400 mb-1">You Won!</div>
+                    <div className="text-4xl font-black text-yellow-300">+₹{fmt(myWin.amount)}</div>
+                    <div className="text-sm text-gray-400 mt-1">Number {myWin.number}</div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
-            <div className="bg-black/60 rounded px-2 py-1 text-[10px] text-white/80 border border-white/10 flex items-center gap-1">
-              <Clock size={9} />
-              <span className="font-bold tabular-nums text-sm" style={{ color: status === "BETTING" ? (secondsLeft <= 5 ? "#ef4444" : "#facc15") : "#fff" }}>
-                {secondsLeft}s
-              </span>
+          {/* Recent results history */}
+          <div className="w-full">
+            <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-2 text-center">Recent Results</div>
+            <div className="flex flex-wrap gap-1.5 justify-center">
+              {history.slice(0, 20).map((h, i) => (
+                <div key={h.id ?? i}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all"
+                  style={{
+                    background: numColor(h.winningNumber),
+                    borderColor: h.winningColor === "green" ? "#00c853" : h.winningColor === "red" ? "#ff5252" : "#555",
+                    color: "#fff",
+                    boxShadow: i === 0 ? `0 0 10px 3px ${numColor(h.winningNumber)}` : "none",
+                  }}>
+                  {h.winningNumber}
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* ── Two-column on md+, single column on mobile ── */}
-          <div className="rl-layout flex flex-col md:grid md:grid-cols-[286px_1fr] lg:grid-cols-[360px_1fr] gap-2 md:gap-4">
-
-            {/* Wheel column */}
-            <div className="flex flex-col items-center gap-2">
-              {/* Wheel — 242px on mobile, 286px md, 360px lg */}
-              <div
-                className="wheel-outer relative overflow-hidden shrink-0 rounded-full"
-                style={{
-                  // Mobile only — desktop CSS (!important) overrides these.
-                  // SPINNING: zoom in. BETTING/SETTLED: compact 80% so the table fits on one screen.
-                  width: status === "SPINNING" ? 320 : 160,
-                  height: status === "SPINNING" ? 320 : 160,
-                  transition: "width .35s ease, height .35s ease",
-                }}
-              >
-                <div
-                  className="wheel-inner absolute"
-                  style={{
-                    width: 440, height: 440,
-                    transform: `scale(${(status === "SPINNING" ? 320 : 160) / 440})`,
-                    transformOrigin: "top left",
-                    transition: "transform .35s ease",
-                  }}
-                >
-                  <RouletteWheel
-                    winningNumber={round?.winningNumber ?? null}
-                    spinning={status === "SPINNING"}
-                    status={status}
-                  />
-                </div>
-
-                {/* Spinning roulette wheel overlay — continuous CSS spin while the round spins */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Image
-                    src="/images/rou.png"
-                    alt="Roulette Wheel"
-                    width={200}
-                    height={200}
-                    priority
-                    className={status === "SPINNING" ? "rl-wheel-spin" : ""}
-                    style={{ pointerEvents: "none" }}
-                  />
-                </div>
-              </div>
-
-              {/* Below-wheel area: win amount for 3s, otherwise winning number badge */}
-              <div className="rl-below-wheel h-10 flex items-center justify-center">
-                <AnimatePresence mode="wait">
-                  {myWin && myWin.payout > 0 ? (
-                    <motion.div
-                      key="win"
-                      initial={{ scale: 0.6, opacity: 0, y: 8 }}
-                      animate={{ scale: 1, opacity: 1, y: 0 }}
-                      exit={{ scale: 0.8, opacity: 0, y: -6 }}
-                      transition={{ type: "spring", stiffness: 420, damping: 26 }}
-                      className="flex items-center gap-2 px-4 py-1.5 rounded-full border-2 border-yellow-400/70"
-                      style={{
-                        background: "linear-gradient(135deg, rgba(120,53,15,0.95), rgba(161,72,14,0.95))",
-                        boxShadow: "0 0 20px rgba(234,179,8,0.45)",
-                      }}
-                    >
-                      <Trophy size={14} className="text-yellow-300 shrink-0" />
-                      <span className="text-base font-extrabold text-yellow-200 tabular-nums">
-                        +{fmt(myWin.payout)}
-                      </span>
-                    </motion.div>
-                  ) : status === "SETTLED" && round?.winningNumber != null ? (
-                    <motion.div
-                      key="num"
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex items-center gap-2"
-                    >
-                      <div className="px-4 py-1 rounded-full font-extrabold text-base text-white shadow-lg" style={{ background: color(round.winningNumber), minWidth: 48, textAlign: "center" }}>
-                        {round.winningNumber}
-                      </div>
-                      <span className="text-[10px] text-white/50 uppercase tracking-widest">{round.winningColor}</span>
-                    </motion.div>
-                  ) : null}
-                </AnimatePresence>
-              </div>
+          {/* Win feed */}
+          <div className="w-full rounded-xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
+            <div className="px-3 py-2 border-b border-white/5 text-[10px] uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
+              <Trophy size={10} className="text-yellow-400" /> Recent Winners
             </div>
-
-            {/* Controls column */}
-            <div className="rl-controls space-y-2">
-
-              {/* Betting table — vertical portrait on mobile, full table on desktop */}
-              <div className="mt-0 md:mt-4">
-                <div className="md:hidden">
-                  <MobileBettingTable chip={chip} bets={bets} disabled={status !== "BETTING"} onPlaceBet={placeBet} />
-                </div>
-                <div className="hidden md:block overflow-x-auto">
-                  <BettingTable chip={chip} bets={bets} disabled={status !== "BETTING"} onPlaceBet={placeBet} />
-                </div>
-              </div>
-
-              {/* Last results */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-[9px] uppercase tracking-wider text-white/40 shrink-0">Last:</span>
-                <div className="flex gap-1 overflow-x-auto flex-1 no-scrollbar">
-                  {(history ?? []).slice(0, 20).map(h => (
-                    <div key={h.id} className="shrink-0 w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold text-white" style={{ background: color(h.winningNumber) }}>
-                      {h.winningNumber}
+            <div className="divide-y divide-white/5 max-h-40 overflow-y-auto">
+              <AnimatePresence>
+                {winFeed.length === 0 ? (
+                  <div className="px-3 py-4 text-center text-xs text-gray-600">Waiting for results…</div>
+                ) : winFeed.map(w => (
+                  <motion.div key={w.id}
+                    initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
+                    className="flex items-center justify-between px-3 py-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black"
+                        style={{ background: numColor(w.number), color: "#fff" }}>{w.number}</div>
+                      <span className="text-gray-300 font-medium">{w.username}</span>
                     </div>
-                  ))}
-                  {(!history || history.length === 0) && <span className="text-[9px] text-white/30">No history yet</span>}
-                </div>
-              </div>
-
-              {/* Chip selector */}
-              <div className="bg-black/30 rounded-lg px-2 py-2 border border-white/10">
-                <div className="text-[9px] uppercase tracking-wider text-white/50 mb-1.5">Chip Value</div>
-                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                  {CHIPS.map(c => (
-                    <button key={c} onClick={() => setChip(c)} className={`casino-chip shrink-0 ${chip === c ? "active" : ""}`}
-                      style={{ background: CHIP_GRADIENTS[c] ?? CHIP_GRADIENTS[10], boxShadow: chip === c ? `0 0 18px ${CHIP_GLOW[c] ?? "rgba(255,200,0,0.6)"}` : `0 0 10px ${(CHIP_GLOW[c] ?? "rgba(255,200,0,0.6)").replace("0.6","0.25")}` }}>
-                      <span>{c >= 1000 ? `${c/1000}k` : c}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5">
-                  <button onClick={doubleBets}     disabled={status !== "BETTING" || bets.length === 0} title="Double" className="rl-ctrl">×2</button>
-                  <button onClick={undoBet}         disabled={status !== "BETTING" || bets.length === 0} title="Undo"   className="rl-ctrl"><RotateCcw size={16} /></button>
-                  <button onClick={clearBets}       disabled={status !== "BETTING" || bets.length === 0} title="Clear"  className="rl-ctrl"><X size={18} /></button>
-                  <button onClick={repeatLastBets}  disabled={status !== "BETTING" || lastBetsRef.current.length === 0} title="Repeat" className="rl-ctrl"><Repeat size={16} /></button>
-                </div>
-                <div className="text-right text-[9px] text-white/60 space-y-0.5">
-                  <div><span className="text-white/40">Staked:</span> <span className="font-bold text-yellow-400">{fmt(totalStaked)}</span></div>
-                  <div><span className="text-white/40">Bets:</span> <span className="font-bold text-white">{bets.length}</span></div>
-                </div>
-              </div>
+                    <span className="text-emerald-400 font-bold">+₹{fmt(w.payout)}</span>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           </div>
         </div>
 
-        {/* ── Live Wins Ticker ── */}
-        <div className="rl-live-feed border-t border-white/10 bg-black/50 py-2">
-          <div className="flex items-center gap-2 px-3 mb-1.5">
-            <span className="text-[8px] uppercase tracking-[0.18em] text-white/35 font-semibold">Live Wins</span>
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+        {/* RIGHT: Betting panel */}
+        <div className="flex-1 flex flex-col gap-4 mt-4 lg:mt-0">
+
+          {/* Error toast */}
+          <AnimatePresence>
+            {errorMsg && (
+              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                className="rounded-lg px-4 py-2.5 text-sm font-medium text-red-300 border border-red-500/30"
+                style={{ background: "rgba(239,68,68,0.08)" }}>
+                {errorMsg}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Chip selector */}
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-2">Select Chip</div>
+            <div className="flex gap-2 flex-wrap">
+              {CHIPS.map(c => {
+                const s = CHIP_STYLE[c]!;
+                return (
+                  <button key={c} onClick={() => setChip(c)}
+                    className="relative rounded-full font-black text-xs transition-all duration-150"
+                    style={{
+                      width: 48, height: 48,
+                      background: s.bg, color: s.color,
+                      boxShadow: chip === c ? `0 0 0 3px #ffcc00, ${s.shadow}` : s.shadow,
+                      transform: chip === c ? "scale(1.15)" : "scale(1)",
+                      border: chip === c ? "2px solid #ffcc00" : "2px solid transparent",
+                    }}>
+                    {c >= 1000 ? `${c/1000}K` : c}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          {winFeed.length === 0 ? null : (
-            <div className="overflow-hidden">
-              <div
-                className="flex gap-2 px-2"
-                style={{
-                  width: "max-content",
-                  animation: `tickerScroll ${Math.max(winFeed.length * 4, 16)}s linear infinite`,
-                }}
-              >
-                {[...winFeed, ...winFeed].map((w, i) => (
-                  <div
-                    key={`${w.id}-${i}`}
-                    className="shrink-0 flex items-center gap-2 rounded-xl px-3 py-1.5 border border-white/10"
-                    style={{ background: "rgba(255,255,255,0.05)" }}
-                  >
-                    <span className="text-[11px] font-semibold text-white/70 truncate max-w-[90px]">{w.username}</span>
-                    <span className="text-sm font-extrabold text-emerald-400 tabular-nums whitespace-nowrap">+{fmt(w.payout)}</span>
+
+          {/* Color / chance bets */}
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-2">Color & Chance</div>
+            <div className="grid grid-cols-3 gap-2">
+              <BetBtn label="RED"   sub="2×"     color="#e53935" onClick={() => placeBet("red")}   disabled={!canBet} glowColor="rgba(229,57,53,0.6)" />
+              <BetBtn label="BLACK" sub="2.25×"  color="#444"    onClick={() => placeBet("black")} disabled={!canBet} glowColor="rgba(100,100,100,0.5)" />
+              <BetBtn label="GREEN 0" sub="9×"   color="#00c853" onClick={() => placeBet("green","0")} disabled={!canBet} glowColor="rgba(0,200,83,0.6)" />
+            </div>
+            <div className="grid grid-cols-4 gap-2 mt-2">
+              <BetBtn label="ODD"  sub="1.95×" color="#7c3aed" onClick={() => placeBet("odd")}  disabled={!canBet} glowColor="rgba(124,58,237,0.5)" />
+              <BetBtn label="EVEN" sub="2.25×" color="#7c3aed" onClick={() => placeBet("even")} disabled={!canBet} glowColor="rgba(124,58,237,0.5)" />
+              <BetBtn label="LOW 0-4" sub="1.95×" color="#0ea5e9" onClick={() => placeBet("low")}  disabled={!canBet} glowColor="rgba(14,165,233,0.5)" />
+              <BetBtn label="HIGH 5-9" sub="1.95×" color="#0ea5e9" onClick={() => placeBet("high")} disabled={!canBet} glowColor="rgba(14,165,233,0.5)" />
+            </div>
+          </div>
+
+          {/* Number buttons 0-9 */}
+          <div>
+            <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-2">Straight Up — 9×</div>
+            <div className="grid grid-cols-5 gap-2">
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                <button key={n} onClick={() => placeBet("number", String(n))} disabled={!canBet}
+                  className="relative h-14 rounded-xl font-black text-xl transition-all duration-150 border-2 flex flex-col items-center justify-center"
+                  style={{
+                    background: numColor(n),
+                    borderColor: canBet ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.05)",
+                    opacity: canBet ? 1 : 0.6,
+                    boxShadow: canBet ? `0 4px 16px ${numColor(n)}55` : "none",
+                    cursor: canBet ? "pointer" : "not-allowed",
+                  }}>
+                  <span className="text-white leading-none">{n}</span>
+                  {betSummary[`number:${n}`] && (
+                    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[9px] font-black rounded-full px-1 leading-4">
+                      ₹{betSummary[`number:${n}`]}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom amount + controls */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 bg-white/5">
+              <span className="text-xs text-gray-400">Custom</span>
+              <span className="text-yellow-400 text-sm font-black">₹</span>
+              <input type="number" min={10} placeholder="amount"
+                className="w-24 bg-transparent text-sm text-white outline-none"
+                onChange={e => { const v = Number(e.target.value); if (v >= 10) setChip(v); }} />
+            </div>
+            {bets.length > 0 && (
+              <button onClick={clearBets} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-500/30 text-red-400 text-xs hover:bg-red-500/10 transition">
+                <RotateCcw size={13} /> Clear
+              </button>
+            )}
+          </div>
+
+          {/* Current bets summary */}
+          {bets.length > 0 && (
+            <div className="rounded-xl border border-white/8 p-3" style={{ background: "rgba(255,255,255,0.03)" }}>
+              <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-2">Your Bets</div>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {Object.entries(betSummary).map(([key, amt]) => {
+                  const [type, val] = key.split(":");
+                  return (
+                    <span key={key} className="rounded-full px-2.5 py-1 text-[11px] font-bold border border-white/10 text-gray-200" style={{ background: "rgba(255,255,255,0.06)" }}>
+                      {type === "number" ? `#${val}` : type?.toUpperCase()} · ₹{fmt(amt)}
+                    </span>
+                  );
+                })}
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500">{bets.length} bet{bets.length > 1 ? "s" : ""}</span>
+                <span className="font-black text-yellow-400">Total: ₹{fmt(totalBet)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* My bets history toggle */}
+          <button onClick={async () => {
+            setShowMyBets(v => !v);
+            if (!showMyBets && user) {
+              const { data } = await api.get("/roulette/my-bets?limit=20").catch(() => ({ data: [] }));
+              setMyBetsHistory(data ?? []);
+            }
+          }} className="text-xs text-gray-500 hover:text-gray-300 transition text-left flex items-center gap-1.5">
+            <Zap size={11} className="text-yellow-400" />
+            {showMyBets ? "Hide" : "Show"} my bet history
+          </button>
+
+          {showMyBets && (
+            <div className="rounded-xl border border-white/8 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
+              <div className="divide-y divide-white/5 max-h-56 overflow-y-auto">
+                {myBetsHistory.length === 0 ? (
+                  <div className="px-4 py-6 text-center text-xs text-gray-600">No bets yet</div>
+                ) : myBetsHistory.map((b: any) => (
+                  <div key={b.id} className="flex items-center justify-between px-3 py-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      {b.round?.winningNumber != null && (
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px]"
+                          style={{ background: numColor(b.round.winningNumber), color: "#fff" }}>
+                          {b.round.winningNumber}
+                        </div>
+                      )}
+                      <span className="text-gray-400">{b.betType}{b.betValue ? ` #${b.betValue}` : ""}</span>
+                      <span className="text-gray-600">₹{fmt(Number(b.amount))}</span>
+                    </div>
+                    <span className={b.isWin ? "text-emerald-400 font-bold" : "text-red-400"}>
+                      {b.isWin ? `+₹${fmt(b.payout)}` : "-₹"+fmt(Number(b.amount))}
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
           )}
-        </div>
 
-        {!user && (
-          <div className="bg-red-900/30 border-t border-red-700/40 p-2 text-center text-xs">
-            Please <a href="/auth/login" className="underline text-yellow-400 font-semibold">log in</a> to place bets.
+          {/* Payout table */}
+          <div className="rounded-xl border border-white/6 overflow-hidden" style={{ background: "rgba(255,255,255,0.02)" }}>
+            <div className="px-3 py-2 text-[10px] uppercase tracking-widest text-gray-500 border-b border-white/5">Payouts</div>
+            <div className="grid grid-cols-4 gap-0 text-xs divide-x divide-white/5">
+              {(Object.entries(PAYOUTS) as [BetType, string][]).map(([type, pay]) => (
+                <div key={type} className="flex flex-col items-center py-2 px-1">
+                  <span className="text-gray-400 font-medium uppercase text-[10px]">{type}</span>
+                  <span className="text-yellow-400 font-black mt-0.5">{pay}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        )}
-      </div>
-
-      {/* ── Bottom bar — outside scroll, always pinned to viewport bottom ── */}
-      <div className="rl-bottom-bar bg-[#0a0a0c] px-3 py-2 border-t border-white/10 flex items-center justify-between gap-2 shrink-0">
-        <button onClick={() => setMuted(m => !m)} className="flex items-center gap-1 text-white/60 hover:text-white transition shrink-0">
-          {muted ? <VolumeX size={13} /> : <Volume2 size={13} />}
-          <span className="text-[9px] hidden sm:inline">{muted ? "Muted" : "Sound"}</span>
-        </button>
-
-        <div className="flex items-center gap-3 md:gap-6 text-[10px] uppercase tracking-widest">
-          <div><span className="text-white/40">Cash: </span><span className="text-yellow-400 font-bold">{user ? fmt(Math.floor(wallet?.available ?? 0)) : "—"}</span></div>
-          <div><span className="text-white/40">Bet: </span><span className="text-white font-bold">{fmt(totalStaked)}</span></div>
-          <div><span className="text-white/40">Win: </span><span className="text-emerald-400 font-bold">{fmt(lastWin)}</span></div>
         </div>
-
-        <span className="text-[9px] text-white/40 shrink-0 hidden md:block">{globalBetCount} bets</span>
       </div>
-
-      {/* ── Desktop wheel sizing override (md+) ── */}
-      <style>{`
-        @media(min-width:768px){
-          .wheel-outer { width:286px!important; height:286px!important; }
-          .wheel-inner { transform:scale(0.65) !important; }
-        }
-        @media(min-width:1024px){
-          .wheel-outer { width:360px!important; height:360px!important; }
-          .wheel-inner { transform:scale(0.818) !important; }
-        }
-      `}</style>
-
-      {/* ── Betting alert toast ── */}
-      <AnimatePresence mode="wait">
-        {bettingAlert && (
-          <motion.div key={bettingAlert.key} initial={{ opacity:0,y:-60,scale:.9 }} animate={{ opacity:1,y:0,scale:1 }} exit={{ opacity:0,y:-40,scale:.95 }} transition={{ type:"spring",stiffness:400,damping:28 }}
-            className="fixed top-14 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
-            <div className={`flex items-center gap-3 px-5 py-2.5 rounded-2xl shadow-2xl border-2 font-bold backdrop-blur-md ${
-              bettingAlert.type === "open" ? "bg-emerald-900/90 border-emerald-400 text-emerald-200" : "bg-red-900/90 border-red-400 text-red-200"
-            }`}>
-              <span className="text-xl">{bettingAlert.type === "open" ? "🟢" : "🔴"}</span>
-              <div>
-                <div className={`text-sm font-extrabold uppercase tracking-widest ${bettingAlert.type === "open" ? "text-emerald-300" : "text-red-300"}`}>
-                  {bettingAlert.type === "open" ? "Betting Open" : "No More Bets"}
-                </div>
-                <div className="text-[10px] font-normal text-white/70 mt-0.5">
-                  {bettingAlert.type === "open" ? "Place your bets now!" : "Wheel is spinning – good luck!"}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-
-      {/* ── Error toast ── */}
-      <AnimatePresence>
-        {errorToast && (
-          <motion.div initial={{ opacity:0,y:-50,x:"-50%",scale:.9 }} animate={{ opacity:1,y:0,x:"-50%",scale:1 }} exit={{ opacity:0,y:-20,x:"-50%",scale:.95 }} transition={{ type:"spring",stiffness:350,damping:25 }}
-            className="fixed top-14 left-1/2 z-50 w-full max-w-sm px-4">
-            <div className="bg-[#180a0f]/95 border-2 border-red-500/50 backdrop-blur-xl p-4 rounded-xl shadow-[0_8px_32px_rgba(239,68,68,0.25)] flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-red-500/20 flex items-center justify-center text-red-400 shrink-0 border border-red-500/30 animate-pulse">
-                <AlertTriangle size={18} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-[10px] font-bold text-red-200 tracking-wide uppercase">Error</h4>
-                <p className="text-sm text-white/90 font-medium leading-relaxed mt-0.5 break-words">{errorToast}</p>
-              </div>
-              <button onClick={() => setErrorToast(null)} className="text-white/40 hover:text-white/90 transition px-1 py-1 rounded-md font-bold text-lg self-start">&times;</button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
+  );
+}
+
+// ── Sub-components ─────────────────────────────────────────────────────────
+function Stat({ Icon, label, value }: { Icon: any; label: string; value: string | number }) {
+  return (
+    <div className="flex items-center gap-1.5 text-xs">
+      <Icon size={12} className="text-gray-500" />
+      <span className="text-gray-500">{label}</span>
+      <span className="font-bold text-gray-300">{value}</span>
+    </div>
+  );
+}
+
+function PhaseChip({ phase, seconds }: { phase: Phase; seconds: number }) {
+  const cfg = {
+    BETTING:  { label: "BETTING OPEN",  color: "#10b981", pulse: true  },
+    CLOSED:   { label: "BETS CLOSED",   color: "#f59e0b", pulse: false },
+    SPINNING: { label: "SPINNING",      color: "#6366f1", pulse: true  },
+    SETTLED:  { label: "RESULT",        color: "#e53935", pulse: false },
+  }[phase];
+  return (
+    <div className="flex items-center gap-1.5 text-xs font-bold" style={{ color: cfg.color }}>
+      {cfg.pulse && <span className="inline-flex relative h-2 w-2">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: cfg.color }} />
+        <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: cfg.color }} />
+      </span>}
+      {cfg.label}
+      {seconds > 0 && <span className="text-gray-400 font-normal ml-1">{seconds}s</span>}
+    </div>
+  );
+}
+
+function BetBtn({ label, sub, color, onClick, disabled, glowColor }: {
+  label: string; sub: string; color: string;
+  onClick: () => void; disabled: boolean; glowColor: string;
+}) {
+  return (
+    <button onClick={onClick} disabled={disabled}
+      className="rounded-xl py-3 flex flex-col items-center font-bold transition-all duration-150 border-2"
+      style={{
+        background: `linear-gradient(160deg, ${color}dd, ${color}88)`,
+        borderColor: disabled ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.18)",
+        opacity: disabled ? 0.5 : 1,
+        cursor: disabled ? "not-allowed" : "pointer",
+        boxShadow: disabled ? "none" : `0 4px 20px ${glowColor}`,
+      }}>
+      <span className="text-white text-xs font-black tracking-wide">{label}</span>
+      <span className="text-white/70 text-[10px] font-bold mt-0.5">{sub}</span>
+    </button>
   );
 }
