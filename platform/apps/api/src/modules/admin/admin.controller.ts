@@ -643,14 +643,15 @@ export class AdminController {
   async getSettings() {
     const settings = await this.admin.getPlatformSettings() as any;
     const defaultInhouseGames = [
-      { id: "roulette", name: "Mini Roulette", description: "Mini Roulette 0-9", href: "/roulette", thumbnail: "/game-thumbs/opt/roulette.webp", emoji: "🎡", bg: "linear-gradient(135deg,#1a0040 0%,#7c3aed 50%,#0a001a 100%)", featured: true, sortOrder: 0 },
-      { id: "mines",    name: "Mines",    description: "Mines Game",             href: "/mines",    thumbnail: "/game-thumbs/opt/mines.webp",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", featured: true, sortOrder: 1 },
-      { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko",   href: "/plinko",   thumbnail: "/game-thumbs/opt/plinko.webp",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", featured: true, sortOrder: 2 },
-      { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",     href: "/pump",     thumbnail: "/game-thumbs/opt/baloon.webp",   emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", featured: true, sortOrder: 3 },
-      { id: "dice",     name: "Dice",     description: "Dice Game",              href: "/dice",     thumbnail: "/game-thumbs/opt/dice.webp",     emoji: "🎲", bg: "linear-gradient(135deg,#4a0030 0%,#db2777 50%,#1a0011 100%)", featured: true, sortOrder: 4 },
-      { id: "towers",   name: "Towers",   description: "Towers Game",            href: "/towers",   thumbnail: "/game-thumbs/opt/towers.webp",   emoji: "🗼", bg: "linear-gradient(135deg,#06283d 0%,#0ea5e9 50%,#021018 100%)", featured: true, sortOrder: 5 },
-      { id: "coin",     name: "Coinflip", description: "Coin Flip",              href: "/coinflip", thumbnail: "/game-thumbs/opt/coinflip-v3.webp",     emoji: "🪙", bg: "linear-gradient(135deg,#3a2a00 0%,#eab308 50%,#1a1300 100%)", featured: true, sortOrder: 6 },
-      { id: "chicken-road", name: "Chicken Road", description: "Cross & Cash Out", href: "/chicken-road", thumbnail: "/game-thumbs/opt/chicken-road.webp", emoji: "🐔", bg: "linear-gradient(135deg,#3a1c00 0%,#d97706 50%,#1a0e00 100%)", featured: true, sortOrder: 7 },
+      { id: "roulette",          name: "Mini Roulette",     description: "Mini Roulette 0-9",      href: "/roulette",          thumbnail: "/game-thumbs/opt/roulette.webp",      emoji: "🎡", bg: "linear-gradient(135deg,#1a0040 0%,#7c3aed 50%,#0a001a 100%)", featured: true, sortOrder: 0 },
+      { id: "european-roulette", name: "European Roulette", description: "European Roulette 0-36", href: "/european-roulette", thumbnail: "/game-thumbs/opt/roulette-euro.webp",  emoji: "🎰", bg: "linear-gradient(135deg,#1a0000 0%,#991b1b 50%,#0a0000 100%)", featured: true, sortOrder: 1 },
+      { id: "mines",    name: "Mines",    description: "Mines Game",             href: "/mines",    thumbnail: "/game-thumbs/opt/mines.webp",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", featured: true, sortOrder: 2 },
+      { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko",   href: "/plinko",   thumbnail: "/game-thumbs/opt/plinko.webp",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", featured: true, sortOrder: 3 },
+      { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",     href: "/pump",     thumbnail: "/game-thumbs/opt/baloon.webp",   emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", featured: true, sortOrder: 4 },
+      { id: "dice",     name: "Dice",     description: "Dice Game",              href: "/dice",     thumbnail: "/game-thumbs/opt/dice.webp",     emoji: "🎲", bg: "linear-gradient(135deg,#4a0030 0%,#db2777 50%,#1a0011 100%)", featured: true, sortOrder: 5 },
+      { id: "towers",   name: "Towers",   description: "Towers Game",            href: "/towers",   thumbnail: "/game-thumbs/opt/towers.webp",   emoji: "🗼", bg: "linear-gradient(135deg,#06283d 0%,#0ea5e9 50%,#021018 100%)", featured: true, sortOrder: 6 },
+      { id: "coin",     name: "Coinflip", description: "Coin Flip",              href: "/coinflip", thumbnail: "/game-thumbs/opt/coinflip-v3.webp",     emoji: "🪙", bg: "linear-gradient(135deg,#3a2a00 0%,#eab308 50%,#1a1300 100%)", featured: true, sortOrder: 7 },
+      { id: "chicken-road", name: "Chicken Road", description: "Cross & Cash Out", href: "/chicken-road", thumbnail: "/game-thumbs/opt/chicken-road.webp", emoji: "🐔", bg: "linear-gradient(135deg,#3a1c00 0%,#d97706 50%,#1a0e00 100%)", featured: true, sortOrder: 8 },
     ];
     const storedGames: any[] = settings.inhouseGames ?? [];
     if (!storedGames.length) return { ...settings, inhouseGames: defaultInhouseGames };
@@ -810,14 +811,15 @@ export class PublicPlatformController {
   async getPublicSettings() {
     const settings = await this.admin.getPlatformSettings();
     const defaultInhouseGames = [
-      { id: "roulette", name: "Mini Roulette", description: "Mini Roulette 0-9", href: "/roulette", thumbnail: "/game-thumbs/opt/roulette.webp", emoji: "🎡", bg: "linear-gradient(135deg,#1a0040 0%,#7c3aed 50%,#0a001a 100%)", featured: true, sortOrder: 0 },
-      { id: "mines",    name: "Mines",    description: "Mines Game",             href: "/mines",    thumbnail: "/game-thumbs/opt/mines.webp",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", featured: true, sortOrder: 1 },
-      { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko",   href: "/plinko",   thumbnail: "/game-thumbs/opt/plinko.webp",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", featured: true, sortOrder: 2 },
-      { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",     href: "/pump",     thumbnail: "/game-thumbs/opt/baloon.webp",   emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", featured: true, sortOrder: 3 },
-      { id: "dice",     name: "Dice",     description: "Dice Game",              href: "/dice",     thumbnail: "/game-thumbs/opt/dice.webp",     emoji: "🎲", bg: "linear-gradient(135deg,#4a0030 0%,#db2777 50%,#1a0011 100%)", featured: true, sortOrder: 4 },
-      { id: "towers",   name: "Towers",   description: "Towers Game",            href: "/towers",   thumbnail: "/game-thumbs/opt/towers.webp",   emoji: "🗼", bg: "linear-gradient(135deg,#06283d 0%,#0ea5e9 50%,#021018 100%)", featured: true, sortOrder: 5 },
-      { id: "coin",     name: "Coinflip", description: "Coin Flip",              href: "/coinflip", thumbnail: "/game-thumbs/opt/coinflip-v3.webp",     emoji: "🪙", bg: "linear-gradient(135deg,#3a2a00 0%,#eab308 50%,#1a1300 100%)", featured: true, sortOrder: 6 },
-      { id: "chicken-road", name: "Chicken Road", description: "Cross & Cash Out", href: "/chicken-road", thumbnail: "/game-thumbs/opt/chicken-road.webp", emoji: "🐔", bg: "linear-gradient(135deg,#3a1c00 0%,#d97706 50%,#1a0e00 100%)", featured: true, sortOrder: 7 },
+      { id: "roulette",          name: "Mini Roulette",     description: "Mini Roulette 0-9",      href: "/roulette",          thumbnail: "/game-thumbs/opt/roulette.webp",      emoji: "🎡", bg: "linear-gradient(135deg,#1a0040 0%,#7c3aed 50%,#0a001a 100%)", featured: true, sortOrder: 0 },
+      { id: "european-roulette", name: "European Roulette", description: "European Roulette 0-36", href: "/european-roulette", thumbnail: "/game-thumbs/opt/roulette-euro.webp",  emoji: "🎰", bg: "linear-gradient(135deg,#1a0000 0%,#991b1b 50%,#0a0000 100%)", featured: true, sortOrder: 1 },
+      { id: "mines",    name: "Mines",    description: "Mines Game",             href: "/mines",    thumbnail: "/game-thumbs/opt/mines.webp",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", featured: true, sortOrder: 2 },
+      { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko",   href: "/plinko",   thumbnail: "/game-thumbs/opt/plinko.webp",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", featured: true, sortOrder: 3 },
+      { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",     href: "/pump",     thumbnail: "/game-thumbs/opt/baloon.webp",   emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", featured: true, sortOrder: 4 },
+      { id: "dice",     name: "Dice",     description: "Dice Game",              href: "/dice",     thumbnail: "/game-thumbs/opt/dice.webp",     emoji: "🎲", bg: "linear-gradient(135deg,#4a0030 0%,#db2777 50%,#1a0011 100%)", featured: true, sortOrder: 5 },
+      { id: "towers",   name: "Towers",   description: "Towers Game",            href: "/towers",   thumbnail: "/game-thumbs/opt/towers.webp",   emoji: "🗼", bg: "linear-gradient(135deg,#06283d 0%,#0ea5e9 50%,#021018 100%)", featured: true, sortOrder: 6 },
+      { id: "coin",     name: "Coinflip", description: "Coin Flip",              href: "/coinflip", thumbnail: "/game-thumbs/opt/coinflip-v3.webp",     emoji: "🪙", bg: "linear-gradient(135deg,#3a2a00 0%,#eab308 50%,#1a1300 100%)", featured: true, sortOrder: 7 },
+      { id: "chicken-road", name: "Chicken Road", description: "Cross & Cash Out", href: "/chicken-road", thumbnail: "/game-thumbs/opt/chicken-road.webp", emoji: "🐔", bg: "linear-gradient(135deg,#3a1c00 0%,#d97706 50%,#1a0e00 100%)", featured: true, sortOrder: 8 },
     ];
     const defaultNavItems = [
       { href: "/exchange",   label: "EXCHANGE",    emoji: "🎰", enabled: true },

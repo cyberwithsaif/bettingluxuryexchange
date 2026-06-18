@@ -91,7 +91,8 @@ model User {
   refreshTokens   RefreshToken[]
   limits          UserLimits?
   adminLogs       AdminLog[]    @relation("AdminActor")
-  rouletteBets    RouletteBet[]
+  rouletteBets            RouletteBet[]
+  europeanRouletteBets    EuropeanRouletteBet[]
   minesSessions   MinesSession[]
   plinkoBets      PlinkoBet[]
   pumpBets        PumpBet[]
@@ -569,6 +570,45 @@ model RouletteBet {
   isWin       Boolean       @default(false)
   createdAt   DateTime      @default(now())
   settledAt   DateTime?
+
+  @@index([roundId])
+  @@index([userId, createdAt])
+}
+
+// -------------------------------------------------------------
+// European Roulette — In-house 0-36 full roulette
+// -------------------------------------------------------------
+
+model EuropeanRouletteRound {
+  id             String              @id @default(cuid())
+  roundNumber    Int                 @unique @default(autoincrement())
+  status         RouletteRoundStatus @default(BETTING)
+  serverSeed     String
+  serverSeedHash String
+  winningNumber  Int?
+  winningColor   String?
+  startedAt      DateTime            @default(now())
+  spinAt         DateTime?
+  settledAt      DateTime?
+
+  bets EuropeanRouletteBet[]
+
+  @@index([status, startedAt])
+}
+
+model EuropeanRouletteBet {
+  id        String                @id @default(cuid())
+  userId    String
+  user      User                  @relation(fields: [userId], references: [id])
+  roundId   String
+  round     EuropeanRouletteRound @relation(fields: [roundId], references: [id])
+  betType   String
+  betValue  String?
+  amount    Decimal               @db.Decimal(20, 4)
+  payout    Decimal               @default(0) @db.Decimal(20, 4)
+  isWin     Boolean               @default(false)
+  createdAt DateTime              @default(now())
+  settledAt DateTime?
 
   @@index([roundId])
   @@index([userId, createdAt])

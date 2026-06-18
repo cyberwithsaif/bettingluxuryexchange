@@ -6,7 +6,8 @@ import useSWR from "swr";
 
 // Fallback when settings haven't loaded — mirrors the API defaults.
 const DEFAULT_GAMES = [
-  { name: "Mini Roulette", href: "/roulette", thumb: "/game-thumbs/opt/roulette.webp" },
+  { name: "Mini Roulette",     href: "/roulette",          thumb: "/game-thumbs/opt/roulette.webp" },
+  { name: "European Roulette", href: "/european-roulette", thumb: "/game-thumbs/opt/roulette-euro.webp" },
   { name: "Mines",    href: "/mines",    thumb: "/game-thumbs/opt/mines.webp" },
   { name: "Plinko",   href: "/plinko",   thumb: "/game-thumbs/opt/plinko.webp" },
   { name: "Pump",     href: "/pump",     thumb: "/game-thumbs/opt/baloon.webp" },

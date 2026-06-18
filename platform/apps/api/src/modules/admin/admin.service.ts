@@ -645,14 +645,16 @@ export class AdminService {
   // ── P/L Control: per-game win/loss & difficulty config + live P/L ──────────
   async getPlControl() {
     const s = (await this.getPlatformSettings()) as Record<string, unknown>;
-    const [plinkoRow, pumpRow, rouletteRow] = await Promise.all([
+    const [plinkoRow, pumpRow, rouletteRow, eurRouletteRow] = await Promise.all([
       this.prisma.systemConfig.findUnique({ where: { key: "plinko_config" } }),
       this.prisma.systemConfig.findUnique({ where: { key: "pump_config" } }),
       this.prisma.systemConfig.findUnique({ where: { key: "roulette_config" } }),
+      this.prisma.systemConfig.findUnique({ where: { key: "european_roulette_config" } }),
     ]);
     const plinkoCfg = (plinkoRow?.value as Record<string, unknown>) ?? {};
     const pumpCfg = (pumpRow?.value as Record<string, unknown>) ?? {};
     const rouletteCfg = (rouletteRow?.value as Record<string, unknown>) ?? {};
+    const eurRouletteCfg = (eurRouletteRow?.value as Record<string, unknown>) ?? {};
     const n = (v: unknown, d = 0) => (v == null ? d : Number(v));
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -669,7 +671,7 @@ export class AdminService {
     };
 
     const p = this.prisma;
-    const [dice, mines, towers, chicken, coinflip, plinko, pump, roulette] = await Promise.all([
+    const [dice, mines, towers, chicken, coinflip, plinko, pump, roulette, eurRoulette] = await Promise.all([
       stat(p.diceBet, {}, { won: true }),
       stat(p.minesSession, { status: { not: "IN_PROGRESS" } }, { status: "CASHED_OUT" }),
       stat(p.towersSession, { status: { not: "IN_PROGRESS" } }, { status: "CASHED_OUT" }),
@@ -678,6 +680,7 @@ export class AdminService {
       stat(p.plinkoBet, {}, { profit: { gte: 0 } }),
       stat(p.pumpBet, { status: { not: "ACTIVE" } }, { status: "CASHED" }),
       stat(p.rouletteBet, { settledAt: { not: null } }, { isWin: true }, "amount"),
+      stat(p.europeanRouletteBet, { settledAt: { not: null } }, { isWin: true }, "amount"),
     ]);
 
     const games = [
@@ -708,6 +711,14 @@ export class AdminService {
           forceNumber: rouletteCfg.forceNumber == null ? null
             : (Number.isInteger(Number(rouletteCfg.forceNumber)) && Number(rouletteCfg.forceNumber) >= 0 && Number(rouletteCfg.forceNumber) <= 9) ? Number(rouletteCfg.forceNumber) : null,
         }, stats: roulette },
+      { id: "european-roulette", name: "European Roulette", emoji: "🎰", controlType: "rtp", target: "endpoint", endpoint: "/european-roulette/admin/config", hasForceNumber: true,
+        config: {
+          rtpPercent: n(eurRouletteCfg.rtpPercent, 97), maxPayout: n(eurRouletteCfg.maxPayout, 0),
+          minBet: n(eurRouletteCfg.minBet, 10), maxBet: n(eurRouletteCfg.maxBet, 100_000),
+          enabled: eurRouletteCfg.enabled !== false,
+          forceNumber: eurRouletteCfg.forceNumber == null ? null
+            : (Number.isInteger(Number(eurRouletteCfg.forceNumber)) && Number(eurRouletteCfg.forceNumber) >= 0 && Number(eurRouletteCfg.forceNumber) <= 36) ? Number(eurRouletteCfg.forceNumber) : null,
+        }, stats: eurRoulette },
     ];
 
     const sum = (k: "wagered" | "payout" | "pl" | "bets") => games.reduce((a, g) => a + ((g.stats as Record<string, number>)[k] ?? 0), 0);
