@@ -643,7 +643,7 @@ export class AdminController {
   async getSettings() {
     const settings = await this.admin.getPlatformSettings() as any;
     const defaultInhouseGames = [
-      { id: "roulette", name: "Roulette", description: "European Roulette",     href: "/roulette", thumbnail: "/game-thumbs/opt/roulette.webp", emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", featured: true, sortOrder: 0 },
+      { id: "roulette", name: "Mini Roulette", description: "Mini Roulette 0-9", href: "/roulette", thumbnail: "/game-thumbs/opt/roulette.webp", emoji: "🎡", bg: "linear-gradient(135deg,#1a0040 0%,#7c3aed 50%,#0a001a 100%)", featured: true, sortOrder: 0 },
       { id: "mines",    name: "Mines",    description: "Mines Game",             href: "/mines",    thumbnail: "/game-thumbs/opt/mines.webp",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", featured: true, sortOrder: 1 },
       { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko",   href: "/plinko",   thumbnail: "/game-thumbs/opt/plinko.webp",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", featured: true, sortOrder: 2 },
       { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",     href: "/pump",     thumbnail: "/game-thumbs/opt/baloon.webp",   emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", featured: true, sortOrder: 3 },
@@ -655,7 +655,12 @@ export class AdminController {
     const storedGames: any[] = settings.inhouseGames ?? [];
     if (!storedGames.length) return { ...settings, inhouseGames: defaultInhouseGames };
     const defaultMap = new Map(defaultInhouseGames.map(g => [g.id, g]));
-    const merged = storedGames.map(g => (!g.thumbnail && defaultMap.has(g.id)) ? { ...g, thumbnail: defaultMap.get(g.id)!.thumbnail } : g);
+    // Merge: use stored data but always sync name/description/bg/emoji from defaults
+    const merged = storedGames.map(g => {
+      const def = defaultMap.get(g.id);
+      if (!def) return g;
+      return { ...g, name: def.name, description: def.description, bg: def.bg, emoji: def.emoji, thumbnail: g.thumbnail || def.thumbnail };
+    });
     const storedIds = new Set(storedGames.map((g: any) => g.id));
     const missing = defaultInhouseGames.filter(g => !storedIds.has(g.id));
     return { ...settings, inhouseGames: [...merged, ...missing].sort((a, b) => (a.sortOrder ?? 99) - (b.sortOrder ?? 99)) };
@@ -805,13 +810,13 @@ export class PublicPlatformController {
   async getPublicSettings() {
     const settings = await this.admin.getPlatformSettings();
     const defaultInhouseGames = [
-      { id: "roulette", name: "Roulette", description: "European Roulette",   href: "/roulette", thumbnail: "/game-thumbs/opt/roulette.webp", emoji: "🎯", bg: "linear-gradient(135deg,#7f0000 0%,#b71c1c 50%,#4a0000 100%)", featured: true, sortOrder: 0 },
-      { id: "mines",    name: "Mines",    description: "Mines Game",           href: "/mines",    thumbnail: "/game-thumbs/opt/mines.webp",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", featured: true, sortOrder: 1 },
-      { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko", href: "/plinko",   thumbnail: "/game-thumbs/opt/plinko.webp",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", featured: true, sortOrder: 2 },
-      { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",   href: "/pump",     thumbnail: "/game-thumbs/opt/baloon.webp",   emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", featured: true, sortOrder: 3 },
-      { id: "dice",     name: "Dice",     description: "Dice Game",            href: "/dice",     thumbnail: "/game-thumbs/opt/dice.webp",     emoji: "🎲", bg: "linear-gradient(135deg,#4a0030 0%,#db2777 50%,#1a0011 100%)", featured: true, sortOrder: 4 },
-      { id: "towers",   name: "Towers",   description: "Towers Game",          href: "/towers",   thumbnail: "/game-thumbs/opt/towers.webp",   emoji: "🗼", bg: "linear-gradient(135deg,#06283d 0%,#0ea5e9 50%,#021018 100%)", featured: true, sortOrder: 5 },
-      { id: "coin",     name: "Coinflip", description: "Coin Flip",            href: "/coinflip", thumbnail: "/game-thumbs/opt/coinflip-v3.webp",     emoji: "🪙", bg: "linear-gradient(135deg,#3a2a00 0%,#eab308 50%,#1a1300 100%)", featured: true, sortOrder: 6 },
+      { id: "roulette", name: "Mini Roulette", description: "Mini Roulette 0-9", href: "/roulette", thumbnail: "/game-thumbs/opt/roulette.webp", emoji: "🎡", bg: "linear-gradient(135deg,#1a0040 0%,#7c3aed 50%,#0a001a 100%)", featured: true, sortOrder: 0 },
+      { id: "mines",    name: "Mines",    description: "Mines Game",             href: "/mines",    thumbnail: "/game-thumbs/opt/mines.webp",    emoji: "💣", bg: "linear-gradient(135deg,#0a3d1a 0%,#1b5e20 50%,#062210 100%)", featured: true, sortOrder: 1 },
+      { id: "plinko",   name: "Plinko",   description: "Provably Fair Plinko",   href: "/plinko",   thumbnail: "/game-thumbs/opt/plinko.webp",   emoji: "🎯", bg: "linear-gradient(135deg,#2d0b6b 0%,#7c3aed 50%,#1a0040 100%)", featured: true, sortOrder: 2 },
+      { id: "baloon",   name: "BALLOON",  description: "Balloon Crash Game",     href: "/pump",     thumbnail: "/game-thumbs/opt/baloon.webp",   emoji: "🎈", bg: "linear-gradient(135deg,#1a0000 0%,#7f1d1d 50%,#1a0000 100%)", featured: true, sortOrder: 3 },
+      { id: "dice",     name: "Dice",     description: "Dice Game",              href: "/dice",     thumbnail: "/game-thumbs/opt/dice.webp",     emoji: "🎲", bg: "linear-gradient(135deg,#4a0030 0%,#db2777 50%,#1a0011 100%)", featured: true, sortOrder: 4 },
+      { id: "towers",   name: "Towers",   description: "Towers Game",            href: "/towers",   thumbnail: "/game-thumbs/opt/towers.webp",   emoji: "🗼", bg: "linear-gradient(135deg,#06283d 0%,#0ea5e9 50%,#021018 100%)", featured: true, sortOrder: 5 },
+      { id: "coin",     name: "Coinflip", description: "Coin Flip",              href: "/coinflip", thumbnail: "/game-thumbs/opt/coinflip-v3.webp",     emoji: "🪙", bg: "linear-gradient(135deg,#3a2a00 0%,#eab308 50%,#1a1300 100%)", featured: true, sortOrder: 6 },
       { id: "chicken-road", name: "Chicken Road", description: "Cross & Cash Out", href: "/chicken-road", thumbnail: "/game-thumbs/opt/chicken-road.webp", emoji: "🐔", bg: "linear-gradient(135deg,#3a1c00 0%,#d97706 50%,#1a0e00 100%)", featured: true, sortOrder: 7 },
     ];
     const defaultNavItems = [
@@ -825,13 +830,17 @@ export class PublicPlatformController {
       { href: "/sportsbook", label: "SPORTS BOOK", emoji: "🎯", enabled: true },
     ];
     // Merge: always include all default built-in games; admin-added extras are appended.
-    // If a stored game has no thumbnail, fall back to the built-in SVG default.
+    // Sync name/description/bg/emoji from code defaults so renames propagate to stored entries.
     const storedGames: any[] = (settings as any).inhouseGames ?? [];
     const defaultMap = new Map(defaultInhouseGames.map(g => [g.id, g]));
     const storedIds = new Set(storedGames.map((g: any) => g.id));
     const missingDefaults = defaultInhouseGames.filter(g => !storedIds.has(g.id));
     const mergedGames = [
-      ...storedGames.map(g => (!g.thumbnail && defaultMap.has(g.id)) ? { ...g, thumbnail: defaultMap.get(g.id)!.thumbnail } : g),
+      ...storedGames.map(g => {
+        const def = defaultMap.get(g.id);
+        if (!def) return g;
+        return { ...g, name: def.name, description: def.description, bg: def.bg, emoji: def.emoji, thumbnail: g.thumbnail || def.thumbnail };
+      }),
       ...missingDefaults,
     ].sort((a, b) => (a.sortOrder ?? 99) - (b.sortOrder ?? 99));
 
